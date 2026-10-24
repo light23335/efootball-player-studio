@@ -1,8 +1,8 @@
 {
   "game": "V17",
-  "version": "1.9.7",
+  "version": "1.9.7.1",
   "backend_tests": {
-    "passed": 231,
+    "passed": 233,
     "skipped": 1,
     "failed": 0
   },
@@ -47,7 +47,10 @@
     "editable_frame_cap": true,
     "render_jni_entry": true,
     "visible_card_tick_resume": true,
-    "original_mini_linked_series": true
+    "original_mini_linked_series": true,
+    "fc_mobile_shoulder_layout": true,
+    "analog_trigger_pressure_preserved": true,
+    "legacy_fc_preset_migrated": true
   },
   "limits": {
     "custom_players": 10000,

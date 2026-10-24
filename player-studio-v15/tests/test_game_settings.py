@@ -16,6 +16,9 @@ class GameSettingsTests(unittest.TestCase):
    for target in (0,1000,True):
     bad=copy.deepcopy(v);bad['frame_rate']['target']=target
     with self.assertRaises(ValueError):settings(store,bad)
+ def test_legacy_fc_preset_migrates_to_mobile_shoulder_layout(self):
+  value=copy.deepcopy(DEFAULTS);value['controller'].update(preset='fc',bindings=preset('default'));value['controller'].pop('mapping_revision')
+  self.assertEqual(normalize(value)['controller']['bindings'],preset('fc'))
 
 class NativeControllerTests(unittest.TestCase):
  @classmethod
@@ -51,15 +54,23 @@ class NativeControllerTests(unittest.TestCase):
   result={BUTTONS[n] for n,off in enumerate(p['digital_offsets']) if raw[off]}
   return result,raw
  def test_fc_physical_single_buttons_and_press_release(self):
-  for source,target in [('B','X'),('X','B'),('RB','RT'),('RT','RB'),('A','A'),('Y','Y'),('LB','LB'),('LT','LT'),('START','START'),('SELECT','SELECT')]:
+  for source,target in [('B','X'),('X','B'),('RB','LT'),('RT','RT'),('A','A'),('Y','Y'),('LB','LB'),('LT','RB'),('START','START'),('SELECT','SELECT')]:
    got,_=self.machine([source]);self.assertEqual(got,{target})
    self.assertEqual(self.machine([])[0],set())
  def test_fc_combos_suppress_single_actions_and_accept_trigger_axes(self):
-  self.assertEqual(self.machine(['RB','B'])[0],{'RT','X'})
+  self.assertEqual(self.machine(['RB','B'])[0],{'RB','X'})
   self.assertEqual(self.machine(['LT','RT'])[0],{'RB','RT'})
   self.assertEqual(self.machine(['LB','B'])[0],{'LB','X'})
   self.assertEqual(self.machine([],triggers=(.8,.9))[0],{'RB','RT'})
-  self.assertEqual(self.machine([],triggers=(0,.8))[0],{'RB'})
+  self.assertEqual(self.machine([],triggers=(0,.8))[0],{'RT'})
+  self.assertEqual(self.machine(['RT','B'])[0],{'RT','X'})
+ def test_sprint_trigger_pressure_survives_but_key_only_triggers_still_work(self):
+  for amount in (.05,.15,.29,.31,.5,.8,1.):
+   _,raw=self.machine([],triggers=(0,amount));self.assertAlmostEqual(struct.unpack_from('<f',raw,0x50)[0],amount,places=6)
+  _,raw=self.machine(['RT']);self.assertEqual(struct.unpack_from('<f',raw,0x50)[0],1.)
+  rows=preset('fc');next(r for r in rows if r['id']=='finesse')['input']=['RT','B']
+  output,raw=self.machine(['B'],triggers=(0,.8),options={'bindings':rows})
+  self.assertEqual(output,{'RB','X'});self.assertEqual(struct.unpack_from('<f',raw,0x50)[0],0.)
  def test_original_preset_identity_and_custom_unbound(self):
   for key in BUTTONS:self.assertEqual(self.machine([key],'default')[0],{key})
   rows=preset('fc');next(r for r in rows if r['id']=='X')['input']=[]
