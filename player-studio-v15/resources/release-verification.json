@@ -1,13 +1,13 @@
 {
   "game": "V16",
-  "version": "1.9.5",
+  "version": "1.9.5.1",
   "backend_tests": {
-    "passed": 181,
+    "passed": 186,
     "skipped": 1,
     "failed": 0
   },
   "frontend_tests": {
-    "passed": 28,
+    "passed": 31,
     "failed": 0
   },
   "public_content": {
@@ -32,7 +32,8 @@
     "native_window_close_click_verified": false,
     "latest_capacity_pair_cleanup_tested": true,
     "shared_booster_reuse_and_first_slot_alias_tested": true,
-    "large_project_close_delta_tested": true
+    "large_project_close_delta_tested": true,
+    "coach_pagination_and_no_focus_loss_hydration_tested": true
   },
   "engine_changes_since_1_9_4": "native record formats and ARM64 hooks retained; route capacity and booster ID pool extended",
   "in_game_tested": false,
@@ -41,5 +42,19 @@
     "shared_booster_definitions": 10000,
     "native_booster_id_bits": 10,
     "first_slot_id_bits": 8
+  },
+  "update_https_repair": {
+    "python_ssl_constructor_failure_diagnosed": true,
+    "system_https_fallback": true,
+    "tls_certificate_validation_enabled": true,
+    "windows_real_https_verified": true,
+    "android_system_https_fallback_added": true
+  },
+  "coach_portraits": {
+    "exact_native_id_lookup": true,
+    "variation_and_base_paths_verified": true,
+    "real_native_pngs_decoded": 2,
+    "page_size": 24,
+    "missing_portraits_not_substituted": true
   }
 }

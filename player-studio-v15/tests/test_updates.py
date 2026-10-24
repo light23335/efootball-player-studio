@@ -25,10 +25,21 @@ class UpdateTests(unittest.TestCase):
   with tempfile.TemporaryDirectory() as folder:
    root=Path(folder);checker=UpdateChecker(SimpleNamespace(root=root),root,'1.9.4')
    checker.settings({'repository':'light23335/efootball-player-studio','enabled':False})
-   with patch('updates.urllib.request.urlopen',side_effect=TimeoutError):checker._check('light23335/efootball-player-studio')
+   with patch('updates.urllib.request.urlopen',side_effect=TimeoutError),patch('updates.native_fetch',side_effect=TimeoutError):checker._check('light23335/efootball-player-studio')
    self.assertEqual(checker.status()['phase'],'offline');self.assertFalse(checker.status()['prompt'])
    with patch('updates.urllib.request.urlopen',side_effect=urllib.error.HTTPError('https://api.github.com',404,'no release',None,None)):checker._check('light23335/efootball-player-studio')
    self.assertEqual(checker.status()['phase'],'current');self.assertFalse(checker.status()['prompt'])
+ def test_missing_frozen_ssl_context_uses_verified_system_https(self):
+  with tempfile.TemporaryDirectory() as folder:
+   root=Path(folder);checker=UpdateChecker(SimpleNamespace(root=root),root,'1.9.4')
+   with patch('updates.urllib.request.urlopen',side_effect=FileNotFoundError(2,'SSL context unavailable')),patch('updates.native_fetch',return_value=json.dumps(self.release()).encode()) as native:
+    checker._check('light23335/efootball-player-studio')
+   self.assertEqual(checker.status()['phase'],'available');self.assertTrue(checker.status()['prompt']);self.assertEqual(checker.status()['transport'],'system-https');native.assert_called_once()
+ def test_native_transport_size_and_failure_do_not_fake_a_new_release(self):
+  with tempfile.TemporaryDirectory() as folder:
+   root=Path(folder);checker=UpdateChecker(SimpleNamespace(root=root),root,'1.9.4')
+   with patch('updates.urllib.request.urlopen',side_effect=FileNotFoundError),patch('updates.native_fetch',return_value=b'x'*(256*1024+1)):checker._check('light23335/efootball-player-studio')
+   self.assertEqual(checker.status()['phase'],'offline');self.assertFalse(checker.status()['prompt'])
  def test_reminder_can_be_dismissed_without_installing_and_auto_check_disabled(self):
   with tempfile.TemporaryDirectory() as folder:
    root=Path(folder);checker=UpdateChecker(SimpleNamespace(root=root),root,'1.9.4');checker.settings({'repository':'light23335/efootball-player-studio','enabled':False})

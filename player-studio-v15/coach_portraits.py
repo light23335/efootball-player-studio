@@ -1,8 +1,41 @@
 """Custom coach portraits use the game's coach-ID texture lookup."""
 import hashlib,io
+import json
+from pathlib import Path
 from pack_covers import normalize as normalize_crop
 
 FOLDER='/Game/Assets/ui/Data/Symbol/Coach/'
+
+def original_portraits(library,coaches,ids):
+    if not isinstance(ids,list):raise ValueError('教练编号必须为列表')
+    ids=list(dict.fromkeys(ids or []))
+    if not ids or len(ids)>24:raise ValueError('每次读取 1–24 名教练头像')
+    known={str(c['id']) for c in coaches if c.get('type')!='custom'}
+    if any(str(cid) not in known or not str(cid).isdigit() for cid in ids):raise ValueError('教练编号不在当前游戏数据库中')
+    if library.state['phase']!='ready':return {'portraits':{},'ready':False,'message':'请先准备游戏资源，才能显示原版头像'}
+    result={};pending={}
+    with library.convert_lock:
+        available=library.face_assets().files
+        for cid in map(str,ids):
+            hit=library.cache.get('coach:'+cid)
+            if hit and (library.store.root/'assets'/hit['asset_id']).is_file():result[cid]=hit;continue
+            prefix='../../../PesMobile/Content/Assets/ui/Data/Symbol/Coach/'
+            path=next((prefix+variation+'coach_'+cid+'_.uasset' for variation in ('Variation/','') if prefix+variation+'coach_'+cid+'_.uasset' in available),None)
+            if path is None:result[cid]={'missing':True,'message':'游戏资源内没有此教练的独立头像'};continue
+            pending[cid]=path.removeprefix('../../../')
+        paths=[p for p in pending.values() if not (library.converted/Path(p).with_suffix('.png')).is_file()]
+        error=''
+        if paths:
+            try:library.run(paths)
+            except (ValueError,OSError) as exc:error=str(exc)
+        for cid,path in pending.items():
+            file=library.converted/Path(path).with_suffix('.png')
+            if not file.is_file():result[cid]={'unavailable':True,'message':error or '此原版头像尚未能读取'};continue
+            asset=library.store.import_asset(file,'image')
+            result[cid]={'asset_id':asset['id'],'zoom':1,'x':0,'y':0,'native_path':path}
+            library.cache['coach:'+cid]=result[cid]
+        library.cache_path.write_text(json.dumps(library.cache,ensure_ascii=False,indent=2),encoding='utf8')
+    return {'portraits':result,'ready':True}
 
 
 def normalize(value):

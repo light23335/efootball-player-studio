@@ -35,6 +35,32 @@ test('coach preview finds Chinese, English and pack names without native select'
  }finally{globalThis.document=old;}
 });
 
+test('coach pagination reaches every row and clamps when searching narrows results',()=>{
+ const old=globalThis.document;globalThis.document={addEventListener(){}};
+ try{const ui=new CoachUI({catalog:{coaches:Array.from({length:55},(_,id)=>({id:String(id),name:'Coach '+id}))},project:()=>({})});
+  assert.equal(ui.resultPage().rows.length,24);assert.equal(ui.resultPage().pages,3);
+  ui.page=2;assert.deepEqual(ui.resultPage().rows.map(r=>r.id),['48','49','50','51','52','53','54']);
+  ui.query='Coach 54';assert.equal(ui.resultPage().total,1);assert.equal(ui.page,0);
+  ui.query='not present';assert.equal(ui.resultPage().pages,1);assert.equal(ui.resultPage().rows.length,0);
+ }finally{globalThis.document=old;}
+});
+
+test('native coach portrait hydration updates avatar elements without redrawing the page',async()=>{
+ const old=globalThis.document;globalThis.document={addEventListener(){}};
+ try{let calls=0,updates=0;const row={id:'8',name:'Coach',type:'native'},ui=new CoachUI({catalog:{coaches:[row]},project:()=>({}),api:async()=>{calls++;return {ready:true,portraits:{8:{asset_id:'exact.png',x:0,y:0,zoom:1}}};},rerender(){throw Error('Input focus would be lost');}});
+  ui.updatePortraitElements=()=>updates++;await ui.loadPortraits([row]);await ui.loadPortraits([row]);
+  assert.equal(calls,1);assert.equal(updates,1);assert.match(ui.portraitImage(row),/exact.png/);
+ }finally{globalThis.document=old;}
+});
+
+test('preparing game resources allows an unavailable coach portrait to retry',async()=>{
+ const old=globalThis.document;globalThis.document={addEventListener(){}};
+ try{let key='missing',calls=0;const row={id:'8',type:'native'},ui=new CoachUI({catalog:{coaches:[row]},project:()=>({}),resourceKey:()=>key,api:async()=>{calls++;return key==='missing'?{ready:false,portraits:{}}:{ready:true,portraits:{8:{asset_id:'ready.png',x:0,y:0,zoom:1}}};}});
+  ui.updatePortraitElements=()=>{};await ui.loadPortraits([row]);assert.match(ui.portraitImage(row),/暂未就绪/);await ui.loadPortraits([row]);assert.equal(calls,1);
+  key='ready';await ui.loadPortraits([row]);assert.equal(calls,2);assert.match(ui.portraitImage(row),/ready.png/);
+ }finally{globalThis.document=old;}
+});
+
 test('window unload sends latest project once and reload can register again',async()=>{
  const before={window:globalThis.window,navigator:globalThis.navigator};const handlers={},calls=[],beacons=[];
  globalThis.window={addEventListener:(name,handler)=>handlers[name]=handler};

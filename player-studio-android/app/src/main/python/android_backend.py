@@ -18,6 +18,28 @@ def start(home,native_dir):
     from java import jclass
     native_files=jclass('com.playerstudio.editor.NativeFiles')
     installed_games=jclass('com.playerstudio.editor.InstalledGames')
+    import updates,urllib.error
+    def system_update_https(url,agent):
+        from urllib.parse import urlsplit
+        if urlsplit(url).scheme!='https' or urlsplit(url).hostname!='api.github.com':raise ValueError('更新请求地址无效')
+        connection=jclass('java.net.URL')(url).openConnection();connection.setConnectTimeout(8000);connection.setReadTimeout(8000)
+        connection.setRequestProperty('Accept','application/vnd.github+json');connection.setRequestProperty('X-GitHub-Api-Version','2022-11-28');connection.setRequestProperty('User-Agent',agent)
+        reader=None
+        try:
+            code=connection.getResponseCode()
+            if code!=200:raise urllib.error.HTTPError(url,code,'Android HTTPS HTTP '+str(code),None,None)
+            reader=jclass('java.io.BufferedReader')(jclass('java.io.InputStreamReader')(connection.getInputStream(),'UTF-8'));lines=[];size=0
+            while True:
+                line=reader.readLine()
+                if line is None:break
+                line=str(line);size+=len(line.encode('utf8'))+1
+                if size>256*1024:raise ValueError('更新说明超过大小限制')
+                lines.append(line)
+            return '\n'.join(lines).encode('utf8')
+        finally:
+            if reader:reader.close()
+            connection.disconnect()
+    updates.NATIVE_TRANSPORT=system_update_https
     app.PLATFORM='android'
     app.open_update_action=lambda url:bool(installed_games.openReleasePage(url))
     def open_export_action(store,name):

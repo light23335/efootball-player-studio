@@ -1,7 +1,13 @@
 """Optional, non-blocking public GitHub Release checks. Never installs updates."""
 from pathlib import Path
-import copy,json,re,threading,time,urllib.request,urllib.error
+import copy,json,logging,re,threading,time,urllib.request,urllib.error
 from urllib.parse import urlsplit
+NATIVE_TRANSPORT=None
+
+def native_fetch(url,agent):
+ if NATIVE_TRANSPORT:return NATIVE_TRANSPORT(url,agent)
+ from native_https import fetch
+ return fetch(url,agent)
 
 def repository(value):
  value=str(value or '').strip().removeprefix('https://github.com/').removesuffix('/').removesuffix('.git')
@@ -56,13 +62,22 @@ class UpdateChecker:
  def _check(self,repo):
   try:
    request=urllib.request.Request('https://api.github.com/repos/'+repo+'/releases/latest',headers={'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','User-Agent':'PlayerStudio/'+self.current})
-   with urllib.request.urlopen(request,timeout=8) as response:
-    raw=response.read(256*1024+1)
-    if len(raw)>256*1024:raise ValueError('更新说明超过大小限制')
+   transport='python-https'
+   try:
+    with urllib.request.urlopen(request,timeout=8) as response:raw=response.read(256*1024+1)
+   except urllib.error.HTTPError:raise
+   except OSError as exc:
+    logging.warning('Python HTTPS failed; using system HTTPS: %s: %s',type(exc).__name__,str(exc))
+    raw=native_fetch(request.full_url,'PlayerStudio/'+self.current);transport='system-https'
+   if len(raw)>256*1024:raise ValueError('更新说明超过大小限制')
    result=release_result(json.loads(raw),self.current,repo,self.platform)
+   result['transport']=transport
   except urllib.error.HTTPError as exc:
+   logging.warning('GitHub update HTTP failure: %s %s',exc.code,exc.reason)
    result={'phase':'current','message':'仓库还没有正式 Release；当前版本可以继续使用'} if exc.code==404 else {'phase':'offline','message':'暂时无法检查更新；不影响继续编辑'}
-  except Exception:result={'phase':'offline','message':'暂时无法检查更新；不影响继续编辑'}
+  except Exception as exc:
+   logging.exception('GitHub update request failure: %s: %s',type(exc).__name__,str(exc))
+   result={'phase':'offline','message':'暂时无法检查更新；不影响继续编辑','detail':type(exc).__name__+': '+str(exc)[:300]}
   with self.lock:self.state=result
  def link(self):
   with self.lock:target=self.state.get('download_url') or self.state.get('release_url')

@@ -45,7 +45,7 @@ import packs
 from window_sessions import WindowSessions
 from booster_library import BoosterLibrary
 
-APP_VERSION = "1.9.5"
+APP_VERSION = "1.9.5.1"
 MAX_PERSONAL_PLAYERS = 10000
 BUNDLE = Path(getattr(sys, "_MEIPASS", Path(__file__).absolute().parent))
 RESOURCE = BUNDLE / "resources"
@@ -721,6 +721,9 @@ class Handler(BaseHTTPRequestHandler):
                 result = store.coaches.save(body['coach'])
             elif path == '/api/coaches/list':
                 result = store.coaches.list()
+            elif path == '/api/coaches/portraits':
+                from coach_portraits import original_portraits
+                result = original_portraits(self.server.library,self.server.catalog['coaches'],body.get('ids'))
             elif path == "/api/library/search":
                 result = self.server.library.search(body)
             elif path == "/api/library/player":
