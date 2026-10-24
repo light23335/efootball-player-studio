@@ -1,0 +1,14 @@
+{
+  "source": "The pack banner reads its maximum rating after the ordinary card converter and overwrites the displayed score. Override only this exact maximum getter call.",
+  "global_preview": true,
+  "converter_returns": [
+    59255500
+  ],
+  "address": 128484712,
+  "file_offset": 128468328,
+  "expected_hex": "00d040b9c0035fd601d400b9c0035fd600d440b9c0035fd6084040b91f0d0071a101005409a044a93f0108eb40010054294100912a015fb82b4100915f150071",
+  "callers": [],
+  "evidence": "Disassembled supplied V14: 0x3882ac8 calls getter 0x7a88568; 0x3882ae0 computes fallback and 0x3882aec overwrites UI rating. Owned card conversion and details do not use this return site.",
+  "value_offset": 208,
+  "direct_only": true
+}

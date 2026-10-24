@@ -1,0 +1,9 @@
+{
+  "name": "personal-player-studio",
+  "version": "1.7.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:domain": "node --test tests/domain.test.mjs"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "source": "provided V13 lib/arm64-v8a/libUE4.so",
+  "factor_function_address": "0x82b7fc8",
+  "factor_function_bytes": 296,
+  "factor_function_sha256": "239d89d31ae20fd92ac7d1b8f72e07be483d696b33bfc3d468802140e1dd2aea",
+  "detail_function_address": "0x82b8a38",
+  "arithmetic": "IEEE754 float32 at each native operation; truncate proficiency delta before adding player and coach boosts; clamp final displayed ability to 40..120",
+  "quadratic_branch": "p < 90: ((p - 99)^2 * (-38) / 99 / 99 + 104) / 100",
+  "linear_branch_float32_words": {
+    "slope": "0x3d46a7f0",
+    "offset": "0x42c68189"
+  },
+  "native_no_coach_sentinel": 127
+}

@@ -1,0 +1,7 @@
+{
+  "source": "V14 restores the native CommonPlayer rarity getter; original identity getter decodes the reserved personal identity. Foreign cards keep original rarity.",
+  "address": 136921252,
+  "file_offset": 136904868,
+  "expected_hex": "00384539c0035fd6003c4539c0035fd601380539c0035fd6013c0539c0035fd600444539c0035fd601440539c0035fd600304539c0035fd601300539c0035fd6",
+  "identity_getter": 136920272
+}

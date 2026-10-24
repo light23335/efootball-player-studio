@@ -1,0 +1,19 @@
+{
+  "format": "player-studio-game-adapters-v1",
+  "engines": {
+    "1f9f0117d16a60e683b07c57a6e72285936d3bc4328c9f7d3424e241e84c5ea2": {
+      "family": "V14",
+      "game_version": "V14"
+    },
+    "c779d79556bb4dfb59ef8abce3e7fba7e786a33cbcf6ac710185c564a4a6fa04": {
+      "family": "V14",
+      "game_version": "V15",
+      "validation": "Same ELF layout; 121 byte engine difference inspected; database strides retained. In-game verification pending."
+    },
+    "efd257d9e41b622d6ecb8f51f7b0a8ee8820113fd427c5572025df1c8eecc7b8": {
+      "family": "V14",
+      "game_version": "V16",
+      "validation": "Native tables, interface regions and installer verified; game acceptance pending."
+    }
+  }
+}

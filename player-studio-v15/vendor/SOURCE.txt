@@ -1,0 +1,2 @@
+CPK/WESYS code from tjgg260/eFootball-Master-League tools/vendor/efootball-player-tool and tools/vendor/sider. GPL-3.0.
+https://github.com/tjgg260/eFootball-Master-League

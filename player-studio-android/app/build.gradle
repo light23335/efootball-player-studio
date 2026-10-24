@@ -1,0 +1,28 @@
+plugins { id 'com.android.application'; id 'com.chaquo.python' }
+android {
+    namespace 'com.playerstudio.editor'
+    compileSdk 36
+    defaultConfig {
+        applicationId 'com.playerstudio.editor'
+        minSdk 26
+        targetSdk 36
+        versionCode 194000
+        versionName '1.9.4-android.1'
+        ndk { abiFilters 'arm64-v8a', 'x86_64' }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    sourceSets { main { assets.srcDirs += ['build/generated/studioAssets'] } }
+    packaging { jniLibs { useLegacyPackaging = true } }
+    androidResources { noCompress += ['zip'] }
+    buildTypes { release { minifyEnabled false } }
+}
+chaquopy {
+    defaultConfig {
+        version '3.12'
+        if (project.hasProperty('studioBuildPython')) buildPython project.property('studioBuildPython')
+        pip { install 'numpy==1.26.2'; install 'pillow==11.0.0'; install 'cryptography==42.0.8' }
+        pyc { src false }
+    }
+    sourceSets { main { srcDirs += ['build/generated/studioPython'] } }
+}
+dependencies { implementation 'org.jcodec:jcodec:0.2.5'; implementation 'org.jcodec:jcodec-android:0.2.5' }

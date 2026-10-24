@@ -1,0 +1,120 @@
+{
+  "stride": 40,
+  "id": {
+    "bit": 112,
+    "width": 10
+  },
+  "effects": {
+    "14": {
+      "bit": 144,
+      "width": 5
+    },
+    "15": {
+      "bit": 261,
+      "width": 5
+    },
+    "16": {
+      "bit": 192,
+      "width": 5
+    },
+    "17": {
+      "bit": 239,
+      "width": 5
+    },
+    "18": {
+      "bit": 276,
+      "width": 5
+    },
+    "19": {
+      "bit": 271,
+      "width": 5
+    },
+    "20": {
+      "bit": 244,
+      "width": 5
+    },
+    "21": {
+      "bit": 122,
+      "width": 5
+    },
+    "22": {
+      "bit": 229,
+      "width": 5
+    },
+    "23": {
+      "bit": 281,
+      "width": 5
+    },
+    "24": {
+      "bit": 234,
+      "width": 5
+    },
+    "25": {
+      "bit": 170,
+      "width": 5
+    },
+    "26": {
+      "bit": 266,
+      "width": 5
+    },
+    "27": {
+      "bit": 154,
+      "width": 5
+    },
+    "28": {
+      "bit": 185,
+      "width": 5
+    },
+    "29": {
+      "bit": 165,
+      "width": 5
+    },
+    "30": {
+      "bit": 197,
+      "width": 5
+    },
+    "31": {
+      "bit": 256,
+      "width": 5
+    },
+    "32": {
+      "bit": 224,
+      "width": 5
+    },
+    "34": {
+      "bit": 180,
+      "width": 5
+    },
+    "35": {
+      "bit": 175,
+      "width": 5
+    },
+    "36": {
+      "bit": 149,
+      "width": 5
+    },
+    "37": {
+      "bit": 249,
+      "width": 5
+    },
+    "38": {
+      "bit": 217,
+      "width": 5
+    },
+    "39": {
+      "bit": 160,
+      "width": 5
+    },
+    "40": {
+      "bit": 202,
+      "width": 5
+    }
+  },
+  "ambiguous_gk_indices": [],
+  "ambiguous_gk_bits": [],
+  "verified_native_rows": 418,
+  "custom_effect_min": 0,
+  "custom_effect_max": 20,
+  "note": "All 26 fields independently verified against V15 ARM64 accessors. Awareness=192, parrying=197, reflexes=256. Unequal GK values are supported.",
+  "evidence": "native-booster-accessors.json"
+}

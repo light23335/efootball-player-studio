@@ -1,0 +1,37 @@
+球员工坊 Player Studio
+
+Three.js 0.186.1
+Copyright (c) 2010-2026 three.js authors
+MIT License. Full license: web/vendor/three/LICENSE
+Source: https://github.com/mrdoob/three.js
+Distribution: https://www.npmjs.com/package/three
+
+Windows executable is built with PyInstaller 6.22.3.
+PyInstaller licensing: https://pyinstaller.org/en/stable/license.html
+Python: https://docs.python.org/3/license.html
+
+CUE4Parse.CLI 0.2.0 / CUE4Parse 1.2.2
+Apache-2.0; licenses and notices are included under tools/asset-decoder/licenses.
+Official source: https://github.com/joric/CUE4Parse.CLI
+Core source: https://github.com/FabianFG/CUE4Parse
+The native codec DLLs are unmodified dependencies used by that release.
+
+Player.bin layout reference (mobile fields separately calibrated):
+https://github.com/tjgg260/eFootball-Master-League/blob/main/tools/data/pesdb_schema.json
+The CPK/WESYS readers used during development were read from that project's GPL-3.0 vendor tools; they are not linked into this application's runtime.
+
+球员数据库、选项目录、培养分组、增能效果、总评参考权重和美术均取自用户提供的 APK，仅用于该用户的个人学习工程。
+Xdelta 3.2.2, Copyright Joshua MacDonald. Apache License 2.0.
+Unmodified official Windows release: https://github.com/jmacd/xdelta/releases/tag/v3.2.2
+License and source reference: tools/apk-delta/LICENSE and tools/apk-delta/SOURCE.txt.
+美术版权归相应权利人。本项目新增的是编辑界面、资源读取与转换、工程存储、模拟和迁移工具，不提供自绘卡面或生成的人物模型。
+
+FFmpeg 7.1 essentials Windows build, Copyright (c) 2000-2024 FFmpeg developers.
+Unmodified separate executable, GPL version 3 or later.
+License: tools/video/COPYING.GPLv3. Source/build references: tools/video/SOURCE.txt.
+Used only when an original card clip is MPEG-2; VP9 clips retain original packets.
+
+Python CityHash 0.4.10 (MIT), https://github.com/escherba/python-cityhash
+NumPy 2.3.5 (BSD), https://numpy.org/doc/stable/license.html
+Pillow 12.3.0 (MIT-CMU), https://pillow.readthedocs.io/en/stable/about.html
+cryptography 50.0.2 (Apache-2.0 / BSD), https://cryptography.io/en/latest/faq/#licensing

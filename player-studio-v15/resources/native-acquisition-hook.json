@@ -1,0 +1,7 @@
+{
+  "source": "V13 acquisition converter call on a stack-local copy; preserve owned state",
+  "address": 59265836,
+  "file_offset": 59249452,
+  "converter": 59247036,
+  "expected_hex": "a4edff97e03340f9600000b4e03700f9e6c8da97f30340f9530200b4e80740f9e00313aa1f0113eba10000540b000014e80314aa9f0213ebe0000054008155f8"
+}

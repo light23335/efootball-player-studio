@@ -1,0 +1,149 @@
+{
+  "game": "V16",
+  "version": "1.9.3.2",
+  "backend_tests": {
+    "passed": 150,
+    "skipped": 1,
+    "failed": 0
+  },
+  "public_content": {
+    "native_players": 46623,
+    "native_coaches": 1661,
+    "personal_players": 0,
+    "personal_coaches": 0,
+    "personal_assets": 0,
+    "private_signing_keys": 0,
+    "native_asset_index": 71481
+  },
+  "features": [
+    "V16 original worker and allocator restored as one checked pair",
+    "allocation closure exercised during export preflight",
+    "all 13 hooks installed in isolated execution of the real 119-route worker",
+    "four original V16 native-model routes preserved",
+    "coach portrait and AI playing styles retained",
+    "optional foreground 160 FPS lock; native ARM64 frame hook executed and lower native choices overridden"
+  ],
+  "native_export": {
+    "status": "passed",
+    "output_bytes": 2465192059,
+    "in_game_tested": false,
+    "game_version": "V16",
+    "binding_preflight": {
+      "routes": 5,
+      "code_bytes": 2608,
+      "page_bytes": 4096,
+      "extension_code_bytes": 5848,
+      "stock_routes_preserved": 4,
+      "allocator_contract_verified": true
+    },
+    "source": {
+      "kind": "v16-prepared",
+      "raw_fingerprint": "1e1ab4382c90ae42f534e9250d1ab747c0ca901b196ad60bca57b037c5a27992",
+      "raw_worker_fingerprint": "019c1c80314943bf060e773e766f23a0735b7f558ea2ae0be57db42e51309cfe",
+      "prepared_worker_fingerprint": "bbc04a09860900bcabc14e48f61e1b8213544ec4317d24bd10f0c532ce1d17f3",
+      "stock_route_ids": [
+        89136418985306,
+        89136418985307,
+        89136418985308,
+        89136418985309
+      ]
+    },
+    "ai_styles": [
+      "trickster",
+      "incisive_run",
+      "early_cross"
+    ],
+    "ai_native_and_owned_match": true,
+    "protected_runtime_preserved": true,
+    "original_engine_preserved": true,
+    "last_verified_version": "1.9.3.1",
+    "note": "Previous art-binding export baseline; current frozen-export report is supplied beside the release."
+  },
+  "native_cache_included": false,
+  "library_ready_on_first_run": false,
+  "in_game_tested": false,
+  "frontend_tests": {
+    "passed": 15,
+    "failed": 0
+  },
+  "v15_compatibility": {
+    "routes": 1,
+    "code_bytes": 2560,
+    "page_bytes": 4096,
+    "extension_code_bytes": 3024,
+    "stock_routes_preserved": 0
+  },
+  "ui": {
+    "styles": 7,
+    "multi_select_saved": true,
+    "reload_preserved": true,
+    "clear_saved": true,
+    "mobile": {
+      "width": 364,
+      "scroll": 364,
+      "viewport": 390,
+      "body": 390
+    },
+    "page_errors": []
+  },
+  "worker_installation": {
+    "routes": 119,
+    "players": 22,
+    "before": {
+      "status": "not_applied",
+      "error": "ValueError('DIY allocation size changed')",
+      "patched_hooks": 0,
+      "total_hooks": 13,
+      "protections": 0,
+      "cache_flushes": 0,
+      "root_address": 481137000448
+    },
+    "after": {
+      "status": "binding_installed",
+      "error": null,
+      "patched_hooks": 13,
+      "total_hooks": 13,
+      "protections": 29,
+      "cache_flushes": 15,
+      "root_address": 481137000448
+    },
+    "allocated_sizes": [
+      4096
+    ],
+    "preflight": {
+      "routes": 119,
+      "code_bytes": 2608,
+      "page_bytes": 4096,
+      "extension_code_bytes": 23312,
+      "stock_routes_preserved": 4
+    },
+    "real_process_memory_used": false
+  },
+  "user_package_fix": {
+    "players_unchanged": 22,
+    "routes_unchanged": 119,
+    "all_other_entry_crc_and_size_preserved": true,
+    "original_protected_runtime_preserved": true,
+    "compiled_runtime_worker_simulation": {
+      "status": "binding_installed",
+      "error": null,
+      "patched_hooks": 13,
+      "total_hooks": 13,
+      "protections": 29,
+      "cache_flushes": 15,
+      "root_address": 481137000448
+    },
+    "in_game_tested": false
+  },
+  "fps160": {
+    "optional": true,
+    "default_enabled": false,
+    "target_fps": 160,
+    "foreground_lock": true,
+    "background_force_disabled": true,
+    "native_hooks_verified": 5,
+    "arm64_frame_hook_tested": true,
+    "original_frame_table_preserved": true,
+    "actual_render_fps_measured": false
+  }
+}

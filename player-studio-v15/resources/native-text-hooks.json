@@ -1,0 +1,17 @@
+{
+  "translate": 136248808,
+  "name": {
+    "address": 137112728,
+    "file_offset": 137096344,
+    "return": 137112912,
+    "original_word": "528007d6",
+    "expected_hex": "d6078052d68ea0720d0ffe9738d79897e103142aceecfd97000440ad082040b9e0a30091a0873eada8031fb8d2369997a0c300d1b0a8ff971f10007101050054"
+  },
+  "description": {
+    "address": 137115608,
+    "file_offset": 137099224,
+    "return": 137116184,
+    "original_word": "d100c3b5",
+    "expected_hex": "b5c300d13e0cfe9769d49897e103142affe9fd97000440ad082040b9a0c300d1a00600ada8031fb8e3a5ff971f080071c1010054a0c300d13ba7ff971f300071"
+  }
+}

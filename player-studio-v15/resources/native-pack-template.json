@@ -1,0 +1,290 @@
+{
+  "agent": {
+    "agent_id": 1366,
+    "count": 0,
+    "target_level": 1,
+    "title": "Worldwide Sep '26",
+    "subcategory": "National Team Selection",
+    "text_color_a": {
+      "color_r": 255,
+      "color_g": 255,
+      "color_b": 255
+    },
+    "text_color_b": {
+      "color_r": 0,
+      "color_g": 255,
+      "color_b": 150
+    },
+    "banner_file_c_name": "/banner/agent/001366/ca685282d96ebcf7fe2be684a54543261df36aadf9eea238035ad0c7c38d4c5c",
+    "banner_file_d_name": "/banner/agent/001366/6eb338debf84299c17be057ba881c598d40cfd88dbf7663fb7ac753b70235edb",
+    "start_date": 1789005600,
+    "expiration_date": 1793843999,
+    "can_reset": "NO",
+    "remaining_player_count": [
+      0,
+      0,
+      0,
+      0,
+      11
+    ],
+    "base_player_count": [
+      0,
+      0,
+      0,
+      0,
+      11
+    ],
+    "limit_count": 0,
+    "use_count": 0,
+    "description": "与标准球员相比，高光球员有不同的能力值，并且可以进一步成长。\n签下强劲球员，强化阵容吧！",
+    "player_list_total": 11,
+    "note_text": "*显示的整体评价反映球员的最高评价。",
+    "agent_type": "BOX_AGENT",
+    "probability": "9.0909",
+    "advertising_id": "",
+    "reset_time": 0,
+    "player_rate_list": [],
+    "kind_list": [
+      "NONE"
+    ],
+    "confirmed_probability": "0",
+    "agent_rarity_type": "AGENT_NORMAL",
+    "agent_early_release_type": "NOT_EARLY_RELEASE"
+  },
+  "price": {
+    "agent_id": 7000,
+    "discount_limit_count": 0,
+    "discount_use_count": 0,
+    "price_list": [
+      {
+        "multiple_count": 1,
+        "price": {
+          "can_use_coin": "YES",
+          "can_use_gp": "NO",
+          "coin_price": 100,
+          "coin_price_base": 100,
+          "gp_price": 0,
+          "gp_price_base": 0
+        }
+      },
+      {
+        "multiple_count": 10,
+        "price": {
+          "can_use_coin": "YES",
+          "can_use_gp": "NO",
+          "coin_price": 900,
+          "coin_price_base": 900,
+          "gp_price": 0,
+          "gp_price_base": 0
+        }
+      }
+    ]
+  },
+  "banners": [
+    {
+      "title": "Worldwide Sep '26",
+      "c": "/banner/agent/001366/ca685282d96ebcf7fe2be684a54543261df36aadf9eea238035ad0c7c38d4c5c",
+      "d": "/banner/agent/001366/6eb338debf84299c17be057ba881c598d40cfd88dbf7663fb7ac753b70235edb"
+    },
+    {
+      "title": "J.LEAGUE",
+      "c": "/banner/agent/001385/f97a4d171ff7082ccfd9b0107ff83a694ea949e9a43786e4f59269de1185b612",
+      "d": "/banner/agent/001385/3462bf4cce1fd35199d0c249e3c94debe9b4223c57f702d4acc71e8f5f5b9de8"
+    },
+    {
+      "title": "Trendyol Süper Lig",
+      "c": "/banner/agent/001386/ca6593c39cb95c8f6d15aafc30e15cb293f9f0bd101c579d3989c4e2c07ff433",
+      "d": "/banner/agent/001386/2252166f942997295a4aa15a4e89dd04ca102177e4e15c7bfa1a4d56f7fafcbc"
+    },
+    {
+      "title": "Spanish League Guardians",
+      "c": "/banner/agent/001398/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001398/a1da0ccfc347d20c149cd4387863d3ca276ca607e9830354189a27d6504cfe51"
+    },
+    {
+      "title": "National 8 Oct '26",
+      "c": "/banner/agent/001399/357a37bfd61acdd735dc84f19e43c1eb76813080b3487c01665411ac1ff5f430",
+      "d": "/banner/agent/001399/968514e0f6c5aa3b86282d9bf526993656980e6c55f74e3a38df8eb5dbbb258c"
+    },
+    {
+      "title": "Encored Stars 8 Oct '26",
+      "c": "/banner/agent/001400/26aa36b30d46dbfb8926fb2420e5b5e50dde7572e92ce2d61807620c1439d69c",
+      "d": "/banner/agent/001400/1b76040d087f53702619ed44a3b857883033c1a31203dccdf6da08170d0aa415"
+    },
+    {
+      "title": "Italian Oct '26",
+      "c": "/banner/agent/001401/2b88d06c8c52e645fca37160a9e2ef6ddabe895c0082fd422664ba27e7aad00b",
+      "d": "/banner/agent/001401/5ecb6d644e1dda8f0c892ef4143a4f47fc29f40b537304e9c83e9c2b9e70fea8"
+    },
+    {
+      "title": "English League Attackers",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "Wonderkids",
+      "c": "/banner/agent/001438/b04e60438d0ed598c77044f9b48c7ccbf17a1f3bc8089156d733a4bf9d43acdc",
+      "d": "/banner/agent/001438/a6c83f3477582e7b96353c2c8913348a5a46f1cc973c71c0e4ec220335ac03b8"
+    },
+    {
+      "title": "Internazionale Milano",
+      "c": "/banner/agent/001442/721332254acb8ed4cd277a91173c35f0374aee3d939c9374a4868c46544649d4",
+      "d": "/banner/agent/001442/2650662f56ede72410ec3cee953c5b0cc2c17337a8d1b4108018843fb0f278e8"
+    },
+    {
+      "title": "阿森纳专属 - 枪手全明星 (全位置)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "英超精选 - 锋线终结者 (FW)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "英超精选 - 前腰与边路大师 (AMF/LMF/RMF)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "英超精选 - 中场枢纽与铁闸 (CMF/DMF)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "英超精选 - 钢铁后防壁垒 (DF)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "英超精选 - 守护神门将 (GK)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "西甲精选 - 锋线杀手 (FW)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "西甲精选 - 传控大师中场 (MF)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "西甲精选 - 后防中坚 (DF)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "西甲精选 - 守护门神 (GK)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "意甲精选 - 锋线尖刀 (FW)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "意甲精选 - 中场统帅 (MF)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "意甲精选 - 链式防守壁垒 (DF)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "意甲精选 - 门神壁垒 (GK)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "欧战豪门 - 攻击群星 (FW)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "欧战豪门 - 中场引擎 (MF)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "欧战豪门 - 坚固防线 (DF)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "欧战豪门 - 巅峰门神 (GK)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "法欧联赛 - 灵动锋线 (FW)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "法欧联赛 - 活力中场 (MF)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "法欧联赛 - 铁血后卫 (DF)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "法欧联赛 - 稳健门将 (GK)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "世界杯传奇 - 锋芒毕露 (FW)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "世界杯传奇 - 掌控全场 (MF)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "世界杯传奇 - 叹息之墙 (DF)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "世界杯传奇 - 守望荣耀 (GK)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "全球俱乐部 - 锋线突击 (FW)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "全球俱乐部 - 中场核心 (MF)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "全球俱乐部 - 后防盾牌 (DF)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "全球俱乐部 - 镇关门神 (GK)",
+      "c": "/banner/agent/001402/069c19f34c46e9d25bf703fd967426990d40754dc5201e489195c8be3ee79d67",
+      "d": "/banner/agent/001402/30384f3cde4e6dd97d1df9a9ae95cec19470ad584beea1599653d9d730fe4576"
+    },
+    {
+      "title": "Welcome to eFootball™",
+      "c": "/banner/agent/009983/308aa700b860dc6e275bf3343bd7a2c34ef9842b09d3b4280676ccb4f62f625d",
+      "d": "/banner/agent/009983/d59297269f987949975af251e343ddaec9c72a8b30dc4ec2202f85014ef713ad"
+    }
+  ]
+}

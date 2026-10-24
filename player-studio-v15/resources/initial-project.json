@@ -1,0 +1,29 @@
+{
+  "format": "73efootball-personal-player-project",
+  "version": 1,
+  "package_id": null,
+  "display_name": "",
+  "card_id": null,
+  "serial": null,
+  "status": "awaiting-user-profile-and-client-assets",
+  "identity": {
+    "name": null,
+    "height_cm": null,
+    "weight_kg": null,
+    "preferred_foot": null,
+    "position": null
+  },
+  "card_type": null,
+  "card_series": null,
+  "base_abilities": {},
+  "innate_skills": [],
+  "additional_skills": [],
+  "initial_level": null,
+  "max_level": null,
+  "booster_ids": [],
+  "migration": {
+    "preserve_full_player_payload": true,
+    "preserve_careerplan": true,
+    "reject_newer_progress_rollback": true
+  }
+}

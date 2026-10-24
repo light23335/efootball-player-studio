@@ -1,0 +1,855 @@
+"""Offline Windows player design studio. All traffic stays on 127.0.0.1."""
+from __future__ import annotations
+
+import argparse
+import base64
+import contextlib
+import copy
+import ctypes
+from ctypes import wintypes
+from datetime import datetime, timezone
+import hashlib
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import io
+import json
+import logging
+import mimetypes
+import os
+from pathlib import Path
+import re
+import secrets
+import shutil
+import socket
+import sqlite3
+import subprocess
+import sys
+import tempfile
+import threading
+import time
+from urllib.parse import parse_qs, quote, unquote, urlsplit
+import uuid
+import urllib.request
+import webbrowser
+import zipfile
+
+import player_package as migration
+from native_library import NativeLibrary
+from apk_database import GameImport,active_resources
+from native_package import NativePackage
+from card_types import CARD_TYPES
+from overall import calculate as calculate_overall
+from coaches import CoachStore, normalize_coach, TACTICS
+from native_appearance import validate as validate_appearance
+from ai_playing_styles import FIELDS as AI_PLAYING_STYLES,project_value as ai_styles,validate as validate_ai_styles
+import packs
+
+APP_VERSION = "1.9.4"
+BUNDLE = Path(getattr(sys, "_MEIPASS", Path(__file__).absolute().parent))
+RESOURCE = BUNDLE / "resources"
+WEB = BUNDLE / "web"
+ASSET_ID = re.compile(r"^[a-f0-9]{64}\.(png|jpg|jpeg|webp|glb|obj|webm|otf|ttf)$")
+MAX_ASSET = 128 * 1024 * 1024
+CATALOG = json.loads((RESOURCE / "catalog.json").read_text(encoding="utf-8"))
+CATALOG['coaches'] = json.loads((RESOURCE / 'coaches.json').read_text(encoding='utf8'))['coaches']
+CATALOG['AI_PLAYING_STYLES']=AI_PLAYING_STYLES
+
+
+def number(value, low, high, default):
+    if type(value) not in (int, float) or not (low <= value <= high):
+        return default
+    return value
+
+
+def default_project():
+    p = json.loads((RESOURCE / "initial-project.json").read_text(encoding="utf-8"))
+    p['ai_playing_styles']=[]
+    return normalize_project(p)
+
+
+def normalize_project(value):
+    if not isinstance(value, dict):
+        raise ValueError("工程需要是 JSON 对象")
+    p = copy.deepcopy(value)
+    # Preserve the original permanent identity and every unrecognized field.
+    p["package_id"] = str(uuid.UUID(p.get("package_id") or str(uuid.uuid4())))
+    if p.get("format", "73efootball-personal-player-project") != "73efootball-personal-player-project":
+        raise ValueError("请选择个人球员工程；.efplayer 请在更新迁移页面使用")
+    if p.get("version", 1) != 1:
+        raise ValueError("工程版本较新，需要升级软件后打开")
+    p["format"] = "73efootball-personal-player-project"
+    p["version"] = 1
+    p["studio_version"] = APP_VERSION
+    p["display_name"] = str(p.get("display_name") or "")[:40]
+    identity = p.setdefault("identity", {})
+    if not isinstance(identity, dict):
+        raise ValueError("个人资料格式不正确")
+    for k, v in {"name": "", "height_cm": 180, "weight_kg": 75, "preferred_foot": "右脚", "position": "CF",
+                 "nationality": "中国", "age": 22, "number": 10, "team": "PERSONAL CLUB"}.items():
+        if identity.get(k) is None:
+            identity[k] = v
+    identity["height_cm"] = number(identity.get("height_cm"), 140, 220, 180)
+    identity["weight_kg"] = number(identity.get("weight_kg"), 40, 140, 75)
+    identity["age"] = number(identity.get("age"), 15, 60, 22)
+    identity["number"] = int(number(identity.get("number"), 1, 99, 10))
+    if identity["position"] not in CATALOG["POSITIONS"]:
+        identity["position"] = "CF"
+    for key in ("name", "nationality", "team", "preferred_foot"):
+        identity[key] = str(identity.get(key) or "")[:60]
+    identity['shirt_name']=str(identity.get('shirt_name') or identity['name'])[:60]
+    celebration=p.get('celebration')
+    if celebration is not None:
+        from native_celebration import validate as validate_celebration
+        validate_celebration(celebration)
+    if p.get('ai_playing_styles') is not None:p['ai_playing_styles']=validate_ai_styles(p['ai_playing_styles'])
+    elif (p.get('source_player') or {}).get('original_payload'):p['ai_playing_styles']=ai_styles(p)
+    p["card_type"] = p.get("card_type") or "Epic"
+    if p["card_type"] not in CARD_TYPES:
+        raise ValueError("未知的基础卡种")
+    p["card_series"] = p.get("card_series") or p["card_type"]
+    if p['card_type'] == 'Epic' and p['card_series'] == 'BigTime':
+        p['card_type'] = 'BigTime'  # Migrate the old combined Epic/Big Time UI.
+    if p['card_type'] == 'BigTime':
+        p['card_series'] = 'BigTime'
+    abilities = p.setdefault("base_abilities", {})
+    if not isinstance(abilities, dict):
+        raise ValueError("基础能力格式不正确")
+    for key in CATALOG["ABILITIES"]:
+        abilities[key] = int(number(abilities.get(key), 1, 105, 65))
+    for key in ("innate_skills", "additional_skills"):
+        values = p.get(key) or []
+        if not isinstance(values, list):
+            raise ValueError("技能列表格式不正确")
+        for v in values:
+            if type(v) is not int or str(v) not in CATALOG["PARAMETER_BY_SKILL"] or "预留" in CATALOG["SKILL_LABELS"].get(str(v), ""):
+                raise ValueError("工程包含未适配的技能编号，已保留原文件；请先核对技能目录")
+        p[key] = list(dict.fromkeys(values))
+    if len(p["additional_skills"]) > 5:
+        raise ValueError("额外习得技能最多 5 项")
+    p["additional_skills"] = [v for v in p["additional_skills"] if v not in p["innate_skills"]]
+    p["initial_level"] = int(number(p.get("initial_level"), 1, 100, 1))
+    p["max_level"] = int(number(p.get("max_level"), 1, 100, 35))
+    p["initial_level"] = min(p["initial_level"], p["max_level"])
+    training = p.setdefault("training", {})
+    if not isinstance(training, dict):
+        raise ValueError("培养分配格式不正确")
+    for group in CATALOG["training_groups"]:
+        training[group["id"]] = int(number(training.get(group["id"]), 0, 40, 0))
+    custom = p.setdefault('custom_boosters', [])
+    if not isinstance(custom, list) or len(custom)>24:
+        raise ValueError('一个工程最多保存 24 项自定义增能')
+    seen=set()
+    for booster in custom:
+        if not isinstance(booster,dict) or type(booster.get('id')) is not int or not 1000<=booster['id']<=1023 or booster['id'] in seen:
+            raise ValueError('自定义增能身份冲突')
+        seen.add(booster['id'])
+        booster['uuid']=str(uuid.UUID(booster.get('uuid') or str(uuid.uuid4())))
+        booster['label']=str(booster.get('label') or '自定义增能')[:40]
+        booster['conditional']=bool(booster.get('conditional',False))
+        effects=booster.get('effects',{})
+        if not isinstance(effects,dict) or any(str(k) not in CATALOG['ABILITIES'] or type(v) is not int or not -20<=v<=20 for k,v in effects.items()):
+            raise ValueError('自定义增能请使用 26 项能力，效果范围为 -20 到 +20')
+        booster['effects']={str(k):v for k,v in effects.items()}
+    ids = {0} | {b["id"] for b in CATALOG["boosters"]} | seen
+    boosters = p.get("booster_ids") or []
+    if not isinstance(boosters, list) or len(boosters) > 2 or any(type(v) is not int or v not in ids for v in boosters):
+        raise ValueError("增能编号尚未适配，已保留原文件")
+    p["booster_ids"] = (boosters + [0, 0])[:2]
+    if p['booster_ids'][0]>255:
+        raise ValueError('第一增能槽的原版编号范围为 0–255，请在第二槽选择此增能')
+    if p["booster_ids"][0] and p["booster_ids"][0] == p["booster_ids"][1]:
+        raise ValueError("两个增能槽请选择不同项目")
+    p.setdefault("conditional_boosters", False)
+    custom_coaches=p.setdefault('custom_coaches',[])
+    if not isinstance(custom_coaches,list) or len(custom_coaches)>50:
+        raise ValueError('一个工程最多携带 50 项自建教练资料')
+    p['custom_coaches']=[normalize_coach(row,CATALOG['ABILITIES']) for row in custom_coaches]
+    if len({row['id'] for row in p['custom_coaches']})!=len(custom_coaches):
+        raise ValueError('自建教练身份重复')
+    settings=p.setdefault('preview',{})
+    if not isinstance(settings,dict):raise ValueError('预览设置格式不正确')
+    if settings.get('training_position') and settings['training_position'] not in CATALOG['POSITIONS']:
+        raise ValueError('自动加点位置无效')
+    selected=str(settings.get('coach_id') or '')
+    if selected and not (re.fullmatch(r'\d{1,20}',selected) or selected.startswith('custom:') and str(uuid.UUID(selected[7:]))==selected[7:]):
+        raise ValueError('教练身份格式不正确')
+    settings['coach_id']=selected or None
+    if settings.get('team_style') and settings['team_style'] not in TACTICS:raise ValueError('未知的教练战术体系')
+    p.setdefault("position_aptitudes", {pos: (2 if pos == identity["position"] else 0) for pos in CATALOG["POSITIONS"]})
+    p.setdefault("play_style", {"attack": 1, "defense": 0})
+    p.setdefault("traits", {"weak_foot_usage": "普通", "weak_foot_accuracy": "普通", "form": "稳定", "injury": "普通"})
+    if not isinstance(p['traits'],dict) or p['traits'].get('weak_foot_usage','普通') not in ('低','普通','高','极高'):
+        raise ValueError('逆足使用频率请选择低、普通、高或极高')
+    appearance = p.setdefault("appearance", {})
+    if 'card_date' in appearance:
+        value=appearance['card_date']
+        if not isinstance(value,str) or len(value)>10:raise ValueError('BT 日期格式应为 YYYY-MM-DD')
+        if value:
+            try:
+                if datetime.strptime(value,'%Y-%m-%d').strftime('%Y-%m-%d')!=value:raise ValueError()
+            except ValueError:raise ValueError('BT 日期无效，请选择真实日期') from None
+    if 'card_rarity' in appearance and (type(appearance['card_rarity']) is not int or not 1<=appearance['card_rarity']<=5):
+        raise ValueError('卡面星级应为 1–5')
+    for key, val in {"accent": "#cbb06b", "jersey": "#202b42", "background": "#101a2c", "portrait": None,
+                     "background_image": None, "photo_zoom": 1, "photo_x": 0, "photo_y": 0, "card_title": "PERSONAL EDITION"}.items():
+        appearance.setdefault(key, val)
+    for key,val in {'thumbnail_image':None,'thumbnail_mode':'card','thumbnail_zoom':1,'thumbnail_x':0,'thumbnail_y':0,'thumbnail_animation':True}.items():appearance.setdefault(key,val)
+    if appearance['thumbnail_mode'] not in ('card','portrait','image'):raise ValueError('小头像来源无效')
+    if type(appearance['thumbnail_animation']) is not bool:raise ValueError('小头像动态背景必须为开关值')
+    for key,lo,hi in (('thumbnail_zoom',.5,8),('thumbnail_x',-100,100),('thumbnail_y',-100,100)):
+        value=appearance[key]
+        if type(value) not in (int,float) or not lo<=value<=hi:raise ValueError('小头像裁切参数超出范围')
+    model = p.setdefault("model", {})
+    p.setdefault('weekly_condition','auto')
+    from native_equipment import validate as validate_equipment
+    validate_equipment(p.setdefault('equipment',{'boots_id':None,'sleeves':'keep'}))
+    if p['weekly_condition'] not in ('auto','A','B','C','D','E'):raise ValueError('实时更新状态请选择跟随规则或 A–E')
+    model.setdefault('preserve_expression',True)
+    if type(model['preserve_expression']) is not bool:raise ValueError('保持导入表情必须为开关值')
+    handles=model.setdefault('binding_handles',{'head':[0,0,0],'neck_root':[0,0,0]})
+    if not isinstance(handles,dict) or set(handles)-{'head','neck_root'}:raise ValueError('头颈定位点无效')
+    for key in ('head','neck_root'):
+        values=handles.setdefault(key,[0,0,0])
+        if not isinstance(values,list) or len(values)!=3 or any(type(v) not in (int,float) or not -10<=v<=10 for v in values):raise ValueError('头颈定位点各轴范围为 -10 至 +10 厘米')
+    model.setdefault('head_vertical_cm',0)
+    offset=model['head_vertical_cm']
+    if type(offset) not in (int,float) or not -10<=offset<=10:raise ValueError('头模垂直位置范围为 -10 至 +10 厘米')
+    validate_appearance(model)
+    if 'leg_length' in (model.get('physique') or {}):model['torso_length']=14-model['physique']['leg_length']
+    for key, val in {"asset": None, "texture": None, "skin": "#bb8968", "hair": "#251e1c", "head_width": 1,
+                     "head_height": 1, "shoulders": 1, "hair_style": "short", "scale": 1, "rotation": 0}.items():
+        model.setdefault(key, val)
+    for group, fields in ((appearance, ("portrait", "background_image", "thumbnail_image")), (model, ("asset", "texture", "rigged_asset"))):
+        for field in fields:
+            if group.get(field) and not ASSET_ID.fullmatch(str(group[field])):
+                raise ValueError("工程含无效的本地资源路径")
+    for group, fields in ((appearance, ("accent", "jersey", "background")), (model, ("skin", "hair"))):
+        for field in fields:
+            if not re.fullmatch(r"#[0-9a-fA-F]{6}", str(group.get(field, ""))):
+                raise ValueError("颜色格式需要是 #RRGGBB")
+    card=p.get('native_card')
+    if card:
+        if not isinstance(card,dict) or card.get('version')!=1 or not isinstance(card.get('layers'),list) or len(card['layers'])>32 or not isinstance(card.get('fonts'),dict):
+            raise ValueError('原版卡面预览资料格式或版本不兼容')
+        layout=card.get('layout') or {}
+        if any(type(layout.get(k)) not in (int,float) or not 1<=layout[k]<=4096 for k in ('width','height')):
+            raise ValueError('原版卡面尺寸无效')
+        for key in ('overall','position','name'):
+            box=layout.get(key) or {}
+            if any(type(box.get(k)) not in (int,float) or not -4096<=box[k]<=4096 for k in ('x','y','w','h','size')) or box['w']<=0 or box['h']<=0 or box['size']<=0:
+                raise ValueError('原版资料层位置无效')
+        if any(not isinstance(row,dict) or not row.get('asset_id') or row.get('blend','source-over') not in ('source-over','screen','multiply','lighter') for row in card['layers']):
+            raise ValueError('原版卡面图层无效')
+    referenced_assets(p)
+    return p
+
+
+def referenced_assets(p):
+    images=[p["appearance"].get("portrait"),p["appearance"].get("thumbnail_image"), p["appearance"].get("background_image"),p["model"].get("asset"), p["model"].get("texture"),p['model'].get('rigged_asset')]
+    images.extend(v.get('asset_id') for v in (p.get('native_art') or {}).values() if isinstance(v,dict))
+    result={v for v in images if v}
+    def collect(value):
+        if isinstance(value,dict):
+            if value.get('asset_id'):result.add(value['asset_id'])
+            for child in value.values():collect(child)
+        elif isinstance(value,list):
+            for child in value:collect(child)
+    collect(p.get('native_card'))
+    collect([c.get('portrait') for c in p.get('custom_coaches',[])])
+    if any(not isinstance(v,str) or not ASSET_ID.fullmatch(v) for v in result):
+        raise ValueError('原版资源引用无效')
+    return result
+
+
+def dialog(kind="open", category="project", initial=""):
+    if os.name != "nt":
+        raise ValueError("文件选择器目前支持 Windows，也可以在输入框中粘贴路径")
+    filters = {"project": "球员工程\0*.efproject;*.json\0所有文件\0*.*\0",
+               "image": "图片\0*.png;*.jpg;*.jpeg;*.webp\0所有文件\0*.*\0",
+               "model": "三维模型\0*.glb;*.obj\0所有文件\0*.*\0",
+               "save": "游戏存档\0*.efsave;*.sqlite3\0所有文件\0*.*\0",
+               "package": "独立球员包\0*.efplayer\0所有文件\0*.*\0",
+               "apk": "安卓游戏 APK\0*.apk\0所有文件\0*.*\0",
+               "update": "APK 增量包\0*.efupdate\0所有文件\0*.*\0"}
+    class OPENFILENAMEW(ctypes.Structure):
+        _fields_ = [("lStructSize", wintypes.DWORD), ("hwndOwner", wintypes.HWND), ("hInstance", wintypes.HINSTANCE),
+                    ("lpstrFilter", wintypes.LPCWSTR), ("lpstrCustomFilter", wintypes.LPWSTR), ("nMaxCustFilter", wintypes.DWORD),
+                    ("nFilterIndex", wintypes.DWORD), ("lpstrFile", wintypes.LPWSTR), ("nMaxFile", wintypes.DWORD),
+                    ("lpstrFileTitle", wintypes.LPWSTR), ("nMaxFileTitle", wintypes.DWORD), ("lpstrInitialDir", wintypes.LPCWSTR),
+                    ("lpstrTitle", wintypes.LPCWSTR), ("Flags", wintypes.DWORD), ("nFileOffset", wintypes.WORD),
+                    ("nFileExtension", wintypes.WORD), ("lpstrDefExt", wintypes.LPCWSTR), ("lCustData", wintypes.LPARAM),
+                    ("lpfnHook", ctypes.c_void_p), ("lpTemplateName", wintypes.LPCWSTR), ("pvReserved", ctypes.c_void_p),
+                    ("dwReserved", wintypes.DWORD), ("FlagsEx", wintypes.DWORD)]
+    buffer = ctypes.create_unicode_buffer(32768)
+    if initial and kind == "save":
+        buffer.value = initial
+    ofn = OPENFILENAMEW()
+    ofn.lStructSize = ctypes.sizeof(ofn)
+    ofn.lpstrFilter = filters.get(category, filters["project"]) + "\0"
+    ofn.lpstrFile = ctypes.cast(buffer, wintypes.LPWSTR)
+    ofn.nMaxFile = len(buffer)
+    ofn.nFilterIndex = 1
+    ofn.lpstrTitle = "选择文件" if kind == "open" else "保存文件"
+    ofn.Flags = 0x00080000 | 0x00000008 | (0x00001000 if kind == "open" else 0x00000002)
+    fn = ctypes.windll.comdlg32.GetOpenFileNameW if kind == "open" else ctypes.windll.comdlg32.GetSaveFileNameW
+    return buffer.value if fn(ctypes.byref(ofn)) else None
+
+
+class Store:
+    def __init__(self, data):
+        self.root = Path(data).absolute()
+        self.root.mkdir(parents=True, exist_ok=True)
+        for folder in ("assets", "exports", "backups", "tmp", "players"):
+            (self.root / folder).mkdir(exist_ok=True)
+        self.lock = threading.RLock()
+        self.coaches = CoachStore(self.root, CATALOG['ABILITIES'])
+        self.project_path = self.root / "current-project.json"
+        self.last_backup = 0
+        if self.project_path.exists():
+            try:
+                self.project = normalize_project(json.loads(self.project_path.read_text(encoding="utf8")))
+            except Exception:
+                # Never silently overwrite a damaged autosave.
+                shutil.copy2(self.project_path, self.root / "backups" / ("unreadable-" + uuid.uuid4().hex + ".json"))
+                self.project = default_project()
+        else:
+            self.project = default_project()
+        self.save(self.project)
+
+    def save(self, project, manual=False):
+        p = normalize_project(project)
+        data = json.dumps(p, ensure_ascii=False, indent=2).encode("utf8")
+        with self.lock:
+            if self.project_path.exists() and (manual or time.monotonic() - self.last_backup > 120):
+                backup = self.root / "backups" / (datetime.now().strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:6] + ".json")
+                shutil.copy2(self.project_path, backup)
+                self.last_backup = time.monotonic()
+            temp = self.root / (".project-" + uuid.uuid4().hex)
+            with temp.open("wb") as f:
+                f.write(data)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(temp, self.project_path)
+            self.project = p
+        return {"saved": True, "at": datetime.now().strftime("%H:%M:%S"), "project": p}
+
+    def _player_path(self, package_id):
+        return self.root / 'players' / (str(uuid.UUID(package_id)) + '.json')
+
+    def new_player_slot(self):
+        """Checkpoint the old identity and immediately register a fresh slot."""
+        with self.lock:
+            previous=copy.deepcopy(self.project)
+            if previous['identity']['name'].strip():self.save_player(previous)
+            elif self._player_path(previous['package_id']).is_file() or previous.get('source_player') or previous.get('model',{}).get('asset') or previous.get('appearance',{}).get('portrait'):
+                previous['identity']['name']='未命名球员';self.save_player(previous)
+            project=default_project();project['package_id']=str(uuid.uuid4())
+            names={r['name'] for r in self.list_players()['rows']};index=1
+            while '新建球员 '+str(index) in names:index+=1
+            project['identity']['name']='新建球员 '+str(index)
+            project['status']='new-player-slot'
+            self.save_player(project)
+            result=self.save(project,True)
+            return {**result,'new_slot':True,'previous_package_id':previous['package_id']}
+
+    def saved_player(self, package_id):
+        path = self._player_path(package_id)
+        if not path.is_file() or path.stat().st_size > 8 * 1024 * 1024:
+            raise ValueError('未找到已保存的自建球员')
+        entry = migration.read_json(path.read_bytes())
+        if entry.get('format') != '73efootball-saved-player' or entry.get('version') != 1:
+            raise ValueError('已保存球员的格式或版本不兼容，原文件已保留')
+        project = normalize_project(entry['project'])
+        if project['package_id'] != str(uuid.UUID(package_id)):
+            raise ValueError('球员永久身份与文件名不一致')
+        return {**entry, 'project': project}
+
+    def save_player(self, project):
+        p = normalize_project(project)
+        if not p['identity']['name'].strip():
+            raise ValueError('请先填写球员姓名，再保存到我的球员')
+        for name in referenced_assets(p):
+            if not (self.root / 'assets' / name).is_file():
+                raise ValueError('球员引用的资源缺失，请先重新载入对应资源')
+        entry = {'format': '73efootball-saved-player', 'version': 1,
+                 'saved_at': migration.stamp(), 'overall': calculate_overall(p, CATALOG), 'project': p}
+        path = self._player_path(p['package_id'])
+        data = json.dumps(entry, ensure_ascii=False, indent=2).encode('utf8')
+        with self.lock:
+            if path.is_file():
+                backup = self.root / 'backups' / ('saved-player-' + path.stem + '-' + datetime.now().strftime('%Y%m%d-%H%M%S-') + uuid.uuid4().hex[:6] + '.json')
+                shutil.copy2(path, backup)
+            temp = path.with_name('.player-' + uuid.uuid4().hex)
+            with temp.open('wb') as f:
+                f.write(data)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(temp, path)
+        return {'saved': True, 'package_id': p['package_id'], 'saved_at': entry['saved_at'],
+                'overall': entry['overall'], 'path': str(path)}
+
+    def list_players(self, query=''):
+        rows, errors = [], []
+        query = str(query).casefold()[:120]
+        with self.lock:
+            for path in (self.root / 'players').glob('*.json'):
+                try:
+                    entry = self.saved_player(path.stem)
+                    p = entry['project']
+                    if query and query not in ' '.join([p['identity']['name'], p['display_name'], p['package_id']]).casefold():
+                        continue
+                    rows.append({'package_id': p['package_id'], 'name': p['identity']['name'],
+                                 'display_name': p['display_name'], 'card_type': p['card_type'],
+                                 'position': p['identity']['position'], 'level': p['initial_level'],
+                                 'max_level': p['max_level'], 'overall': calculate_overall(p, CATALOG),
+                                 'portrait': p['appearance']['portrait'], 'saved_at': entry['saved_at']})
+                except (ValueError, KeyError, OSError) as exc:
+                    errors.append({'file': path.name, 'message': str(exc)})
+        rows.sort(key=lambda item: item['saved_at'], reverse=True)
+        return {'rows': rows, 'total': len(rows), 'errors': errors}
+
+    def import_asset(self, path, category):
+        source = Path(path).absolute()
+        if not source.is_file() or source.stat().st_size > MAX_ASSET:
+            raise ValueError("文件不存在或超过 128 MB")
+        suffix = source.suffix.lower()
+        allowed = {'image':('.png','.jpg','.jpeg','.webp'),'model':('.glb','.obj'),'video':('.webm',),'font':('.otf','.ttf')}.get(category,())
+        if suffix not in allowed:
+            raise ValueError("图片支持 PNG/JPG/WebP；模型支持 GLB/OBJ")
+        data = source.read_bytes()
+        if category=='video' and not data.startswith(b'\x1aE\xdf\xa3'):
+            raise ValueError('原版动画封装无效')
+        if category=='font' and data[:4] not in (b'OTTO',b'\x00\x01\x00\x00'):
+            raise ValueError('原版字体格式无效')
+        if suffix == ".glb" and data[:4] != b"glTF":
+            raise ValueError("这不是有效的 GLB 文件")
+        if category == "image" and not (data.startswith(b"\x89PNG\r\n\x1a\n") or data.startswith(b"\xff\xd8") or data[:4] == b"RIFF" and data[8:12] == b"WEBP"):
+            raise ValueError("图片内容与扩展名不符")
+        name = hashlib.sha256(data).hexdigest() + suffix
+        target = self.root / "assets" / name
+        if not target.exists():
+            target.write_bytes(data)
+        return {"id": name, "name": source.name, "size": len(data), "url": "/assets/" + name}
+
+    def import_screenshot(self, uri):
+        if not isinstance(uri, str) or not uri.startswith("data:image/png;base64,"):
+            raise ValueError("取景需要是 PNG 图片")
+        data = base64.b64decode(uri.split(",", 1)[1], validate=True)
+        if len(data) > 6 * 1024 * 1024 or not data.startswith(b"\x89PNG\r\n\x1a\n"):
+            raise ValueError("取景图片过大或格式不正确")
+        name = hashlib.sha256(data).hexdigest() + ".png"
+        (self.root / "assets" / name).write_bytes(data)
+        return {"id": name, "url": "/assets/" + name}
+
+    def import_project(self, path):
+        source = Path(path).absolute()
+        if source.suffix.lower() == ".efproject":
+            with migration.checked_zip(source, 512 * 1024 * 1024) as z:
+                m = migration.read_json(z.read("manifest.json"))
+                if m.get('format')=='73efootball-studio-project' and m.get('version')==2:
+                    from project_sharing import import_selected
+                    return import_selected(self,z,m)
+                if m.get("format") != "73efootball-studio-project" or m.get("version") != 1:
+                    raise ValueError("工程包版本不兼容")
+                expected = set(m["sha256"]) | {"manifest.json"}
+                if set(z.namelist()) != expected or "project.json" not in expected:
+                    raise ValueError("工程包清单不完整")
+                files = {}
+                for name, sha in m["sha256"].items():
+                    data = z.read(name)
+                    if migration.digest(data) != sha:
+                        raise ValueError("工程包校验失败：" + name)
+                    if name != "project.json" and (not name.startswith("assets/") or not ASSET_ID.fullmatch(name[7:])):
+                        raise ValueError("工程包含未知文件")
+                    if name.startswith("assets/") and (len(data) > MAX_ASSET or name[7:71] != migration.digest(data)):
+                        raise ValueError("资源内容与永久文件名不一致")
+                    files[name] = data
+                p = normalize_project(migration.read_json(files["project.json"]))
+                for name in referenced_assets(p):
+                    if "assets/" + name not in files:
+                        raise ValueError("工程包缺少引用的资源")
+                for name, data in files.items():
+                    if name.startswith("assets/"):
+                        (self.root / name).write_bytes(data)
+        else:
+            if source.stat().st_size > 8 * 1024 * 1024:
+                raise ValueError("工程 JSON 过大")
+            p = normalize_project(migration.read_json(source.read_bytes()))
+        existing=self._player_path(p['package_id'])
+        if existing.is_file() and self.saved_player(p['package_id'])['project']!=p:
+            p['package_id']=str(uuid.uuid4());p['card_id']=None;p['serial']=0
+        if self.project['package_id']!=p['package_id'] and self.project['identity']['name'].strip():self.save_player(self.project)
+        if p['identity']['name'].strip():self.save_player(p)
+        self.save(p, manual=True)
+        return p
+
+    def export_project(self, project):
+        p = normalize_project(project)
+        files = {"project.json": json.dumps(p, ensure_ascii=False, indent=2).encode("utf8")}
+        for name in referenced_assets(p):
+            source = self.root / "assets" / name
+            if not source.is_file():
+                raise ValueError("工程引用的资源缺失，请重新导入图片或模型")
+            files["assets/" + name] = source.read_bytes()
+        manifest = {"format": "73efootball-studio-project", "version": 1, "package_id": p["package_id"],
+                    "created_at": migration.stamp(), "sha256": {k: migration.digest(v) for k, v in files.items()}}
+        files["manifest.json"] = migration.compact(manifest).encode("utf8")
+        filename = "球员工程-" + datetime.now().strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:4] + ".efproject"
+        (self.root / "exports" / filename).write_bytes(migration.archive_bytes(files))
+        return {"url": "/exports/" + quote(filename), "filename": filename, "path": str(self.root / "exports" / filename)}
+
+
+class StudioServer(ThreadingHTTPServer):
+    daemon_threads = True
+
+    def __init__(self, address, store, token=None):
+        super().__init__(address, Handler)
+        self.store = store
+        home = Path(sys.executable).absolute().parent if getattr(sys, 'frozen', False) else Path(__file__).absolute().parent.parent / '球员工坊-V15'
+        self.home=home
+        self.use_resources(active_resources(RESOURCE,store.root))
+        self.game_import = GameImport(self,RESOURCE)
+        from onboarding import Setup
+        self.setup = Setup(self)
+        self.token = token or secrets.token_urlsafe(32)
+        self.last_seen = time.monotonic()
+
+    def use_resources(self,resources):
+        global CATALOG
+        from head_preview import HeadPreview
+        library=NativeLibrary(resources,self.home,self.store)
+        package=NativePackage(library,resources,(BUNDLE/'personal_runtime.py').read_text(encoding='utf8'),profile_resources=RESOURCE)
+        self.catalog=json.loads((Path(resources)/'catalog.json').read_text(encoding='utf8'))
+        self.catalog['coaches']=json.loads((Path(resources)/'coaches.json').read_text(encoding='utf8'))['coaches']
+        self.catalog['AI_PLAYING_STYLES']=AI_PLAYING_STYLES
+        from native_equipment import read_catalogue
+        self.catalog['equipment']=read_catalogue(resources,RESOURCE)
+        CATALOG=self.catalog
+        self.library=library;self.native_package=package;self.head_preview=HeadPreview(library,package)
+        from native_thumbnail import ThumbnailPreview
+        self.thumbnail_preview=ThumbnailPreview(library)
+
+
+class Handler(BaseHTTPRequestHandler):
+    server_version = "PlayerStudio/1"
+
+    def log_message(self, fmt, *args):
+        logging.info(fmt, *args)
+
+    def authenticated(self):
+        cookie = dict(part.strip().split("=", 1) for part in self.headers.get("Cookie", "").split(";") if "=" in part)
+        query = parse_qs(urlsplit(self.path).query)
+        # A restarted local server issues a new launch token. An old browser
+        # cookie must not override the explicit token in the new launch URL.
+        supplied = self.headers.get("X-Studio-Token") or query.get("token", [""])[0] or cookie.get("studio_session") or ""
+        return secrets.compare_digest(supplied, self.server.token)
+
+    def send(self, data, status=200, content_type="application/json; charset=utf-8", cookie=False, download=None):
+        if not isinstance(data, bytes):
+            data = json.dumps(data, ensure_ascii=False, allow_nan=False).encode("utf8")
+        self.send_response(status)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' blob: data:; worker-src blob:; object-src 'none'; frame-ancestors 'none'")
+        if cookie:
+            self.send_header("Set-Cookie", "studio_session=" + self.server.token + "; HttpOnly; SameSite=Strict; Path=/")
+        if download:
+            self.send_header("Content-Disposition", "attachment; filename*=UTF-8''" + quote(download))
+        self.end_headers()
+        try:
+            self.wfile.write(data)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+
+    def do_GET(self):
+        path = unquote(urlsplit(self.path).path)
+        if path == "/health":
+            return self.send({"app": "player-studio", "version": APP_VERSION})
+        if path == "/" and self.authenticated():
+            return self.send((WEB / "index.html").read_bytes(), content_type="text/html; charset=utf-8", cookie=True)
+        if not self.authenticated():
+            return self.send({"error": "请从桌面程序启动球员工坊"}, 403)
+        self.server.last_seen = time.monotonic()
+        if path == "/api/bootstrap":
+            app_root = self.server.library.home.parent
+            active=json.loads((self.server.store.root/'active-game.json').read_text(encoding='utf8')) if (self.server.store.root/'active-game.json').is_file() else {}
+            return self.send({"project": self.server.store.project, "catalog": self.server.catalog, "version": APP_VERSION,
+                              "platform":globals().get('PLATFORM','pc'),
+                              "data_directory": str(self.server.store.root), "default_apk": source_apk(self.server.library.home, active.get('apk'), "73efootball-"+self.server.library.profile.get('game_version','V16')+".apk"),
+                              "default_companion": source_apk(self.server.library.home, active.get('companion'), "73efootball-离线资源包-V9+.apk"), "library": self.server.library.summary(),
+                              "migration_profile": migration.PROFILE, "identities": self.server.library.identities(),
+                              "custom_coaches": self.server.store.coaches.list(),
+                              "default_rigged":str(app_root/'我的脸模/我的头部-接缝修复-V13骨架.glb') if (app_root/'我的脸模/我的头部-接缝修复-V13骨架.glb').is_file() else ''})
+        if path == "/api/ping":
+            return self.send({"ok": True})
+        if path.startswith("/assets/"):
+            name = path[8:]
+            if not ASSET_ID.fullmatch(name):
+                return self.send({"error": "无效资源"}, 404)
+            file = self.server.store.root / "assets" / name
+        elif path.startswith("/exports/"):
+            name = path[9:]
+            if "/" in name or "\\" in name or ".." in name:
+                return self.send({"error": "无效导出路径"}, 404)
+            file = self.server.store.root / "exports" / name
+        else:
+            file = Path(os.path.abspath(WEB / path.lstrip("/")))
+            if not str(file).startswith(str(WEB.absolute()) + os.sep):
+                return self.send({"error": "路径不存在"}, 404)
+        if not file.is_file():
+            return self.send({"error": "文件不存在"}, 404)
+        mime = {".js": "text/javascript; charset=utf-8", ".glb": "model/gltf-binary", ".obj": "text/plain; charset=utf-8",'.webm':'video/webm','.otf':'font/otf','.ttf':'font/ttf'}.get(file.suffix.lower(), mimetypes.guess_type(str(file))[0] or "application/octet-stream")
+        if file.stat().st_size > 8*1024*1024:
+            self.send_response(200)
+            self.send_header('Content-Type', mime)
+            self.send_header('Content-Length', str(file.stat().st_size))
+            self.send_header('Cache-Control', 'no-store')
+            self.send_header('X-Content-Type-Options', 'nosniff')
+            if path.startswith('/exports/'):
+                self.send_header('Content-Disposition', "attachment; filename*=UTF-8''"+quote(file.name))
+            self.end_headers()
+            try:
+                with file.open('rb') as src:
+                    shutil.copyfileobj(src, self.wfile, 1024*1024)
+            except (BrokenPipeError, ConnectionResetError):pass
+        else:self.send(file.read_bytes(), content_type=mime, download=file.name if path.startswith("/exports/") else None)
+
+    def do_POST(self):
+        if not self.authenticated():
+            return self.send({"error": "会话无效"}, 403)
+        origin = self.headers.get("Origin")
+        expected = "http://127.0.0.1:" + str(self.server.server_port)
+        if origin and origin != expected:
+            return self.send({"error": "来源不匹配"}, 403)
+        try:
+            size = int(self.headers.get("Content-Length", "0"))
+            if not 0 <= size <= 8 * 1024 * 1024:
+                raise ValueError("请求过大")
+            body = migration.read_json(self.rfile.read(size) or b"{}")
+            path = urlsplit(self.path).path
+            store = self.server.store
+            self.server.last_seen = time.monotonic()
+            if path == "/api/project/save":
+                result = store.save(body["project"], body.get("manual", False))
+            elif path == '/api/project/checkpoint':
+                value=normalize_project(body['project'])
+                backup=store.root/'backups'/('before-template-'+datetime.now().strftime('%Y%m%d-%H%M%S-')+uuid.uuid4().hex[:6]+'.json')
+                with store.lock:backup.write_text(json.dumps(value,ensure_ascii=False,indent=2),encoding='utf8')
+                result={'backed_up':True,'backup':str(backup)}
+            elif path == '/api/players/save':
+                result = store.save_player(body['project'])
+            elif path == '/api/players/list':
+                result = store.list_players(body.get('query', ''))
+            elif path == '/api/players/open':
+                if store.project['package_id']!=body['package_id'] and store.project['identity']['name'].strip():store.save_player(store.project)
+                result = store.save(store.saved_player(body['package_id'])['project'], manual=True)
+            elif path == '/api/players/export':
+                result = store.export_project(store.saved_player(body['package_id'])['project'])
+            elif path == '/api/coaches/save':
+                result = store.coaches.save(body['coach'])
+            elif path == '/api/coaches/list':
+                result = store.coaches.list()
+            elif path == "/api/library/search":
+                result = self.server.library.search(body)
+            elif path == "/api/library/player":
+                result = self.server.library.player(body["id"])
+            elif path == '/api/library/card':
+                result = self.server.library.card(body['id'])
+            elif path == '/api/library/card-info':
+                result = self.server.library.card_info(body['id'],body.get('team_id'),body.get('nation_id'))
+            elif path == '/api/library/presets':
+                result = self.server.library.presets.search(body)
+            elif path == '/api/library/preset-previews':
+                result = self.server.library.presets.previews(body['ids'])
+            elif path == '/api/library/preset':
+                result = self.server.library.presets.apply(body)
+            elif path == "/api/library/assets":
+                result = self.server.library.assets(body)
+            elif path == "/api/library/convert":
+                result = self.server.library.convert(body)
+            elif path == "/api/library/setup":
+                result = self.server.library.setup(body)
+            elif path == "/api/library/status":
+                result = self.server.library.summary()
+            elif path == '/api/game-import/start':
+                result = self.server.game_import.start(body)
+            elif path == '/api/setup/status':
+                result = self.server.setup.status(body.get('refresh',False))
+            elif path == '/api/setup/preferences':
+                from onboarding import preferences
+                result = preferences(store,body)
+            elif path == '/api/setup/install-plan':
+                result = self.server.setup.install_plan(body)
+            elif path == '/api/game-import/status':
+                result = self.server.game_import.status()
+            elif path == '/api/game-import/install-adapter':
+                result = self.server.game_import.install_adapter(body['path'])
+            elif path == '/api/native-apk/start':
+                if self.server.game_import.status()['phase']=='working':raise ValueError('正在切换游戏数据库，请等待导入完成')
+                result = self.server.native_package.start(body if body.get('operation')=='companion' else {**body,'project':normalize_project(body['project'])})
+            elif path == '/api/native-apk/candidates':
+                result = self.server.native_package.candidates(normalize_project(body['project']))
+            elif path == '/api/packs/list':
+                result = {'rows':packs.load(store),'banners':json.loads((RESOURCE/'native-pack-template.json').read_text(encoding='utf8'))['banners']}
+            elif path == '/api/packs/save':
+                result = packs.save(store,body['pack'])
+            elif path == '/api/packs/random-options':
+                result = {'rows':packs.random_options(self.server.library.resources)}
+            elif path == '/api/packs/random':
+                result = packs.random_members(self.server.library.resources,body)
+            elif path == '/api/appearance/profile':
+                from native_appearance import profile
+                result = profile(self.server.library.resources,body['id']) or {}
+            elif path == '/api/model/head-preview':
+                result = self.server.head_preview.prepare(normalize_project(body['project']))
+            elif path == '/api/thumbnail/preview':
+                result = self.server.thumbnail_preview.prepare(normalize_project(body['project']))
+            elif path == '/api/native-apk/status':
+                result = self.server.native_package.status()
+            elif path == "/api/project/new":
+                result = store.new_player_slot()
+            elif path == '/api/projects/export':
+                from project_sharing import export_selected
+                result=export_selected(store,body['selected_ids'],normalize_project(body['project']))
+            elif path == '/api/tools/status':
+                from workspace_tools import export_list,game_options
+                result={**export_list(store),'game_options':game_options(store),'platform':globals().get('PLATFORM','pc'),'busy':self.server.native_package.status()['phase']=='working' or self.server.game_import.status()['phase']=='working'}
+            elif path == '/api/tools/game-options':
+                from workspace_tools import game_options
+                result=game_options(store,body)
+            elif path == '/api/exports/clear':
+                from workspace_tools import clear_exports
+                result=clear_exports(self.server)
+            elif path == '/api/exports/open':
+                from workspace_tools import open_export
+                result=globals().get('open_export_action',open_export)(store,body['name'])
+            elif path == "/api/dialog":
+                result = {"path": dialog(body.get("kind", "open"), body.get("category", "project"), body.get("initial", ""))}
+            elif path == "/api/project/import":
+                result = {"project": store.import_project(body["path"])}
+            elif path == "/api/project/export":
+                result = store.export_project(body["project"])
+            elif path == "/api/assets/import":
+                result = store.import_asset(body["path"], body.get("category", "image"))
+            elif path == "/api/assets/data":
+                result = store.import_screenshot(body["data"])
+            elif path == "/api/save/players":
+                with migration.save_input(body["path"]) as (db, meta, info), contextlib.closing(migration.connect(db, True)) as c:
+                    result = {"players": [{"id": r["id"], "serial": r["serial"], **migration.progress({"player": json.loads(r["json"])})} for r in c.execute("SELECT id,serial,json FROM gameplayers ORDER BY id,serial")]}
+            elif path == "/api/package/inspect":
+                manifest, state, _ = migration.load_package(body["path"])
+                result = {"manifest": {k: v for k, v in manifest.items() if k not in ("db", "sha256")}, "careerplan_rows": len(state["careerplan"])}
+            elif path == "/api/package/export":
+                project_file = store.root / "current-project.json"
+                cid, serial = int(body["id"]), int(body["serial"])
+                bound = store.project.get("card_id"), store.project.get("serial")
+                if any(v is not None for v in bound) and bound != (cid, serial):
+                    raise ValueError("此工程已绑定另一球员实例，请打开对应工程或新建工程")
+                output = store.root / "exports" / ("个人球员-" + datetime.now().strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:4] + ".efplayer")
+                result = migration.export_player(body["save"], body["apk"], cid, serial, output,
+                    project=project_file, previous=body.get("previous") or None)
+                updated = copy.deepcopy(store.project)
+                updated.update(card_id=cid, serial=serial)
+                store.save(updated, manual=True)
+                result["binding"] = {"card_id": cid, "serial": serial}
+                result["url"] = "/exports/" + quote(output.name)
+            elif path in ("/api/migration/plan", "/api/migration/import"):
+                output = None
+                if path.endswith("/import"):
+                    suffix = ".efsave" if Path(body["save"]).suffix.lower() == ".efsave" else ".sqlite3"
+                    output = store.root / "exports" / ("迁移后存档-" + datetime.now().strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:4] + suffix)
+                result = migration.migration(body["save"], body["package"], body["apk"], output, body.get("prefer", "package"))
+                if output:
+                    result["url"] = "/exports/" + quote(output.name)
+            elif path == "/api/exit":
+                result = {"closed": True}
+                threading.Thread(target=self.server.shutdown, daemon=True).start()
+            else:
+                return self.send({"error": "未知操作"}, 404)
+            self.send(result)
+        except Exception as exc:
+            logging.exception("Operation failed")
+            self.send({"error": str(exc)}, 400)
+
+
+def open_window(url, data):
+    candidates = [Path(os.environ.get("PROGRAMFILES(X86)", "C:/Program Files (x86)")) / "Microsoft/Edge/Application/msedge.exe",
+                  Path(os.environ.get("PROGRAMFILES", "C:/Program Files")) / "Google/Chrome/Application/chrome.exe"]
+    for exe in candidates:
+        if exe.is_file():
+            subprocess.Popen([str(exe), "--app=" + url, "--window-size=1580,1020", "--no-first-run",
+                              "--user-data-dir=" + str(Path(data) / "browser")], close_fds=True)
+            return
+    webbrowser.open(url)
+
+
+def source_apk(home, configured, filename):
+    """Resolve movable portable inputs without retaining another PC\'s paths."""
+    home=Path(home)
+    candidates=([Path(configured)] if configured else [])+[home/"原始APK"/filename,home/filename,home.parent/filename]
+    return next((str(p) for p in candidates if p.is_file()), "")
+
+def main(argv=None):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--no-browser", action="store_true")
+    parser.add_argument("--port", type=int, default=0)
+    parser.add_argument("--data-dir")
+    parser.add_argument("--no-idle-exit", action="store_true")
+    args = parser.parse_args(argv)
+    home = Path(sys.executable).absolute().parent if getattr(sys, "frozen", False) else Path(__file__).absolute().parent
+    data = Path(args.data_dir).absolute() if args.data_dir else home / "data"
+    runtime_path = data / "runtime.json"
+    if runtime_path.is_file():
+        try:
+            existing = json.loads(runtime_path.read_text(encoding="utf8"))
+            existing_url = urlsplit(existing["url"])
+            if existing_url.hostname != "127.0.0.1":
+                raise ValueError("无效的本地会话")
+            existing_token = parse_qs(existing_url.query)["token"][0]
+            request = urllib.request.Request(f"http://127.0.0.1:{existing['port']}/api/ping", headers={"X-Studio-Token": existing_token})
+            with urllib.request.urlopen(request, timeout=1) as response:
+                if not json.load(response).get("ok"):
+                    raise ValueError("会话不可用")
+            if not args.no_browser:
+                open_window(existing["url"], data)
+            if sys.stdout:
+                print(json.dumps(existing), flush=True)
+            return
+        except Exception:
+            pass
+    store = Store(data)
+    logging.basicConfig(filename=store.root / "studio.log", level=logging.INFO, encoding="utf8")
+    tempfile.tempdir = str(store.root / "tmp")
+    server = StudioServer(("127.0.0.1", args.port), store)
+    url = f"http://127.0.0.1:{server.server_port}/?token={server.token}"
+    runtime = {"pid": os.getpid(), "port": server.server_port, "url": url, "version": APP_VERSION}
+    runtime_path = store.root / "runtime.json"
+    runtime_path.write_text(json.dumps(runtime, indent=2), encoding="utf8")
+    if sys.stdout:
+        print(json.dumps(runtime), flush=True)
+    if not args.no_browser:
+        open_window(url, store.root)
+    def idle_monitor():
+        while True:
+            time.sleep(15)
+            busy=server.game_import.status()['phase']=='working' or server.native_package.status()['phase']=='working' or server.library.state['phase']=='preparing'
+            if not args.no_idle_exit and not busy and time.monotonic() - server.last_seen > 180:
+                server.shutdown()
+                return
+    threading.Thread(target=idle_monitor, daemon=True).start()
+    try:
+        server.serve_forever(poll_interval=0.3)
+    finally:
+        server.server_close()
+        runtime_path.unlink(missing_ok=True)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as error:
+        if sys.stderr:
+            raise
+        ctypes.windll.user32.MessageBoxW(None, str(error), "球员工坊启动失败", 0x10)

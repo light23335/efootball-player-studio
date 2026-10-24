@@ -1,0 +1,464 @@
+{
+  "0": {
+    "bit": 665,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 1825,
+    "margin": 1820
+  },
+  "1": {
+    "bit": 670,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 4054,
+    "margin": 2875
+  },
+  "2": {
+    "bit": 611,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 913,
+    "margin": 913
+  },
+  "3": {
+    "bit": 620,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 1684,
+    "margin": 1681
+  },
+  "4": {
+    "bit": 603,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 636,
+    "margin": 633
+  },
+  "5": {
+    "bit": 287,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 1339,
+    "margin": 1339
+  },
+  "6": {
+    "bit": 679,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 4304,
+    "margin": 3563
+  },
+  "7": {
+    "bit": 673,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 581,
+    "margin": 578
+  },
+  "9": {
+    "bit": 649,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 4,
+    "margin": 4
+  },
+  "10": {
+    "bit": 676,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 4010,
+    "margin": 3524
+  },
+  "11": {
+    "bit": 646,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 158,
+    "margin": 158
+  },
+  "12": {
+    "bit": 633,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 97,
+    "margin": 96
+  },
+  "13": {
+    "bit": 608,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 40,
+    "margin": 40
+  },
+  "15": {
+    "bit": 624,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 3600,
+    "margin": 1847
+  },
+  "16": {
+    "bit": 604,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 79,
+    "margin": 78
+  },
+  "17": {
+    "bit": 677,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 4393,
+    "margin": 3479
+  },
+  "18": {
+    "bit": 659,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 97,
+    "margin": 96
+  },
+  "19": {
+    "bit": 642,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 1235,
+    "margin": 1231
+  },
+  "20": {
+    "bit": 653,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 627,
+    "margin": 622
+  },
+  "21": {
+    "bit": 655,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 1768,
+    "margin": 1753
+  },
+  "22": {
+    "bit": 630,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 2158,
+    "margin": 2153
+  },
+  "23": {
+    "bit": 663,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 4597,
+    "margin": 3748
+  },
+  "24": {
+    "bit": 682,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 80,
+    "margin": 79
+  },
+  "26": {
+    "bit": 649,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 4,
+    "margin": 4
+  },
+  "27": {
+    "bit": 666,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 2692,
+    "margin": 2658
+  },
+  "28": {
+    "bit": 641,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 2057,
+    "margin": 2057
+  },
+  "29": {
+    "bit": 651,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 4848,
+    "margin": 2605
+  },
+  "30": {
+    "bit": 621,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 202,
+    "margin": 201
+  },
+  "31": {
+    "bit": 623,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 29,
+    "margin": 29
+  },
+  "32": {
+    "bit": 645,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 5617,
+    "margin": 3893
+  },
+  "33": {
+    "bit": 613,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 5347,
+    "margin": 3543
+  },
+  "34": {
+    "bit": 610,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 3074,
+    "margin": 2732
+  },
+  "35": {
+    "bit": 605,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 3580,
+    "margin": 2614
+  },
+  "36": {
+    "bit": 658,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 104,
+    "margin": 104
+  },
+  "37": {
+    "bit": 622,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 4058,
+    "margin": 3900
+  },
+  "38": {
+    "bit": 657,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 268,
+    "margin": 268
+  },
+  "39": {
+    "bit": 652,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 335,
+    "margin": 335
+  },
+  "40": {
+    "bit": 643,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 17,
+    "margin": 17
+  },
+  "41": {
+    "bit": 678,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 134,
+    "margin": 134
+  },
+  "42": {
+    "bit": 638,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 166,
+    "margin": 166
+  },
+  "44": {
+    "bit": 615,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 2174,
+    "margin": 2172
+  },
+  "45": {
+    "bit": 617,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 702,
+    "margin": 346
+  },
+  "46": {
+    "bit": 223,
+    "agreement": 0.999791,
+    "overlap": 14379,
+    "positives": 441,
+    "margin": 438
+  },
+  "47": {
+    "bit": 668,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 824,
+    "margin": 824
+  },
+  "48": {
+    "bit": 669,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 706,
+    "margin": 314
+  },
+  "49": {
+    "bit": 667,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 2086,
+    "margin": 2040
+  },
+  "50": {
+    "bit": 634,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 582,
+    "margin": 430
+  },
+  "53": {
+    "bit": 602,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 35,
+    "margin": 35
+  },
+  "54": {
+    "bit": 631,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 11,
+    "margin": 11
+  },
+  "55": {
+    "bit": 618,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 2722,
+    "margin": 2722
+  },
+  "56": {
+    "bit": 639,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 2689,
+    "margin": 1574
+  },
+  "57": {
+    "bit": 662,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 1396,
+    "margin": 1396
+  },
+  "58": {
+    "bit": 637,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 4416,
+    "margin": 1769
+  },
+  "59": {
+    "bit": 674,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 2368,
+    "margin": 1731
+  },
+  "60": {
+    "bit": 606,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 3112,
+    "margin": 2119
+  },
+  "61": {
+    "bit": 636,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 2994,
+    "margin": 2063
+  },
+  "62": {
+    "bit": 664,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 118,
+    "margin": 117
+  },
+  "64": {
+    "bit": 672,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 121,
+    "margin": 121
+  },
+  "65": {
+    "bit": 661,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 1823,
+    "margin": 1798
+  },
+  "66": {
+    "bit": 609,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 64,
+    "margin": 64
+  },
+  "67": {
+    "bit": 656,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 23,
+    "margin": 23
+  },
+  "69": {
+    "bit": 619,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 2641,
+    "margin": 2583
+  },
+  "71": {
+    "bit": 660,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 1339,
+    "margin": 1338
+  },
+  "72": {
+    "bit": 612,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 5389,
+    "margin": 4095
+  },
+  "73": {
+    "bit": 635,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 20,
+    "margin": 20
+  },
+  "8": {
+    "bit": 628,
+    "agreement": 1.0,
+    "overlap": 14379,
+    "positives": 1,
+    "reference": "Tap Trick; bit reference plus exact single positive in V13"
+  }
+}

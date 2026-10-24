@@ -1,0 +1,12 @@
+{
+  "verified_upgrades": [
+    {
+      "source_engine": "09319641e4a8fa9c547c593199ed905863f0194ff5a1899de0f209db03d920e2",
+      "target_engine": "1f9f0117d16a60e683b07c57a6e72285936d3bc4328c9f7d3424e241e84c5ea2",
+      "profile": "73efootball-v13-147-v1",
+      "source_release": "20261019-V13-startup-fixed",
+      "target_release": "20261020-E198-v14-four-fixes",
+      "evidence": "Player.bin/400 common records unchanged; 147-field mappings and strict SQLite schema retained; native display hook guards unchanged; database schema is checked on every import"
+    }
+  ]
+}

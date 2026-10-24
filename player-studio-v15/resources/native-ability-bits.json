@@ -1,0 +1,184 @@
+{
+  "14": {
+    "bit": 492,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.946867,
+    "overlap": 14379
+  },
+  "15": {
+    "bit": 390,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.946867,
+    "overlap": 14379
+  },
+  "16": {
+    "bit": 466,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.995132,
+    "overlap": 14379
+  },
+  "17": {
+    "bit": 486,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.946867,
+    "overlap": 14379
+  },
+  "18": {
+    "bit": 396,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.946867,
+    "overlap": 14379
+  },
+  "19": {
+    "bit": 550,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.946867,
+    "overlap": 14379
+  },
+  "20": {
+    "bit": 524,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.946867,
+    "overlap": 14379
+  },
+  "21": {
+    "bit": 518,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.946867,
+    "overlap": 14379
+  },
+  "22": {
+    "bit": 530,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.946867,
+    "overlap": 14379
+  },
+  "23": {
+    "bit": 402,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.946867,
+    "overlap": 14379
+  },
+  "24": {
+    "bit": 448,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.946867,
+    "overlap": 14379
+  },
+  "25": {
+    "bit": 504,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.946867,
+    "overlap": 14379
+  },
+  "26": {
+    "bit": 544,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.946867,
+    "overlap": 14379
+  },
+  "27": {
+    "bit": 368,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.946867,
+    "overlap": 14379
+  },
+  "28": {
+    "bit": 428,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.946867,
+    "overlap": 14379
+  },
+  "29": {
+    "bit": 416,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.995132,
+    "overlap": 14379
+  },
+  "30": {
+    "bit": 460,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.995132,
+    "overlap": 14379
+  },
+  "31": {
+    "bit": 454,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.995132,
+    "overlap": 14379
+  },
+  "32": {
+    "bit": 422,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.995132,
+    "overlap": 14379
+  },
+  "34": {
+    "bit": 434,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.946867,
+    "overlap": 14379
+  },
+  "35": {
+    "bit": 512,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.946867,
+    "overlap": 14379
+  },
+  "36": {
+    "bit": 498,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.946867,
+    "overlap": 14379
+  },
+  "37": {
+    "bit": 384,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.946867,
+    "overlap": 14379
+  },
+  "38": {
+    "bit": 480,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.946867,
+    "overlap": 14379
+  },
+  "39": {
+    "bit": 408,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.946867,
+    "overlap": 14379
+  },
+  "40": {
+    "bit": 472,
+    "width": 6,
+    "bias": 40,
+    "agreement": 0.946867,
+    "overlap": 14379
+  }
+}

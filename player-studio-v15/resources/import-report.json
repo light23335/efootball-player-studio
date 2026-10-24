@@ -1,0 +1,25 @@
+{
+  "format": "player-studio-apk-database-v1",
+  "import_revision": "apk-catalogue-appearance-options-v3",
+  "apk": "73efootball-V15.apk",
+  "apk_sha256": "bf3f6b67b94e7b1036eed5b5df3c0399a8b6452663f81bc3ccf30802e0876643",
+  "companion": "73efootball-离线资源包-V9+.apk",
+  "release_id": "20261021-E212-V15-gateway-root-fixed",
+  "engine_sha256": "c779d79556bb4dfb59ef8abce3e7fba7e786a33cbcf6ac710185c564a4a6fa04",
+  "counts": {
+    "players": 46619,
+    "managed_cards": 14381,
+    "coaches": 1661,
+    "boosters": 418,
+    "skills": 75,
+    "verified_level_cards": 14641,
+    "tables": {
+      "common/etc/pesdb/Player.bin": 46619,
+      "common/etc/appearance/PlayerAppearance.bin": 46619,
+      "common/etc/pesdb/PlayerVariationDetail.bin": 13904
+    },
+    "assets": 71473
+  },
+  "personal_data_preserved": true,
+  "in_game_tested": false
+}

@@ -1,0 +1,6 @@
+# Python 3.12, Windows x64; versions used for the 1.8.1 V15 release.
+numpy==2.3.5
+Pillow==12.3.0
+cryptography==50.0.2
+cityhash==0.4.10
+PyInstaller==6.22.3

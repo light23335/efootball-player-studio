@@ -1,0 +1,246 @@
+{
+  "format": "native-interface-contract-v1",
+  "architecture": "arm64",
+  "regions": [
+    {
+      "name": "route.path",
+      "offset": 59227680,
+      "bytes": 64,
+      "sha256": "8ef42a6a3d8b61ecaf86e97b6ef2e7b413ebc71320df6753af41c7b328090e18"
+    },
+    {
+      "name": "native-binding-profile.hooks.6",
+      "offset": 59241276,
+      "bytes": 64,
+      "sha256": "ca3af7b8ea3c3b9c5017459e85299e8bd666fc813dbdcdeee18b346216221769"
+    },
+    {
+      "name": "native-acquisition-hook",
+      "offset": 59249452,
+      "bytes": 64,
+      "sha256": "13c69108e8188d4f0f7ab0f10af5639712d25932e2db836fa2d9c1319e5e29b5"
+    },
+    {
+      "name": "route.face",
+      "offset": 61344520,
+      "bytes": 64,
+      "sha256": "0663c19534740927110948fb9161590cb3fcdb487ff2b36fabad00ab5d28d193"
+    },
+    {
+      "name": "native-binding-profile.hooks.5",
+      "offset": 128467824,
+      "bytes": 64,
+      "sha256": "ebf2801c64d6213f83e301ec7c5c3dee9173c9e646a0a085b2a3f5e79afec706"
+    },
+    {
+      "name": "native-overall-hook",
+      "offset": 128468328,
+      "bytes": 64,
+      "sha256": "d90f6ab189583e62e3783c478690032942d7986f42750178d7d691d948d817e5"
+    },
+    {
+      "name": "native-position-hook",
+      "offset": 128468344,
+      "bytes": 64,
+      "sha256": "e096e059abd415f4a9e0d178ad6c4a92aac53f19cb674e9aead00bb89fd674d6"
+    },
+    {
+      "name": "route.small_style",
+      "offset": 129558100,
+      "bytes": 64,
+      "sha256": "3101a91ccf3497a3acb0aef29dd3853f489895a679f749d62c1e9f350cf38cc3"
+    },
+    {
+      "name": "route.detail_style",
+      "offset": 129561112,
+      "bytes": 64,
+      "sha256": "37b360799fafe0777337c4c236a43c629cece4a970639a253d0e7b41fd5ba668"
+    },
+    {
+      "name": "route.portrait",
+      "offset": 129561120,
+      "bytes": 64,
+      "sha256": "990df23cf2356db0027f57d11e8b694c34082dab86a15b26f96abc48f27afbb1"
+    },
+    {
+      "name": "native-thumbnail-hook",
+      "offset": 129561160,
+      "bytes": 64,
+      "sha256": "5b5235fd1bdf37770191b5081c1fd025eaf0019f340135d5944bb85f76044f36"
+    },
+    {
+      "name": "native-rarity-hook",
+      "offset": 136904868,
+      "bytes": 64,
+      "sha256": "cfb4c4b2b15717912248f9889bd256298b5b1ab6daa4ace4e8d35f42e54506b4"
+    },
+    {
+      "name": "native-booster-accessors.rows.0",
+      "offset": 137012152,
+      "bytes": 64,
+      "sha256": "3ff97a7b7566226ccbbd414cb182ce8f3a1fca9cb54486efb60fb56ce9766f47"
+    },
+    {
+      "name": "native-booster-accessors.rows.1",
+      "offset": 137012192,
+      "bytes": 64,
+      "sha256": "4da6c79ab2f87718e3f3aece7f9a2c931dfa211f996d390c7871d202618c4c62"
+    },
+    {
+      "name": "native-booster-accessors.rows.2",
+      "offset": 137012232,
+      "bytes": 64,
+      "sha256": "7bb9e7d0761b3eb83711d9485b84aa7519bab7ec668d845a4668c92f99a31ea6"
+    },
+    {
+      "name": "native-booster-accessors.rows.3",
+      "offset": 137012272,
+      "bytes": 64,
+      "sha256": "3911ee50e889058adfa0ede382a21b9f7a15ba7deb6c73520aa79249dc812f08"
+    },
+    {
+      "name": "native-booster-accessors.rows.4",
+      "offset": 137012312,
+      "bytes": 64,
+      "sha256": "ffd92fef5370be18e43f0227ed89cbceb1766bb7db6ac9bc4a4698b13d8f84d2"
+    },
+    {
+      "name": "native-booster-accessors.rows.5",
+      "offset": 137012352,
+      "bytes": 64,
+      "sha256": "5f4e56037feeb8de856d73f4e37e635beccfece39349313aa5544f9275e7de22"
+    },
+    {
+      "name": "native-booster-accessors.rows.6",
+      "offset": 137012392,
+      "bytes": 64,
+      "sha256": "63db478367cac49b4eeff15351ae4fbfb7a337be897c7c45d1a2d08ac387b2c2"
+    },
+    {
+      "name": "native-booster-accessors.rows.7",
+      "offset": 137012432,
+      "bytes": 64,
+      "sha256": "802628e9dd854d7e69dfcaa601ec9e81e665c1b9ad7a4aeb41f199083a71c9ec"
+    },
+    {
+      "name": "native-booster-accessors.rows.8",
+      "offset": 137012472,
+      "bytes": 64,
+      "sha256": "dabe8928db452ac0b90fe3532c43ea3b8286ca633fcf8f28259a73289d0555c2"
+    },
+    {
+      "name": "native-booster-accessors.rows.9",
+      "offset": 137012512,
+      "bytes": 64,
+      "sha256": "e53c56993b4388f6a2ce5e7a8cfe0ae469761c2f903a9cae8fe7cd31851e6ffb"
+    },
+    {
+      "name": "native-booster-accessors.rows.10",
+      "offset": 137012552,
+      "bytes": 64,
+      "sha256": "c4539bfa7b28585582707681482cd4b75ce17beec5510869c4cee0bc70c233bb"
+    },
+    {
+      "name": "native-booster-accessors.rows.11",
+      "offset": 137012592,
+      "bytes": 64,
+      "sha256": "6b82f139ac4408b04c9f3415c0bdc382a90e5d0e2158f310cad6818a98cfae83"
+    },
+    {
+      "name": "native-booster-accessors.rows.12",
+      "offset": 137012632,
+      "bytes": 64,
+      "sha256": "1aa827dd208c6486a0cd5c889e7b634827c74d463fbb463a2b0d0242d5fba684"
+    },
+    {
+      "name": "native-booster-accessors.rows.13",
+      "offset": 137012672,
+      "bytes": 64,
+      "sha256": "75ec1c2b1a55794989b39e863a81ce202c480611198bf330faafa58e719c730a"
+    },
+    {
+      "name": "native-booster-accessors.rows.14",
+      "offset": 137012712,
+      "bytes": 64,
+      "sha256": "9c5d61c5e8d18c0a9d455fb0f3c790c3c561c7a39b22ac7dfe1e4df1162c0f01"
+    },
+    {
+      "name": "native-booster-accessors.rows.15",
+      "offset": 137012752,
+      "bytes": 64,
+      "sha256": "2d2742ec1132a0b5b149d7ba25fbfc79a7a2bb201b96978089d5b7da4e15f8b5"
+    },
+    {
+      "name": "native-booster-accessors.rows.16",
+      "offset": 137012792,
+      "bytes": 64,
+      "sha256": "f83651e5556c2524e6de0ff4df9e716ebaa049f931db51e30e3be67e57f61ea3"
+    },
+    {
+      "name": "native-booster-accessors.rows.17",
+      "offset": 137012832,
+      "bytes": 64,
+      "sha256": "33c33d373b86fb9e1e71b60ba359c5ab03e44b5dc05f39f2f192ba5ff618c285"
+    },
+    {
+      "name": "native-booster-accessors.rows.18",
+      "offset": 137012872,
+      "bytes": 64,
+      "sha256": "8633b50705d7bc913994c35eb39e8076c2ee00bc6e8ec8905e84b64c8c788756"
+    },
+    {
+      "name": "native-booster-accessors.rows.19",
+      "offset": 137012912,
+      "bytes": 64,
+      "sha256": "124bb4327495ff08594f28819f723041b31b884e481ddcfec4637fcfe8ed7bfb"
+    },
+    {
+      "name": "native-booster-accessors.rows.20",
+      "offset": 137012952,
+      "bytes": 64,
+      "sha256": "7c78f69378d5a9fb6dbee088c6e236c1fcb7ca00c2dbb55b72604eff7f07faee"
+    },
+    {
+      "name": "native-booster-accessors.rows.21",
+      "offset": 137012992,
+      "bytes": 64,
+      "sha256": "7532035f43cd4393f0229ba99de4b1cca14e0ab041ea4f5fbf450aaf33a3235e"
+    },
+    {
+      "name": "native-booster-accessors.rows.22",
+      "offset": 137013032,
+      "bytes": 64,
+      "sha256": "3ac5e1f31c594993e8989ad6dab7118a8b6c7a770549c3aecfd3a013d60b4475"
+    },
+    {
+      "name": "native-booster-accessors.rows.23",
+      "offset": 137013072,
+      "bytes": 64,
+      "sha256": "e78f575294ff1bd4dbb0550ac7cbd23e6444adf0857528b1b802715e75c3c324"
+    },
+    {
+      "name": "native-booster-accessors.rows.24",
+      "offset": 137013112,
+      "bytes": 64,
+      "sha256": "cedf30c7738fdd2a693a52bce0a02b58e0589979b540a7bba5b25db3d8c62456"
+    },
+    {
+      "name": "native-booster-accessors.rows.25",
+      "offset": 137013152,
+      "bytes": 64,
+      "sha256": "9a3161fa0f61f55718a50e4b5054da7341c797daf1525816f6c0ff3842625948"
+    },
+    {
+      "name": "native-text-hooks.name",
+      "offset": 137096344,
+      "bytes": 64,
+      "sha256": "5623a8f7b66f77c0797d2a268cbc342249510e8535e65b4d0ae754a95e301bb9"
+    },
+    {
+      "name": "native-text-hooks.description",
+      "offset": 137099224,
+      "bytes": 64,
+      "sha256": "dc50ae8f75ee9d3b679e4204b5a3058d716b755d3f3993c824fa7a4be035d03b"
+    }
+  ]
+}

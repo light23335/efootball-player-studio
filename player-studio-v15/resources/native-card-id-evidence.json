@@ -1,0 +1,25 @@
+{
+  "checked_card_layer_names": 1124,
+  "mismatches": 0,
+  "style_bits": [
+    40,
+    8
+  ],
+  "agent_bits": [
+    28,
+    12
+  ],
+  "person_bits": [
+    0,
+    28
+  ],
+  "style_format": "two decimal digits for each hexadecimal nibble",
+  "source": "provided APK native Thumbnail/Player/Variation2022 filenames matched to full numeric player IDs",
+  "native_face_hook": {
+    "address": 61360904,
+    "original_payload_offset": 1872,
+    "original_blob_length": 2400,
+    "argument_register": "x1",
+    "purpose": "prepend personal-card-to-existing-person identity mapping to the original custom legend face binding"
+  }
+}

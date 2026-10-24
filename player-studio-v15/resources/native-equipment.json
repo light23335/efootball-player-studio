@@ -1,0 +1,340 @@
+{
+  "boots": [
+    {
+      "id": 51,
+      "name": "Classic",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 52,
+      "name": "Classic",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 61,
+      "name": "explorer",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 62,
+      "name": "explorer",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 63,
+      "name": "explorer",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 64,
+      "name": "explorer",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 65,
+      "name": "explorer",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 66,
+      "name": "explorer ex",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 71,
+      "name": "explorer ex",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 72,
+      "name": "explorer ex",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 1051,
+      "name": "X Speedportal+",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 1052,
+      "name": "X Speedportal+",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 1053,
+      "name": "X Speedportal+",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 1054,
+      "name": "X Speedportal.1",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 1061,
+      "name": "Predator Edge+",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 1062,
+      "name": "Predator Edge+",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 1063,
+      "name": "Predator Edge+",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 1064,
+      "name": "Predator Accuracy.1",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 1071,
+      "name": "X Crazyfast Messi.1",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 1072,
+      "name": "F30",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 1081,
+      "name": "Copa Sense+",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 1082,
+      "name": "Copa Sense+",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 1083,
+      "name": "COPA PURE.1",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 2021,
+      "name": "Gear Up Mercurial Superfly",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 2022,
+      "name": "Superfly 9 Elite",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 2023,
+      "name": "Mercurial Superfly 9",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 2024,
+      "name": "Dream Speed Superfly 8 Elite",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 2025,
+      "name": "Mercurial Superfly 9",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 2051,
+      "name": "Tiempo Legend 9",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 2052,
+      "name": "Tiempo Legend 9",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 2053,
+      "name": "Tiempo Legend 9",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 2061,
+      "name": "Phantom GT2",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 2062,
+      "name": "PHANTOM GT2",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 2063,
+      "name": "Phantom GX",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 2065,
+      "name": "Phantom GX",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 3041,
+      "name": "ULTRA Ultimate",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 3042,
+      "name": "ULTRA Ultimate",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 3043,
+      "name": "Ultra Ultimate",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 3051,
+      "name": "Future Ultimate",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 3052,
+      "name": "FUTURE 1.4",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 3053,
+      "name": "Future Ultimate",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 4011,
+      "name": "Magnetico Clone",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 4031,
+      "name": "Velocita Elixir Pro",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 4032,
+      "name": "VELOCITA",
+      "color": "",
+      "material": "Synthetic Upper / Pebax Outsole / Knitted Insock"
+    },
+    {
+      "id": 5011,
+      "name": "MORELIA NEO Ⅳ",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 5012,
+      "name": "MORELIA NEO Ⅲ JAPAN",
+      "color": "White / Green\n",
+      "material": "Synthetic Leather/Kangaroo Leather"
+    },
+    {
+      "id": 5031,
+      "name": "MORELIA Ⅱ",
+      "color": "Red×White",
+      "material": "Kangaroo Leather/Synthetic Leather"
+    },
+    {
+      "id": 5032,
+      "name": "MORELIA NEO Ⅲ β JAPAN",
+      "color": "White / Blue\n",
+      "material": "Synthetic Leather/Kangaroo Leather\n"
+    },
+    {
+      "id": 5041,
+      "name": "DS LIGHT X-FLY PRO L.E.",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 6021,
+      "name": "PROPULSION",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 7011,
+      "name": "442 PRO",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 7021,
+      "name": "FURON PRO HG",
+      "color": "",
+      "material": ""
+    },
+    {
+      "id": 8001,
+      "name": "Solista 100 VI Gravity",
+      "color": "",
+      "material": ""
+    }
+  ],
+  "sleeves": [
+    {
+      "id": "keep",
+      "name": "跟随模板"
+    },
+    {
+      "id": "seasonal",
+      "name": "随季节"
+    },
+    {
+      "id": "short",
+      "name": "短袖"
+    },
+    {
+      "id": "long",
+      "name": "长袖"
+    }
+  ]
+}

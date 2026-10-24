@@ -1,0 +1,9 @@
+{
+  "address": 129577544,
+  "file_offset": 129561160,
+  "expected_hex": "4819ff97c02300b4e8a30191f50300aaf9031faa180140b2ffff06a9ff3f00f904000014396300913fc303f1600400547602198bffff03a9ff1b00f9c88e4038",
+  "original_call": 129341288,
+  "assign": 49514364,
+  "mini_offset": 440,
+  "source": "V15 PlayerCardTextureInfo mini M01..M06 before filename conversion; displaced BL preserved"
+}

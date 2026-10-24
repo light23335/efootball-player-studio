@@ -1,0 +1,54 @@
+{
+  "sites": {
+    "face": 61360904,
+    "portrait": 129577504,
+    "path": 59244064,
+    "detail_style": 129577496,
+    "small_style": 129574484
+  },
+  "templates": {
+    "face": {
+      "hex": "e827bda9ea2f01a90a423bd5ea1300f948030010090140f9290200b43f0009eb6000005408010291fbffff17830100b46900403949010037092d41a9692c00a9091140f9690800f9ea1340f90a421bd5ea2f41a9e827c3a8c0035fd6ea1340f90a421bd5ea2f41a9e827c3a8e5ffff17f0debc9a78563412",
+      "tableRefs": [
+        16
+      ],
+      "delegate": 108,
+      "backRefs": []
+    },
+    "portrait": {
+      "hex": "e827bda9ea2f01a90a423bd5ea1300f908040010090140f9e90200b4ff0209eb6000005408010291fbffff17092d44a969ae09a9092940f9695600f909ad42a969ae15a97fb600f968020891092d00a91f0900f968a207911f7d00a91f0900f9ea1340f90a421bd5ea2f41a9e827c3a805000014ea1340f90a421bd5ea2f41a9e827c3a8dfffff17f0debc9a78563412",
+      "tableRefs": [
+        16
+      ],
+      "delegate": 132,
+      "backRefs": []
+    },
+    "detail_style": {
+      "hex": "e827bda9ea2f01a90a423bd5ea1300f9c8020010090140f9a90100b4ff0209eb6000005408010291fbffff17050540f9ea1340f90a421bd5ea2f41a9e827c3a810010058102200d100021fd6ea1340f90a421bd5ea2f41a9e827c3a8e9ffff17f0debc9a78563412",
+      "tableRefs": [
+        16
+      ],
+      "delegate": 92,
+      "backRefs": [
+        64
+      ]
+    },
+    "small_style": {
+      "hex": "e827bda9ea2f01a90a423bd5ea1300f988020010090140f9690100b4bf0009eb6000005408010291fbffff17050540f9ea1340f90a421bd5ea2f41a9e827c3a805000014ea1340f90a421bd5ea2f41a9e827c3a8ebffff17f0debc9a78563412",
+      "tableRefs": [
+        16
+      ],
+      "delegate": 84,
+      "backRefs": []
+    },
+    "path": {
+      "hex": "e827bda9ea2f01a90a423bd5ea1300f9e10300b4290840b93f250071810300542b0040f94b0300b408040010090140f9e90200b4690140f90a2d40f93f010aeb21020054690540f90a3140f93f010aeb800000540a2147f83f010aeb410100546921407909010035e2031f2ae3031f2aea1340f90a421bd5ea2f41a9e827c3a80700001408010291e9ffff17ea1340f90a421bd5ea2f41a9e827c3a8d9ffff17f0debc9a78563412",
+      "tableRefs": [
+        40
+      ],
+      "delegate": 156,
+      "backRefs": []
+    }
+  },
+  "root_prefix_bytes": 2400
+}

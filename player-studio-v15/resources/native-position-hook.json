@@ -1,0 +1,9 @@
+{
+  "source": "provided V13 libUE4.so; acquisition-card converter 0x38809bc calls this position getter",
+  "address": 128484728,
+  "file_offset": 128468344,
+  "expected_hex": "00d440b9c0035fd6084040b91f0d0071a101005409a044a93f0108eb40010054294100912a015fb82b4100915f150071e0179f1a241148fae9030baa41ffff54",
+  "object_card_id_offset": 8,
+  "position_member_offset": 212,
+  "enum": "GK=0 through CF=12; sentinel=13"
+}

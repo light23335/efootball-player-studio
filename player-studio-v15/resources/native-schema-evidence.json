@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "client_records": 46615,
+  "server_overlap": 14379,
+  "special_cards_all_26_equal": 13615,
+  "abilities_checked": 353990,
+  "height_weight_age_foot_traits_aptitudes_exact": true,
+  "styles_exact_on_special_cards": true,
+  "note": "Mobile offsets are calibrated against the supplied V13 data; PC field semantics are not assumed."
+}

@@ -1,0 +1,25 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <queries>
+        <package android:name="com.efootball.revival.local" />
+        <package android:name="com.efootball.revival.resources" />
+        <package android:name="com.efootball.revival.diyer" />
+        <package android:name="com.efootball.revival.diyassets" />
+        <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent>
+    </queries>
+    <application android:label="球员工坊" android:icon="@drawable/studio_icon" android:roundIcon="@drawable/studio_icon" android:theme="@android:style/Theme.Material.NoActionBar"
+        android:allowBackup="false" android:largeHeap="true" android:pageSizeCompat="enabled"
+        android:usesCleartextTraffic="false" android:networkSecurityConfig="@xml/network_security">
+        <activity android:name=".MainActivity" android:exported="true"
+            android:configChanges="keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize">
+            <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+        </activity>
+        <service android:name=".StudioService" android:exported="false" android:foregroundServiceType="dataSync" />
+        <provider android:name=".ExportProvider" android:authorities="com.playerstudio.editor.exports" android:exported="false" android:grantUriPermissions="true" />
+    </application>
+</manifest>

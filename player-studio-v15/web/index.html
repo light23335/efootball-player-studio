@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0c121c">
+  <title>球员工坊 · Player Studio</title>
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/onboarding.css">
+  <link rel="stylesheet" href="/packs.css">
+  <script type="importmap">{"imports":{"three":"/vendor/three/build/three.module.js","three/addons/":"/vendor/three/examples/jsm/"}}</script>
+</head>
+<body>
+  <dialog id="disclaimer-dialog"><h2>使用声明</h2><p>本软件仅供个人娱乐、学习与交流，完全免费。不得销售、付费分发、捆绑收费或用于任何盈利活动。</p><p>游戏、球员及相关素材权利归各原权利人所有。本软件为非官方工具，与游戏官方无关联。请仅处理你有权使用的本地文件，并自行保管工程与存档。</p><button class="button primary" id="disclaimer-accept">我已了解，进入软件</button></dialog>
+  <script>document.getElementById('disclaimer-accept').onclick=()=>{sessionStorage.setItem('studio-disclaimer','1');document.getElementById('disclaimer-dialog').close()};if(sessionStorage.getItem('studio-disclaimer')!=='1')document.getElementById('disclaimer-dialog').showModal();</script>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#"><img src="/icon.svg" alt=""><span>球员工坊<small>PLAYER STUDIO</small></span></a>
+      <div class="workspace-badge"><span class="status-dot"></span>本地工作区<span>V16 · 1.9.4</span></div>
+      <div class="nav-label">工作区</div><button class="quiet-button navigation-mode-toggle" id="navigation-mode-toggle" data-navigation="full">切换完整导航</button>
+      <nav id="navigation" aria-label="工作区导航"></nav>
+      <div class="nav-divider"></div>
+      <button class="nav-item" data-page="migration" id="migration-nav"><span data-icon="archive"></span><span>更新与迁移</span><span class="nav-arrow">↗</span></button>
+      <div class="sidebar-bottom">
+        <div class="identity-mark"><span data-icon="fingerprint"></span><div>永久工程身份<small id="project-uuid">正在读取</small></div></div>
+        <button class="quiet-button" id="help-button"><span data-icon="help"></span>使用说明</button>
+      </div>
+    </aside>
+    <main class="main-shell">
+      <header class="topbar"><label class="compact-navigation">工作区<select id="compact-page-select" aria-label="切换工作区"></select></label>
+        <div class="breadcrumb">个人球员<span>/</span><strong id="breadcrumb-page">资料</strong></div>
+        <div class="top-actions">
+          <span id="save-status" class="save-status"><i class="status-dot"></i>已保存到本机</span>
+          <button class="icon-button" id="undo-button" title="撤销" aria-label="撤销"><span data-icon="undo"></span></button>
+          <button class="icon-button" id="redo-button" title="重做" aria-label="重做"><span data-icon="redo"></span></button>
+          <div class="toolbar-separator"></div>
+          <button class="button primary" id="save-player"><span data-icon="check"></span>保存球员</button>
+          <button class="button secondary" id="open-project"><span data-icon="folder"></span>打开工程</button>
+          <button class="button primary" id="export-project"><span data-icon="export"></span>导出工程</button>
+        </div>
+      </header>
+      <div class="workbench">
+        <section class="editor-area">
+          <div class="page-heading"><div><div class="eyebrow" id="page-eyebrow">CREATE YOUR OWN LEGACY</div><h1 id="page-title">球员资料</h1><p id="page-description">从名字到球场位置，定义属于你的球员。</p></div><button class="button subtle" id="new-project"><span data-icon="plus"></span>新建球员</button></div>
+          <div id="editor-content"><div class="loading-state"><span class="spinner"></span>正在打开本地工程…</div></div>
+        </section>
+        <aside class="preview-area">
+          <div class="preview-header"><span><i class="live-dot"></i>实时预览</span><span class="preview-state">设计工程</span></div>
+          <div id="coach-selection" class="coach-selection"></div>
+          <div class="preview-tabs" role="tablist"><button class="active" data-preview="card">球员卡面</button><button data-preview="stats">能力概览</button><button data-preview="model">3D 模型</button></div>
+          <div class="preview-pane" id="preview-card">
+            <div class="card-stage"><div id="card-empty" class="native-card-empty">尚未选择游戏原版图像<br><small>请先从球员与原版资源库选择</small></div><canvas id="player-card" width="600" height="860" aria-label="实时球员卡面预览"></canvas></div>
+            <div class="card-caption"><span id="preview-series">EPIC · PERSONAL EDITION</span><span id="preview-level">Lv.1 / 35</span></div>
+            <div class="native-motion-controls"><span id="native-card-status"></span><button class="text-link" id="card-motion-toggle" hidden>暂停原版动画</button></div>
+            <div id="preview-overall" class="overall-summary" aria-live="polite"></div>
+            <div class="preview-summary" id="preview-summary"></div>
+            <button class="button secondary full-width" id="export-card"><span data-icon="image"></span>导出卡面 PNG</button>
+          </div>
+          <div class="preview-pane hidden" id="preview-stats"><div id="radar-chart"></div><div id="stat-overview"></div></div>
+          <div class="preview-pane hidden" id="preview-model"><div id="mini-model-stage" class="model-stage mini-model-stage"></div><div class="model-hint">左键旋转 · 滚轮缩放 · 右键平移</div><button class="button secondary full-width" id="open-model-page">打开模型工作区</button></div>
+          <div class="preview-footer"><span data-icon="info"></span><p>总评包含所选教练的已配置加成，不含状态箭头。APK 实装已接入；完整材质动画、脸模与比赛效果仍待游戏内验收。</p></div>
+        </aside>
+      </div>
+    </main>
+  </div>
+  <div class="toast-container" id="toasts" aria-live="polite"></div>
+  <dialog id="help-dialog"><button class="dialog-close icon-button" id="close-help" aria-label="关闭">×</button><div class="eyebrow">PLAYER STUDIO</div><h2>球员工坊 V16 · 1.9.4</h2><p>所有内容保存在本机，退出后再次打开会恢复工程。导出 .efproject 会把资料、照片与模型一起打包。</p><ol><li><strong>资料与能力</strong>：填写 1 级基础值，再用培养模拟查看升级后的变化。</li><li><strong>技能</strong>：区分天生与额外习得，追加技能最多 5 项。</li><li><strong>卡面</strong>：选择原版预设与人物图，列表可自动播放原版视频。</li><li><strong>模型</strong>：选择游戏已有脸模，或使用已核对的 V13 骨架 GLB。静态模型需匹配的骨架版本。</li><li><strong>APK 实装</strong>：从原 APK 生成个人球员测试包；首次安装配套生成同签名资源 APK。</li><li><strong>更新迁移</strong>：更新前导出最新 .efplayer 实际进度快照，再合并到新版导出的存档。</li></ol><p class="muted">备份整个 data，尤其是 data/signing。首次改签版不能直接覆盖原签名游戏。游戏内验收范围和实装限制见随附“测试说明.json”。</p><button class="button primary" id="help-done">开始创作</button></dialog>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

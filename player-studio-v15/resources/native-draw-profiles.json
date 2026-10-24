@@ -1,0 +1,15 @@
+{
+  "game_version": "V14",
+  "player_selection": "auto",
+  "BigTime": [
+    "WIN_SCREEN",
+    "SPOTLIGHT_BIGWIN",
+    "RED_CARPET",
+    "OPENING_BIGTIME",
+    "PROMOTION_DRIBBLE"
+  ],
+  "Epic": ["WIN_SCREEN", "SPOTLIGHT_WIN", "RED_CARPET", "OPENING_EPIC", "PROMOTION_DRIBBLE"],
+  "Legendary": ["WIN_SCREEN", "SPOTLIGHT_WIN", "RED_CARPET", "OPENING_EPIC", "PROMOTION_DRIBBLE"],
+  "ShowTime": ["WIN_SCREEN", "SPOTLIGHT_WIN", "RED_CARPET", "OPENING_SHOWTIME", "PROMOTION_DRIBBLE"],
+  "evidence": "The supplied engine declares distinct OPENING_BIGTIME, OPENING_EPIC and OPENING_SHOWTIME enums. Select explicit card series before the shared native LEGENDARY type."
+}
