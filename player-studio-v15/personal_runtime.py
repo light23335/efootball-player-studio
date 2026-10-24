@@ -17,6 +17,7 @@ MANIFEST='custom-resources/personal-player-studio/players.json'
 # Extend the original checked FPS hooks; do not change the engine frame table.
 FPS160_BLOB='9737355cca03c9205dd0220c92a3865a4abe73e97690ef776b5a2431a342fc6e'
 FPS160_FUNCTIONS={
+    'start':'4e892622bf71abcae0d9615067d8fbfe81887d77b63760ecd896225c2fcff0c2',
     'native_payload':'1dda887ce2dfdc64c63dc53040168dbefd0f6769128ae08e53902fb93e2fbcef',
     'validate':'bcb15d61eae99572756d148d1fe2f00bf43e72b76c966dbaa0878e4020e41b4b',
     'install':'4fb544d6f4444e61920f8661ce948d869b6206562ad31d611165cd40f9557018',
@@ -29,10 +30,13 @@ FPS160_FUNCTIONS={
 }
 
 
-def prepare_fps160(module):
+def prepare_fps160(module,target=160):
     """Configure inert Python/native templates before the original worker starts."""
     from personal_binding import code_fingerprint
-    if getattr(module,'_studio_fps160',False):return dict(module._studio_fps160)
+    if type(target) is not int or not 15<=target<=999:raise ValueError('FPS target must be 15–999')
+    if getattr(module,'_studio_fps160',False):
+        if module._studio_fps160['target_fps']!=target:raise ValueError('FPS worker already configured for a different target')
+        return dict(module._studio_fps160)
     if getattr(module,'_started',False):raise ValueError('FPS worker already started before 160 FPS configuration')
     for name,expected in FPS160_FUNCTIONS.items():
         function=getattr(module,name,None)
@@ -42,11 +46,12 @@ def prepare_fps160(module):
     if hashlib.sha256(blob).hexdigest()!=FPS160_BLOB:raise ValueError('160 FPS native template changed')
     if blob[620:624]!=bytes.fromhex('170f8052') or blob[1104:1110]!='120'.encode('utf-16le'):
         raise ValueError('160 FPS native patch sites changed')
-    blob[620:624]=bytes.fromhex('17148052')  # MOV W23, #160 in the frame hook.
-    blob[1104:1110]='160'.encode('utf-16le')
+    import struct
+    blob[620:624]=struct.pack('<I',0x52800017|(target<<5))
+    blob[1104:1110]=str(target).rjust(3).encode('utf-16le')
     payload['blob_hex']=blob.hex()
     def constants(value):
-        if type(value) is int and value==120:return 160
+        if type(value) is int and value==120:return target
         if isinstance(value,tuple):return tuple(constants(v) for v in value)
         return value
     changes={name:getattr(module,name).__code__.replace(co_consts=tuple(constants(v) for v in getattr(module,name).__code__.co_consts))
@@ -55,35 +60,96 @@ def prepare_fps160(module):
     def sticky(desired,focused):return 5 if focused else None
     def mailbox(state,desired,allow):return write(state,5,allow)
     def display(hz):
-        result=request(hz)
+        result=request(hz) or {}
         supported=result.get('supported_refresh_rates_hz') or []
         rates=[v for v in supported if type(v) in (int,float) and v>0]
-        if hz==160 and rates:
-            eligible=[v for v in rates if v>=160]
+        if hz==target and rates:
+            eligible=[v for v in rates if v>=target]
             chosen=min(eligible) if eligible else max(rates)
             if chosen!=hz:result=request(chosen)
-        return dict(result,game_target_fps=160)
+        return dict(result,game_target_fps=target)
     def status(root,result):
-        return report(root,dict(result,force_160=True,lock_policy='foreground',target_fps=160,actual_render_fps_measured=False))
+        return report(root,dict(result,force_160=target==160,custom_frame_rate=True,lock_policy='foreground',target_fps=target,actual_render_fps_measured=False))
     module.PAYLOAD=payload
     for name,code in changes.items():getattr(module,name).__code__=code
     module.sticky_fps_target=sticky;module._write_mailbox=mailbox;module._report=status;module._request_display_refresh=display
-    module._studio_fps160={'enabled':True,'target_fps':160,'saved_enum':5,'lock_policy':'foreground','original_frame_table_preserved':True,'actual_render_fps_measured':False}
+    # An ARM64 Python process may run under an x86_64 Android kernel (LDPlayer).
+    # Use its compiled ABI for this module's startup guard. The original worker
+    # still verifies all native engine hook bytes before any memory write.
+    system=getattr(module,'os',None);python=getattr(module,'sys',None)
+    abi=getattr(getattr(python,'implementation',None),'_multiarch','').lower()
+    if system is not None and abi.startswith(('aarch64','arm64')):
+        class ProcessOS:
+            def __getattr__(self,key):return getattr(system,key)
+            def uname(self):
+                value=system.uname()
+                if value.machine!='x86_64':return value
+                return types.SimpleNamespace(**{k:getattr(value,k,None) for k in ('sysname','nodename','release','version')},machine='aarch64')
+        module.os=ProcessOS()
+    module._studio_fps160={'enabled':True,'target_fps':target,'saved_enum':5,'lock_policy':'foreground','original_frame_table_preserved':True,'actual_render_fps_measured':False}
     return dict(module._studio_fps160)
 
 
 def install_fps_options(document,root):
     options=document.get('frame_rate',{})
-    if not options.get('force_160'):return
+    if not (options.get('enabled') or options.get('force_160')):return
     try:
         import fps120_runtime
-        result=dict(prepare_fps160(fps120_runtime),status='configured')
+        prepared=prepare_fps160(fps120_runtime,options.get('target',160))
+        startup=fps120_runtime.start(str(root))
+        result=dict(prepared,status='worker_started' if startup.get('status') in ('started','already_started') else 'not_applied',startup=startup)
     except Exception as exc:
         # A runtime mismatch must not prevent the user's game from starting.
         result={'enabled':True,'status':'not_applied','error':str(exc),'actual_render_fps_measured':False}
     destination=Path(root)/'outputs/efootball/personal-fps160-status.json'
     destination.parent.mkdir(parents=True,exist_ok=True)
     destination.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf8')
+
+
+def render_commands(options,width,height):
+    commands=[];target=None;display=options.get('display',{})
+    fps=options.get('frame_rate',{})
+    if fps.get('enabled'):commands.extend(['r.VSync 0','t.MaxFPS '+str(fps['target'])])
+    if display.get('enabled'):
+        import math
+        if min(width,height)<=0:raise ValueError('Display dimensions unavailable')
+        long_side,short_side=max(width,height),min(width,height)
+        short=min(display['height'],int(3840*short_side/long_side));long=round(short*long_side/short_side)
+        long-=long%2;short-=short%2
+        target=(long,short) if width>=height else (short,long)
+        commands.extend(['r.DynamicRes.OperationMode 0','r.ScreenPercentage 100',
+                         'r.MobileContentScaleFactor '+format(short/720,'.6f'),
+                         'r.SetRes '+str(target[0])+'x'+str(target[1])+'f'])
+    return commands,target
+
+
+def install_render_options(document,root):
+    options=document.get('game_settings',{})
+    if not (options.get('display',{}).get('enabled') or options.get('frame_rate',{}).get('enabled')):return
+    def worker():
+        destination=Path(root)/'outputs/efootball/personal-render-status.json'
+        result={'actual_render_resolution_measured':False,'actual_render_fps_measured':False,'status':'not_applied'}
+        try:
+            from java import jclass
+            activity=None
+            for attempt in range(45):
+                activity=jclass('com.epicgames.ue4.GameActivity').Get()
+                if activity is not None and activity.hasWindowFocus():break
+                time.sleep(1)
+            else:raise ValueError('Game activity did not become foreground')
+            point=jclass('android.graphics.Point')();activity.getWindowManager().getDefaultDisplay().getRealSize(point)
+            commands,target=render_commands(options,int(point.x),int(point.y))
+            # This public JNI method enqueues work on the actual game thread.
+            # Repeat once after initialization so the startup quality preset
+            # cannot immediately overwrite a queued resolution command.
+            for attempt in range(2):
+                if attempt:time.sleep(3)
+                for command in commands:activity.nativeConsoleCommand(command)
+            result.update(status='commands_queued',commands=commands,target_resolution=target,display_pixels=[int(point.x),int(point.y)])
+        except Exception as exc:result['error']=str(exc)
+        destination.parent.mkdir(parents=True,exist_ok=True);destination.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf8')
+    import threading
+    threading.Thread(target=worker,name='studio-render-options',daemon=True).start()
 
 
 def install_package_identity(document):
@@ -440,6 +506,7 @@ def install(namespace):
         _protected_runtime.install_root(root)
         install_package_identity(document)
         install_fps_options(document,root)
+        install_render_options(document,root)
         import legends_v10
         if document.get('native_binding'):
             import personal_binding

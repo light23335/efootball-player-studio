@@ -35,7 +35,7 @@ from custom_boosters import issues as booster_issues,validate_projects as valida
 
 PREFIX='assets/gateway-release/'
 NATIVE='custom-resources/legends-v10/'
-COMPILER_REVISION='v17-coach-links-identity-skills-1.9.6'
+COMPILER_REVISION='v17-controller-render-card-motion-1.9.7'
 
 
 def compact(value):return json.dumps(value,ensure_ascii=False,separators=(',',':')).encode('utf8')
@@ -163,7 +163,14 @@ class NativePackage:
             for pack in packs:
                 if not pack['members']:raise ValueError(pack['name']+'：卡包是空草稿，请先添加球员后再生成 APK')
             from workspace_tools import game_options
-            if not projects and not packs and not coaches and not game_options(self.store).get('enabled') and not body.get('force_fps160'):raise ValueError('请选择至少一名球员、教练、卡包，或启用 AI 组别 / 160 帧设置')
+            from game_settings import settings as read_game_settings
+            option_settings=read_game_settings(self.store)
+            from game_settings import normalize as normalize_game_settings
+            if body.get('force_fps160'):option_settings['frame_rate']={'enabled':True,'target':160}
+            if 'frame_rate' in body:option_settings['frame_rate']=body['frame_rate']
+            option_settings=normalize_game_settings(option_settings)
+            body=dict(body,export_settings=option_settings)
+            if not projects and not packs and not coaches and not game_options(self.store).get('enabled') and not body.get('force_fps160') and not any(v['enabled'] for v in option_settings.values()):raise ValueError('请选择球员、教练或卡包，或启用游戏设置')
             validate_boosters(projects,self._booster_labels())
             self.state={'phase':'working','message':'核对当前游戏原包与所选球员','players':len(projects)}
         threading.Thread(target=self._worker,args=(dict(body,projects=projects,packs=packs,coaches=coaches),),daemon=True).start()
@@ -310,6 +317,11 @@ class NativePackage:
                 from coach_portraits import compile_portraits,owned_paths
                 coach_art,coach_portrait_report=compile_portraits(body.get('coaches',[]),coaches,self.library)
                 art.extend(coach_art)
+                card_motion_report=[]
+                if body['export_settings']['card_motion']['enabled']:
+                    from card_motion import packages as motion_packages
+                    motion_art,card_motion_report=motion_packages(self.library.face_assets(),self.profile_resources)
+                    art.extend(motion_art)
                 cpk,table_report=compile_tables(original,projects,definitions,self.resources,bindings,coach_resources,replace_ids,replace_boosters)
                 src=Container(self.library.containers/'pc3700_mobile_and_10_P.utoc',engine_key)
                 out=work/'pc3700_mobile_and.utoc'
@@ -346,12 +358,19 @@ class NativePackage:
                 document['pack_policy']={'allow_china_edition':True}
                 from workspace_tools import game_options
                 document['game_options']=game_options(self.store)
-                document['frame_rate']={'force_160':body.get('force_fps160',False)}
+                export_settings=body['export_settings']
+                document['game_settings']=export_settings
+                document['card_motion_preflight']=card_motion_report
+                document['frame_rate']={**export_settings['frame_rate'],'force_160':export_settings['frame_rate']['enabled'] and export_settings['frame_rate']['target']==160}
                 document['installation']=installation
-                if document['frame_rate']['force_160']:
+                if export_settings['display']['enabled'] or export_settings['frame_rate']['enabled']:
+                    from native_display import verify_display
+                    with source.open('lib/arm64-v8a/libUE4.so') as render_engine:
+                        document['render_preflight']=verify_display(render_engine,self.profile_resources)
+                if document['frame_rate']['enabled']:
                     from native_fps import verify_fps160
                     with source.open('lib/arm64-v8a/libUE4.so') as fps_engine:
-                        document['frame_rate']['preflight']=verify_fps160(apk,fps_engine)
+                        document['frame_rate']['preflight']=verify_fps160(apk,fps_engine,document['frame_rate']['target'])
                 from pack_catalogue import REFERENCE
                 if REFERENCE in source.namelist():
                     excluded=json.loads(source.read(REFERENCE))
@@ -365,7 +384,7 @@ class NativePackage:
                 document['editor_registries']={'boosters':booster_registry,'coach_boosters':coach_registry.get('boosters',{}),'coach_links':coach_registry.get('links',{})}
                 document['coach_links']=list({r['id']:r for r in [*inherited.get('coach_links',[]),*new_link_routes]}.values())
                 for relative,content in cover_files.items():replacements[PREFIX+relative]=content
-                if identities or inherited.get('native_binding') or document['coach_links']:
+                if identities or inherited.get('native_binding') or document['coach_links'] or export_settings['controller']['enabled'] or export_settings['card_motion']['enabled']:
                     profile=json.loads((self.resources/'native-route-templates.json').read_text(encoding='utf8'))
                     profile['club_emblems']=True
                     profile['external_routes']=True
@@ -375,9 +394,14 @@ class NativePackage:
                     mini_profile=self.resources/'native-thumbnail-hook.json'
                     if not mini_profile.is_file():mini_profile=self.profile_resources/'native-thumbnail-hook.json'
                     profile['thumbnail_hook']=json.loads(mini_profile.read_text(encoding='utf8'))
+                    if export_settings['card_motion']['enabled']:
+                        from card_motion import stock_routes
+                        profile['thumbnail_hook']['stock_routes']=stock_routes(self.library,records)
                     from native_extensions import link_hooks
                     with source.open('lib/arm64-v8a/libUE4.so') as engine:
                         profile['native_hooks']=link_hooks(document['coach_links'],engine,link_schema(self.profile_resources))
+                        from game_settings import controller_hooks
+                        profile['native_hooks']+=controller_hooks(export_settings['controller'],engine,self.profile_resources)
                         from native_skill_effects import hooks as skill_hooks,required as skill_effects_required
                         if skill_effects_required(document['players'],catalog):profile['native_hooks']+=skill_hooks(engine,self.profile_resources)
                     with source.open('lib/arm64-v8a/libUE4.so') as engine:
@@ -405,6 +429,8 @@ class NativePackage:
                                            'position':definition['base_parameters'][0],
                                            'maximum_overall':definition['maximum_development']['overall'],
                                            'presentation_rarity':10 if definition['card_type'] in ('BigTime','Epic','Legendary') else 0})
+                    from card_presentation import repair_routes
+                    routes=repair_routes(routes,document['players'],records)
                     compose(original_binding,routes,profile)
                     document['native_binding']={'routes':routes,'profile':profile,'original_fingerprint':fingerprint(original_binding)}
                     from native_binding_source import installer_metadata
@@ -450,7 +476,7 @@ class NativePackage:
             temp=coach_path.with_suffix('.tmp');temp.write_bytes(compact(coach_registry));temp.replace(coach_path)
             report={'identities':identities,'native_art':art_reports,'packs':[{'uuid':p['uuid'],'agent_id':p['agent_id'],'name':p['name'],'members':len(p['members']),'skipped_members':p.get('skipped_members',[])} for p in packs],
                     'native_tables':table_report,'signature':verified,'live_data':live_report,
-                    'native_binding_routes':len(document.get('native_binding',{}).get('routes',[])),'frame_rate':document['frame_rate'],'installation':installation,
+                    'native_binding_routes':len(document.get('native_binding',{}).get('routes',[])),'frame_rate':document['frame_rate'],'game_settings':export_settings,'render_preflight':document.get('render_preflight'),'card_motion_preflight':card_motion_report,'installation':installation,
                     'coaches':[{'uuid':c['uuid'],'id':c['id'],'name':c['payload']['name']} for c in coaches],'coach_portraits':coach_portrait_report,
                     'source_apk':str(apk),'output':str(output),'engine_profile':release['base_release_id'],'resource_release':release['release_id'],
                     'in_game_tested':False,'progress_policy':'first grant only; existing instance retains live XP, training and statistics'}

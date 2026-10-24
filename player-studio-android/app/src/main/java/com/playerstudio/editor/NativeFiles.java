@@ -43,7 +43,7 @@ public final class NativeFiles {
         if (pending!=null) throw new IllegalStateException("已有文件选择窗口");
         if (!"open".equals(kind)) throw new IllegalArgumentException("请使用导出按钮保存文件");
         CompletableFuture<String> future=new CompletableFuture<>();pending=future;category=selectedCategory;
-        MainActivity activity=MainActivity.activity();
+        BaseActivity activity=BaseActivity.activity();
         activity.runOnUiThread(()->{
             Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE);
             intent.setType("image".equals(selectedCategory)?"image/*":"*/*");
@@ -111,13 +111,13 @@ public final class NativeFiles {
         exportSource=source;
         Intent intent=new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType(source.getName().endsWith(".apk")?"application/vnd.android.package-archive":"application/octet-stream");
-        intent.putExtra(Intent.EXTRA_TITLE,source.getName());MainActivity.activity().startActivityForResult(intent,101);
+        intent.putExtra(Intent.EXTRA_TITLE,source.getName());BaseActivity.activity().startActivityForResult(intent,101);
     }
     static void onResult(int request,int result,Intent data) {
         if(request==103) {
             File file=pendingInstall;pendingInstall=null;
             if(file!=null&&context.getPackageManager().canRequestPackageInstalls())launchInstaller(file);
-            else MainActivity.activity().showMessage("未允许安装，请授权后再次点击直接安装");
+            else BaseActivity.activity().showMessage("未允许安装，请授权后再次点击直接安装");
         } else if(request==100) {
             CompletableFuture<String> future=pending;if(future==null)return;
             if(result!=Activity.RESULT_OK || data==null || data.getData()==null){future.complete("");return;}
@@ -126,22 +126,22 @@ public final class NativeFiles {
         } else if(request==101 && result==Activity.RESULT_OK && data!=null && data.getData()!=null) {
             Uri uri=data.getData();File source=exportSource;
             io.execute(()->{try(InputStream input=new FileInputStream(source);OutputStream output=context.getContentResolver().openOutputStream(uri,"w")) {
-                if(output==null)throw new IOException("无法写入目标位置");copy(input,output);MainActivity.activity().showMessage("已导出 "+source.getName());
-            }catch(Exception e){MainActivity.activity().showMessage("导出失败："+e.getMessage());}});
+                if(output==null)throw new IOException("无法写入目标位置");copy(input,output);BaseActivity.activity().showMessage("已导出 "+source.getName());
+            }catch(Exception e){BaseActivity.activity().showMessage("导出失败："+e.getMessage());}});
         }
     }
     public static String install(String path) throws Exception {
         File folder=new File(home,"data/exports").getCanonicalFile();File file=new File(path).getCanonicalFile();
         if(!file.getParentFile().equals(folder)||!file.isFile()||!file.getName().endsWith(".apk"))throw new IOException("请选择本软件生成且尚未清除的 APK");
         if(!context.getPackageManager().canRequestPackageInstalls()) {
-            pendingInstall=file;MainActivity activity=MainActivity.activity();
+            pendingInstall=file;BaseActivity activity=BaseActivity.activity();
             activity.runOnUiThread(()->activity.startActivityForResult(new Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,Uri.parse("package:"+context.getPackageName())),103));
             return "permission";
         }
         launchInstaller(file);return "installer";
     }
     private static void launchInstaller(File file) {
-        MainActivity activity=MainActivity.activity();activity.runOnUiThread(()->{
+        BaseActivity activity=BaseActivity.activity();activity.runOnUiThread(()->{
             try {
                 Uri uri=new Uri.Builder().scheme("content").authority(context.getPackageName()+".exports").appendPath("export").appendPath(file.getName()).build();
                 Intent intent=new Intent(Intent.ACTION_VIEW).setDataAndType(uri,"application/vnd.android.package-archive").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);

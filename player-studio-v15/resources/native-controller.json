@@ -1,0 +1,68 @@
+{
+  "format": "native-controller-snapshot-v1",
+  "proof": "0x6772930 clones the device event tree before frame conversion; x28 points to that private per-device copy. Only this copy is remapped.",
+  "digital_offsets": [
+    32,
+    33,
+    34,
+    35,
+    36,
+    39,
+    37,
+    40,
+    38,
+    41,
+    47,
+    46,
+    42,
+    43,
+    44,
+    45
+  ],
+  "trigger_axes": [
+    76,
+    80
+  ],
+  "hat_axes": [
+    84,
+    88
+  ],
+  "table_offset": 864,
+  "options_offset": 852,
+  "hook": {
+    "name": "studio_connected_controller_mapping",
+    "address": 108473612,
+    "file_offset": 108457228,
+    "expected_hex": "89e340391f2003d5085dbb9b802340bd8ae740392101271e00a4082f411d0c4e0098600e001d600e00a4102f2198a00e00d8216e211d610e01cd08fce90308aa",
+    "body_hex": "ff0307d1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f27b09a911423bd5f15300f9e08705ade28f06ade49707ade69f08ade9031f2a8a8340395f010071ea079f1a29010a2a8a8740395f010071ea079f1a29050a2a8a8b40395f010071ea079f1a29090a2a8a8f40395f010071ea079f1a290d0a2a8a9340395f010071ea079f1a29110a2a8a9f40395f010071ea079f1a29150a2a8a9740395f010071ea079f1a29190a2a8aa340395f010071ea079f1a291d0a2a8a9b40395f010071ea079f1a29210a2a8aa740395f010071ea079f1a29250a2a8abf40395f010071ea079f1a29290a2a8abb40395f010071ea079f1a292d0a2a8aab40395f010071ea079f1a29310a2a8aaf40395f010071ea079f1a29350a2a8ab340395f010071ea079f1a29390a2a8ab740395f010071ea079f1a293d0a2a804f40bd2110001c0020211eeab79f1a29190a2a805340bd810f001c0020211eeab79f1a291d0a2a805b40bd0040211ec10e001c0020211eeab79f1a29310a2a805b40bd210e001c0020211eeab79f1a29350a2a805740bd0040211e610d001c0020211eeab79f1a29390a2a805740bdc10c001c0020211eeab79f1a293d0a2aca0c0010eb031f2aec031f2a4d39c1282d0100342f010d0aff010d6b81ffff549f010d6a41ffff546b010e2a8c010d2af7ffff176a0100538a8300396a0501538a8700396a0902538a8b00396a0d03538a8f00396a1104538a9300396a1505538a9f00396a1906538a9700396a1d07538aa300396a2108538a9b00396a2509538aa700396a290a538abf00396a2d0b538abb00396a310c538aab00396a350d538aaf00396a390e538ab300396a3d0f538ab700396a1906534001231e804f00bd6a1d07534001231e805300bd6a3d0f536d390e534a010d4b4001221e805700bd6a350d536d310c534a010d4b4001221e805b00bdca0400104b0140b9ab00003480c343fc814344fc81c303fc804304fc4b0540b98b000034804b40bd0040211e804b00bde08745ade28f46ade49747ade69f48adf15340f911421bd5e00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f27b49a9ff03079189e340391f2003d5085dbb9b802340bd5000005800021fd61c2d7706000000009a99993e00000000000000001f2003d500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "absolute_fixups": [
+      [
+        840,
+        108473628
+      ]
+    ],
+    "assembly": "sub sp,sp,#448\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x30,[sp,#144]\nmrs x17,nzcv\nstr x17,[sp,#160]\nstp q0,q1,[sp,#176]\nstp q2,q3,[sp,#208]\nstp q4,q5,[sp,#240]\nstp q6,q7,[sp,#272]\nmov w9,wzr\nldrb w10,[x28,#32]\ncmp w10,#0\ncset w10,ne\norr w9,w9,w10,lsl #0\nldrb w10,[x28,#33]\ncmp w10,#0\ncset w10,ne\norr w9,w9,w10,lsl #1\nldrb w10,[x28,#34]\ncmp w10,#0\ncset w10,ne\norr w9,w9,w10,lsl #2\nldrb w10,[x28,#35]\ncmp w10,#0\ncset w10,ne\norr w9,w9,w10,lsl #3\nldrb w10,[x28,#36]\ncmp w10,#0\ncset w10,ne\norr w9,w9,w10,lsl #4\nldrb w10,[x28,#39]\ncmp w10,#0\ncset w10,ne\norr w9,w9,w10,lsl #5\nldrb w10,[x28,#37]\ncmp w10,#0\ncset w10,ne\norr w9,w9,w10,lsl #6\nldrb w10,[x28,#40]\ncmp w10,#0\ncset w10,ne\norr w9,w9,w10,lsl #7\nldrb w10,[x28,#38]\ncmp w10,#0\ncset w10,ne\norr w9,w9,w10,lsl #8\nldrb w10,[x28,#41]\ncmp w10,#0\ncset w10,ne\norr w9,w9,w10,lsl #9\nldrb w10,[x28,#47]\ncmp w10,#0\ncset w10,ne\norr w9,w9,w10,lsl #10\nldrb w10,[x28,#46]\ncmp w10,#0\ncset w10,ne\norr w9,w9,w10,lsl #11\nldrb w10,[x28,#42]\ncmp w10,#0\ncset w10,ne\norr w9,w9,w10,lsl #12\nldrb w10,[x28,#43]\ncmp w10,#0\ncset w10,ne\norr w9,w9,w10,lsl #13\nldrb w10,[x28,#44]\ncmp w10,#0\ncset w10,ne\norr w9,w9,w10,lsl #14\nldrb w10,[x28,#45]\ncmp w10,#0\ncset w10,ne\norr w9,w9,w10,lsl #15\nldr s0,[x28,#76]\nldr s1,threshold\nfcmp s0,s1\ncset w10,ge\norr w9,w9,w10,lsl #6\nldr s0,[x28,#80]\nldr s1,threshold\nfcmp s0,s1\ncset w10,ge\norr w9,w9,w10,lsl #7\nldr s0,[x28,#88]\nfneg s0,s0\nldr s1,threshold\nfcmp s0,s1\ncset w10,ge\norr w9,w9,w10,lsl #12\nldr s0,[x28,#88]\nldr s1,threshold\nfcmp s0,s1\ncset w10,ge\norr w9,w9,w10,lsl #13\nldr s0,[x28,#84]\nfneg s0,s0\nldr s1,threshold\nfcmp s0,s1\ncset w10,ge\norr w9,w9,w10,lsl #14\nldr s0,[x28,#84]\nldr s1,threshold\nfcmp s0,s1\ncset w10,ge\norr w9,w9,w10,lsl #15\nadr x10,table\nmov w11,wzr\nmov w12,wzr\nloop:\nldp w13,w14,[x10],#8\ncbz w13,mapped\nand w15,w9,w13\ncmp w15,w13\nb.ne loop\ntst w12,w13\nb.ne loop\norr w11,w11,w14\norr w12,w12,w13\nb loop\nmapped:\nubfx w10,w11,#0,#1\nstrb w10,[x28,#32]\nubfx w10,w11,#1,#1\nstrb w10,[x28,#33]\nubfx w10,w11,#2,#1\nstrb w10,[x28,#34]\nubfx w10,w11,#3,#1\nstrb w10,[x28,#35]\nubfx w10,w11,#4,#1\nstrb w10,[x28,#36]\nubfx w10,w11,#5,#1\nstrb w10,[x28,#39]\nubfx w10,w11,#6,#1\nstrb w10,[x28,#37]\nubfx w10,w11,#7,#1\nstrb w10,[x28,#40]\nubfx w10,w11,#8,#1\nstrb w10,[x28,#38]\nubfx w10,w11,#9,#1\nstrb w10,[x28,#41]\nubfx w10,w11,#10,#1\nstrb w10,[x28,#47]\nubfx w10,w11,#11,#1\nstrb w10,[x28,#46]\nubfx w10,w11,#12,#1\nstrb w10,[x28,#42]\nubfx w10,w11,#13,#1\nstrb w10,[x28,#43]\nubfx w10,w11,#14,#1\nstrb w10,[x28,#44]\nubfx w10,w11,#15,#1\nstrb w10,[x28,#45]\nubfx w10,w11,#6,#1\nucvtf s0,w10\nstr s0,[x28,#76]\nubfx w10,w11,#7,#1\nucvtf s0,w10\nstr s0,[x28,#80]\nubfx w10,w11,#15,#1\nubfx w13,w11,#14,#1\nsub w10,w10,w13\nscvtf s0,w10\nstr s0,[x28,#84]\nubfx w10,w11,#13,#1\nubfx w13,w11,#12,#1\nsub w10,w10,w13\nscvtf s0,w10\nstr s0,[x28,#88]\nadr x10,options\nldr w11,[x10]\ncbz w11,no_swap\nldr d0,[x28,#0x3c]\nldr d1,[x28,#0x44]\nstr d1,[x28,#0x3c]\nstr d0,[x28,#0x44]\nno_swap:\nldr w11,[x10,#4]\ncbz w11,restore\nldr s0,[x28,#0x48]\nfneg s0,s0\nstr s0,[x28,#0x48]\nrestore:\nldp q0,q1,[sp,#176]\nldp q2,q3,[sp,#208]\nldp q4,q5,[sp,#240]\nldp q6,q7,[sp,#272]\nldr x17,[sp,#160]\nmsr nzcv,x17\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x30,[sp,#144]\nadd sp,sp,#448\nldrb w9,[x28,#0x38]\nnop\numaddl x8,w8,w27,x23\nldr s0,[x28,#0x20]\nldr x16,resume\nbr x16\n.align 3\nresume: .quad 108473628\nthreshold: .word 0x3e99999a\noptions: .word 0x75a13842,0x6531a65b\n.align 3\ntable: .quad 0x63edc7261a09e0b5"
+  },
+  "key_hook": {
+    "name": "studio_controller_dpad_key_events",
+    "address": 108472188,
+    "file_offset": 108455804,
+    "expected_hex": "a98201513f350071480c00542a28fdb04a292391888200918b0000104c6969386b090c8b60011fd68886009156000014f44f44a9f65743a9f85f42a9fdfb40a9",
+    "body_hex": "a84e00511f0d0071e80000548802088b1f040071e9079f1a09a900397001005800021fd6a98201513f35007169000054d000005800021fd6ca000058f000005800021fd61f2003d50c297706000000000070c700000000008c27770600000000",
+    "absolute_fixups": [
+      [
+        72,
+        108472588
+      ],
+      [
+        80,
+        13070336
+      ],
+      [
+        88,
+        108472204
+      ]
+    ],
+    "assembly": "sub w8,w21,#19\ncmp w8,#3\nb.hi stock\nadd x8,x20,x8\ncmp w0,#1\ncset w9,ne\nstrb w9,[x8,#0x2a]\nldr x16,tail\nbr x16\nstock:\nsub w9,w21,#96\ncmp w9,#13\nb.ls valid\nldr x16,tail\nbr x16\nvalid:\nldr x10,page\nldr x16,next\nbr x16\n.align 3\ntail: .quad 0x677290c\npage: .quad 0xc77000\nnext: .quad 0x677278c\n"
+  }
+}

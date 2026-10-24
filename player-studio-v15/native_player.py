@@ -152,5 +152,6 @@ def compile_player(project,catalog,costs,identity,template,nation_id,team_id,sou
     for i,n in maximum.pop('parameters').items():display_parameters[int(i)]=n
     maximum['parameters']=display_parameters
     return {'identity':identity,'owned':p,'base_parameters':base,'allocation':ledger,
+            'card_art_source':{k:(project.get('native_card') or {}).get(k) for k in ('source_id','native_style','native_agent')},
             'weekly_condition':project.get('weekly_condition','auto'),
             'maximum_development':maximum,'card_type':project['card_type'],'card_series':project.get('card_series',project['card_type'])}

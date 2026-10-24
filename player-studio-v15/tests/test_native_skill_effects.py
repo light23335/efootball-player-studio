@@ -11,7 +11,9 @@ class SkillDataTests(unittest.TestCase):
    self.assertEqual(visible_skills([25,variant,43]),[25,52,43])
  def test_native_text_keys_are_distinct_and_describe_the_visible_skills(self):
   groups=text_groups();self.assertTrue(groups)
-  self.assertEqual({text for g in groups for text in g['items'].values()},{'重炮攻门','长传好手','健步如飞'})
+  texts={text for g in groups for text in g['items'].values()}
+  self.assertTrue({'重炮攻门','长传好手','健步如飞'}<=texts)
+  self.assertIn('凌空抽射或蓄力达到 50% 的射门，射门偏差降低 20%。',texts)
 
 @unittest.skipUnless(APK.is_file(),'requires original V17 APK')
 class MatchInstructionTests(unittest.TestCase):

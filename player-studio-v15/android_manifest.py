@@ -80,6 +80,23 @@ class Manifest:
   if launcher:entries.extend([start('intent'),start('action',[('name','android.intent.action.MAIN')]),end('action'),start('category',[('name','android.intent.category.LAUNCHER')]),end('category'),end('intent')])
   entries.append(end('queries'))
   at=next(n for n,name,attrs in self.nodes() if name=='application');self.chunks[at:at]=entries
+ def add_activity_alias(self,name,target):
+  if any(tag=='activity-alias' and any(a['name']=='name' and a['value']==name for a in attrs) for _,tag,attrs in self.nodes()):return
+  attributes=sorted([('name',name,3,0x01010003),('targetActivity',target,3,0x01010202),('exported',0,18,0x01010010)],key=lambda a:a[3])
+  part=bytearray(struct.pack('<HHIII',0x102,16,36+20*len(attributes),0,NONE)+struct.pack('<IIHHHHHH',NONE,self.index('activity-alias'),20,20,len(attributes),0,0,0));ids={}
+  for key,value,kind,resource in attributes:
+   index=self.index(key);ids[index]=resource;data=self.index(value) if kind==3 else value
+   part.extend(struct.pack('<IIIHBBI',self.index(ANDROID),index,data if kind==3 else NONE,8,0,kind,data))
+  resource=next((n for n,c in enumerate(self.chunks) if struct.unpack_from('<H',c)[0]==0x180),None)
+  values=list(struct.unpack('<'+'I'*((len(self.chunks[resource])-8)//4),self.chunks[resource][8:])) if resource is not None else []
+  values.extend([0]*max(0,max(ids)+1-len(values)))
+  for index,value in ids.items():values[index]=value
+  encoded=bytearray(struct.pack('<HHI',0x180,8,8+len(values)*4)+struct.pack('<'+'I'*len(values),*values))
+  if resource is not None:self.chunks[resource]=encoded
+  else:self.chunks.insert(self.pool+1,encoded)
+  end=bytearray(struct.pack('<HHIIIII',0x103,16,24,0,NONE,NONE,self.index('activity-alias')))
+  at=next(n for n,c in enumerate(self.chunks) if struct.unpack_from('<H',c)[0]==0x103 and self.string(struct.unpack_from('<I',c,20)[0])=='application')
+  self.chunks[at:at]=[part,end]
  def bytes(self):
   header,styles,flags,style_offsets,style_data=self.pool_meta;utf8=bool(flags&256);data=bytearray();offsets=[]
   def length(n):

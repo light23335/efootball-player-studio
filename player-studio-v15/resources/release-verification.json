@@ -1,13 +1,13 @@
 {
   "game": "V17",
-  "version": "1.9.6",
+  "version": "1.9.7",
   "backend_tests": {
-    "passed": 213,
+    "passed": 231,
     "skipped": 1,
     "failed": 0
   },
   "frontend_tests": {
-    "passed": 33,
+    "passed": 35,
     "failed": 0
   },
   "public_content": {
@@ -35,7 +35,19 @@
     "bound_unbound_repeated_manifest_roundtrip": true,
     "project_sharing_preserves_links_numbers_binding": true,
     "native_match_skill_instructions_executed": true,
-    "original_native_worker_all_hooks_install_in_isolated_memory": true
+    "original_native_worker_all_hooks_install_in_isolated_memory": true,
+    "connected_controller_snapshot_mapping": true,
+    "fc_default_and_custom_combinations": true,
+    "controller_press_release_and_trigger_axes": true,
+    "coach_native_four_ten_bit_slots": true,
+    "ai_style_native_parameters_and_labels": true,
+    "skill_names_and_descriptions_in_compiled_cpk": true,
+    "bound_card_native_art_series": true,
+    "arm64_process_on_x86_android_kernel_startup": true,
+    "editable_frame_cap": true,
+    "render_jni_entry": true,
+    "visible_card_tick_resume": true,
+    "original_mini_linked_series": true
   },
   "limits": {
     "custom_players": 10000,
@@ -44,6 +56,6 @@
     "coach_custom_link_ids": 256
   },
   "in_game_tested": false,
-  "game_acceptance": "The game was not launched. New match skill feel and animation results require in-game acceptance.",
+  "game_acceptance": "The game was not launched. Physical-controller feel, actual frame rate/resolution and on-device card animation require in-game acceptance.",
   "personal_data_policy": "Publish clean artifacts only; installed editor, personal projects and signing keys are not replaced."
 }

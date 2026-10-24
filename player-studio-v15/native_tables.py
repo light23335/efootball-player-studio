@@ -186,12 +186,11 @@ def compile_tables(original,projects,definitions,resources,bindings,extra=None,r
     texts,text_routes=booster_rows(projects,abilities)
     from native_skill_effects import text_groups
     from native_strings import merge_groups
-    skill_texts=text_groups(resources)
     for name in cpk.files:
         if name.endswith('/string/all_diff.str'):
             content=cpk.read(name)
             if texts:content=merge_strings(content,texts,{text_key(bid)+j for bid in replace_boosters for j in (0,1)})
-            replacements[name]=merge_groups(content,skill_texts)
+            replacements[name]=merge_groups(content,text_groups(resources,name.split('/')[0]))
     weekly,weekly_added=weekly_table(unwrap(cpk.read(WEEKLY)),projects,definitions,bindings,replace_ids)
     replacements[WEEKLY]=wrap(weekly,cpk.read(WEEKLY))
     replacements[BOOT_ASSIGNMENTS],equipment_report=compile_boots(cpk,projects,definitions,bindings,replace_ids)

@@ -16,3 +16,10 @@ test('clearing one link preserves the other link and unsupported types cannot be
   updateLinkup(row,{dataset:{linkSlot:'0',linkField:'template_id'},value:''},[type]);assert.equal(row.linkups[0],null);assert.equal(row.linkups[1].template_id,8);
   updateLinkup(row,{dataset:{linkSlot:'0',linkField:'template_id'},value:'999'},[type]);assert.equal(row.linkups[0],null);
 });
+test('stored style 9 displays The Destroyer without applying the runtime conversion twice',()=>{
+ const c=structuredClone(catalog);c.PLAY_STYLES={attack:{14:'创意指挥官'},defense:{9:'破坏者'}};
+ c.COACH_LINK_SCHEMA.style_to_parameter=Array.from({length:36},(_,i)=>i===9?14:i);
+ const row={linkups:[{...type,source_positions:[5],target_positions:[5],source_style:9,target_style:9},null]};
+ const html=renderLinkups(row,c);assert.match(html,/<option value="9" selected>破坏者<\/option>/);
+ assert.match(linkupText(row,c),/破坏者/);assert.doesNotMatch(linkupText(row,c),/创意指挥官/);
+});

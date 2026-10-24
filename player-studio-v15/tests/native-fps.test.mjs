@@ -2,17 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {NativePackageUI} from '../web/native-package-ui.js';
 
-test('160 FPS export checkbox defaults off, survives rendering and submits a boolean',async()=>{
+test('export links to editable render and controller settings and preserves the legacy FPS API',async()=>{
  const handlers={};const previous=globalThis.document;
  globalThis.document={addEventListener:(name,handler)=>handlers[name]=handler,querySelector:()=>null};
  try{
   const requests=[];const ui=new NativePackageUI({api:async(path,body)=>{requests.push({path,body});return{phase:'done'};},project:()=>({package_id:'sample'}),toast:()=>{}});
   ui.update=()=>{};ui.poll=()=>{};
-  assert.match(ui.render(),/data-native-fps160 >强开 160 帧/);
+  assert.match(ui.render(),/设置分辨率、帧率与手柄键位/);
   await ui.click({target:{closest:()=>({disabled:false,dataset:{},hasAttribute:name=>name==='data-native-build'})}});
   assert.equal(requests.at(-1).body.force_fps160,false);
   handlers.change({target:{dataset:{},checked:true,hasAttribute:name=>name==='data-native-fps160'}});
-  assert.match(ui.render(),/data-native-fps160 checked/);
+  assert.match(ui.render(),/data-page="tools"/);
   await ui.click({target:{closest:()=>({disabled:false,dataset:{},hasAttribute:name=>name==='data-native-build'})}});
   assert.equal(requests.at(-1).body.force_fps160,true);
   handlers.change({target:{dataset:{},checked:false,hasAttribute:name=>name==='data-native-fps160'}});

@@ -78,8 +78,17 @@ def manifest_version(raw,code,name):
     data[at:at+size]=rebuilt;struct.pack_into('<I',data,4,len(data))
     return bytes(data)
 
+def controller_activity_dex(raw):
+    """Keep the established lifecycle as BaseActivity for the new input entry."""
+    import zlib
+    before=b'Lcom/playerstudio/editor/MainActivity';after=b'Lcom/playerstudio/editor/BaseActivity'
+    if before not in raw:return raw
+    data=bytearray(raw.replace(before,after))
+    data[12:32]=hashlib.sha1(data[32:]).digest();struct.pack_into('<I',data,8,zlib.adler32(data[12:])&0xffffffff)
+    return bytes(data)
+
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--base',required=True);p.add_argument('--output',required=True);p.add_argument('--key',required=True);p.add_argument('--password-file',required=True);p.add_argument('--work',required=True);p.add_argument('--installed-games-dex');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--base',required=True);p.add_argument('--output',required=True);p.add_argument('--key',required=True);p.add_argument('--password-file',required=True);p.add_argument('--work',required=True);p.add_argument('--installed-games-dex');p.add_argument('--controller-dex');a=p.parse_args()
     core=ROOT/'core' if (ROOT/'core').is_dir() else ROOT.parent/'player-studio-v15';sys.path.insert(0,str(core))
     from apk_format import replace_entries,sign_v2,verify_v2
     from cryptography.hazmat.primitives.serialization.pkcs12 import load_key_and_certificates
@@ -112,10 +121,22 @@ def main():
         build=json.loads(source.read('assets/chaquopy/build.json'));build['assets']['app.imy']=hashlib.sha1(app.getvalue()).hexdigest()
         changes={'assets/chaquopy/app.imy':app.getvalue(),'assets/chaquopy/build.json':json.dumps(build,separators=(',',':')).encode(),
                  'assets/studio-bundle.zip':bundle.getvalue(),'assets/studio-bundle.sha256':hashlib.sha256(bundle.getvalue()).hexdigest().encode(),
-                 'AndroidManifest.xml':manifest_version(source.read('AndroidManifest.xml'),196000,'1.9.6-android.1')}
+                 'AndroidManifest.xml':manifest_version(source.read('AndroidManifest.xml'),197000,'1.9.7-android.1')}
         from android_manifest import Manifest
         manifest=Manifest(changes['AndroidManifest.xml'])
         if not any(name=='queries' for _,name,_ in manifest.nodes()):manifest.add_queries(['com.efootball.revival.local','com.efootball.revival.resources','com.efootball.revival.diyer','com.efootball.revival.diyassets'],launcher=True)
+        controller_marker='assets/studio-controller-dex.txt'
+        if a.controller_dex:
+            if controller_marker in source.namelist():name=source.read(controller_marker).decode().strip()
+            else:
+                existing=[n for n in source.namelist() if re.fullmatch(r'classes\d*\.dex',n)]
+                for entry in existing:
+                    raw=source.read(entry);updated=controller_activity_dex(raw)
+                    if updated!=raw:changes[entry]=updated
+                name='classes'+str(max([1]+[int(re.fullmatch(r'classes(\d*)\.dex',n).group(1) or 1) for n in existing])+1)+'.dex'
+            changes[name]=Path(a.controller_dex).read_bytes();changes[controller_marker]=name.encode()
+            manifest.add_activity_alias('com.playerstudio.editor.BaseActivity','com.playerstudio.editor.MainActivity')
+        elif controller_marker not in source.namelist():raise ValueError('This release requires the compiled physical-controller Java helper')
         changes['AndroidManifest.xml']=manifest.bytes()
         marker='assets/studio-installed-games-dex.txt'
         if a.installed_games_dex:
@@ -140,7 +161,7 @@ def main():
                 raw.seek(entry.header_offset+26);length,extra=struct.unpack('<HH',raw.read(4))
                 alignment=16384 if entry.filename.endswith('.so') else 4
                 if (entry.header_offset+30+length+extra)%alignment:raise ValueError('APK alignment failure: '+entry.filename)
-    report={'version':'1.9.6-android.1','version_code':196000,'path':str(Path(a.output).resolve()),'bytes':Path(a.output).stat().st_size,'sha256':hashlib.sha256(Path(a.output).read_bytes()).hexdigest(),'signature':verification,'base_java_and_codecs_unchanged':True,'installed_games_helper_added':True}
+    report={'version':'1.9.7-android.1','version_code':197000,'path':str(Path(a.output).resolve()),'bytes':Path(a.output).stat().st_size,'sha256':hashlib.sha256(Path(a.output).read_bytes()).hexdigest(),'signature':verification,'base_activity_lifecycle_preserved':True,'physical_controller_helper_added':bool(a.controller_dex),'native_codecs_unchanged':True,'installed_games_helper_added':True}
     Path(a.output).with_suffix('.build.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8');print(json.dumps(report,ensure_ascii=False))
 
 if __name__=='__main__':main()

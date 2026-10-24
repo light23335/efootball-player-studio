@@ -15,6 +15,20 @@ class Fps160Tests(unittest.TestCase):
  def test_original_engine_and_five_hook_sites_verify_without_writing(self):
   with zipfile.ZipFile(self.apk) as z,z.open('lib/arm64-v8a/libUE4.so') as engine:report=verify_fps160(self.apk,engine)
   self.assertEqual(report['native_hooks_verified'],5);self.assertTrue(report['engine_instructions_verified'])
+ def test_translated_arm64_process_uses_its_abi_without_changing_global_uname(self):
+  import ctypes,threading
+  for abi,status in [('aarch64-linux-android','started'),('x86_64-linux-android','not_android_arm64')]:
+   module=fps_module(self.apk);system=types.SimpleNamespace(uname=lambda:types.SimpleNamespace(machine='x86_64'))
+   module.os=system;module.sys=types.SimpleNamespace(platform='linux',byteorder='little',implementation=types.SimpleNamespace(_multiarch=abi));module.ctypes=ctypes;module._lock=threading.Lock();started=[]
+   module.threading=types.SimpleNamespace(Thread=lambda **kw:types.SimpleNamespace(start=lambda:started.append(kw)))
+   prepare_fps160(module,240)
+   with patch.dict(sys.modules,{'java':types.ModuleType('java')}):self.assertEqual(module.start('temporary-test-root')['status'],status)
+   self.assertEqual(system.uname().machine,'x86_64');self.assertEqual(len(started),int(status=='started'))
+ def test_custom_targets_are_in_native_code_and_label(self):
+  for target in (15,60,144,240,999):
+   module=fps_module(self.apk);report=prepare_fps160(module,target);raw=bytes.fromhex(module.PAYLOAD['blob_hex'])
+   self.assertEqual(struct.unpack_from('<I',raw,620)[0],0x52800017|(target<<5));self.assertEqual(raw[1104:1110].decode('utf-16le').strip(),str(target));self.assertEqual(module.display_refresh_for_enum(5),target)
+   self.assertEqual(report['target_fps'],target)
  def test_disabled_option_does_not_import_or_alter_original_fps(self):
   with tempfile.TemporaryDirectory() as folder:
    original=fps_module(self.apk);before=copy.deepcopy(original.PAYLOAD)

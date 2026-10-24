@@ -11,6 +11,7 @@ test('only player editing needs a loaded player; fresh slots stay locked until t
  assert.equal(playerReady({identity:{name:'新建球员 1'},status:'new-player-slot'}),false);
  assert.equal(playerReady({identity:{name:'新建球员 1'},status:'new-player-slot',source_player:{id:'7511'}}),true);
  assert.equal(playerReady({identity:{name:'导入的自制球员'}}),true);
+ assert.equal(playerReady({identity:{name:'Adam Lallana'},status:'new-player-slot',model:{asset:'own.glb'},native_card:{version:1}}),true);
  for(const id of ['library','personal','packs','coaches','native','tools','apk'])assert.equal(editorPages.has(id),false);
 });
 test('a user-collapsed active navigation group stays closed through background rerenders',()=>{

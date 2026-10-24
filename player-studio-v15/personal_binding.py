@@ -300,7 +300,15 @@ def _thumbnail_hook(payload,blob,routes,profile):
             if not isinstance(value,str) or len(value)>22 or any(c not in '0123456789abcdefghijklmnopqrstuvwxyz_' for c in value):
                 raise ValueError('小头像原生图层名称无效')
             raw=value.encode('ascii');rows.extend(bytes([len(raw)*2])+raw.ljust(23,b'\0'))
-    if not rows:return
+    stock=bytearray()
+    for route in sorted(profile.get('stock_routes',[]),key=lambda r:r['key']):
+        if type(route['key']) is not int or not 0<=route['key']<2**35 or len(route['names'])!=2:raise ValueError('原版小卡动画索引无效')
+        stock.extend(struct.pack('<Q',route['key']+1))
+        for value in route['names']:
+            if not isinstance(value,str) or len(value)>22 or any(c not in '0123456789abcdefghijklmnopqrstuvwxyz_' for c in value):raise ValueError('原版小卡动画名称无效')
+            raw=value.encode('ascii');stock.extend(bytes([len(raw)*2])+raw.ljust(23,b'\0'))
+    if not rows and not stock:return
+    stock.extend(bytes(56))
     rows.extend(bytes(152));blob.extend(bytes(-len(blob)%8));start=len(blob);words=[];labels={};branches=[];calls=[]
     def emit(w):words.append(w)
     def pair(op,a,b,off,scale):return op|((off//scale)<<15)|(b<<10)|(31<<5)|a
@@ -310,7 +318,7 @@ def _thumbnail_hook(payload,blob,routes,profile):
     emit(pair(0xa9000000,18,30,144,8));emit(0xd53b4208);emit(0xf90053e8)
     for reg in range(0,8,2):emit(pair(0xad000000,reg,reg+1,176+reg*16,16))
     table_ref=len(words);emit(0)
-    labels['loop']=len(words);emit(0xf9400128);branch('cbz','done',8)
+    labels['loop']=len(words);emit(0xf9400128);branch('cbz','stock',8)
     emit(0xeb0802ff);branch('eq','match');emit(0x91026129);branch('b','loop') # cmp x23,x8; add x9,x9,#152
     labels['match']=len(words);emit(0xf900a3e9) # resident source record at sp+320
     for slot in range(6):
@@ -318,6 +326,19 @@ def _thumbnail_hook(payload,blob,routes,profile):
         emit(0xf940a3e1);emit(0x39400022|(offset<<10));emit(0x53017c42) # ldrb w2,[x1,#offset]; lsr w2,w2,#1
         emit(0x91000021|((offset+1)<<10));emit(0x91000260|((profile['mini_offset']+slot*24)<<10))
         calls.append(len(words));emit(0);emit(0xd63f0200)
+    branch('b','done')
+    labels['stock']=len(words);stock_ref=len(words);emit(0);emit(0xd35cfeea);emit(0x9100054a)
+    labels['stock_loop']=len(words);emit(0xf9400128);branch('cbz','done',8)
+    emit(0xeb08015f);branch('eq','stock_match');emit(0x9100e129);branch('b','stock_loop')
+    labels['stock_match']=len(words);emit(0xf900a3e9)
+    for entry,slot in enumerate((1,5)):
+        offset=8+entry*24
+        emit(0xf940a3e1);emit(0x39400022|(offset<<10));emit(0x53017c42)
+        # An empty stock entry leaves the game's original layer intact.
+        branch('cbz','stock_next_'+str(entry),2)
+        emit(0x91000021|((offset+1)<<10));emit(0x91000260|((profile['mini_offset']+slot*24)<<10))
+        calls.append(len(words));emit(0);emit(0xd63f0200)
+        labels['stock_next_'+str(entry)]=len(words)
     labels['done']=len(words)
     for reg in range(0,8,2):emit(pair(0xad400000,reg,reg+1,176+reg*16,16))
     emit(0xf94053e8);emit(0xd51b4208)
@@ -328,14 +349,18 @@ def _thumbnail_hook(payload,blob,routes,profile):
     literals={}
     for name,value in [('assign',profile['assign']),('resume',profile['address']+4),('call',profile['original_call'])]:
         literals[name]=len(words);payload.setdefault('absolute_fixups',[]).append([start+len(words)*4,value]);words.extend([0,0])
-    row_at=start+len(words)*4;delta=row_at-(start+table_ref*4)
+    stock_at=start+len(words)*4;row_at=stock_at+len(stock);delta=row_at-(start+table_ref*4)
+    if not -(1<<20)<=delta<(1<<20):raise ValueError('小卡动画索引超出代码引用范围')
     words[table_ref]=0x10000009|((delta&3)<<29)|(((delta>>2)&0x7ffff)<<5)
+    delta=stock_at-(start+stock_ref*4)
+    if not -(1<<20)<=delta<(1<<20):raise ValueError('原版小卡动画索引超出代码引用范围')
+    words[stock_ref]=0x10000009|((delta&3)<<29)|(((delta>>2)&0x7ffff)<<5)
     for at,target,reg in [(at,literals['assign'],16) for at in calls]+[(resume,literals['resume'],30),(original_call,literals['call'],16)]:
         words[at]=0x58000000|(((target-at)&0x7ffff)<<5)|reg
     for at,kind,label,reg in branches:
         delta=labels[label]-at;words[at]=(0x14000000|(delta&0x3ffffff) if kind=='b' else
             (0xb4000000|reg if kind=='cbz' else 0x54000000)|((delta&0x7ffff)<<5))
-    blob.extend(struct.pack('<'+'I'*len(words),*words));blob.extend(rows)
+    blob.extend(struct.pack('<'+'I'*len(words),*words));blob.extend(stock);blob.extend(rows)
     payload['hooks'].append({'name':'personal_mobile_icon_layers','address':profile['address'],'offset':start,'expected_hex':profile['expected_hex']})
 
 

@@ -138,7 +138,7 @@ def build_catalogue(apk,resources):
         return {'players':len(records),'managed_cards':len(managed),'coaches':coaches,'boosters':options['boosters'],'skills':options['skills'],'verified_level_cards':sum(row[7] is not None for row in records),'tables':{k:len(v) for k,v in tables.items() if isinstance(v,dict)}}
 
 def read_coaches(archive,resources):
-    from native_coaches import COACH,BOOSTER,TACTICS,ATTRIBUTES
+    from native_coaches import COACH,BOOSTER,TACTICS,ATTRIBUTES,ability_ids,SLOT_LAYOUT
     sources=[Cpk(archive.read(n)) for n in (PREFIX+'livedata/dt870_mobile_and.cpk',PREFIX+'custom-resources/legends-v10/dt870_mobile_and.cpk') if n in archive.namelist()]
     raw=bonus=None
     for source in sources:
@@ -159,7 +159,7 @@ def read_coaches(archive,resources):
         if cid not in old:prior['pack_title']=''
         prior['raw_payload_verified']=cid in old
         prior['tactics']={name:(value>>bit)&127 for name,bit in TACTICS.items()}
-        ids=[(value>>bit)&511 for bit in (160,148,128,137)];effects={};unmapped=[]
+        ids=ability_ids(row);effects={};unmapped=[]
         for bid in ids[:2]:
             if not bid:continue
             attr,amount=boosts.get(bid,(None,0))
@@ -174,7 +174,7 @@ def read_coaches(archive,resources):
     from personal_source import PATH as personal_path
     personal=json.loads(archive.read(personal_path)) if personal_path in archive.namelist() else {}
     previous['linkup_types']=read_catalogue(link_source,coaches,resources,personal.get('coach_links',[])) if link_source else []
-    previous['coach_options_revision']='native-boosters-2-and-links-2-v1'
+    previous['coach_options_revision']='native-boosters-2-and-links-2-v1';previous['coach_slot_layout']=SLOT_LAYOUT
     previous['coaches']=coaches;(resources/'coaches.json').write_text(json.dumps(previous,ensure_ascii=False,indent=2),encoding='utf8');return len(coaches)
 
 def index_assets(library):

@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "source": "V17 native 36-byte special-skill UI descriptors; name lookup 0x82bb658 -> 0x82bb60c, plus localized text deltas",
+  "rows": [
+    {
+      "address": 12825156,
+      "id": 24,
+      "name_msg": 23068808,
+      "description_msg": 23134367,
+      "name_group": "E15W",
+      "description_group": "E18T"
+    },
+    {
+      "address": 12825552,
+      "id": 51,
+      "name_msg": 23068821,
+      "description_msg": 23134391,
+      "name_group": "E15W",
+      "description_group": "E18T"
+    },
+    {
+      "address": 12825588,
+      "id": 52,
+      "name_msg": 23068822,
+      "description_msg": 23134392,
+      "name_group": "E15W",
+      "description_group": "E18T"
+    },
+    {
+      "address": 12825660,
+      "id": 43,
+      "name_msg": 23068819,
+      "description_msg": 23134389,
+      "name_group": "E15W",
+      "description_group": "E18T"
+    },
+    {
+      "address": 12825696,
+      "id": 68,
+      "name_msg": 23068837,
+      "description_msg": 23134393,
+      "name_group": "E15W",
+      "description_group": "E18T"
+    },
+    {
+      "address": 12825732,
+      "id": 25,
+      "name_msg": 76284566,
+      "description_msg": 76284567,
+      "name_group": "Any13T",
+      "description_group": "Any13T"
+    }
+  ]
+}

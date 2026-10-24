@@ -40,7 +40,7 @@ def normalize(value,info=None):
         if not isinstance(positions,list) or not positions or any(type(p) is not int or not 0<=p<=12 for p in positions):
             raise ValueError('核心球员和关键球员必须分别选择至少一个有效位置')
         style=value.get(role+'_style')
-        if type(style) is not int or not 0<=style<=34:raise ValueError('心有灵犀比赛风格编号无效')
+        if type(style) is not int or not 0<=style<=35:raise ValueError('心有灵犀比赛风格编号无效')
         result[role+'_positions']=sorted(set(positions));result[role+'_style']=style
     return result
 
@@ -99,10 +99,32 @@ def read_catalogue(cpk,coaches,resources,routes=()):
             for ident,row in sorted(records.items()) if str(ident) in info['effect_by_template']]
 
 
-def repair_legacy(document,info=None):
+def repair_legacy(document,info=None,resources=None):
     """Repair previously imported read-only coach options without touching saves."""
-    if document.get('coach_options_revision')=='native-boosters-2-and-links-2-v1':return document
     info=info or schema();known=info.get('booster_records',{});templates=info.get('templates',[])
+    from native_coaches import SLOT_LAYOUT,COACH,ability_ids
+    if resources and document.get('coach_slot_layout')!=SLOT_LAYOUT:
+        import zipfile
+        from native_cpk import Cpk
+        report=Path(resources)/'import-report.json'
+        try:
+            apk=json.loads(report.read_text(encoding='utf8'))['apk'];native={}
+            with zipfile.ZipFile(apk) as archive:
+                for source in ('livedata','custom-resources/legends-v10'):
+                    cpk=Cpk(archive.read('assets/gateway-release/'+source+'/dt870_mobile_and.cpk'))
+                    if COACH not in cpk.files:continue
+                    raw=unwrap(cpk.read(COACH))
+                    if len(raw)%176:raise ValueError('教练表长度改变')
+                    for at in range(0,len(raw),176):native[str(int.from_bytes(raw[at:at+8],'little'))]=ability_ids(raw[at:at+176])
+            for coach in document['coaches']:
+                if str(coach['id']) in native:
+                    coach['ability_ids']=native[str(coach['id'])]
+                    coach.setdefault('raw_payload',{})['ability_id']=coach['ability_ids']
+            document.pop('coach_options_revision',None);document['coach_slot_layout']=SLOT_LAYOUT
+        except (OSError,KeyError,ValueError,zipfile.BadZipFile):pass
+    if document.get('coach_options_revision')=='native-boosters-2-and-links-2-v1':
+        for row in document.get('linkup_types',[]):row['label']=info.get('template_labels',{}).get(str(row['template_id']),row.get('label',''))
+        return document
     indexed={t['template_id']:t for t in templates}
     for coach in document.get('coaches',[]):
         ids=coach.get('ability_ids') or coach.get('raw_payload',{}).get('ability_id',[])

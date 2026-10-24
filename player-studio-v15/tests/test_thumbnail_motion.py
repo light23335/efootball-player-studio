@@ -48,9 +48,10 @@ class NativeMiniHookTests(unittest.TestCase):
         except ImportError:self.skipTest('optional ARM64 emulator')
         hook={'address':0x120000,'original_call':0x130000,'assign':0x140000,'mini_offset':440,'expected_hex':'00'*64}
         native_names=['8737832_b','0501_278_f02','','8737832_m','','0501_m06']
+        stock_id=89135066911146;hook['stock_routes']=[{'key':stock_id>>28,'names':['0501_278_f02','0501_m06']}]
         payload={'hooks':[]};blob=bytearray();_thumbnail_hook(payload,blob,[{'cardId':11,'thumbnail_names':['a']*6},{'cardId':29,'thumbnail_names':native_names}],hook)
         for at,value in payload['absolute_fixups']:struct.pack_into('<Q',blob,at,value)
-        for cid in (29,37):
+        for cid in (29,37,stock_id,stock_id+99):
             with self.subTest(card=cid):
                 uc=Uc(UC_ARCH_ARM64,UC_MODE_ARM);uc.mem_map(0x100000,0x10000);uc.mem_write(0x100000,bytes(blob))
                 for address in (0x120000,0x130000,0x140000,0x300000,0x400000):uc.mem_map(address,0x10000)
@@ -76,7 +77,9 @@ class NativeMiniHookTests(unittest.TestCase):
                         returned.append(True);vm.emu_stop()
                 uc.hook_add(UC_HOOK_CODE,intercept);uc.emu_start(0x100000,0x150000,count=2000)
                 self.assertTrue(returned)
-                self.assertEqual(calls,[(0x300000+440+i*24,n) for i,n in enumerate(native_names)] if cid==29 else [])
+                expected_calls=([(0x300000+440+i*24,n) for i,n in enumerate(native_names)] if cid==29 else
+                                [(0x300000+440+24,'0501_278_f02'),(0x300000+440+5*24,'0501_m06')] if cid>>28==stock_id>>28 else [])
+                self.assertEqual(calls,expected_calls)
 
     def test_old_routes_do_not_gain_an_unconfigured_hook(self):
         payload={};blob=bytearray();_thumbnail_hook(payload,blob,[{'cardId':1}],{})

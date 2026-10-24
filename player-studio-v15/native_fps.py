@@ -39,8 +39,8 @@ class EngineMemory:
     def close(self):
         if self.owns:self.file.close()
 
-def verify_fps160(apk,engine):
-    module=fps_module(apk);result=prepare_fps160(module);memory=EngineMemory(engine)
+def verify_fps160(apk,engine,target=160):
+    module=fps_module(apk);result=prepare_fps160(module,target);memory=EngineMemory(engine)
     try:module.validate(memory,0)
     finally:memory.close()
     return dict(result,native_hooks_verified=len(module.PAYLOAD['hooks']),engine_instructions_verified=True)

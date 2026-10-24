@@ -1,7 +1,8 @@
 export const editorPages=new Set(['profile','abilities','training','skills','card','model']);
 export function playerReady(project){
+ const authored=project&&(project.native_card||project.model?.asset||project.appearance?.portrait);
  return Boolean(project&&(project.source_player?.id||project.editor_ready||
-  (project.identity?.name?.trim()&&project.status!=='new-player-slot')));
+  (project.identity?.name?.trim()&&(project.status!=='new-player-slot'||authored))));
 }
 
 // Keep the scroll container and group controls stable while editing rerenders.

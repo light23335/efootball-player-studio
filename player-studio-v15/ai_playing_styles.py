@@ -8,11 +8,11 @@ read preserved Player.bin records first, just as the game does for AI styles.
 """
 FIELDS={
  'trickster':{'label':'魔术师','english':'Trickster','bit':616,'parameter':63},
- 'mazing_run':{'label':'内切突破','english':'Mazing Run','bit':625,'parameter':64},
+ 'mazing_run':{'label':'惊人突破','english':'Mazing Run','bit':625,'parameter':64},
  'speeding_bullet':{'label':'疾速子弹','english':'Speeding Bullet','bit':675,'parameter':65},
- 'incisive_run':{'label':'突破专家','english':'Incisive Run','bit':650,'parameter':66},
- 'long_ball_expert':{'label':'长传专家','english':'Long Ball Expert','bit':680,'parameter':67},
- 'early_cross':{'label':'快速传中','english':'Early Crosser','bit':351,'parameter':68},
+ 'incisive_run':{'label':'内切突破','english':'Incisive Run','bit':650,'parameter':66},
+ 'long_ball_expert':{'label':'长球专家','english':'Long Ball Expert','bit':680,'parameter':67},
+ 'early_cross':{'label':'提前传中手','english':'Early Crosser','bit':351,'parameter':68},
  'long_ranger':{'label':'重炮手','english':'Long Ranger','bit':647,'parameter':69},
 }
 

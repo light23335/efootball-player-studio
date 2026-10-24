@@ -31,16 +31,26 @@ def hooks(engine,resources=None):
         hook.pop('assembly',None)
     return result
 
-def text_groups(resources=None):
-    path=(Path(resources) if resources else RESOURCE)/'skill-labels-zh.json'
-    if not path.is_file():path=RESOURCE/'skill-labels-zh.json'
+def text_groups(resources=None,locale='zha'):
+    # The native detail-screen table has separate name and description IDs.
+    # Reserved slots must populate both, including each height variant.
+    path=(Path(resources) if resources else RESOURCE)/'native-skill-ui.json'
+    if not path.is_file():path=RESOURCE/'native-skill-ui.json'
     data=json.loads(path.read_text(encoding='utf8'))
+    chinese=locale in ('zha','chi')
+    names={25:'Power Strike',43:'Lofted Pass Specialist',52:'Quick Stride'}
+    descriptions={25:'Reduces shot error by 20% for volleys or shots with at least 50% power.',
+                  24:'Increases the speed of eligible low-power shots below 50% power. Applies to normal and Stunning Shots; other native motion conditions still apply.',
+                  43:'Reduces the wind-up for lofted passes by 12%. Ground passes are unchanged.',
+                  52:'Uses explosive acceleration up to 175 cm, controlled acceleration from 176 to 185 cm, and lengthy acceleration from 186 cm.'}
     result={}
     for row in data['rows']:
-        skill=row['id']
-        if skill not in (25,43,51,52,68):continue
-        group=result.setdefault(row['group'],{'name':row['group_name'],'id':row['group'],'items':{}})
-        group['items'][row['key']]=VISIBLE[52 if skill in (51,68) else skill]
+        skill=52 if row['id'] in (51,68) else row['id']
+        for kind in ('name','description'):
+            if kind=='name' and skill==24:continue
+            message=row[kind+'_msg'];gid=message>>16;key=message&65535
+            group=result.setdefault(gid,{'name':row[kind+'_group'],'id':gid,'items':{}})
+            group['items'][key]=(VISIBLE[skill] if chinese else names[skill]) if kind=='name' else (DESCRIPTIONS[skill] if chinese else descriptions[skill])
     return list(result.values())
 
 def skill_bits(resources):

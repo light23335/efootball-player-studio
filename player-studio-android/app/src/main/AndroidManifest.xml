@@ -19,6 +19,7 @@
             android:configChanges="keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize">
             <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
         </activity>
+        <activity-alias android:name=".BaseActivity" android:targetActivity=".MainActivity" android:exported="false" />
         <service android:name=".StudioService" android:exported="false" android:foregroundServiceType="dataSync" />
         <provider android:name=".ExportProvider" android:authorities="com.playerstudio.editor.exports" android:exported="false" android:grantUriPermissions="true" />
     </application>

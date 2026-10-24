@@ -104576,7 +104576,7 @@
         7,
         13,
         17,
-        28
+        14
       ],
       "source": "导入 APK · 原生教练表",
       "raw_payload": {
@@ -104602,7 +104602,7 @@
           7,
           13,
           17,
-          28
+          14
         ],
         "type": "NORMAL",
         "name": "José Mourinho",
@@ -104623,15 +104623,16 @@
           "target_style": 5
         },
         {
-          "template_id": 28,
+          "template_id": 14,
           "source_positions": [
-            11
+            9,
+            10
           ],
-          "source_style": 13,
+          "source_style": 4,
           "target_positions": [
             12
           ],
-          "target_style": 22
+          "target_style": 13
         }
       ]
     },
@@ -104658,7 +104659,7 @@
         11,
         14,
         7,
-        24
+        12
       ],
       "source": "导入 APK · 原生教练表",
       "raw_payload": {
@@ -104684,7 +104685,7 @@
           11,
           14,
           7,
-          24
+          12
         ],
         "type": "NORMAL",
         "name": "Antonio Conte",
@@ -104706,15 +104707,16 @@
           "target_style": 4
         },
         {
-          "template_id": 24,
+          "template_id": 12,
           "source_positions": [
-            11
+            9,
+            10
           ],
-          "source_style": 13,
+          "source_style": 4,
           "target_positions": [
-            5
+            12
           ],
-          "target_style": 5
+          "target_style": 3
         }
       ]
     },
@@ -104800,7 +104802,7 @@
         11,
         20,
         18,
-        22
+        11
       ],
       "source": "导入 APK · 原生教练表",
       "raw_payload": {
@@ -104826,7 +104828,7 @@
           11,
           20,
           18,
-          22
+          11
         ],
         "type": "NORMAL",
         "name": "Jürgen Klopp",
@@ -104847,15 +104849,16 @@
           "target_style": 9
         },
         {
-          "template_id": 22,
+          "template_id": 11,
           "source_positions": [
-            4
+            9,
+            10
           ],
-          "source_style": 9,
+          "source_style": 14,
           "target_positions": [
-            4
+            12
           ],
-          "target_style": 9
+          "target_style": 1
         }
       ]
     },
@@ -104882,7 +104885,7 @@
         6,
         5,
         5,
-        32
+        16
       ],
       "source": "导入 APK · 原生教练表",
       "raw_payload": {
@@ -104908,7 +104911,7 @@
           6,
           5,
           5,
-          32
+          16
         ],
         "type": "NORMAL",
         "name": "Cristian Chivu",
@@ -104930,15 +104933,16 @@
           "target_style": 3
         },
         {
-          "template_id": 32,
+          "template_id": 16,
           "source_positions": [
-            8
+            6,
+            7
           ],
-          "source_style": 5,
+          "source_style": 14,
           "target_positions": [
             12
           ],
-          "target_style": 1
+          "target_style": 3
         }
       ]
     },
@@ -104965,7 +104969,7 @@
         3,
         18,
         1,
-        20
+        10
       ],
       "source": "导入 APK · 原生教练表",
       "raw_payload": {
@@ -104991,7 +104995,7 @@
           3,
           18,
           1,
-          20
+          10
         ],
         "type": "NORMAL",
         "name": "R. Rodríguez",
@@ -105012,15 +105016,15 @@
           "target_style": 1
         },
         {
-          "template_id": 20,
+          "template_id": 10,
           "source_positions": [
-            12
+            8
           ],
-          "source_style": 13,
+          "source_style": 14,
           "target_positions": [
             12
           ],
-          "target_style": 3
+          "target_style": 1
         }
       ]
     },
@@ -105047,7 +105051,7 @@
         12,
         1,
         7,
-        24
+        12
       ],
       "source": "导入 APK · 原生教练表",
       "raw_payload": {
@@ -105073,7 +105077,7 @@
           12,
           1,
           7,
-          24
+          12
         ],
         "type": "NORMAL",
         "name": "Makino Tomoaki",
@@ -105095,15 +105099,16 @@
           "target_style": 4
         },
         {
-          "template_id": 24,
+          "template_id": 12,
           "source_positions": [
-            11
+            9,
+            10
           ],
-          "source_style": 13,
+          "source_style": 4,
           "target_positions": [
-            5
+            12
           ],
-          "target_style": 5
+          "target_style": 3
         }
       ]
     }

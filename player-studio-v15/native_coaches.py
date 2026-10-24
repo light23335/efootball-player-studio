@@ -5,6 +5,13 @@ from native_cpk import unwrap,wrap
 COACH='common/etc/pesdb/Coach.bin'
 BOOSTER='common/etc/pesdb/CoachBooster.bin'
 TACTICS={'possession':206,'short_counter':224,'long_counter':238,'side_attack':213,'long_ball':199}
+# Native disk getters 0x8236464 / 0x823648c / 0x82364b4 / 0x82364dc.
+ABILITY_BITS=(160,148,128,138)
+SLOT_LAYOUT='native-coach-four-10bit-v2'
+
+def ability_ids(row):
+    value=int.from_bytes(row,'little')
+    return [(value>>bit)&1023 for bit in ABILITY_BITS]
 # CoachBooster enum -> native ability enum -> 147-parameter index. Verified
 # against 0x8236528 / 0x8236530 and 0x82a1ee4, then the runtime ability getter.
 # The reference coach_boost_map.json in the original APK uses a different
@@ -69,7 +76,7 @@ def compile_coaches(cpk,coaches,catalogue,registry,replace_ids=(),replace_booste
         value=int.from_bytes(records[int(template['id'])],'little');value=bitfield(value,0,64,cid)
         for key,bit in TACTICS.items():value=bitfield(value,bit,7,c['tactics'][key])
         age=int(c.get('age') or template['age']);value=bitfield(value,231,6,age-15)
-        for bit,bid in zip((160,148,128,137),abilities):value=bitfield(value,bit,9,bid)
+        for bit,bid in zip(ABILITY_BITS,abilities):value=bitfield(value,bit,10,bid)
         row=bytearray(value.to_bytes(176,'little'))
         # Native getters return row+0x20 (Japanese) and row+0x4e
         # (other locales); each name is 0x2e bytes including its terminator.

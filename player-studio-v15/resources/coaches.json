@@ -98033,7 +98033,7 @@
         7,
         13,
         17,
-        28
+        14
       ],
       "source": "导入 APK · 原生教练表",
       "raw_payload": {
@@ -98059,7 +98059,7 @@
           7,
           13,
           17,
-          28
+          14
         ],
         "type": "NORMAL",
         "name": "José Mourinho",
@@ -98080,15 +98080,16 @@
           "target_style": 5
         },
         {
-          "template_id": 28,
+          "template_id": 14,
           "source_positions": [
-            11
+            9,
+            10
           ],
-          "source_style": 13,
+          "source_style": 4,
           "target_positions": [
             12
           ],
-          "target_style": 22
+          "target_style": 13
         }
       ]
     },
@@ -98115,7 +98116,7 @@
         11,
         14,
         7,
-        24
+        12
       ],
       "source": "导入 APK · 原生教练表",
       "raw_payload": {
@@ -98141,7 +98142,7 @@
           11,
           14,
           7,
-          24
+          12
         ],
         "type": "NORMAL",
         "name": "Antonio Conte",
@@ -98163,15 +98164,16 @@
           "target_style": 4
         },
         {
-          "template_id": 24,
+          "template_id": 12,
           "source_positions": [
-            11
+            9,
+            10
           ],
-          "source_style": 13,
+          "source_style": 4,
           "target_positions": [
-            5
+            12
           ],
-          "target_style": 5
+          "target_style": 3
         }
       ]
     },
@@ -98257,7 +98259,7 @@
         11,
         20,
         18,
-        22
+        11
       ],
       "source": "导入 APK · 原生教练表",
       "raw_payload": {
@@ -98283,7 +98285,7 @@
           11,
           20,
           18,
-          22
+          11
         ],
         "type": "NORMAL",
         "name": "Jürgen Klopp",
@@ -98304,15 +98306,16 @@
           "target_style": 9
         },
         {
-          "template_id": 22,
+          "template_id": 11,
           "source_positions": [
-            4
+            9,
+            10
           ],
-          "source_style": 9,
+          "source_style": 14,
           "target_positions": [
-            4
+            12
           ],
-          "target_style": 9
+          "target_style": 1
         }
       ]
     },
@@ -98339,7 +98342,7 @@
         6,
         5,
         5,
-        32
+        16
       ],
       "source": "导入 APK · 原生教练表",
       "raw_payload": {
@@ -98365,7 +98368,7 @@
           6,
           5,
           5,
-          32
+          16
         ],
         "type": "NORMAL",
         "name": "Cristian Chivu",
@@ -98387,15 +98390,16 @@
           "target_style": 3
         },
         {
-          "template_id": 32,
+          "template_id": 16,
           "source_positions": [
-            8
+            6,
+            7
           ],
-          "source_style": 5,
+          "source_style": 14,
           "target_positions": [
             12
           ],
-          "target_style": 1
+          "target_style": 3
         }
       ]
     },
@@ -98422,7 +98426,7 @@
         3,
         18,
         1,
-        20
+        10
       ],
       "source": "导入 APK · 原生教练表",
       "raw_payload": {
@@ -98448,7 +98452,7 @@
           3,
           18,
           1,
-          20
+          10
         ],
         "type": "NORMAL",
         "name": "R. Rodríguez",
@@ -98469,15 +98473,15 @@
           "target_style": 1
         },
         {
-          "template_id": 20,
+          "template_id": 10,
           "source_positions": [
-            12
+            8
           ],
-          "source_style": 13,
+          "source_style": 14,
           "target_positions": [
             12
           ],
-          "target_style": 3
+          "target_style": 1
         }
       ]
     },
@@ -98504,7 +98508,7 @@
         12,
         1,
         7,
-        24
+        12
       ],
       "source": "导入 APK · 原生教练表",
       "raw_payload": {
@@ -98530,7 +98534,7 @@
           12,
           1,
           7,
-          24
+          12
         ],
         "type": "NORMAL",
         "name": "Makino Tomoaki",
@@ -98552,15 +98556,16 @@
           "target_style": 4
         },
         {
-          "template_id": 24,
+          "template_id": 12,
           "source_positions": [
-            11
+            9,
+            10
           ],
-          "source_style": 13,
+          "source_style": 4,
           "target_positions": [
-            5
+            12
           ],
-          "target_style": 5
+          "target_style": 3
         }
       ]
     }
@@ -98799,7 +98804,8 @@
       "effect": 3,
       "coaches": [
         "Xabi Alonso",
-        "D. Deschamps"
+        "D. Deschamps",
+        "R. Rodríguez"
       ]
     },
     {
@@ -98813,9 +98819,11 @@
         12
       ],
       "target_style": 1,
-      "label": "突破传球 · 组合 11",
+      "label": "突破传球D",
       "effect": 3,
-      "coaches": []
+      "coaches": [
+        "Jürgen Klopp"
+      ]
     },
     {
       "template_id": 12,
@@ -98830,7 +98838,10 @@
       "target_style": 3,
       "label": "二过一配合B",
       "effect": 4,
-      "coaches": []
+      "coaches": [
+        "Antonio Conte",
+        "Makino Tomoaki"
+      ]
     },
     {
       "template_id": 13,
@@ -98860,7 +98871,9 @@
       "target_style": 13,
       "label": "二过一配合C",
       "effect": 4,
-      "coaches": []
+      "coaches": [
+        "José Mourinho"
+      ]
     },
     {
       "template_id": 15,
@@ -98891,7 +98904,8 @@
       "effect": 4,
       "coaches": [
         "Johan Cruyff",
-        "Frank Lampard"
+        "Frank Lampard",
+        "Cristian Chivu"
       ]
     },
     {
@@ -98920,7 +98934,7 @@
         5
       ],
       "target_style": 9,
-      "label": "原生配合类型 6 · 组合 18",
+      "label": "双人逼抢A",
       "effect": 6,
       "coaches": [
         "Jürgen Klopp"
@@ -98952,9 +98966,7 @@
       "target_style": 3,
       "label": "暗影联动 · 组合 20",
       "effect": 5,
-      "coaches": [
-        "R. Rodríguez"
-      ]
+      "coaches": []
     },
     {
       "template_id": 21,
@@ -98982,9 +98994,7 @@
       "target_style": 9,
       "label": "原生配合类型 6 · 组合 22",
       "effect": 6,
-      "coaches": [
-        "Jürgen Klopp"
-      ]
+      "coaches": []
     },
     {
       "template_id": 23,
@@ -99012,10 +99022,7 @@
       "target_style": 5,
       "label": "暗影联动 · 组合 24",
       "effect": 5,
-      "coaches": [
-        "Antonio Conte",
-        "Makino Tomoaki"
-      ]
+      "coaches": []
     },
     {
       "template_id": 25,
@@ -99071,9 +99078,7 @@
       "target_style": 22,
       "label": "暗影联动 · 组合 28",
       "effect": 5,
-      "coaches": [
-        "José Mourinho"
-      ]
+      "coaches": []
     },
     {
       "template_id": 29,
@@ -99130,10 +99135,9 @@
       "target_style": 1,
       "label": "突破传球 · 组合 32",
       "effect": 3,
-      "coaches": [
-        "Cristian Chivu"
-      ]
+      "coaches": []
     }
   ],
-  "coach_options_revision": "native-boosters-2-and-links-2-v1"
+  "coach_options_revision": "native-boosters-2-and-links-2-v1",
+  "coach_slot_layout": "native-coach-four-10bit-v2"
 }

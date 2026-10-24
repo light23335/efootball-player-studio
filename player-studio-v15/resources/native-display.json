@@ -1,0 +1,12 @@
+{
+  "address": 42422272,
+  "file_offset": 42405888,
+  "expected_hex": "ff4302d1fd7b07a9f44f08a9fdc3019154d03bd5e10302aa881640f9a8831ff8e8430091997c679468d703f008013391080140f9480100b4e81b40b9ff7f00a9",
+  "dex_method": {
+    "class": "com.epicgames.ue4.GameActivity",
+    "name": "nativeConsoleCommand",
+    "signature": "(Ljava/lang/String;)V",
+    "access_flags": 257
+  },
+  "source": "V16.1/V17 public JNI queues commands on the engine game thread."
+}

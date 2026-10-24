@@ -17,7 +17,7 @@ def main():
                 if not source.is_file() or source.suffix in ('.pyc','.log'):continue
                 data=source.read_bytes()
                 if source.name=='index.html':
-                    data=re.sub(rb'V16 \xc2\xb7 [^<]+',b'V16 \xc2\xb7 1.9.6 Android',data).replace(b'</head>',b'<link rel="stylesheet" href="/android.css"><script defer src="/android-ui.js"></script></head>')
+                    data=re.sub(rb'V16 \xc2\xb7 [^<]+',b'V16 \xc2\xb7 1.9.7 Android',data).replace(b'</head>',b'<link rel="stylesheet" href="/android.css"><script defer src="/android-ui.js"></script></head>')
                 z.writestr(source.relative_to(core).as_posix(),data)
         for name in ('personal_runtime.py','personal_binding.py'):z.write(core/name,name)
         for source in (ROOT/'licenses').glob('*'):

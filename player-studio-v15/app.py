@@ -45,7 +45,7 @@ import packs
 from window_sessions import WindowSessions
 from booster_library import BoosterLibrary
 
-APP_VERSION = "1.9.6"
+APP_VERSION = "1.9.7"
 MAX_PERSONAL_PLAYERS = 10000
 BUNDLE = Path(getattr(sys, "_MEIPASS", Path(__file__).absolute().parent))
 RESOURCE = BUNDLE / "resources"
@@ -56,7 +56,7 @@ CATALOG = json.loads((RESOURCE / "catalog.json").read_text(encoding="utf-8"))
 from skill_localization import apply_labels as apply_skill_labels
 apply_skill_labels(CATALOG,RESOURCE)
 from native_coach_links import schema as coach_link_schema,repair_legacy as repair_coach_options
-_coach_options=repair_coach_options(json.loads((RESOURCE / 'coaches.json').read_text(encoding='utf8')),coach_link_schema(RESOURCE))
+_coach_options=repair_coach_options(json.loads((RESOURCE / 'coaches.json').read_text(encoding='utf8')),coach_link_schema(RESOURCE),RESOURCE)
 CATALOG['coaches'] = _coach_options['coaches']
 CATALOG['COACH_LINK_TYPES'] = _coach_options.get('linkup_types',[])
 CATALOG['COACH_LINK_SCHEMA']=coach_link_schema(RESOURCE)
@@ -251,6 +251,10 @@ def normalize_project(value):
         if any(not isinstance(row,dict) or not row.get('asset_id') or row.get('blend','source-over') not in ('source-over','screen','multiply','lighter') for row in card['layers']):
             raise ValueError('原版卡面图层无效')
     referenced_assets(p)
+    if p.get('status')=='new-player-slot' and p['identity']['name'].strip() and (p.get('native_card') or p['model'].get('asset') or p['appearance'].get('portrait')):
+        # Older versions kept the empty-slot marker after a custom model or
+        # card was authored. Loading that saved design must enable editing.
+        p['status']='draft';p['editor_ready']=True
     return p
 
 
@@ -582,7 +586,7 @@ class StudioServer(ThreadingHTTPServer):
         package=NativePackage(library,resources,(BUNDLE/'personal_runtime.py').read_text(encoding='utf8'),profile_resources=RESOURCE)
         self.catalog=json.loads((Path(resources)/'catalog.json').read_text(encoding='utf8'))
         apply_skill_labels(self.catalog,RESOURCE)
-        coach_options=repair_coach_options(json.loads((Path(resources)/'coaches.json').read_text(encoding='utf8')),coach_link_schema(RESOURCE))
+        coach_options=repair_coach_options(json.loads((Path(resources)/'coaches.json').read_text(encoding='utf8')),coach_link_schema(RESOURCE),resources)
         self.catalog['coaches']=coach_options['coaches']
         self.catalog['COACH_LINK_TYPES']=coach_options.get('linkup_types',[])
         self.catalog['COACH_LINK_SCHEMA']=coach_link_schema(RESOURCE)
@@ -818,6 +822,9 @@ class Handler(BaseHTTPRequestHandler):
             elif path == '/api/tools/game-options':
                 from workspace_tools import game_options
                 result=game_options(store,body)
+            elif path == '/api/tools/game-settings':
+                from game_settings import settings,schema
+                with store.lock:result={'value':settings(store,body.get('value')),'schema':schema()}
             elif path == '/api/exports/clear':
                 from workspace_tools import clear_exports
                 result=clear_exports(self.server)

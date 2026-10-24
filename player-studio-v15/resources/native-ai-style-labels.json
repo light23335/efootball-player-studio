@@ -1,0 +1,54 @@
+{
+  "source": "V17 native parameter name table and full + delta texts; native one-hot record decoding verified",
+  "rows": [
+    {
+      "key": "trickster",
+      "parameter": 63,
+      "message": 23068683,
+      "label": "魔术师",
+      "english": "Trickster"
+    },
+    {
+      "key": "mazing_run",
+      "parameter": 64,
+      "message": 23068685,
+      "label": "惊人突破",
+      "english": "Mazing Run"
+    },
+    {
+      "key": "speeding_bullet",
+      "parameter": 65,
+      "message": 23068748,
+      "label": "疾速子弹",
+      "english": "Speeding Bullet"
+    },
+    {
+      "key": "incisive_run",
+      "parameter": 66,
+      "message": 23068690,
+      "label": "内切突破",
+      "english": "Incisive Run"
+    },
+    {
+      "key": "long_ball_expert",
+      "parameter": 67,
+      "message": 23068749,
+      "label": "长球专家",
+      "english": "Long Ball Expert"
+    },
+    {
+      "key": "early_cross",
+      "parameter": 68,
+      "message": 23068687,
+      "label": "提前传中手",
+      "english": "Early Crosser"
+    },
+    {
+      "key": "long_ranger",
+      "parameter": 69,
+      "message": 23068691,
+      "label": "重炮手",
+      "english": "Long Ranger"
+    }
+  ]
+}
