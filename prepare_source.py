@@ -4,7 +4,7 @@ import gzip,shutil,hashlib
 root=Path(__file__).resolve().parent
 source=root/'player-studio-v15/resources/library.sqlite3.gz'
 target=source.with_suffix('')
-expected='abf58df873bc1085dea6e26dffe1769b3c94e74d8ebef1628bf128384fca1dc8'
+expected='0d0f2caad753a8045e66a375ddc5534de6575d04dd400b27c4a9d5c1fdcaa44e'
 if target.is_file():
     if hashlib.sha256(target.read_bytes()).hexdigest()!=expected:raise RuntimeError('Existing database differs; keep it and resolve manually.')
 else:

@@ -45,7 +45,7 @@ import packs
 from window_sessions import WindowSessions
 from booster_library import BoosterLibrary
 
-APP_VERSION = "1.9.5.1"
+APP_VERSION = "1.9.6"
 MAX_PERSONAL_PLAYERS = 10000
 BUNDLE = Path(getattr(sys, "_MEIPASS", Path(__file__).absolute().parent))
 RESOURCE = BUNDLE / "resources"
@@ -53,7 +53,13 @@ WEB = BUNDLE / "web"
 ASSET_ID = re.compile(r"^[a-f0-9]{64}\.(png|jpg|jpeg|webp|glb|obj|webm|otf|ttf)$")
 MAX_ASSET = 128 * 1024 * 1024
 CATALOG = json.loads((RESOURCE / "catalog.json").read_text(encoding="utf-8"))
-CATALOG['coaches'] = json.loads((RESOURCE / 'coaches.json').read_text(encoding='utf8'))['coaches']
+from skill_localization import apply_labels as apply_skill_labels
+apply_skill_labels(CATALOG,RESOURCE)
+from native_coach_links import schema as coach_link_schema,repair_legacy as repair_coach_options
+_coach_options=repair_coach_options(json.loads((RESOURCE / 'coaches.json').read_text(encoding='utf8')),coach_link_schema(RESOURCE))
+CATALOG['coaches'] = _coach_options['coaches']
+CATALOG['COACH_LINK_TYPES'] = _coach_options.get('linkup_types',[])
+CATALOG['COACH_LINK_SCHEMA']=coach_link_schema(RESOURCE)
 CATALOG['AI_PLAYING_STYLES']=AI_PLAYING_STYLES
 
 
@@ -93,12 +99,14 @@ def normalize_project(value):
     identity["height_cm"] = number(identity.get("height_cm"), 140, 220, 180)
     identity["weight_kg"] = number(identity.get("weight_kg"), 40, 140, 75)
     identity["age"] = number(identity.get("age"), 15, 60, 22)
-    identity["number"] = int(number(identity.get("number"), 1, 99, 10))
+    identity["number"] = int(number(identity.get("number"), 1, 999, 10))
     if identity["position"] not in CATALOG["POSITIONS"]:
         identity["position"] = "CF"
     for key in ("name", "nationality", "team", "preferred_foot"):
         identity[key] = str(identity.get(key) or "")[:60]
     identity['shirt_name']=str(identity.get('shirt_name') or identity['name'])[:60]
+    from player_identity_binding import normalize as normalize_original_binding
+    normalize_original_binding(identity,p.get('source_player'))
     celebration=p.get('celebration')
     if celebration is not None:
         from native_celebration import validate as validate_celebration
@@ -573,7 +581,11 @@ class StudioServer(ThreadingHTTPServer):
         library=NativeLibrary(resources,self.home,self.store)
         package=NativePackage(library,resources,(BUNDLE/'personal_runtime.py').read_text(encoding='utf8'),profile_resources=RESOURCE)
         self.catalog=json.loads((Path(resources)/'catalog.json').read_text(encoding='utf8'))
-        self.catalog['coaches']=json.loads((Path(resources)/'coaches.json').read_text(encoding='utf8'))['coaches']
+        apply_skill_labels(self.catalog,RESOURCE)
+        coach_options=repair_coach_options(json.loads((Path(resources)/'coaches.json').read_text(encoding='utf8')),coach_link_schema(RESOURCE))
+        self.catalog['coaches']=coach_options['coaches']
+        self.catalog['COACH_LINK_TYPES']=coach_options.get('linkup_types',[])
+        self.catalog['COACH_LINK_SCHEMA']=coach_link_schema(RESOURCE)
         self.catalog['AI_PLAYING_STYLES']=AI_PLAYING_STYLES
         from native_equipment import read_catalogue
         self.catalog['equipment']=read_catalogue(resources,RESOURCE)

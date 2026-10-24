@@ -236,7 +236,7 @@ class PersonalResourceTests(unittest.TestCase):
             self.assertEqual(struct.unpack_from('<II',blob,at+128),(108<<14,13))
         profile['boosters']=[{'id':1000,'name':74860000,'description':74860001}]
         profile['text_hooks']=json.loads((RESOURCE/'native-text-hooks.json').read_text())
-        self.assertLessEqual(len(bytes.fromhex(compose(original,routes,profile)['blob_hex'])),8192)
+        self.assertLessEqual(len(bytes.fromhex(compose(original,routes,profile)['blob_hex']))-len(bytes.fromhex(original['blob_hex'])),2048)
         with self.assertRaises(ValueError):compose(original,[dict(routes[0],club_id=65536)],profile)
 
     def test_fixed_B_preserves_original_weekly_rows_including_duplicates(self):

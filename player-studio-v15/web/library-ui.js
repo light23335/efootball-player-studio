@@ -66,6 +66,9 @@ export class LibraryUI {
     this.commit(()=>{
       const p=this.project();p.source_player={id:row.id,name:row.name,name_en:row.name_en,base_id:row.base_id,source:row.source,original_payload:payload};
       p.ai_playing_styles=[...(payload.ai_playing_styles||[])];
+      p.identity.number=Number.isInteger(payload.uniform_number)&&payload.uniform_number>=1?payload.uniform_number:1;
+      p.identity.number_source=payload._studio_number_source||'原包未提供号码';
+      p.identity.original_player_id=String(row.id);p.identity.bind_original_player=false;
       p.identity.name=row.name;p.identity.shirt_name=payload._studio_names?.[3]||payload._studio_names?.[1]||row.name;p.celebration=params[59]??null;p.display_name=row.name;p.identity.position=row.position;p.identity.height_cm=params[47];p.identity.weight_kg=params[48];p.identity.age=params[46]||22;
       p.identity.team_id=row.identity_names?.team?.id||0;p.identity.nation_id=row.identity_names?.nation?.id||0;
       p.identity.team=row.identity_names?.team?.name||'未收录球队名称';p.identity.nationality=row.identity_names?.nation?.name||'未收录国家名称';p.identity.preferred_foot=params[43]===1?'左脚':'右脚';
@@ -73,8 +76,9 @@ export class LibraryUI {
       p.card_type=row.card_type;p.card_series=payload._studio_card_label?.startsWith('Show Time')?'ShowTime':p.card_type;
       p.max_level=Math.max(1,Math.min(100,row.level_limit||35));p.max_level_known=Boolean(row.level_limit);p.initial_level=1;
       p.base_abilities=Object.fromEntries(Object.keys(this.catalog.ABILITIES).map(i=>[i,params[i]]));
-      p.innate_skills=(payload._studio_skill_ids||Object.entries(this.catalog.PARAMETER_BY_SKILL).filter(([i,index])=>params[index]===1).map(([i])=>Number(i))).filter(i=>!this.catalog.SKILL_LABELS[i]?.includes('预留'));
-      p.additional_skills=[];p.position_aptitudes=Object.fromEntries(this.catalog.APTITUDES.map((pos,i)=>[pos,params[i+1]||0]));
+      const visibleSkills=values=>[...new Set(values.map(i=>[51,68].includes(i)?52:i))].filter(i=>!this.catalog.SKILL_LABELS[i]?.includes('预留'));
+      p.innate_skills=visibleSkills(payload._studio_skill_ids||Object.entries(this.catalog.PARAMETER_BY_SKILL).filter(([i,index])=>params[index]===1).map(([i])=>Number(i)));
+      p.additional_skills=visibleSkills(payload.additional_skill_id||[]).filter(i=>!p.innate_skills.includes(i));p.position_aptitudes=Object.fromEntries(this.catalog.APTITUDES.map((pos,i)=>[pos,params[i+1]||0]));
       p.play_style={attack:payload.play_style?.[0]||0,defense:payload.play_style?.[1]||0};p.training=Object.fromEntries(this.catalog.training_groups.map(g=>[g.id,0]));
       const boosterIds=new Set(this.catalog.boosters.map(b=>b.id));p.booster_ids=(payload.initial_booster_id_list||[]).slice(0,2).map(id=>boosterIds.has(id)?id:0);while(p.booster_ids.length<2)p.booster_ids.push(0);
       p.appearance.portrait=image?.asset_id||null;p.appearance.background_image=background?.asset_id||null;p.appearance.photo_zoom=1;p.appearance.photo_x=0;p.appearance.photo_y=0;p.native_art={portrait:image,background,foreground:null,full:null};p.model.asset=model?.asset_id||null;p.model.native_source=model;p.model.morphs={};

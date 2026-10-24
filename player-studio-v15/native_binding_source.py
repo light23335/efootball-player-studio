@@ -19,9 +19,9 @@ def read_installer(apk):
     if not isinstance(payload,dict) or not {'blob_hex','hooks','offsets','back_fixup'}<=payload.keys():
         raise ValueError('原版 APK 的美术接口资料不完整')
     if 'prepare_binding' in root.co_names and 'diy_runtime' in root.co_names:
-        from native_diy_binding import literal_routes,compose,PreparedInstaller,verify_protocol
+        from native_diy_binding import route_layers,compose,PreparedInstaller,verify_protocol
         verify_protocol(reader)
-        routes=literal_routes(root)
+        layers=route_layers(root);routes=[r for layer in layers for r in layer]
         sites=literal_assignments(reader('diy_routes'),{'SITES'})['SITES']
         templates=literal_assignments(reader('diy_route_templates'),{'TEMPLATES'})['TEMPLATES']
         outer=[c for c in reader('diy_binding_outer').co_consts if isinstance(c,types.CodeType) and c.co_name=='_start_legend_portrait_binding']
@@ -29,8 +29,10 @@ def read_installer(apk):
         preparer=next(c for c in reader('diy_runtime').co_consts if isinstance(c,types.CodeType) and c.co_name=='prepare_binding')
         allocators=[c for c in preparer.co_consts if isinstance(c,types.CodeType) and c.co_name=='allocate_pages']
         if len(allocators)!=1:raise ValueError('V16 原生分配器准备入口改变')
-        effective=compose(payload,routes,sites,templates)
-        return effective,PreparedInstaller(code,outer[0],effective,payload,routes,allocators[0])
+        effective=payload
+        for layer in layers:effective=compose(effective,layer,sites,templates)
+        installer=PreparedInstaller(code,outer[0],effective,payload,routes,allocators[0]);installer.route_layers=layers
+        return effective,installer
     return payload,code
 
 def installer_metadata(installer):return getattr(installer,'proof',None)

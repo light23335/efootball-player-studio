@@ -1,0 +1,733 @@
+{
+  "version": 1,
+  "source": "V17 ARM64 CoachLink constructor, position enumeration and style/effect converter tables",
+  "position_bits": {
+    "source": {
+      "0": 45,
+      "1": 34,
+      "2": 39,
+      "3": 27,
+      "4": 36,
+      "5": 23,
+      "6": 41,
+      "7": 29,
+      "8": 44,
+      "9": 25,
+      "10": 48,
+      "11": 31,
+      "12": 38
+    },
+    "target": {
+      "0": 47,
+      "1": 33,
+      "2": 42,
+      "3": 26,
+      "4": 35,
+      "5": 22,
+      "6": 40,
+      "7": 30,
+      "8": 43,
+      "9": 24,
+      "10": 49,
+      "11": 32,
+      "12": 28
+    }
+  },
+  "style_to_parameter": [
+    0,
+    1,
+    2,
+    3,
+    7,
+    10,
+    11,
+    12,
+    13,
+    14,
+    17,
+    18,
+    19,
+    5,
+    6,
+    16,
+    21,
+    22,
+    8,
+    9,
+    15,
+    20,
+    4,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35
+  ],
+  "effect_by_template": {
+    "1": 0,
+    "2": 0,
+    "3": 1,
+    "4": 1,
+    "5": 2,
+    "6": 2,
+    "7": 0,
+    "8": 3,
+    "9": 3,
+    "10": 3,
+    "11": 3,
+    "12": 4,
+    "13": 4,
+    "14": 4,
+    "15": 4,
+    "16": 4,
+    "17": 5,
+    "18": 6,
+    "19": 5,
+    "20": 5,
+    "21": 5,
+    "22": 6,
+    "23": 5,
+    "24": 5,
+    "25": 5,
+    "26": 5,
+    "27": 5,
+    "28": 5,
+    "29": 6,
+    "30": 2,
+    "31": 3,
+    "32": 3
+  },
+  "record_bytes": 8,
+  "hooks": {
+    "effect": {
+      "address": 136529940,
+      "file_offset": 136513556,
+      "expected_hex": "1f80007128010054080400511f7d0071c80000540955fc9029613291284d288b000540b9c0035fd6e0008052c0035fd6fd7bbea9f44f01a9fd030091e1031f2a"
+    },
+    "label": {
+      "address": 136531952,
+      "file_offset": 136515568,
+      "expected_hex": "0855fc9008613691e0430091e1c30091e323009102048052000546ad020d47ad600606ad000544ad620e07ad020d45ad600604ad000542ad620e05ad020d43ad"
+    }
+  },
+  "templates": [
+    {
+      "template_id": 1,
+      "source_positions": [
+        4
+      ],
+      "source_style": 20,
+      "target_positions": [
+        12
+      ],
+      "target_style": 1
+    },
+    {
+      "template_id": 2,
+      "source_positions": [
+        5
+      ],
+      "source_style": 20,
+      "target_positions": [
+        9,
+        10
+      ],
+      "target_style": 4
+    },
+    {
+      "template_id": 3,
+      "source_positions": [
+        9,
+        10
+      ],
+      "source_style": 14,
+      "target_positions": [
+        2,
+        3
+      ],
+      "target_style": 11
+    },
+    {
+      "template_id": 4,
+      "source_positions": [
+        8
+      ],
+      "source_style": 14,
+      "target_positions": [
+        6,
+        7
+      ],
+      "target_style": 6
+    },
+    {
+      "template_id": 5,
+      "source_positions": [
+        6,
+        7
+      ],
+      "source_style": 19,
+      "target_positions": [
+        12
+      ],
+      "target_style": 3
+    },
+    {
+      "template_id": 6,
+      "source_positions": [
+        2,
+        3
+      ],
+      "source_style": 11,
+      "target_positions": [
+        12
+      ],
+      "target_style": 3
+    },
+    {
+      "template_id": 7,
+      "source_positions": [
+        1
+      ],
+      "source_style": 15,
+      "target_positions": [
+        9,
+        10
+      ],
+      "target_style": 4
+    },
+    {
+      "template_id": 8,
+      "source_positions": [
+        5
+      ],
+      "source_style": 7,
+      "target_positions": [
+        12
+      ],
+      "target_style": 1
+    },
+    {
+      "template_id": 9,
+      "source_positions": [
+        8
+      ],
+      "source_style": 14,
+      "target_positions": [
+        9,
+        10
+      ],
+      "target_style": 4
+    },
+    {
+      "template_id": 10,
+      "source_positions": [
+        8
+      ],
+      "source_style": 14,
+      "target_positions": [
+        12
+      ],
+      "target_style": 1
+    },
+    {
+      "template_id": 11,
+      "source_positions": [
+        9,
+        10
+      ],
+      "source_style": 14,
+      "target_positions": [
+        12
+      ],
+      "target_style": 1
+    },
+    {
+      "template_id": 12,
+      "source_positions": [
+        9,
+        10
+      ],
+      "source_style": 4,
+      "target_positions": [
+        12
+      ],
+      "target_style": 3
+    },
+    {
+      "template_id": 13,
+      "source_positions": [
+        9,
+        10
+      ],
+      "source_style": 4,
+      "target_positions": [
+        12
+      ],
+      "target_style": 22
+    },
+    {
+      "template_id": 14,
+      "source_positions": [
+        9,
+        10
+      ],
+      "source_style": 4,
+      "target_positions": [
+        12
+      ],
+      "target_style": 13
+    },
+    {
+      "template_id": 15,
+      "source_positions": [
+        11
+      ],
+      "source_style": 6,
+      "target_positions": [
+        12
+      ],
+      "target_style": 1
+    },
+    {
+      "template_id": 16,
+      "source_positions": [
+        6,
+        7
+      ],
+      "source_style": 14,
+      "target_positions": [
+        12
+      ],
+      "target_style": 3
+    },
+    {
+      "template_id": 17,
+      "source_positions": [
+        12
+      ],
+      "source_style": 13,
+      "target_positions": [
+        8
+      ],
+      "target_style": 5
+    },
+    {
+      "template_id": 18,
+      "source_positions": [
+        5
+      ],
+      "source_style": 9,
+      "target_positions": [
+        5
+      ],
+      "target_style": 9
+    },
+    {
+      "template_id": 19,
+      "source_positions": [
+        12
+      ],
+      "source_style": 13,
+      "target_positions": [
+        8
+      ],
+      "target_style": 6
+    },
+    {
+      "template_id": 20,
+      "source_positions": [
+        12
+      ],
+      "source_style": 13,
+      "target_positions": [
+        12
+      ],
+      "target_style": 3
+    },
+    {
+      "template_id": 21,
+      "source_positions": [
+        12
+      ],
+      "source_style": 13,
+      "target_positions": [
+        12
+      ],
+      "target_style": 22
+    },
+    {
+      "template_id": 22,
+      "source_positions": [
+        4
+      ],
+      "source_style": 9,
+      "target_positions": [
+        4
+      ],
+      "target_style": 9
+    },
+    {
+      "template_id": 23,
+      "source_positions": [
+        12
+      ],
+      "source_style": 13,
+      "target_positions": [
+        5
+      ],
+      "target_style": 6
+    },
+    {
+      "template_id": 24,
+      "source_positions": [
+        11
+      ],
+      "source_style": 13,
+      "target_positions": [
+        5
+      ],
+      "target_style": 5
+    },
+    {
+      "template_id": 25,
+      "source_positions": [
+        11
+      ],
+      "source_style": 13,
+      "target_positions": [
+        8
+      ],
+      "target_style": 6
+    },
+    {
+      "template_id": 26,
+      "source_positions": [
+        11
+      ],
+      "source_style": 13,
+      "target_positions": [
+        5
+      ],
+      "target_style": 6
+    },
+    {
+      "template_id": 27,
+      "source_positions": [
+        11
+      ],
+      "source_style": 13,
+      "target_positions": [
+        12
+      ],
+      "target_style": 3
+    },
+    {
+      "template_id": 28,
+      "source_positions": [
+        11
+      ],
+      "source_style": 13,
+      "target_positions": [
+        12
+      ],
+      "target_style": 22
+    },
+    {
+      "template_id": 29,
+      "source_positions": [
+        5
+      ],
+      "source_style": 9,
+      "target_positions": [
+        4
+      ],
+      "target_style": 9
+    },
+    {
+      "template_id": 30,
+      "source_positions": [
+        9,
+        10
+      ],
+      "source_style": 19,
+      "target_positions": [
+        12
+      ],
+      "target_style": 22
+    },
+    {
+      "template_id": 31,
+      "source_positions": [
+        11
+      ],
+      "source_style": 5,
+      "target_positions": [
+        12
+      ],
+      "target_style": 3
+    },
+    {
+      "template_id": 32,
+      "source_positions": [
+        8
+      ],
+      "source_style": 5,
+      "target_positions": [
+        12
+      ],
+      "target_style": 1
+    }
+  ],
+  "template_labels": {
+    "1": "过顶长传A",
+    "2": "过顶长传B",
+    "3": "斜长传B",
+    "4": "斜长传A",
+    "5": "积极调整A",
+    "6": "积极调整B",
+    "7": "过顶长传C",
+    "8": "突破传球B",
+    "9": "突破传球 · 组合 9",
+    "10": "突破传球A",
+    "11": "突破传球 · 组合 11",
+    "12": "二过一配合B",
+    "13": "二过一配合 · 组合 13",
+    "14": "二过一配合C",
+    "15": "二过一配合 · 组合 15",
+    "16": "二过一配合A",
+    "17": "暗影联动A",
+    "18": "原生配合类型 6 · 组合 18",
+    "19": "暗影联动 · 组合 19",
+    "20": "暗影联动 · 组合 20",
+    "21": "暗影联动 · 组合 21",
+    "22": "原生配合类型 6 · 组合 22",
+    "23": "暗影联动 · 组合 23",
+    "24": "暗影联动 · 组合 24",
+    "25": "暗影联动 · 组合 25",
+    "26": "暗影联动 · 组合 26",
+    "27": "暗影联动 · 组合 27",
+    "28": "暗影联动 · 组合 28",
+    "29": "原生配合类型 6 · 组合 29",
+    "30": "积极调整 · 组合 30",
+    "31": "突破传球 · 组合 31",
+    "32": "突破传球 · 组合 32"
+  },
+  "booster_records": {
+    "1": {
+      "parameter": "14",
+      "amount": 1
+    },
+    "2": {
+      "parameter": "18",
+      "amount": 1
+    },
+    "3": {
+      "parameter": "19",
+      "amount": 1
+    },
+    "4": {
+      "parameter": "17",
+      "amount": 1
+    },
+    "5": {
+      "parameter": "21",
+      "amount": 1
+    },
+    "6": {
+      "parameter": "22",
+      "amount": 1
+    },
+    "7": {
+      "parameter": "20",
+      "amount": 1
+    },
+    "8": {
+      "parameter": "27",
+      "amount": 1
+    },
+    "9": {
+      "parameter": "28",
+      "amount": 1
+    },
+    "10": {
+      "parameter": "23",
+      "amount": 1
+    },
+    "11": {
+      "parameter": "15",
+      "amount": 1
+    },
+    "12": {
+      "parameter": "24",
+      "amount": 1
+    },
+    "13": {
+      "parameter": "25",
+      "amount": 1
+    },
+    "14": {
+      "parameter": "37",
+      "amount": 1
+    },
+    "15": {
+      "parameter": "34",
+      "amount": 1
+    },
+    "16": {
+      "parameter": "38",
+      "amount": 1
+    },
+    "17": {
+      "parameter": "35",
+      "amount": 1
+    },
+    "18": {
+      "parameter": "36",
+      "amount": 1
+    },
+    "19": {
+      "parameter": "39",
+      "amount": 1
+    },
+    "20": {
+      "parameter": "40",
+      "amount": 1
+    },
+    "21": {
+      "parameter": "16",
+      "amount": 1
+    },
+    "22": {
+      "parameter": "32",
+      "amount": 1
+    },
+    "23": {
+      "parameter": "29",
+      "amount": 1
+    },
+    "24": {
+      "parameter": "30",
+      "amount": 1
+    },
+    "25": {
+      "parameter": "31",
+      "amount": 1
+    },
+    "26": {
+      "parameter": "26",
+      "amount": 1
+    },
+    "27": {
+      "parameter": "14",
+      "amount": 2
+    },
+    "28": {
+      "parameter": "18",
+      "amount": 2
+    },
+    "29": {
+      "parameter": "19",
+      "amount": 2
+    },
+    "30": {
+      "parameter": "17",
+      "amount": 2
+    },
+    "31": {
+      "parameter": "21",
+      "amount": 2
+    },
+    "32": {
+      "parameter": "22",
+      "amount": 2
+    },
+    "33": {
+      "parameter": "20",
+      "amount": 2
+    },
+    "34": {
+      "parameter": "27",
+      "amount": 2
+    },
+    "35": {
+      "parameter": "28",
+      "amount": 2
+    },
+    "36": {
+      "parameter": "23",
+      "amount": 2
+    },
+    "37": {
+      "parameter": "15",
+      "amount": 2
+    },
+    "38": {
+      "parameter": "24",
+      "amount": 2
+    },
+    "39": {
+      "parameter": "25",
+      "amount": 2
+    },
+    "40": {
+      "parameter": "37",
+      "amount": 2
+    },
+    "41": {
+      "parameter": "34",
+      "amount": 2
+    },
+    "42": {
+      "parameter": "38",
+      "amount": 2
+    },
+    "43": {
+      "parameter": "35",
+      "amount": 2
+    },
+    "44": {
+      "parameter": "36",
+      "amount": 2
+    },
+    "45": {
+      "parameter": "39",
+      "amount": 2
+    },
+    "46": {
+      "parameter": "40",
+      "amount": 2
+    },
+    "47": {
+      "parameter": "16",
+      "amount": 2
+    },
+    "48": {
+      "parameter": "32",
+      "amount": 2
+    },
+    "49": {
+      "parameter": "29",
+      "amount": 2
+    },
+    "50": {
+      "parameter": "30",
+      "amount": 2
+    },
+    "51": {
+      "parameter": "31",
+      "amount": 2
+    },
+    "52": {
+      "parameter": "26",
+      "amount": 2
+    }
+  }
+}

@@ -56,7 +56,7 @@ class NativeLibrary:
         self.card_media=json.loads((self.resources/'native-card-media.json').read_text(encoding='utf8'))
         self.card_widgets=json.loads((self.resources/'native-card-widgets.json').read_text(encoding='utf8'))
         self.presets=NativePresets(self)
-        self.convert_lock=threading.Lock();self.setup_lock=threading.Lock()
+        self.convert_lock=threading.Lock();self.setup_lock=threading.Lock();self.number_lock=threading.Lock()
         self.thumbnail_lock=threading.Lock();self.thumbnail_frames=OrderedDict()
         self._face_assets=None
         try:ready=json.loads((self.root/'ready.json').read_text(encoding='utf8')).get('release_id')==self.profile['release_id'] and self.containers.is_dir()
@@ -147,6 +147,21 @@ class NativeLibrary:
             r=dict(row);r['payload']=restore_payload(json.loads(r['payload']));r['portrait']=self._portrait(c,r['id'],r['base_id'])
             from ai_playing_styles import restore_payload as restore_ai_styles
             restore_ai_styles(r['payload'])
+            if not r['payload'].get('_studio_number_source'):
+                from native_numbers import restore as restore_number,assignments
+                with self.number_lock:
+                    if not hasattr(self,'number_assignments'):
+                        self.number_assignments={}
+                        report=self.resources/'import-report.json'
+                        if report.is_file():
+                            try:
+                                from native_cpk import Cpk
+                                source=json.loads(report.read_text(encoding='utf8'))['apk']
+                                with zipfile.ZipFile(source) as archive:
+                                    names=['assets/gateway-release/'+n+'/dt870_mobile_and.cpk' for n in ('livedata','custom-resources/legends-v10')]
+                                    self.number_assignments=assignments([Cpk(archive.read(n)) for n in names if n in archive.namelist()])
+                            except (OSError,KeyError,ValueError,zipfile.BadZipFile):pass
+                restore_number(r['payload'],int(pid),int(r['payload'].get('initial_base_team_id') or 0),self.number_assignments)
             r['thumbnail']=self._thumbnail(c,r['id'],r['base_id'])
             from native_appearance import profile
             r['appearance_profile']=profile(self.resources,r['id'])

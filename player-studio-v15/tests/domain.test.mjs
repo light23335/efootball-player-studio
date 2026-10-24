@@ -106,8 +106,8 @@ test('native position priorities keep outfield players out of goalkeeper trainin
 test('native and custom coaches alter the preview without changing player training or boosters',()=>{
   const p=project();p.preview={coach_id:'17609097478250'};
   const coach=catalog.coaches.find(c=>c.id===p.preview.coach_id),base=structuredClone(p.base_abilities);
-  const native=simulate(p,catalog);assert.equal(native.final[15],68);assert.equal(native.final[40],68);assert.equal(native.final[21],68);assert.deepEqual(p.base_abilities,base);
-  assert.ok(coach.unmapped_abilities.includes(24));
+  const native=simulate(p,catalog);assert.equal(native.final[15],68);assert.equal(native.final[37],68);assert.equal(native.final[40],67);assert.equal(native.final[21],67);assert.deepEqual(p.base_abilities,base);
+  assert.deepEqual(coach.unmapped_abilities,[]);assert.deepEqual(coach.linkups.map(c=>c.template_id),[7,24]);
   p.custom_coaches=[{id:'custom:test',name:'自建教练',effects:{20:6,34:2}}];p.preview.coach_id='custom:test';
   const custom=simulate(p,catalog);assert.equal(custom.final[20],71);assert.equal(custom.boosted[20],65);assert.deepEqual(p.training,project().training);
 });

@@ -1,60 +1,49 @@
 {
-  "game": "V16",
-  "version": "1.9.5.1",
+  "game": "V17",
+  "version": "1.9.6",
   "backend_tests": {
-    "passed": 186,
+    "passed": 213,
     "skipped": 1,
     "failed": 0
   },
   "frontend_tests": {
-    "passed": 31,
+    "passed": 33,
     "failed": 0
   },
   "public_content": {
-    "native_players": 46623,
+    "native_players": 46629,
     "native_coaches": 1661,
     "personal_players": 0,
     "personal_coaches": 0,
     "personal_assets": 0,
-    "private_signing_keys": 0,
-    "native_asset_index": 71481
+    "private_signing_keys": 0
   },
-  "ui_checks": {
-    "workspace_pages_opened": 15,
-    "global_click_repaint_root_cause_fixed": true,
-    "search_focus_preserved": true,
-    "delete_cancel_and_confirm_verified": true,
-    "coach_english_search_verified": true,
-    "blank_slot_edit_pages_locked": true,
-    "original_copy_entry_inside_my_players": true,
-    "refresh_reconnect_verified": true,
-    "desktop_close_event_and_http_exit_tests": true,
-    "native_window_close_click_verified": false,
-    "latest_capacity_pair_cleanup_tested": true,
-    "shared_booster_reuse_and_first_slot_alias_tested": true,
-    "large_project_close_delta_tested": true,
-    "coach_pagination_and_no_focus_loss_hydration_tested": true
+  "verified": {
+    "native_stock_binding_layers": [
+      4,
+      6
+    ],
+    "stock_routes_preserved": 10,
+    "coach_booster_attributes": 26,
+    "coach_ability_slots": 2,
+    "coach_link_slots": 2,
+    "existing_link_types": 32,
+    "link_conditions_encoded_and_native_type_adapters_executed": true,
+    "shirt_numbers_native_getter_executed": true,
+    "bound_identity_native_person_getter_executed": true,
+    "original_database_records_preserved": true,
+    "bound_unbound_repeated_manifest_roundtrip": true,
+    "project_sharing_preserves_links_numbers_binding": true,
+    "native_match_skill_instructions_executed": true,
+    "original_native_worker_all_hooks_install_in_isolated_memory": true
   },
-  "engine_changes_since_1_9_4": "native record formats and ARM64 hooks retained; route capacity and booster ID pool extended",
-  "in_game_tested": false,
   "limits": {
     "custom_players": 10000,
     "shared_booster_definitions": 10000,
-    "native_booster_id_bits": 10,
-    "first_slot_id_bits": 8
+    "coach_native_booster_rows": 200,
+    "coach_custom_link_ids": 256
   },
-  "update_https_repair": {
-    "python_ssl_constructor_failure_diagnosed": true,
-    "system_https_fallback": true,
-    "tls_certificate_validation_enabled": true,
-    "windows_real_https_verified": true,
-    "android_system_https_fallback_added": true
-  },
-  "coach_portraits": {
-    "exact_native_id_lookup": true,
-    "variation_and_base_paths_verified": true,
-    "real_native_pngs_decoded": 2,
-    "page_size": 24,
-    "missing_portraits_not_substituted": true
-  }
+  "in_game_tested": false,
+  "game_acceptance": "The game was not launched. New match skill feel and animation results require in-game acceptance.",
+  "personal_data_policy": "Publish clean artifacts only; installed editor, personal projects and signing keys are not replaced."
 }

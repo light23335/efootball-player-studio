@@ -1,0 +1,186 @@
+{
+  "version": 1,
+  "source": "V17/V16.1 ARM64 checked match interfaces; fixed studio skill effects",
+  "hooks": [
+    {
+      "name": "studio_shot_marker_and_lofted_windup",
+      "address": 114685504,
+      "file_offset": 114669120,
+      "expected_hex": "68d9835289b64039bf8317f8a80318b869000034683e41b9280100340041201ea00302d1a11302d1a22302d1e30314aae403162aff44009460ea0736e0031baa",
+      "body_hex": "ffc30ad1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f27b09a9e00705ade20f06ade41707ade61f08ade82709adea2f0aadec370badee3f0cadf0470dadf24f0eadf4570fadf65f10adf86711adfa6f12adfc7713adfe7f14ad11423bd5f15301f9e0031baa41098052b009005800023fd6c003003611008052880640b91f21007161010054800e40bd01102c1e0020211ee6000054aa0000545f170071600000545f1b00714100005431008052f1ab02b9e0031baa9007005800023fd608478552616b68385007005800023fd65007005800023fd6a00000b4e1088052e2ab42b9f006005800023fd6880640b9081100511f09007128010054e0031baa01098052f004005800023fd6800000360106001c0809211ee82301bdf15341f911421bd5e00745ade20f46ade41747ade61f48ade82749adea2f4aadec374badee3f4cadf0474dadf24f4eadf4574fadf65f50adf86751adfa6f52adfc7753adfe7f54ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f27b49a9ffc30a9168d98352b001005800021fd61f2003d57cd8dc0600000000ccd9d30600000000b0402c0700000000f81e300700000000383a2b070000000044f6d506000000005d74913f",
+      "absolute_fixups": [
+        [
+          432,
+          115136636
+        ],
+        [
+          440,
+          114547148
+        ],
+        [
+          448,
+          120340656
+        ],
+        [
+          456,
+          120594168
+        ],
+        [
+          464,
+          120273464
+        ],
+        [
+          472,
+          114685508
+        ]
+      ],
+      "assembly": "sub sp,sp,#688\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x30,[sp,#144]\nstp q0,q1,[sp,#160]\nstp q2,q3,[sp,#192]\nstp q4,q5,[sp,#224]\nstp q6,q7,[sp,#256]\nstp q8,q9,[sp,#288]\nstp q10,q11,[sp,#320]\nstp q12,q13,[sp,#352]\nstp q14,q15,[sp,#384]\nstp q16,q17,[sp,#416]\nstp q18,q19,[sp,#448]\nstp q20,q21,[sp,#480]\nstp q22,q23,[sp,#512]\nstp q24,q25,[sp,#544]\nstp q26,q27,[sp,#576]\nstp q28,q29,[sp,#608]\nstp q30,q31,[sp,#640]\nmrs x17,nzcv\nstr x17,[sp,#672]\nmov x0,x27\nmov w1,#74\nldr x16,flag\nblr x16\ntbz w0,#0,lofted\nmov w17,#0\nldr w8,[x20,#4]\ncmp w8,#8\nb.ne set_marker\nldr s0,[x20,#12]\nfmov s1,#0.5\nfcmp s0,s1\nb.vs set_marker\nb.ge eligible\ncmp w26,#5\nb.eq eligible\ncmp w26,#6\nb.ne set_marker\neligible:\nmov w17,#1\nset_marker:\nstr w17,[sp,#680]\nmov x0,x27\nldr x16,context\nblr x16\nmov w8,#0x2a38\nldrb w1,[x27,x8]\nldr x16,state\nblr x16\nldr x16,parameters\nblr x16\ncbz x0,lofted\nmov w1,#71\nldr w2,[sp,#680]\nldr x16,set_flag\nblr x16\nlofted:\nldr w8,[x20,#4]\nsub w8,w8,#4\ncmp w8,#2\nb.hi done\nmov x0,x27\nmov w1,#72\nldr x16,flag\nblr x16\ntbz w0,#0,done\nldr s1,lofted_factor\nfmul s8,s8,s1\nstr s8,[sp,#288]\ndone:\nldr x17,[sp,#672]\nmsr nzcv,x17\nldp q0,q1,[sp,#160]\nldp q2,q3,[sp,#192]\nldp q4,q5,[sp,#224]\nldp q6,q7,[sp,#256]\nldp q8,q9,[sp,#288]\nldp q10,q11,[sp,#320]\nldp q12,q13,[sp,#352]\nldp q14,q15,[sp,#384]\nldp q16,q17,[sp,#416]\nldp q18,q19,[sp,#448]\nldp q20,q21,[sp,#480]\nldp q22,q23,[sp,#512]\nldp q24,q25,[sp,#544]\nldp q26,q27,[sp,#576]\nldp q28,q29,[sp,#608]\nldp q30,q31,[sp,#640]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x30,[sp,#144]\nadd sp,sp,#688\nmov w8,#0x1ecb\nldr x16,resume\nbr x16\n\n.align 3\nflag: .quad 115136636\ncontext: .quad 114547148\nstate: .quad 120340656\nparameters: .quad 120594168\nset_flag: .quad 120273464\nresume: .quad 114685508\nlofted_factor: .word 1066497117"
+    },
+    {
+      "name": "studio_height_acceleration",
+      "address": 116574876,
+      "file_offset": 116558492,
+      "expected_hex": "28858b52e9519852e8d1a772a9cea772ea624039e00315aa0001271e2101271e5f0100712a0c201ec243f897195d0e94e1031f2a775e0f94fb0300aae00315aa",
+      "body_hex": "ffc30ad1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f27b09a9e00705ade20f06ade41707ade61f08ade82709adea2f0aadec370badee3f0cadf0470dadf24f0eadf4570fadf65f10adf86711adfa6f12adfc7713adfe7f14ad11423bd5f15301f9e00315aaa10880527008005800023fd620020037e00315aac1088052d007005800023fd640020037e00315aa210980523007005800023fd6c0020036a04643bd0190261e0020211e460200544a0100540b000014a04643bd0190261e0020211e860100548b00005405000014c005001c04000014a005001c020000148005001c2929201e6105001c2959211ee93301bdf15341f911421bd5e00745ade20f46ade41747ade61f48ade82749adea2f4aadec374badee3f4cadf0474dadf24f4eadf4574fadf65f50adf86751adfa6f52adfc7753adfe7f54ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f27b49a9ffc30a9128858b52b000005800021fd61f2003d57cd8dc0600000000a0caf206000000008fc2753d8fc2f53d8fc2f53ccdcc8c3f",
+      "absolute_fixups": [
+        [
+          392,
+          115136636
+        ],
+        [
+          400,
+          116574880
+        ]
+      ],
+      "assembly": "sub sp,sp,#688\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x30,[sp,#144]\nstp q0,q1,[sp,#160]\nstp q2,q3,[sp,#192]\nstp q4,q5,[sp,#224]\nstp q6,q7,[sp,#256]\nstp q8,q9,[sp,#288]\nstp q10,q11,[sp,#320]\nstp q12,q13,[sp,#352]\nstp q14,q15,[sp,#384]\nstp q16,q17,[sp,#416]\nstp q18,q19,[sp,#448]\nstp q20,q21,[sp,#480]\nstp q22,q23,[sp,#512]\nstp q24,q25,[sp,#544]\nstp q26,q27,[sp,#576]\nstp q28,q29,[sp,#608]\nstp q30,q31,[sp,#640]\nmrs x17,nzcv\nstr x17,[sp,#672]\nmov x0,x21\nmov w1,#69\nldr x16,flag\nblr x16\ntbnz w0,#0,explosive\nmov x0,x21\nmov w1,#70\nldr x16,flag\nblr x16\ntbnz w0,#0,controlled\nmov x0,x21\nmov w1,#73\nldr x16,flag\nblr x16\ntbz w0,#0,done\nldr s0,[x21,#836]\nfmov s1,#20.0\nfcmp s0,s1\nb.vs done\nb.ge strong\nb mild\nexplosive:\nldr s0,[x21,#836]\nfmov s1,#20.0\nfcmp s0,s1\nb.vs done\nb.lt strong\nb mild\ncontrolled:\nldr s0,controlled_bonus\nb apply\nstrong:\nldr s0,strong_bonus\nb apply\nmild:\nldr s0,mild_bonus\napply:\nfadd s9,s9,s0\nldr s1,ceiling\nfmin s9,s9,s1\nstr s9,[sp,#304]\ndone:\nldr x17,[sp,#672]\nmsr nzcv,x17\nldp q0,q1,[sp,#160]\nldp q2,q3,[sp,#192]\nldp q4,q5,[sp,#224]\nldp q6,q7,[sp,#256]\nldp q8,q9,[sp,#288]\nldp q10,q11,[sp,#320]\nldp q12,q13,[sp,#352]\nldp q14,q15,[sp,#384]\nldp q16,q17,[sp,#416]\nldp q18,q19,[sp,#448]\nldp q20,q21,[sp,#480]\nldp q22,q23,[sp,#512]\nldp q24,q25,[sp,#544]\nldp q26,q27,[sp,#576]\nldp q28,q29,[sp,#608]\nldp q30,q31,[sp,#640]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x30,[sp,#144]\nadd sp,sp,#688\nmov w8,#0x5c29\nldr x16,resume\nbr x16\n\n.align 3\nflag: .quad 115136636\nresume: .quad 116574880\ncontrolled_bonus: .word 1031127695\nstrong_bonus: .word 1039516303\nmild_bonus: .word 1022739087\nceiling: .word 1066192077"
+    },
+    {
+      "name": "studio_heavy_shot_error_0x6d58f94",
+      "address": 114659220,
+      "file_offset": 114642836,
+      "expected_hex": "ff8302d1ec1300fdeb2b036de923046dfd7b05a9fa6706a9f85f07a9f65708a9f44f09a9fd4301915ad03bd5f30300aa481740f9e00301aaf80303aa0840201e",
+      "body_hex": "f37bbea9e80b00fdf30300aa120000940840201ee00313aa410980523002005800023fd600010036e00313aae10880529001005800023fd660000036a101001c0809211e0041201ee80b40fdf37bc2a8c0035fd6ff8302d19000005800021fd67cd8dc0600000000988fd50600000000cdcc4c3f",
+      "absolute_fixups": [
+        [
+          96,
+          115136636
+        ],
+        [
+          104,
+          114659224
+        ]
+      ],
+      "assembly": "\nstp x19,x30,[sp,#-32]!\nstr d8,[sp,#16]\nmov x19,x0\nbl original\nfmov s8,s0\nmov x0,x19\nmov w1,#74\nldr x16,flag\nblr x16\ntbz w0,#0,done\nmov x0,x19\nmov w1,#71\nldr x16,flag\nblr x16\ntbz w0,#0,done\nldr s1,accuracy_factor\nfmul s8,s8,s1\ndone:\nfmov s0,s8\nldr d8,[sp,#16]\nldp x19,x30,[sp],#32\nret\noriginal:\n.word 3506603007\nldr x16,resume\nbr x16\n\n.align 3\nflag: .quad 115136636\nresume: .quad 114659224\naccuracy_factor: .word 1061997773"
+    },
+    {
+      "name": "studio_heavy_shot_error_0x6d5a034",
+      "address": 114663476,
+      "file_offset": 114647092,
+      "expected_hex": "e923bb6dfd7b01a9f71300f9f65703a9f44f04a9fd430091f30300aae00301aaf60302aaf50301aa0196ff97f403002ae00315aa0096ff97f703002ae00315aa",
+      "body_hex": "f37bbea9e80b00fdf30300aa120000940840201ee00313aa410980523002005800023fd600010036e00313aae10880529001005800023fd660000036a101001c0809211e0041201ee80b40fdf37bc2a8c0035fd6e923bb6d9000005800021fd67cd8dc060000000038a0d50600000000cdcc4c3f",
+      "absolute_fixups": [
+        [
+          96,
+          115136636
+        ],
+        [
+          104,
+          114663480
+        ]
+      ],
+      "assembly": "\nstp x19,x30,[sp,#-32]!\nstr d8,[sp,#16]\nmov x19,x0\nbl original\nfmov s8,s0\nmov x0,x19\nmov w1,#74\nldr x16,flag\nblr x16\ntbz w0,#0,done\nmov x0,x19\nmov w1,#71\nldr x16,flag\nblr x16\ntbz w0,#0,done\nldr s1,accuracy_factor\nfmul s8,s8,s1\ndone:\nfmov s0,s8\nldr d8,[sp,#16]\nldp x19,x30,[sp],#32\nret\noriginal:\n.word 1840980969\nldr x16,resume\nbr x16\n\n.align 3\nflag: .quad 115136636\nresume: .quad 114663480\naccuracy_factor: .word 1061997773"
+    },
+    {
+      "name": "studio_unused_amazon",
+      "address": 116317712,
+      "file_offset": 116301328,
+      "expected_hex": "fd7bbea9f44f01a9fd030091f40300aae003012af303012ab43cea97e103002ae00314aa86580f94e20300aae003132ae1088052f44f41a9fd7bc2a87e3b1114",
+      "body_hex": "00008052c0035fd6",
+      "absolute_fixups": [],
+      "assembly": "mov w0,#0\nret\n\n.align 3\n\n"
+    },
+    {
+      "name": "studio_unused_mekong",
+      "address": 118307664,
+      "file_offset": 118291280,
+      "expected_hex": "fd7bbba9fa6701a9f85f02a9f65703a9f44f04a9fd030091f70300aae003012a01098052f30307aaf503062af903052afa0304aaf40303aa24a40994e0060036",
+      "body_hex": "00008052c0035fd6",
+      "absolute_fixups": [],
+      "assembly": "mov w0,#0\nret\n\n.align 3\n\n"
+    },
+    {
+      "name": "studio_unused_indus_0x6d6281c",
+      "address": 114698268,
+      "file_offset": 114681884,
+      "expected_hex": "18ac0194000600361f0b0071cb0500546886413988050035882640b91f110071e8179f1ae802080ae8f30737a0835ef87b70ff97e103002ae00315aa896b1794",
+      "body_hex": "000080527000005800021fd61f2003d52028d60600000000",
+      "absolute_fixups": [
+        [
+          16,
+          114698272
+        ]
+      ],
+      "assembly": "mov w0,#0\nldr x16,resume\nbr x16\n.align 3\nresume: .quad 114698272\n"
+    },
+    {
+      "name": "studio_unused_indus_0x6d6878c",
+      "address": 114722700,
+      "file_offset": 114706316,
+      "expected_hex": "3c940194400100366842403908010035600e40bd01102c1e0020211ec44a417ae8d69f1ae8e1073702000014b7e10737e00313aae10314aa3f0c009460000036",
+      "body_hex": "000080527000005800021fd61f2003d59087d60600000000",
+      "absolute_fixups": [
+        [
+          16,
+          114722704
+        ]
+      ],
+      "assembly": "mov w0,#0\nldr x16,resume\nbr x16\n.align 3\nresume: .quad 114722704\n"
+    },
+    {
+      "name": "studio_unused_indus_0x6d688b4",
+      "address": 114722996,
+      "file_offset": 114706612,
+      "expected_hex": "f2930194e00000366842403968d9ff34600e40bd01102c1e0020211ee5d8ff544853a852601640bd0101271e0020211e4d010054614640b900098052e20313aa",
+      "body_hex": "000080527000005800021fd61f2003d5b888d60600000000",
+      "absolute_fixups": [
+        [
+          16,
+          114723000
+        ]
+      ],
+      "assembly": "mov w0,#0\nldr x16,resume\nbr x16\n.align 3\nresume: .quad 114723000\n"
+    },
+    {
+      "name": "studio_low_screamer_normal_shot",
+      "address": 114698176,
+      "file_offset": 114681792,
+      "expected_hex": "ea179f1a08010a2a1901092a59060036e00315aa3b03005281851594f80300aaa0835ef830c70194a0835ef81900381e9270ff97e203002ae00318aae103192a",
+      "body_hex": "0a0080527000005800021fd61f2003d5c427d60600000000",
+      "absolute_fixups": [
+        [
+          16,
+          114698180
+        ]
+      ],
+      "assembly": "mov w10,#0\nldr x16,resume\nbr x16\n.align 3\nresume: .quad 114698180\n"
+    }
+  ],
+  "visible_skills": {
+    "25": "重炮攻门",
+    "43": "长传好手",
+    "52": "健步如飞"
+  },
+  "acceleration_variants": {
+    "explosive": 51,
+    "controlled": 52,
+    "lengthy": 68
+  },
+  "defaults": {
+    "shot_error_factor": 0.8,
+    "power_threshold": 0.5,
+    "lofted_windup_factor": 0.88,
+    "explosive_max_height": 175,
+    "controlled_max_height": 185,
+    "native_speed_threshold": 20
+  }
+}

@@ -5,10 +5,14 @@ from native_cpk import unwrap,wrap
 COACH='common/etc/pesdb/Coach.bin'
 BOOSTER='common/etc/pesdb/CoachBooster.bin'
 TACTICS={'possession':206,'short_counter':224,'long_counter':238,'side_attack':213,'long_ball':199}
-# Independently matched against every supplied coach with this ability. Other
-# attribute enums must be verified before they can be compiled.
-ATTRIBUTES={'38':1,'25':3,'35':4,'18':5,'21':7,'22':8,'27':10,'15':11,
-            '37':13,'40':14,'39':15,'24':16,'36':17,'23':18,'14':20}
+# CoachBooster enum -> native ability enum -> 147-parameter index. Verified
+# against 0x8236528 / 0x8236530 and 0x82a1ee4, then the runtime ability getter.
+# The reference coach_boost_map.json in the original APK uses a different
+# ordering and must not be used to compile or preview these native records.
+ATTRIBUTES={'14':1,'15':11,'16':21,'17':4,'18':2,'19':3,'20':7,'21':5,
+            '22':6,'23':10,'24':12,'25':13,'26':26,'27':8,'28':9,'29':23,
+            '30':24,'31':25,'32':22,'34':15,'35':17,'36':18,'37':14,'38':16,
+            '39':19,'40':20}
 
 def bitfield(value,bit,width,new):
     if type(new) is not int or not 0<=new<1<<width:raise ValueError('教练原生字段超出可写范围')
@@ -36,20 +40,32 @@ def compile_coaches(cpk,coaches,catalogue,registry,replace_ids=(),replace_booste
         cid=used[uid]
         if cid in records and cid not in replace_ids:raise ValueError('个人教练编号与原版冲突')
         effects={str(k):v for k,v in c['effects'].items() if v}
-        if len(effects)>4:raise ValueError(c['name']+'：V13 教练最多支持 4 项独立能力增能')
+        if len(effects)>2:raise ValueError(c['name']+'：原生教练只有 2 项能力增能；另外两个编号用于心有灵犀，请减少到 2 项后实装')
         if effects.keys()-ATTRIBUTES.keys():raise ValueError(c['name']+'：部分教练增能属性尚未核对原生编号，未用其他效果替代')
-        if any(type(v) is not int or not 0<=v<=15 for v in effects.values()):raise ValueError(c['name']+'：教练实装增能目前支持 +1 至 +15')
+        if any(type(v) is not int or not 0<=v<=20 for v in effects.values()):raise ValueError(c['name']+'：教练实装增能支持 +1 至 +20，不能写入负数')
         abilities=[]
         for index,amount in effects.items():
             key=uid+':'+index
+            # Reuse immutable stock entries when possible; never reserve them
+            # as mutable personal identities, or a later edit could change an
+            # original coach's effects as well.
+            shared=next((bid for bid,row in bonus.items()
+                         if bid<256 and (int.from_bytes(row,'little')>>10)&1023
+                         ==amount|(ATTRIBUTES[index]<<5)),None)
+            if key not in boost_registry and shared is not None:
+                abilities.append(shared);continue
             if key not in boost_registry:
                 free=next((i for i in range(256,512) if i not in bonus and i not in boost_registry.values()),None)
                 if free is None:raise ValueError('个人教练增能编号已用完')
                 boost_registry[key]=free
             bid=boost_registry[key]
             if bid in bonus and bid not in replace_boosters:raise ValueError('个人教练增能编号与原版冲突')
+            # Native constructor iterates at most 200 rows (not 512 IDs).
+            if bid not in bonus and len(bonus)>=200:
+                raise ValueError('本次 APK 教练增能表已达原生 200 条上限，请复用已有加成或减少不同的教练增能')
             bonus[bid]=struct.pack('<I',bid|(amount<<10)|(ATTRIBUTES[index]<<15));abilities.append(bid)
-        abilities+= [0]*(4-len(abilities))
+        abilities+= [0]*(2-len(abilities))
+        abilities+=list(c.get('_compiled_link_ids') or [0,0])
         value=int.from_bytes(records[int(template['id'])],'little');value=bitfield(value,0,64,cid)
         for key,bit in TACTICS.items():value=bitfield(value,bit,7,c['tactics'][key])
         age=int(c.get('age') or template['age']);value=bitfield(value,231,6,age-15)

@@ -460,5 +460,45 @@
     "overlap": 14379,
     "positives": 1,
     "reference": "Tap Trick; bit reference plus exact single positive in V13"
+  },
+  "14": {
+    "bit": 607,
+    "source": "V17 native Player.bin decoder 0x82aa124 and parameter getter 0x82a84d4",
+    "runtime_bit": 412
+  },
+  "25": {
+    "bit": 632,
+    "source": "V17 native Player.bin decoder 0x82aa124 and parameter getter 0x82a84d4",
+    "runtime_bit": 415
+  },
+  "43": {
+    "bit": 614,
+    "source": "V17 native Player.bin decoder 0x82aa124 and parameter getter 0x82a84d4",
+    "runtime_bit": 413
+  },
+  "51": {
+    "bit": 671,
+    "source": "V17 native Player.bin decoder 0x82aa124 and parameter getter 0x82a84d4",
+    "runtime_bit": 410
+  },
+  "52": {
+    "bit": 575,
+    "source": "V17 native Player.bin decoder 0x82aa124 and parameter getter 0x82a84d4",
+    "runtime_bit": 411
+  },
+  "63": {
+    "bit": 681,
+    "source": "V17 native Player.bin decoder 0x82aa124 and parameter getter 0x82a84d4",
+    "runtime_bit": 409
+  },
+  "68": {
+    "bit": 640,
+    "source": "V17 native Player.bin decoder 0x82aa124 and parameter getter 0x82a84d4",
+    "runtime_bit": 414
+  },
+  "70": {
+    "bit": 623,
+    "source": "V17 native Player.bin decoder 0x82aa124 and parameter getter 0x82a84d4",
+    "runtime_bit": 403
   }
 }

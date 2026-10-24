@@ -6,7 +6,7 @@ from native_tables import PLAYER,APPEARANCE,VARIATION,ALIASES
 from card_types import editor_card_type
 
 PREFIX='assets/gateway-release/'
-IMPORT_REVISION='apk-catalogue-compatible-v7'
+IMPORT_REVISION='apk-catalogue-compatible-v9-coach-links-shirt-number'
 
 def active_resources(base,store):
     path=Path(store)/'active-game.json'
@@ -46,6 +46,9 @@ def build_catalogue(apk,resources):
         from pack_catalogue import catalogue_from_archive
         (resources/'pack-exclusions.json').write_text(json.dumps(catalogue_from_archive(z),ensure_ascii=False),encoding='utf8')
         tables=read_tables(z);names={};classes={};verified={}
+        from native_numbers import assignments,restore as restore_number
+        number_sources=[Cpk(z.read(path)) for path in (PREFIX+'livedata/dt870_mobile_and.cpk',PREFIX+'custom-resources/legends-v10/dt870_mobile_and.cpk') if path in z.namelist()]
+        shirt_numbers=assignments(number_sources)
         name_path=PREFIX+'outputs/reference/player_editor_names.json.gz'
         if name_path in z.namelist():names=json.loads(gzip.decompress(z.read(name_path)))
         class_path=PREFIX+'outputs/reference/card-class-table.csv'
@@ -92,6 +95,7 @@ def build_catalogue(apk,resources):
                 if len(complete.get('parameters',[]))==147 and type(limit) is int and 1<=limit<=100:
                     p.update(copy.deepcopy(complete));p.pop('_studio_unknown_level_limit',None);p.pop('_studio_partial_skill_mapping',None);source+=' + 原包已校验资料'
             p.update(_studio_client_record=b.hex(),_studio_names=strings,_studio_card_label=labels.get(pid,''),_studio_native_card_class=kind)
+            restore_number(p,ident,int(p.get('initial_base_team_id') or get('club')),shirt_numbers)
             from native_celebration import restore_payload
             restore_payload(p)
             from ai_playing_styles import restore_payload as restore_ai_styles
@@ -124,6 +128,7 @@ def build_catalogue(apk,resources):
         from native_appearance import compact_table
         (resources/'native-appearance.bin').write_bytes(compact_table(tables[APPEARANCE]))
         coaches=read_coaches(z,resources)
+        catalog['coaches']=json.loads((resources/'coaches.json').read_text(encoding='utf8'))['coaches']
         from native_equipment import write_catalogue
         equipment=write_catalogue(Cpk(z.read(PREFIX+'custom-resources/legends-v10/dt870_mobile_and.cpk')),resources)
         from apk_literals import update_options
@@ -142,7 +147,7 @@ def read_coaches(archive,resources):
     previous=json.loads((resources/'coaches.json').read_text(encoding='utf8'));old={str(c['id']):c for c in previous['coaches']}
     if raw is None:return len(old)
     if len(raw)%176 or bonus is None or len(bonus)%4:raise ValueError('新版教练数据库布局改变')
-    boosts={};attribute={v:k for k,v in ATTRIBUTES.items()};attribute.update({2:'34',6:'17'})
+    boosts={};attribute={v:k for k,v in ATTRIBUTES.items()}
     for at in range(0,len(bonus),4):
         value=int.from_bytes(bonus[at:at+4],'little');boosts[value&1023]=((value>>15)&31,(value>>10)&31)
     coaches=[]
@@ -155,7 +160,7 @@ def read_coaches(archive,resources):
         prior['raw_payload_verified']=cid in old
         prior['tactics']={name:(value>>bit)&127 for name,bit in TACTICS.items()}
         ids=[(value>>bit)&511 for bit in (160,148,128,137)];effects={};unmapped=[]
-        for bid in ids:
+        for bid in ids[:2]:
             if not bid:continue
             attr,amount=boosts.get(bid,(None,0))
             if attr in attribute:effects[attribute[attr]]=effects.get(attribute[attr],0)+amount
@@ -164,6 +169,12 @@ def read_coaches(archive,resources):
         prior['raw_payload'].update(coach_id={'id':int(cid),'serial':0},name=prior['name'],name_en=prior['name_en'],age=prior['age'],ability_id=ids,**prior['tactics'])
         coaches.append(prior)
     if not coaches:raise ValueError('新版教练目录为空，未启用数据库')
+    from native_coach_links import read_catalogue
+    link_source=next((source for source in reversed(sources) if 'common/etc/pesdb/CoachLink.bin' in source.files),None)
+    from personal_source import PATH as personal_path
+    personal=json.loads(archive.read(personal_path)) if personal_path in archive.namelist() else {}
+    previous['linkup_types']=read_catalogue(link_source,coaches,resources,personal.get('coach_links',[])) if link_source else []
+    previous['coach_options_revision']='native-boosters-2-and-links-2-v1'
     previous['coaches']=coaches;(resources/'coaches.json').write_text(json.dumps(previous,ensure_ascii=False,indent=2),encoding='utf8');return len(coaches)
 
 def index_assets(library):

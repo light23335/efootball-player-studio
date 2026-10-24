@@ -1,6 +1,7 @@
 """Read our own APK metadata as data; preserve owners across repeated builds."""
 import copy,json,uuid
 from native_models import person_keys
+from player_identity_binding import owned_person_aliases,BOUND_AGENT_MIN
 
 PATH='assets/gateway-release/custom-resources/personal-player-studio/players.json'
 
@@ -34,9 +35,13 @@ def ownership(doc):
         if not route:raise ValueError('个人包缺少球员绑定记录')
         art=int(route['portraitKey'])
         history=set(map(int,i.get('previous_card_ids',[])))|{cid}
-        if not 90000000<=pid<99000000 or not 8000000<=art<9000000 or any(k&0xfffffff!=pid for k in history):
+        independent=i.get('independent_person_id',pid);bound=i.get('bound_original_player_id')
+        bound_valid=type(bound) is int and 0<bound<2**63 and pid==(bound&0xfffffff)
+        bound_people=set(i.get('bound_person_ids',[]))
+        if bound_valid:bound_people.add(pid)
+        if not 90000000<=independent<99000000 or not (90000000<=pid<99000000 or bound_valid) or not 8000000<=art<9000000 or any((k&0xfffffff)!=independent and not ((k>>28)&4095>=BOUND_AGENT_MIN and (k&0xfffffff) in bound_people) for k in history):
             raise ValueError('个人包永久编号不在工坊专用范围内')
-        aliases={cid,*map(int,person_keys(pid)),art,*history}
+        aliases={cid,*owned_person_aliases(i),art,*history}
         result[uid]={'identity':i,'asset_key':art,'aliases':aliases,
                      'boosters':{int(b) for b in p['base_parameters'][144:147] if int(b) in custom_ids or 1000<=int(b)<1024}}
     used={}
@@ -50,8 +55,12 @@ def seed(doc,registry,assets):
     owners=ownership(doc)
     for uid,p in owners.items():
         i=p['identity'];old=registry.get(uid)
-        if old and old['person_id']!=i['person_id']:raise ValueError('同一球员在本机和个人包中的永久编号不同，请先核对工程来源')
+        if old and old['person_id']!=i['person_id'] and (old.get('independent_person_id') is None or old.get('independent_person_id')!=i.get('independent_person_id')):
+            raise ValueError('同一球员在本机和个人包中的永久编号不同，请先核对工程来源')
         registry[uid]={'person_id':i['person_id'],'card_id':i['card_id'],
+                       'independent_person_id':i.get('independent_person_id',i['person_id']),
+                       'bound_original_player_id':i.get('bound_original_player_id'),
+                       'bound_person_ids':list(i.get('bound_person_ids',[])),
                        'card_ids':sorted(set((old or {}).get('card_ids',[]))|{i['card_id'],*i.get('previous_card_ids',[])})}
         if uid in assets and int(assets[uid])!=p['asset_key']:raise ValueError('同一球员的美术槽位与个人包不同')
         assets[uid]=p['asset_key']

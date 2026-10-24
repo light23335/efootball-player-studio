@@ -112,7 +112,7 @@ def main():
         build=json.loads(source.read('assets/chaquopy/build.json'));build['assets']['app.imy']=hashlib.sha1(app.getvalue()).hexdigest()
         changes={'assets/chaquopy/app.imy':app.getvalue(),'assets/chaquopy/build.json':json.dumps(build,separators=(',',':')).encode(),
                  'assets/studio-bundle.zip':bundle.getvalue(),'assets/studio-bundle.sha256':hashlib.sha256(bundle.getvalue()).hexdigest().encode(),
-                 'AndroidManifest.xml':manifest_version(source.read('AndroidManifest.xml'),195001,'1.9.5.1-android.1')}
+                 'AndroidManifest.xml':manifest_version(source.read('AndroidManifest.xml'),196000,'1.9.6-android.1')}
         from android_manifest import Manifest
         manifest=Manifest(changes['AndroidManifest.xml'])
         if not any(name=='queries' for _,name,_ in manifest.nodes()):manifest.add_queries(['com.efootball.revival.local','com.efootball.revival.resources','com.efootball.revival.diyer','com.efootball.revival.diyassets'],launcher=True)
@@ -140,7 +140,7 @@ def main():
                 raw.seek(entry.header_offset+26);length,extra=struct.unpack('<HH',raw.read(4))
                 alignment=16384 if entry.filename.endswith('.so') else 4
                 if (entry.header_offset+30+length+extra)%alignment:raise ValueError('APK alignment failure: '+entry.filename)
-    report={'version':'1.9.5.1-android.1','version_code':195001,'path':str(Path(a.output).resolve()),'bytes':Path(a.output).stat().st_size,'sha256':hashlib.sha256(Path(a.output).read_bytes()).hexdigest(),'signature':verification,'base_java_and_codecs_unchanged':True,'installed_games_helper_added':True}
+    report={'version':'1.9.6-android.1','version_code':196000,'path':str(Path(a.output).resolve()),'bytes':Path(a.output).stat().st_size,'sha256':hashlib.sha256(Path(a.output).read_bytes()).hexdigest(),'signature':verification,'base_java_and_codecs_unchanged':True,'installed_games_helper_added':True}
     Path(a.output).with_suffix('.build.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8');print(json.dumps(report,ensure_ascii=False))
 
 if __name__=='__main__':main()

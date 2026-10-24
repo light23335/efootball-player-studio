@@ -3,17 +3,20 @@
 APK modules are inspected, never imported. This reproduces their verified
 128-byte dispatch format before the personal extension is composed.
 """
-import copy,dis,re,struct,types
+import copy,dis,marshal,re,struct,types
 from personal_binding import code_fingerprint
 
 # Only the small data-composition protocol is pinned, not the engine or routes.
 PROTOCOL={'diy_routes.compose': '23252b61d72435ac8f9740473e1b81c5f4fa7433b544c5815169aaad42528903', 'diy_runtime.prepare_binding': 'bc5e91d38fc77e96b6f647f339dfc2140c81be4b4ef13ea5165e64074db07710', 'diy_runtime.sized_worker': '02edadc079d56b95a5f8299df5748d9be2ebc0861540c41baea152be0e224dd2', 'diy_binding_outer._start_legend_portrait_binding': '7f453f5874e4289b6a4225d14360544225dfdcc5923cd15e24d499e1fb250a6d'}
+V17_COMPOSE='13255b3dc09249b8cb23e01705b185436f1c2b257b42c8c9bd4ebf67efbf2b75'
 
 
 def verify_protocol(reader):
     for module,name in (('diy_routes','compose'),('diy_runtime','prepare_binding'),('diy_runtime','sized_worker'),('diy_binding_outer','_start_legend_portrait_binding')):
         functions=[c for c in reader(module).co_consts if isinstance(c,types.CodeType) and c.co_name==name]
-        if len(functions)!=1 or code_fingerprint(functions[0])!=PROTOCOL.get(module+'.'+name):raise ValueError('原版 DIY 美术准备协议改变：'+name)
+        allowed={PROTOCOL.get(module+'.'+name)}
+        if module== 'diy_routes' and name=='compose':allowed.add(V17_COMPOSE)
+        if len(functions)!=1 or code_fingerprint(functions[0]) not in allowed:raise ValueError('原版 DIY 美术准备协议改变：'+name)
 
 
 def literal_routes(code):
@@ -29,10 +32,38 @@ def literal_routes(code):
         elif i.opname=='BUILD_LIST':
             if not 1<=i.arg<=1024 or len(stack)!=i.arg or not all(isinstance(r,dict) for r in stack):raise ValueError('V16 原版绑定列表无效')
             tail=instructions[at+1:]
+            if len(tail)==6 and tail[-2].opname=='DELETE_NAME':
+                aliases={b.argval for a,b in zip(instructions,instructions[1:]) if a.opname=='IMPORT_FROM' and a.argval=='prepare_binding' and b.opname=='STORE_NAME'}
+                if tail[-2].argval not in aliases:raise ValueError('原版绑定准备删除了未知名称')
+                tail=tail[:-2]+tail[-1:]
             if len(tail)!=5 or [x.opname for x in tail]!=['CALL','LOAD_CONST','BINARY_SUBSCR','STORE_NAME','RETURN_CONST'] or tail[0].arg!=2 or tail[1].argval!=0 or tail[3].argval!='_start_legend_portrait_binding' or tail[4].argval is not None:raise ValueError('V16 原版绑定准备调用改变')
             return stack
         else:raise ValueError('V16 原版绑定不再是可读取的常量列表')
     raise ValueError('V16 缺少原版美术绑定列表')
+
+
+def route_layers(code):
+    """Read nested marshal wrappers in their inner-to-outer execution order."""
+    layers=[];count=0
+    def visit(node):
+        nonlocal count
+        count+=1
+        if count>4096:raise ValueError('原版美术包装层过多')
+        children=[]
+        for item in node.co_consts:
+            if isinstance(item,bytes) and item and item[0] in (99,227):
+                try:child=marshal.loads(item)
+                except (ValueError,EOFError,TypeError):continue
+                if isinstance(child,types.CodeType) and child.co_name=='<module>':children.append(child)
+        for child in children:visit(child)
+        if node.co_name=='<module>' and 'diy_runtime' in node.co_names:
+            layers.append(literal_routes(node))
+            if len(layers)>8:raise ValueError('原版美术分派层过多')
+    visit(code)
+    if not layers:raise ValueError('缺少原版美术分派层')
+    ids=[r['cardId'] for layer in layers for r in layer]
+    if len(set(ids))!=len(ids):raise ValueError('原版美术分派层存在重复球员')
+    return layers
 
 
 def compose(payload,routes,sites,templates,capacity=65536):
@@ -45,7 +76,7 @@ def compose(payload,routes,sites,templates,capacity=65536):
     for r in sorted(routes,key=lambda r:r['cardId']):
         cid,donor,key,face=r['cardId'],r['suiteDonorId'],r['portraitKey'],r.get('modelFaceKey','1');native=r.get('modelNativeId')
         if any(type(v) is not int or not 0<v<2**63 for v in (cid,donor)) or native is not None and (type(native) is not int or not 0<native<2**63):raise ValueError('V16 原版绑定编号无效')
-        if not isinstance(key,str) or not re.fullmatch('[0-9]{7}',key) or not isinstance(face,str) or not re.fullmatch('[0-9]{1,7}',face) or cid in seen or key in keys:raise ValueError('V16 原版绑定编号重复')
+        if not isinstance(key,str) or not re.fullmatch('[0-9]{7}',key) or not isinstance(face,str) or not (re.fullmatch('[0-9]{1,7}',face) or native is not None and face=='') or cid in seen or key in keys:raise ValueError('V16 原版绑定编号重复')
         seen.add(cid);keys.add(key)
         slot=b'\xff'+bytes(7)+struct.pack('<Q',native)+bytes(8) if native is not None else small(face)
         row=struct.pack('<QQ',cid,donor)+slot+small(key+'_')+small(key+'f')+(key+'_\0').encode('utf-16le')+(key+'f\0').encode('utf-16le')+bytes(4)

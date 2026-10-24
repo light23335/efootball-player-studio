@@ -65,3 +65,14 @@ def merge(raw,texts,replace_ids=()):
     if group['id']!=1142 or (group['items'].keys()&texts.keys())-set(replace_ids):raise ValueError('自建增能文字占用了原版条目')
     group['items'].update(texts)
     return wrap(write(groups))
+
+def merge_groups(raw,updates):
+    groups=read(unwrap(raw))
+    for update in updates:
+        group=next((g for g in groups if g['id']==update['id']),None)
+        if group is None:
+            if any(g['name']==update['name'] for g in groups):raise ValueError('技能文字组编号改变')
+            group={'name':update['name'],'id':update['id'],'items':{}};groups.append(group)
+        if group['name']!=update['name']:raise ValueError('技能文字组名称改变')
+        group['items'].update(update['items'])
+    return wrap(write(groups))

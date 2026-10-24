@@ -1,0 +1,197 @@
+{
+  "format": "native-coach-attribute-map-v1",
+  "engine_sha256": "efd257d9e41b622d6ecb8f51f7b0a8ee8820113fd427c5572025df1c8eecc7b8",
+  "source": "CoachBooster native enum converter and native player parameter getter; ARM64 instructions executed in isolated emulation",
+  "functions": {
+    "coach_enum_converter": 136537384,
+    "parameter_converter": 136978148,
+    "runtime_parameter_getter": 137004244,
+    "amount_getter": 136537428
+  },
+  "enum_table_offset": 13455064,
+  "parameter_table_offset": 13460920,
+  "rows": [
+    {
+      "coach_enum": 1,
+      "native_enum": 0,
+      "parameter": 14,
+      "label": "进攻意识",
+      "runtime_value_verified": 40
+    },
+    {
+      "coach_enum": 2,
+      "native_enum": 1,
+      "parameter": 18,
+      "label": "控球",
+      "runtime_value_verified": 44
+    },
+    {
+      "coach_enum": 3,
+      "native_enum": 3,
+      "parameter": 19,
+      "label": "紧密控球",
+      "runtime_value_verified": 45
+    },
+    {
+      "coach_enum": 4,
+      "native_enum": 2,
+      "parameter": 17,
+      "label": "盘球",
+      "runtime_value_verified": 43
+    },
+    {
+      "coach_enum": 5,
+      "native_enum": 4,
+      "parameter": 21,
+      "label": "地面传球",
+      "runtime_value_verified": 47
+    },
+    {
+      "coach_enum": 6,
+      "native_enum": 5,
+      "parameter": 22,
+      "label": "空中传球",
+      "runtime_value_verified": 48
+    },
+    {
+      "coach_enum": 7,
+      "native_enum": 6,
+      "parameter": 20,
+      "label": "射门",
+      "runtime_value_verified": 46
+    },
+    {
+      "coach_enum": 8,
+      "native_enum": 8,
+      "parameter": 27,
+      "label": "定位球",
+      "runtime_value_verified": 53
+    },
+    {
+      "coach_enum": 9,
+      "native_enum": 9,
+      "parameter": 28,
+      "label": "弧线",
+      "runtime_value_verified": 54
+    },
+    {
+      "coach_enum": 10,
+      "native_enum": 7,
+      "parameter": 23,
+      "label": "头球",
+      "runtime_value_verified": 49
+    },
+    {
+      "coach_enum": 11,
+      "native_enum": 17,
+      "parameter": 15,
+      "label": "防守意识",
+      "runtime_value_verified": 41
+    },
+    {
+      "coach_enum": 12,
+      "native_enum": 18,
+      "parameter": 24,
+      "label": "抢球",
+      "runtime_value_verified": 50
+    },
+    {
+      "coach_enum": 13,
+      "native_enum": 19,
+      "parameter": 25,
+      "label": "积极性",
+      "runtime_value_verified": 51
+    },
+    {
+      "coach_enum": 14,
+      "native_enum": 12,
+      "parameter": 37,
+      "label": "脚下力量",
+      "runtime_value_verified": 62
+    },
+    {
+      "coach_enum": 15,
+      "native_enum": 10,
+      "parameter": 34,
+      "label": "速度",
+      "runtime_value_verified": 59
+    },
+    {
+      "coach_enum": 16,
+      "native_enum": 11,
+      "parameter": 38,
+      "label": "加速",
+      "runtime_value_verified": 63
+    },
+    {
+      "coach_enum": 17,
+      "native_enum": 14,
+      "parameter": 35,
+      "label": "身体接触",
+      "runtime_value_verified": 60
+    },
+    {
+      "coach_enum": 18,
+      "native_enum": 15,
+      "parameter": 36,
+      "label": "身体控制",
+      "runtime_value_verified": 61
+    },
+    {
+      "coach_enum": 19,
+      "native_enum": 13,
+      "parameter": 39,
+      "label": "跳跃",
+      "runtime_value_verified": 64
+    },
+    {
+      "coach_enum": 20,
+      "native_enum": 16,
+      "parameter": 40,
+      "label": "体力",
+      "runtime_value_verified": 65
+    },
+    {
+      "coach_enum": 21,
+      "native_enum": 21,
+      "parameter": 16,
+      "label": "守门意识",
+      "runtime_value_verified": 42
+    },
+    {
+      "coach_enum": 22,
+      "native_enum": 25,
+      "parameter": 32,
+      "label": "扑救范围",
+      "runtime_value_verified": 58
+    },
+    {
+      "coach_enum": 23,
+      "native_enum": 22,
+      "parameter": 29,
+      "label": "接球",
+      "runtime_value_verified": 55
+    },
+    {
+      "coach_enum": 24,
+      "native_enum": 23,
+      "parameter": 30,
+      "label": "解围",
+      "runtime_value_verified": 56
+    },
+    {
+      "coach_enum": 25,
+      "native_enum": 24,
+      "parameter": 31,
+      "label": "扑救反应",
+      "runtime_value_verified": 57
+    },
+    {
+      "coach_enum": 26,
+      "native_enum": 20,
+      "parameter": 26,
+      "label": "防守参与",
+      "runtime_value_verified": 52
+    }
+  ]
+}

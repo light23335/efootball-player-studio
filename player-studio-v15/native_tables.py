@@ -8,6 +8,7 @@ from native_cpk import Cpk,unwrap,wrap
 from native_appearance import patch as patch_appearance
 from native_strings import booster_rows,merge as merge_strings
 from native_models import person_keys
+from player_identity_binding import owned_person_aliases
 from native_equipment import patch_sleeves,compile_boots,ASSIGNMENTS as BOOT_ASSIGNMENTS
 from custom_boosters import BOOSTER_BITS,validate_projects,canonical,context,text_key
 from native_celebration import FIELD as CELEBRATION_FIELD,validate as validate_celebration
@@ -53,7 +54,8 @@ def player_record(template,project,definition,fields,ability_bits,skill_bits):
         value=set_bits(value,**field,new=int(new))
     for index,field in ability_bits.items():value=set_bits(value,field['bit'],6,base[int(index)]-40)
     for field in AI_FIELDS.values():value=set_bits(value,field['bit'],1,base[field['parameter']])
-    selected=set(project['innate_skills'])
+    from native_skill_effects import compiled_skills
+    selected=set(compiled_skills(project['innate_skills'],identity['height_cm']))
     # All selected skills are written to the verified 147-parameter owned
     # protocol. Unknown client-table bits are left untouched, never guessed.
     for skill,field in skill_bits.items():value=set_bits(value,field['bit'],1,int(int(skill) in selected))
@@ -112,7 +114,7 @@ def weekly_table(data,projects,definitions,bindings=None,replace_ids=()):
         if selected!='auto' and selected not in grades:raise ValueError('实时更新状态无效')
         grade=3 if selected=='auto' else grades[selected]
         identity=definition['identity']
-        basic={identity['person_id']}
+        basic=set() if identity.get('bound_original_player_id') else {identity['person_id']}
         if binding.get('asset_key'):basic.add(int(binding['asset_key']))
         for pid in sorted({identity['card_id'],*basic,*identity.get('previous_card_ids',[])}):
             if pid in seen:raise ValueError('个人周状态编号与原版冲突')
@@ -133,19 +135,20 @@ def compile_tables(original,projects,definitions,resources,bindings,extra=None,r
     variants={k:v for k,v in variants.items() if k not in replace_ids}
     fields=json.loads((resources/'native-player-fields.json').read_text(encoding='utf8'))
     ability_bits=json.loads((resources/'native-ability-bits.json').read_text(encoding='utf8'))
-    skill_bits=json.loads((resources/'native-skill-bits.json').read_text(encoding='utf8'))
+    from native_skill_effects import skill_bits as verified_skill_bits
+    skill_bits=verified_skill_bits(resources)
     lines=raw[ALIASES].decode('utf8').splitlines();alias_rows=list(csv.reader(lines))
     aliases={row[0]:row[1] for row in alias_rows[1:] if len(row)==2}
     for project,definition,binding in zip(projects,definitions,bindings):
         cid=definition['identity']['card_id'];person=definition['identity']['person_id']
         anchor=int(project['native_card']['source_id'])
-        if cid in players or person in players:raise ValueError('个人编号与原版球员冲突，未写入')
+        if cid in players or person in players and not definition['identity'].get('bound_original_player_id'):raise ValueError('个人编号与原版球员冲突，未写入')
         template=original_players[anchor]
         record=player_record(template,project,definition,fields,ability_bits,skill_bits)
         players[cid]=record
         # Different native readers normalise the same permanent identity to
         # low-24, low-23 or low-22 person keys. Each needs the same body data.
-        basic={int(k) for k in person_keys(person)}
+        basic=set(owned_person_aliases(definition['identity']))
         if binding.get('asset_key'):basic.add(int(binding['asset_key']))
         for target in basic:
             if target in players:raise ValueError('个人基础资料别名与原版球员冲突')
@@ -181,9 +184,14 @@ def compile_tables(original,projects,definitions,resources,bindings,extra=None,r
     replacements={name:wrap(value,wrapped[name]) for name,value in updated.items()}
     abilities=json.loads((resources/'catalog.json').read_text(encoding='utf8'))['ABILITIES']
     texts,text_routes=booster_rows(projects,abilities)
-    if texts:
-        for name in cpk.files:
-            if name.endswith('/string/all_diff.str'):replacements[name]=merge_strings(cpk.read(name),texts,{text_key(bid)+j for bid in replace_boosters for j in (0,1)})
+    from native_skill_effects import text_groups
+    from native_strings import merge_groups
+    skill_texts=text_groups(resources)
+    for name in cpk.files:
+        if name.endswith('/string/all_diff.str'):
+            content=cpk.read(name)
+            if texts:content=merge_strings(content,texts,{text_key(bid)+j for bid in replace_boosters for j in (0,1)})
+            replacements[name]=merge_groups(content,skill_texts)
     weekly,weekly_added=weekly_table(unwrap(cpk.read(WEEKLY)),projects,definitions,bindings,replace_ids)
     replacements[WEEKLY]=wrap(weekly,cpk.read(WEEKLY))
     replacements[BOOT_ASSIGNMENTS],equipment_report=compile_boots(cpk,projects,definitions,bindings,replace_ids)
@@ -192,7 +200,7 @@ def compile_tables(original,projects,definitions,resources,bindings,extra=None,r
     server_only=sorted({skill for project in projects for skill in project['innate_skills'] if str(skill) not in skill_bits})
     return result,{'players_added':len(players)-len(original_players),'original_player_records_preserved':len(original_players),
                    'original_appearance_records_preserved':len(original_appearances),'personal_cards':len(projects),
-                   'native_person_aliases':{d['identity']['package_id']:person_keys(d['identity']['person_id']) for d in definitions},
+                   'native_person_aliases':{d['identity']['package_id']:owned_person_aliases(d['identity']) for d in definitions},
                    'equipment':equipment_report,'personal_booster_text_routes':text_routes,
                    'fixed_B_weekly_records_added':weekly_added,
                    'personal_weekly_states':{d['identity']['package_id']:p.get('weekly_condition','auto') for p,d in zip(projects,definitions)},

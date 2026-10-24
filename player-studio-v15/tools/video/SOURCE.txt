@@ -1,7 +1,0 @@
-Unmodified FFmpeg 7.1 essentials Windows build, www.gyan.dev.
-Copyright (c) 2000-2024 the FFmpeg developers.
-Configured with --enable-gpl --enable-version3. GPL version 3 or later.
-Used as a separate executable for original MPEG-2 card-video conversion.
-Project and source: https://ffmpeg.org/releases/ffmpeg-7.1.tar.xz
-Build source/configuration: https://www.gyan.dev/ffmpeg/builds/
-The existing executable in this user's development workspace is copied unchanged.

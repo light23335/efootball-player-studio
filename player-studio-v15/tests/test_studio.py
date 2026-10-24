@@ -186,7 +186,7 @@ class StudioTests(unittest.TestCase):
         server=app.StudioServer(('127.0.0.1',0),self.store,'test-token')
         self.addCleanup(server.server_close)
         library=server.library
-        self.assertEqual(library.summary()['players'],46623)
+        self.assertEqual(library.summary()['players'],46629)
         henry=library.player('88046312750111')
         self.assertEqual(henry['name'],'Thierry Henry')
         self.assertEqual(henry['card_type'],'Epic')

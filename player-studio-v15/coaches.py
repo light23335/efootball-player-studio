@@ -34,6 +34,8 @@ def normalize_coach(value, abilities):
     row['effects'] = {str(k): v for k, v in effects.items() if v}
     from coach_portraits import normalize
     row['portrait'] = normalize(row.get('portrait'))
+    from native_coach_links import normalize_slots
+    row['linkups'] = normalize_slots(row.get('linkups'))
     return row
 
 

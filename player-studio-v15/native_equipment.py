@@ -63,7 +63,8 @@ def compile_boots(cpk,projects,definitions,bindings,replace_ids=()):
         boots=selected if selected is not None else inherited
         if boots is None:
             report.append({'package_id':d['identity']['package_id'],'boots_id':None,'mode':'native-default'});continue
-        aliases={d['identity']['card_id'],*map(int,person_keys(d['identity']['person_id'])),int(b['asset_key'])}
+        from player_identity_binding import owned_person_aliases
+        aliases={d['identity']['card_id'],*owned_person_aliases(d['identity']),int(b['asset_key'])}
         for alias in aliases:
             if alias in original and alias not in replace_ids:raise ValueError('个人球鞋编号与原版记录冲突')
             rows[alias]=boots

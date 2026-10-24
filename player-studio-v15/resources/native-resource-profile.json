@@ -1,10 +1,10 @@
 {
-  "release_id": "20261023-E169-E205-E211-models-card-art-source-contract-v1-default-live-v2026102401",
-  "game_version": "V16",
-  "cache_namespace": "V16-efd257d9",
+  "release_id": "20261024-E169-E213-unified-test",
+  "game_version": "V17",
+  "cache_namespace": "V17-efd257d9",
   "native_engine_sha256": "efd257d9e41b622d6ecb8f51f7b0a8ee8820113fd427c5572025df1c8eecc7b8",
   "resource_key_offset": 12814176,
   "resource_key_sha256": "6bc6ea77e0384df5836508a9280b278d18bb484c079d9531a5df742888f42162",
   "family": "V14",
-  "validation": "Native tables and 40 interface regions verified. Automatic compatible updates supported; game acceptance pending."
+  "validation": "Native tables, 40 interface regions, and both stock route layers verified. Game acceptance pending."
 }

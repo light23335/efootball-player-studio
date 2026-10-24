@@ -20,7 +20,8 @@ def module_reader(apk):
         return value
     return read
 
-def literal_assignments(code,wanted):
+def literal_assignments(code,wanted,_depth=0):
+    if _depth>64:raise ValueError('APK 常量包装层过多')
     instructions=list(dis.get_instructions(code));start=0;result={}
     for at,instruction in enumerate(instructions):
         if instruction.opname not in ('STORE_NAME','STORE_FAST','STORE_DEREF','STORE_GLOBAL'):continue
@@ -49,6 +50,19 @@ def literal_assignments(code,wanted):
             if len(stack)!=1:raise ValueError('APK 常量资料不完整')
             result[instruction.argval]=stack[0]
         start=at+1
+    missing=set(wanted)-set(result)
+    if missing:
+        inherited=[]
+        for raw in code.co_consts:
+            if not isinstance(raw,bytes) or not raw or raw[0] not in (99,227):continue
+            try:child=marshal.loads(raw)
+            except (ValueError,EOFError,TypeError):continue
+            if not isinstance(child,types.CodeType) or child.co_name!='<module>':continue
+            try:inherited.append(literal_assignments(child,missing,_depth+1))
+            except ValueError as exc:
+                if str(exc)!='APK 缺少必要选项资料':raise
+        if len(inherited)==1:result.update(inherited[0])
+        elif inherited:raise ValueError('APK 常量包装层包含多个不同来源')
     if set(result)!=set(wanted):raise ValueError('APK 缺少必要选项资料')
     return result
 
@@ -73,6 +87,8 @@ def update_options(apk,catalog):
         if ident in old and old[ident]['effects']==effects:label=old[ident]['label']
         boosters.append({'id':ident,'category':kind,'label':label,'conditional':kind!=0,'effects':effects})
     catalog.update(options);catalog.update(skill);catalog['boosters']=boosters
+    from skill_localization import apply_labels
+    apply_labels(catalog)
     costs=literal_assignments(reader('pes_tables'),{'EXPERIENCE_LIST'})['EXPERIENCE_LIST']
     if isinstance(costs,(list,tuple)) and costs and all(isinstance(row,(list,tuple)) and len(row)==2 for row in costs):
         pairs=dict(costs)

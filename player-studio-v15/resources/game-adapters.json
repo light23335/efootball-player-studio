@@ -12,8 +12,8 @@
     },
     "efd257d9e41b622d6ecb8f51f7b0a8ee8820113fd427c5572025df1c8eecc7b8": {
       "family": "V14",
-      "game_version": "V16",
-      "validation": "Native tables, interface regions and installer verified; game acceptance pending."
+      "game_version": "V17",
+      "validation": "V16.1 and V17 have identical ARM64 engines. Two stock binding layers, coach and gameplay interfaces verified; game acceptance pending."
     }
   }
 }

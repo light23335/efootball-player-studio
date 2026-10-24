@@ -35,7 +35,7 @@ from custom_boosters import issues as booster_issues,validate_projects as valida
 
 PREFIX='assets/gateway-release/'
 NATIVE='custom-resources/legends-v10/'
-COMPILER_REVISION='v16-ui-pairing-boosters-capacity-1.9.5'
+COMPILER_REVISION='v17-coach-links-identity-skills-1.9.6'
 
 
 def compact(value):return json.dumps(value,ensure_ascii=False,separators=(',',':')).encode('utf8')
@@ -265,7 +265,8 @@ class NativePackage:
                     for p in projects:
                         own=owners.get(p['package_id'],{}).get('aliases',set())
                         identity=reserve_identity(p,occupied-own,registry);identities.append(identity)
-                        occupied.update((identity['card_id'],*map(int,person_keys(identity['person_id']))))
+                        from player_identity_binding import owned_person_aliases
+                        occupied.update((identity['card_id'],*owned_person_aliases(identity)))
                         nation=p['identity'].get('nation_id')
                         if not nation:
                             row=db.execute('select id from identities where kind=? and name=?',('nation',p['identity']['nationality'])).fetchone()
@@ -298,8 +299,14 @@ class NativePackage:
                 old_coaches=[c for c in inherited.get('coaches',[]) if c['uuid'] in selected_coach_ids]
                 coach_registry.setdefault('coaches',{}).update({c['uuid']:c['id'] for c in old_coaches})
                 coach_registry.setdefault('boosters',{}).update(inherited.get('editor_registries',{}).get('coach_boosters',{}))
-                coach_resources,coaches=compile_coaches(Cpk(original),body.get('coaches',[]),coach_catalog,coach_registry,
-                    {c['id'] for c in old_coaches},{b for c in old_coaches for b in c['payload'].get('ability_id',[]) if b})
+                coach_registry.setdefault('links',{}).update(inherited.get('editor_registries',{}).get('coach_links',{}))
+                from native_coach_links import compile_links,schema as link_schema
+                selected_coaches=copy.deepcopy(body.get('coaches',[]))
+                link_resources,link_ids,new_link_routes=compile_links(Cpk(original),selected_coaches,coach_registry,link_schema(self.profile_resources))
+                for coach in selected_coaches:coach['_compiled_link_ids']=link_ids[coach['uuid']]
+                coach_resources,coaches=compile_coaches(Cpk(original),selected_coaches,coach_catalog,coach_registry,
+                    {c['id'] for c in old_coaches},{b for c in old_coaches for b in c['payload'].get('ability_id',[])[:2] if b})
+                coach_resources.update(link_resources)
                 from coach_portraits import compile_portraits,owned_paths
                 coach_art,coach_portrait_report=compile_portraits(body.get('coaches',[]),coaches,self.library)
                 art.extend(coach_art)
@@ -355,9 +362,10 @@ class NativePackage:
                 for p in projects:
                     for b in p.get('custom_boosters',[]):document['preview_boosters'][str(b['id'])]={'effects':b['effects'],'conditional':bool(b.get('conditional'))}
                 document['pack_covers']={**inherited.get('pack_covers',{}),**cover_routes}
-                document['editor_registries']={'boosters':booster_registry,'coach_boosters':coach_registry.get('boosters',{})}
+                document['editor_registries']={'boosters':booster_registry,'coach_boosters':coach_registry.get('boosters',{}),'coach_links':coach_registry.get('links',{})}
+                document['coach_links']=list({r['id']:r for r in [*inherited.get('coach_links',[]),*new_link_routes]}.values())
                 for relative,content in cover_files.items():replacements[PREFIX+relative]=content
-                if identities or inherited.get('native_binding'):
+                if identities or inherited.get('native_binding') or document['coach_links']:
                     profile=json.loads((self.resources/'native-route-templates.json').read_text(encoding='utf8'))
                     profile['club_emblems']=True
                     profile['external_routes']=True
@@ -367,6 +375,11 @@ class NativePackage:
                     mini_profile=self.resources/'native-thumbnail-hook.json'
                     if not mini_profile.is_file():mini_profile=self.profile_resources/'native-thumbnail-hook.json'
                     profile['thumbnail_hook']=json.loads(mini_profile.read_text(encoding='utf8'))
+                    from native_extensions import link_hooks
+                    with source.open('lib/arm64-v8a/libUE4.so') as engine:
+                        profile['native_hooks']=link_hooks(document['coach_links'],engine,link_schema(self.profile_resources))
+                        from native_skill_effects import hooks as skill_hooks,required as skill_effects_required
+                        if skill_effects_required(document['players'],catalog):profile['native_hooks']+=skill_hooks(engine,self.profile_resources)
                     with source.open('lib/arm64-v8a/libUE4.so') as engine:
                         for name in ('position_hook','acquisition_hook','overall_hook','thumbnail_hook'):
                             h=profile[name];engine.seek(h['file_offset'])
@@ -384,7 +397,7 @@ class NativePackage:
                     original_binding,installer_code=read_installer(apk)
                     routes=[r for r in inherited.get('native_binding',{}).get('routes',[]) if int(r['cardId']) not in replace_ids]
                     for identity,binding,definition in zip(identities,bindings,definitions):
-                        for cid in sorted({identity['card_id'],*map(int,person_keys(identity['person_id'])),int(binding['asset_key']),*identity['previous_card_ids']}):
+                        for cid in sorted({identity['card_id'],*owned_person_aliases(identity),int(binding['asset_key']),*identity['previous_card_ids']}):
                             routes.append({'cardId':cid,'suiteDonorId':identity['card_id'],
                                            'portraitKey':binding['asset_key'],'modelFaceKey':binding['asset_key'],
                                            'thumbnail_names':binding['thumbnail_names'],

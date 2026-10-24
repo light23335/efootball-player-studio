@@ -17,7 +17,9 @@ class V15BindingSourceTests(unittest.TestCase):
         root=Path(__file__).resolve().parents[2];apk=root/'球员工坊-V15/原始APK/73efootball-V15.apk'
         if not apk.is_file():self.skipTest('requires the original V15 APK')
         resources=Path(__file__).resolve().parents[1]/'resources';payload,code=read_installer(apk)
-        self.assertEqual(payload,json.loads((resources/'native-binding-profile.json').read_text()))
+        # The bundled profile now describes V17. Keep a separate immutable
+        # V15 fingerprint so this remains a real backwards-compatibility test.
+        self.assertEqual(fingerprint(payload),'1e1ab4382c90ae42f534e9250d1ab747c0ca901b196ad60bca57b037c5a27992')
         profile=json.loads((resources/'native-route-templates.json').read_text());profile.update(external_routes=True,club_emblems=True)
         for field,file in (('position_hook','native-position-hook.json'),('acquisition_hook','native-acquisition-hook.json'),('overall_hook','native-overall-hook.json'),('thumbnail_hook','native-thumbnail-hook.json')):profile[field]=json.loads((resources/file).read_text())
         route={'cardId':990001,'suiteDonorId':990001,'portraitKey':'8900001','modelFaceKey':'8900001','club_id':108,'position':1,'maximum_overall':99,'presentation_rarity':10}

@@ -1,5 +1,5 @@
 from pathlib import Path
-import copy,dis,json,re,struct,sys,types,unittest
+import copy,dis,json,marshal,re,struct,sys,types,unittest
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from apk_literals import module_reader,literal_assignments
@@ -11,7 +11,7 @@ from personal_binding import capture,fingerprint,prepare,compose,relocate_code
 class V193BindingTests(unittest.TestCase):
  @classmethod
  def setUpClass(cls):
-  cls.root=Path(__file__).resolve().parents[2];cls.apk=cls.root.parent/'73efootball安装包及资源/73efootball-V16(1).apk'
+  cls.root=Path(__file__).resolve().parents[2];cls.apk=getattr(cls,'original_apk',cls.root.parent/'73efootball安装包及资源/73efootball-V16(1).apk')
   if not cls.apk.is_file():raise unittest.SkipTest('requires original V16 APK')
   cls.reader=staticmethod(module_reader(cls.apk));cls.payload,cls.installer=read_installer(cls.apk)
   res=cls.root/'player-studio-v15/resources';cls.profile=json.loads((res/'native-route-templates.json').read_text());cls.profile.update(external_routes=True,club_emblems=True)
@@ -21,7 +21,18 @@ class V193BindingTests(unittest.TestCase):
 
  def actual_loader(self,allocator=None):
   """Run only the inspected pure composition functions, never APK modules."""
-  def function(module,name,namespace):return types.FunctionType(next(c for c in self.reader(module).co_consts if isinstance(c,types.CodeType) and c.co_name==name),namespace)
+  def function(module,name,namespace):
+   def find(code):
+    direct=next((c for c in code.co_consts if isinstance(c,types.CodeType) and c.co_name==name),None)
+    if direct:return direct
+    for value in code.co_consts:
+     if not isinstance(value,bytes) or value[:1] not in (b'c',b'\xe3'):continue
+     try:child=marshal.loads(value)
+     except (ValueError,TypeError,EOFError):continue
+     if isinstance(child,types.CodeType) and child.co_name=='<module>':
+      match=find(child)
+      if match:return match
+   return types.FunctionType(find(self.reader(module)),namespace)
   def require(ok,message):
    if not ok:raise ValueError(message)
   def forbidden(*args):raise AssertionError('No native allocation during preflight')
@@ -32,14 +43,16 @@ class V193BindingTests(unittest.TestCase):
   ns['sized_worker']=function('diy_runtime','sized_worker',ns);real_prepare=function('diy_runtime','prepare_binding',ns)
   outer=types.ModuleType('diy_binding_outer');outer._start_legend_portrait_binding=function('diy_binding_outer','_start_legend_portrait_binding',{})
   raw=types.FunctionType(self.installer.raw_code,{'allocate_portrait_pages':allocator or forbidden});raw.__globals__['_start_legend_portrait_binding']=raw
-  with patch.dict(sys.modules,{'diy_binding_outer':outer}):actual,payload,_=real_prepare(raw,self.installer.routes)
+  actual=raw
+  with patch.dict(sys.modules,{'diy_binding_outer':outer}):
+   for layer in self.installer.route_layers:actual,payload,_=real_prepare(actual,layer)
   return actual,payload
 
  def test_preflight_uses_actual_v16_loader_and_resizes_only_our_entry_span(self):
   actual,payload=self.actual_loader()
   self.assertEqual(payload,self.payload);self.assertNotEqual(fingerprint(payload),fingerprint(self.installer.raw_payload))
   before=capture(actual);modified,report=prepare(actual,self.binding)
-  self.assertEqual(capture(actual),before);self.assertEqual(report['stock_routes_preserved'],4);self.assertEqual(report['page_bytes'],4096)
+  self.assertEqual(capture(actual),before);self.assertEqual(report['stock_routes_preserved'],len(self.installer.routes));self.assertEqual(report['page_bytes'],4096)
   worker=next(c for c in modified.__code__.co_consts if isinstance(c,types.CodeType) and c.co_name=='worker')
   self.assertEqual(code_fingerprint(worker),self.installer.proof['raw_worker_fingerprint'])
   checked=verify_installer(self.installer,self.binding)
@@ -100,5 +113,35 @@ class V193BindingTests(unittest.TestCase):
  def test_changed_preparation_call_cannot_be_silently_treated_as_legacy(self):
   code=compile("def unused(): pass\n_start_legend_portrait_binding=prepare_binding(_start_legend_portrait_binding, [{'cardId':1}])[1]\n",'bad.py','exec')
   with self.assertRaises(ValueError):literal_routes(code)
+
+class V17BindingTests(V193BindingTests):
+ original_apk=Path('C:/Users/1/Downloads/73efootball-V17.apk')
+
+ def test_two_stock_preparation_layers_and_isolated_native_worker(self):
+  self.assertEqual([len(layer) for layer in self.installer.route_layers],[4,6])
+  actual,payload=self.actual_loader(lambda *args:(0x7000000000+0x6000000,'isolated'))
+  self.assertEqual(payload,self.payload)
+  modified,_=prepare(actual,self.binding)
+  from native_worker_sim import run
+  import zipfile
+  with zipfile.ZipFile(self.apk) as archive:engine=archive.read('lib/arm64-v8a/libUE4.so')
+  report=run(modified,capture(modified),engine)
+  self.assertEqual(report['status'],'binding_installed',report)
+
+ def test_coaches_only_binding_installs_custom_link_adapters(self):
+  import io,zipfile
+  from native_extensions import link_hooks
+  from native_coach_links import schema
+  from native_worker_sim import run
+  with zipfile.ZipFile(self.apk) as archive:engine=archive.read('lib/arm64-v8a/libUE4.so')
+  binding=copy.deepcopy(self.binding);binding['routes']=[]
+  binding['profile']['native_hooks']=link_hooks([{'id':256,'template_id':8}],io.BytesIO(engine),schema())
+  from native_skill_effects import hooks as skill_hooks
+  binding['profile']['native_hooks']+=skill_hooks(io.BytesIO(engine))
+  actual,_=self.actual_loader(lambda *args:(0x7000000000+0x6000000,'isolated'))
+  modified,_=prepare(actual,binding)
+  report=run(modified,capture(modified),engine)
+  self.assertEqual(report['status'],'binding_installed',report)
+  self.assertEqual(report['patched_hooks'],report['total_hooks'])
 
 if __name__=='__main__':unittest.main()

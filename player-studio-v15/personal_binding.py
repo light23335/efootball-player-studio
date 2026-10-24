@@ -70,7 +70,7 @@ def reserve_asset_key(uid,occupied,registry):
 
 
 def compose(payload,routes,profile,capacity=4194304):
-    if not 1<=len(routes)<=10000:raise ValueError('个人美术绑定数量须为 1–10000')
+    if not 0<=len(routes)<=10000:raise ValueError('个人美术绑定数量不能超过 10000')
     seen=set();rows=bytearray();stride=144 if profile.get('acquisition_hook') else (136 if profile.get('club_emblems') or profile.get('position_hook') else 128)
     external=bool(profile.get('external_routes'))
     def small(value):
@@ -147,6 +147,12 @@ def compose(payload,routes,profile,capacity=4194304):
     if profile.get('rarity_hook'):_rarity_hook(out,blob,table,stride,profile['rarity_hook'])
     if profile.get('overall_hook'):_overall_hook(out,blob,table,stride,profile['overall_hook'])
     if profile.get('thumbnail_hook'):_thumbnail_hook(out,blob,routes,profile['thumbnail_hook'])
+    for hook in profile.get('native_hooks',[]):
+        if any(h['address']==hook['address'] for h in out['hooks']):raise ValueError('原生扩展接口重复')
+        blob.extend(bytes(-len(blob)%8));at=len(blob);body=bytes.fromhex(hook['body_hex'])
+        out['hooks'].append({'name':hook['name'],'address':hook['address'],'offset':at,'expected_hex':hook['expected_hex']})
+        out.setdefault('absolute_fixups',[]).extend([[at+offset,target] for offset,target in hook['absolute_fixups']])
+        blob.extend(body)
     if len(blob)>capacity:raise ValueError('个人美术绑定超出已分配容量')
     if bytes(blob[:len(prefix)])!=prefix:raise ValueError('原版传奇美术绑定被改变')
     out['blob_hex']=blob.hex()
