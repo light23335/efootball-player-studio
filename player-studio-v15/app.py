@@ -510,6 +510,8 @@ class StudioServer(ThreadingHTTPServer):
         self.game_import = GameImport(self,RESOURCE)
         from onboarding import Setup
         self.setup = Setup(self)
+        from updates import UpdateChecker
+        self.updates = UpdateChecker(store,RESOURCE,APP_VERSION,globals().get('PLATFORM','pc'))
         self.token = token or secrets.token_urlsafe(32)
         self.last_seen = time.monotonic()
 
@@ -573,6 +575,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.send({"error": "请从桌面程序启动球员工坊"}, 403)
         self.server.last_seen = time.monotonic()
         if path == "/api/bootstrap":
+            self.server.updates.start()
             app_root = self.server.library.home.parent
             active=json.loads((self.server.store.root/'active-game.json').read_text(encoding='utf8')) if (self.server.store.root/'active-game.json').is_file() else {}
             return self.send({"project": self.server.store.project, "catalog": self.server.catalog, "version": APP_VERSION,
@@ -682,6 +685,18 @@ class Handler(BaseHTTPRequestHandler):
                 result = preferences(store,body)
             elif path == '/api/setup/install-plan':
                 result = self.server.setup.install_plan(body)
+            elif path == '/api/updates/status':
+                result = self.server.updates.status()
+            elif path == '/api/updates/check':
+                result = self.server.updates.start(manual=True)
+            elif path == '/api/updates/settings':
+                result = self.server.updates.settings(body)
+            elif path == '/api/updates/dismiss':
+                result = self.server.updates.dismiss()
+            elif path == '/api/updates/open':
+                url=self.server.updates.link()
+                action=globals().get('open_update_action',lambda value:webbrowser.open(value))
+                result={'opened':bool(action(url))}
             elif path == '/api/game-import/status':
                 result = self.server.game_import.status()
             elif path == '/api/game-import/install-adapter':

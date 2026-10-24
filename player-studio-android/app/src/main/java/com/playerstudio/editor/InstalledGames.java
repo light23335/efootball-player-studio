@@ -11,6 +11,11 @@ import org.json.*;
 
 /** Only reads compatible installation APKs; never reads another app's data. */
 public final class InstalledGames {
+    public static boolean openReleasePage(String url){
+        android.net.Uri uri=android.net.Uri.parse(url);
+        if(!"https".equals(uri.getScheme())||!"github.com".equals(uri.getHost())||!uri.getPath().contains("/releases/"))throw new IllegalArgumentException("更新下载地址无效");
+        NativeFiles.applicationContext().startActivity(new Intent(Intent.ACTION_VIEW,uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));return true;
+    }
     private static final String[] KNOWN={"com.efootball.revival.local","com.efootball.revival.resources","com.efootball.revival.diyer","com.efootball.revival.diyassets"};
     private static int flags(){return Build.VERSION.SDK_INT>=28?PackageManager.GET_SIGNING_CERTIFICATES:PackageManager.GET_SIGNATURES;}
     private static Set<String> signatures(PackageInfo info) throws Exception {

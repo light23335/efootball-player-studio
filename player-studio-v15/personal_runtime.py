@@ -86,6 +86,17 @@ def install_fps_options(document,root):
     destination.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf8')
 
 
+def install_package_identity(document):
+    if document.get('installation',{}).get('package')!='com.efootball.revival.diyer':return
+    import legend_cr7_grants
+    from personal_binding import code_fingerprint
+    function=legend_cr7_grants._device_root
+    if getattr(function,'_studio_coexist',False):return
+    if code_fingerprint(function.__code__)!='c72dbd0080b6556425a7d207f69c64437f4a5064bad6b4c506f33ce6d178458c':raise ValueError('Coexist private directory interface changed')
+    function.__code__=function.__code__.replace(co_consts=tuple(v.replace('com.efootball.revival.local','com.efootball.revival.diyer') if isinstance(v,str) else v for v in function.__code__.co_consts))
+    function._studio_coexist=True
+
+
 class PackImageService:
     """Serve signed custom banners locally; redirect stock image requests."""
     def __init__(self,root,routes):
@@ -427,6 +438,7 @@ def install(namespace):
         install_pack_images(namespace,document,root)
         import _protected_runtime
         _protected_runtime.install_root(root)
+        install_package_identity(document)
         install_fps_options(document,root)
         import legends_v10
         if document.get('native_binding'):

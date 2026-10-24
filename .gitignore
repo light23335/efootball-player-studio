@@ -24,3 +24,6 @@ output/
 *.exe
 *.dll
 player-studio-v15/resources/library.sqlite3
+
+.env
+.env.*

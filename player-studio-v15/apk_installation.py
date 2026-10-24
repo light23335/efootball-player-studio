@@ -22,10 +22,10 @@ def remember_resource(store,mode,package,certificate):
  path=store.root/'resource-installations.json';value=json.loads(path.read_text(encoding='utf8')) if path.is_file() else {}
  value[mode]={'package':package,'signer':certificate};temp=path.with_suffix('.tmp');temp.write_text(json.dumps(value,ensure_ascii=False),encoding='utf8');temp.replace(path)
 
-def resources_needed(store,rows):
+def resources_needed(store,rows,game_package=None):
  cert=local_certificate(store);path=store.root/'resource-installations.json';known=json.loads(path.read_text(encoding='utf8')) if path.is_file() else {};result={}
- for mode,package in [('update',RESOURCES),('coexist',COEXIST_RESOURCES)]:
-  exists=cert and (known.get(mode,{}).get('signer')==cert or any(r['package']==package and cert in r['signers'] for r in rows))
+ for mode,package in [('update',COEXIST_RESOURCES if game_package==COEXIST_GAME else RESOURCES),('coexist',COEXIST_RESOURCES)]:
+  exists=cert and (any(r.get('signer')==cert and r.get('package')==package for r in known.values()) or any(r['package']==package and cert in r['signers'] for r in rows))
   result[mode]=not bool(exists)
  return result
 
@@ -55,8 +55,14 @@ def patch_dex(raw):
  return bytes(out),changed
 
 def coexist_entries(source,mode):
- if mode=='update':return {},{'mode':'update','rewritten_dex_strings':0}
+ if mode=='update':
+  metadata={'mode':'update','package':identity(source.filename)['package'],'rewritten_dex_strings':0}
+  if metadata['package']==COEXIST_GAME:verify_private_root(source.filename);metadata['private_root_check_verified']=True
+  return {},metadata
  metadata=plan(source.filename,'coexist');document=Manifest(source.read('AndroidManifest.xml'))
+ if metadata['package']==COEXIST_GAME:
+  verify_private_root(source.filename)
+  metadata['private_root_check_verified']=True
  document.clone(metadata['package'],'73efootball 工坊版' if metadata['package']==COEXIST_GAME else '73efootball 工坊资源',ALIASES)
  replacements={'AndroidManifest.xml':document.bytes()};count=0
  for name in source.namelist():
@@ -64,3 +70,10 @@ def coexist_entries(source,mode):
    raw,changed=patch_dex(source.read(name));count+=changed
    if changed:replacements[name]=raw
  return replacements,dict(metadata,rewritten_dex_strings=count)
+
+def verify_private_root(apk):
+ import types
+ from apk_literals import module_reader
+ from personal_binding import code_fingerprint
+ code=next(c for c in module_reader(apk)('legend_cr7_grants').co_consts if isinstance(c,types.CodeType) and c.co_name=='_device_root')
+ if code_fingerprint(code)!='c72dbd0080b6556425a7d207f69c64437f4a5064bad6b4c506f33ce6d178458c':raise ValueError('原版私有目录检查接口已改变，未生成共存包')

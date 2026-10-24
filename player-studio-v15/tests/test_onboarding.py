@@ -1,10 +1,13 @@
 from pathlib import Path
 from types import SimpleNamespace
-import copy,hashlib,json,struct,sys,tempfile,unittest,zipfile,zlib
+import copy,hashlib,json,struct,sys,tempfile,types,unittest,zipfile,zlib
+from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from apk_installation import coexist_entries,identity,patch_dex,plan,COEXIST_GAME,COEXIST_RESOURCES,remember_resource,resources_needed,local_certificate
 from android_manifest import Manifest
 from onboarding import Setup,preferences
+from personal_runtime import install_package_identity
+from apk_literals import module_reader
 
 class CoexistTests(unittest.TestCase):
  @classmethod
@@ -50,7 +53,18 @@ class CoexistTests(unittest.TestCase):
  def test_resources_generated_once_and_invalidated_when_signer_changes(self):
   with tempfile.TemporaryDirectory() as folder:
    store=SimpleNamespace(root=Path(folder));(store.root/'signing').mkdir();certificate=store.root/'signing/personal-apk-signing-cert.der';certificate.write_bytes(b'first')
-   self.assertTrue(resources_needed(store,[])['coexist']);remember_resource(store,'coexist',COEXIST_RESOURCES,local_certificate(store));self.assertFalse(resources_needed(store,[])['coexist']);self.assertTrue(resources_needed(store,[])['update'])
+   self.assertTrue(resources_needed(store,[])['coexist']);remember_resource(store,'coexist',COEXIST_RESOURCES,local_certificate(store));self.assertFalse(resources_needed(store,[])['coexist']);self.assertTrue(resources_needed(store,[])['update']);self.assertFalse(resources_needed(store,[],COEXIST_GAME)['update'])
    certificate.write_bytes(b'second');self.assertTrue(resources_needed(store,[])['coexist'])
+ def test_clone_private_root_guard_does_not_point_into_original_game(self):
+  code=next(c for c in module_reader(self.game)('legend_cr7_grants').co_consts if isinstance(c,types.CodeType) and c.co_name=='_device_root')
+  class FakePath:
+   def __init__(self,value):self.value=value
+   def resolve(self):return self
+   def __str__(self):return self.value
+  for mode in ('coexist','update'):
+   function=types.FunctionType(code,{'Path':FakePath});module=SimpleNamespace(_device_root=function)
+   self.assertTrue(function('/data/data/com.efootball.revival.local/files'))
+   with patch.dict(sys.modules,{'legend_cr7_grants':module}):install_package_identity({'installation':{'package':COEXIST_GAME,'mode':mode}})
+   self.assertTrue(function('/data/data/com.efootball.revival.diyer/files'));self.assertTrue(function('/data/user/0/com.efootball.revival.diyer/files'));self.assertFalse(function('/data/data/com.efootball.revival.local/files'))
 
 if __name__=='__main__':unittest.main()

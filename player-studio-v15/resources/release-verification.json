@@ -1,8 +1,8 @@
 {
   "game": "V16",
-  "version": "1.9.3.2",
+  "version": "1.9.4",
   "backend_tests": {
-    "passed": 150,
+    "passed": 164,
     "skipped": 1,
     "failed": 0
   },
@@ -21,7 +21,15 @@
     "all 13 hooks installed in isolated execution of the real 119-route worker",
     "four original V16 native-model routes preserved",
     "coach portrait and AI playing styles retained",
-    "optional foreground 160 FPS lock; native ARM64 frame hook executed and lower native choices overridden"
+    "optional foreground 160 FPS lock; native ARM64 frame hook executed and lower native choices overridden",
+    "beginner start page and full navigation preserve all features",
+    "searchable detailed tutorial",
+    "homepage export cleanup with confirmation",
+    "Android installed APK discovery and install signer check",
+    "independent coexist game and resource identities",
+    "resources generated once per signing and target identity",
+    "new player and overwrite prompts with project checkpoint",
+    "optional public GitHub Release notification without automatic installation"
   ],
   "native_export": {
     "status": "passed",
@@ -63,7 +71,7 @@
   "library_ready_on_first_run": false,
   "in_game_tested": false,
   "frontend_tests": {
-    "passed": 15,
+    "passed": 20,
     "failed": 0
   },
   "v15_compatibility": {
@@ -145,5 +153,21 @@
     "arm64_frame_hook_tested": true,
     "original_frame_table_preserved": true,
     "actual_render_fps_measured": false
+  },
+  "coexist": {
+    "game_package": "com.efootball.revival.diyer",
+    "resource_package": "com.efootball.revival.diyassets",
+    "independent_game_save": true,
+    "arbitrary_signature_overwrite_supported": false,
+    "original_game_data_read": false,
+    "dex_checksums_verified": true,
+    "private_root_guard_verified": true,
+    "in_game_tested": false
+  },
+  "updates": {
+    "repository": "light23335/efootball-player-studio",
+    "mandatory": false,
+    "auto_install": false,
+    "requires_user_token": false
   }
 }

@@ -60,6 +60,6 @@ class Setup:
   matching=next((r for r in games if cert in r['signers']),None) if cert else None
   game=next((r for r in games if r['path']==selected.get('apk')),None) or matching or next(iter(games),None)
   resource=next((r for r in resources if r['path']==selected.get('companion')),None) or next((r for r in resources if cert and cert in r['signers']),None) or next(iter(resources),None)
-  return {**self.cache,'preferences':preferences(self.server.store),'library':self.server.library.summary(),'resources_needed':resources_needed(self.server.store,self.cache['rows']),'selected':{'apk':game['path'] if game else selected.get('apk',''),'companion':resource['path'] if resource else selected.get('companion','')},'recommended_mode':'update' if (matching and game and matching['package']==game['package']) or (not provider and cert) else 'coexist',
+  return {**self.cache,'preferences':preferences(self.server.store),'library':self.server.library.summary(),'resources_needed':resources_needed(self.server.store,self.cache['rows'],game['package'] if game else None),'selected':{'apk':game['path'] if game else selected.get('apk',''),'companion':resource['path'] if resource else selected.get('companion','')},'recommended_mode':'update' if (matching and game and matching['package']==game['package']) or (not provider and cert) else 'coexist',
           'save_notice':'自动读取安装包和资源，不读取其他应用的私有存档。共存版使用独立存档；同包名、同签名覆盖安装才可保留原游戏存档。'}
  def install_plan(self,body):return plan(body['apk'],body.get('installation_mode','update'),local_certificate(self.server.store))

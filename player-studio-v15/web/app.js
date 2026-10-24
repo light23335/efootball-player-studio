@@ -1,3 +1,4 @@
+import {ReleaseUpdatesUI} from './release-updates.js';
 import {choosePlayerAction,playerLoadChoices} from './player-prompts.js';
 import {OnboardingUI,navigationGroups} from './onboarding-ui.js';
 import {WorkspaceTools} from './workspace-tools.js';
@@ -65,7 +66,7 @@ const pages={
 };
 let project,catalog,currentPage='home',preview='card',abilityFilter='all',skillQuery='',skillMode='innate',skillSelectedOnly=false;
 let past=[],future=[],lastChangeKey='',lastChangeTime=0,version=0,savedVersion=0,saveTimer=null,savePromise=null,viewer;
-let toolsUI,onboardingUI,navigationMode='simple';
+let toolsUI,onboardingUI,releaseUpdatesUI,navigationMode='simple';
 let simulation,imageCache=new Map(),cardDrawVersion=0,modelMetadata={},libraryUI,updateUI,nativePackageUI,personalUI,coachUI,presetsUI,packUI,nativeCard,identityOptions={nation:[],team:[]};
 const migrationState={mode:'export',save:'',apk:'',package:'',previous:'',prefer:'package',players:[],selected:null,plan:null,status:'',statusType:'',resultUrl:null};
 
@@ -195,6 +196,7 @@ function renderPage(){
   else if(preview==='model')viewer?.attach($('#mini-model-stage'));
   if(currentPage==='model'&&!project.model.physique)loadPhysique();
   coachUI?.renderPreview();updateLive();updateUndo();libraryUI?.activate(currentPage);updateUI?.activate(currentPage);nativePackageUI?.activate(currentPage);personalUI?.activate(currentPage);coachUI?.activate(currentPage);
+  releaseUpdatesUI?.activate(currentPage).catch(()=>{});
   onboardingUI?.activate(currentPage).catch(e=>toast(e.message,true));
   packUI?.activate(currentPage);toolsUI?.activate(currentPage).catch(e=>toast(e.message,true));
   if(currentPage==='card')presetsUI.refresh();
@@ -411,10 +413,11 @@ async function boot(){
   libraryUI=new LibraryUI({api,commit,project:()=>project,catalog,toast,navigate,rerender:renderPage,beforeLoadPlayer:preparePlayerLoad,status:data.library,apk:data.default_apk,companion:data.default_companion});
   updateUI=new GameImportUI({api,toast,apk:data.default_apk,companion:data.default_companion,rerender:renderPage});
   nativePackageUI=new NativePackageUI({api,toast,platform:data.platform,project:()=>project,apk:data.default_apk,companion:data.default_companion,installationMode:setup.recommended_mode,resourcesNeeded:setup.resources_needed,rigged:data.default_rigged||''});
+  releaseUpdatesUI=new ReleaseUpdatesUI({api,toast});
   onboardingUI=new OnboardingUI({api,toast,flushSave,mode:()=>navigationMode,setMode:mode=>{navigationMode=mode;renderNavigation();renderPage();},setSources:(selected,mode)=>{for(const ui of [libraryUI,updateUI,nativePackageUI])for(const key of ['apk','companion'])if(selected[key])ui[key]=selected[key];migrationState.apk=selected.apk||migrationState.apk;}});
   toolsUI=new WorkspaceTools({api,toast,project:()=>project,flushSave});
   packUI=new PackUI({api,toast,rerender:renderPage});
-  personalUI=new PersonalUI({api,toast,project:()=>project,flushSave,navigate,replaceProject:p=>{past=[];future=[];project=p;version++;savedVersion=version;}});
+  personalUI=new PersonalUI({api,toast,beforeOpenPlayer:async()=>{if(await choosePlayerAction('读取已保存球员','将切换当前编辑内容。当前工程会先备份；切换到其他球员时会保存当前球员。若要创建另一名球员，请使用新建独立槽位。',[{id:'open',label:'备份并读取球员',primary:true}])!=='open')return false;await api('project/checkpoint',{project});return true;},project:()=>project,flushSave,navigate,replaceProject:p=>{past=[];future=[];project=p;version++;savedVersion=version;}});
   coachUI=new CoachUI({api,toast,catalog,project:()=>project,commit,flushSave,navigate,rerender:renderPage,custom:data.custom_coaches?.rows||[]});
   presetsUI=new CardPresetsUI({api,toast,project:()=>project,commit,rerender:renderPage});
   nativeCard=new NativeCardRenderer($('#player-card'),state=>{$('#native-card-status').textContent=`原版图层 ${state.layers} · 动画 ${state.videos} · 资料素材 ${state.ui||0}${state.missing?' · '+state.missing+' 项未读取':''}`;$('#card-motion-toggle').hidden=!state.videos;},catalog);
@@ -424,6 +427,7 @@ async function boot(){
   viewer.onHeadSelection=key=>{const el=document.querySelector('[data-head-option="selected"]');if(el)el.value=key;};
   const badge=document.querySelector('.workspace-badge>span:last-child');if(badge)badge.textContent=(data.library.game_version||'V15')+' · '+data.version;document.querySelector('#help-dialog h2').textContent='球员工坊 '+(data.library.game_version||'V15')+' · '+data.version;
   viewer.attach($('#mini-model-stage'));renderPage();
+  releaseUpdatesUI.poll();
   libraryUI.refreshLoaded();
   setInterval(()=>api('ping').catch(()=>{}),12000);
   window.__studio={get project(){return project;},get simulation(){return simulation;},get catalog(){return catalog;},get viewer(){return viewer;},get library(){return libraryUI;},get presets(){return presetsUI;},get nativeCard(){return nativeCard;},flushSave,navigate};

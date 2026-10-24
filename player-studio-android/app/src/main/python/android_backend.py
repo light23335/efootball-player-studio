@@ -19,6 +19,7 @@ def start(home,native_dir):
     native_files=jclass('com.playerstudio.editor.NativeFiles')
     installed_games=jclass('com.playerstudio.editor.InstalledGames')
     app.PLATFORM='android'
+    app.open_update_action=lambda url:bool(installed_games.openReleasePage(url))
     def open_export_action(store,name):
         from workspace_tools import export_file
         path=export_file(store,name)
