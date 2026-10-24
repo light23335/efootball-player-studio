@@ -57,7 +57,7 @@ class StudioTests(unittest.TestCase):
         q=app.normalize_project(p);self.assertEqual(q['custom_boosters'][0]['effects'],{'34':7,'20':-2})
         self.assertEqual(app.normalize_project(q)['custom_boosters'][0]['uuid'],q['custom_boosters'][0]['uuid'])
         p['booster_ids']=[1000,0]
-        with self.assertRaises(ValueError):app.normalize_project(p)
+        self.assertEqual(app.normalize_project(p)['booster_ids'][0],1000)
         p['booster_ids']=[0,1000];p['custom_boosters'][0]['effects']['34']=21
         with self.assertRaises(ValueError):app.normalize_project(p)
 

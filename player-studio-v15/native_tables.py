@@ -9,7 +9,7 @@ from native_appearance import patch as patch_appearance
 from native_strings import booster_rows,merge as merge_strings
 from native_models import person_keys
 from native_equipment import patch_sleeves,compile_boots,ASSIGNMENTS as BOOT_ASSIGNMENTS
-from custom_boosters import BOOSTER_BITS,validate_projects,canonical,context
+from custom_boosters import BOOSTER_BITS,validate_projects,canonical,context,text_key
 from native_celebration import FIELD as CELEBRATION_FIELD,validate as validate_celebration
 from ai_playing_styles import FIELDS as AI_FIELDS
 
@@ -183,7 +183,7 @@ def compile_tables(original,projects,definitions,resources,bindings,extra=None,r
     texts,text_routes=booster_rows(projects,abilities)
     if texts:
         for name in cpk.files:
-            if name.endswith('/string/all_diff.str'):replacements[name]=merge_strings(cpk.read(name),texts,{60000+(bid-1000)*2+j for bid in replace_boosters for j in (0,1)})
+            if name.endswith('/string/all_diff.str'):replacements[name]=merge_strings(cpk.read(name),texts,{text_key(bid)+j for bid in replace_boosters for j in (0,1)})
     weekly,weekly_added=weekly_table(unwrap(cpk.read(WEEKLY)),projects,definitions,bindings,replace_ids)
     replacements[WEEKLY]=wrap(weekly,cpk.read(WEEKLY))
     replacements[BOOT_ASSIGNMENTS],equipment_report=compile_boots(cpk,projects,definitions,bindings,replace_ids)

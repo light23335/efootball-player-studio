@@ -4,10 +4,11 @@ export const tactics=[['possession','控球游戏'],['short_counter','快速反�
 
 export class CoachUI {
   constructor(context){
-    Object.assign(this,context);this.query='';this.editing=null;this.custom=this.custom||[];
+    Object.assign(this,context);this.query='';this.editing=null;this.custom=this.custom||[];this.previewOpen=false;this.previewQuery='';
     document.addEventListener('input',e=>{
       const el=e.target;
       if(el.id==='coach-query'){this.query=el.value;this.renderResults();}
+      if(el.id==='preview-coach-query'){this.previewQuery=el.value;this.renderPreviewResults();}
       if(el.dataset.coachPortrait&&this.editing?.portrait){this.editing.portrait[el.dataset.coachPortrait]=Number(el.value);this.portraitPreview();}
       if(el.dataset.coachField&&this.editing){
         const [group,key]=el.dataset.coachField.split('.');
@@ -18,6 +19,8 @@ export class CoachUI {
     });
     document.addEventListener('change',e=>{if(e.target.id==='preview-coach'){this.choose(e.target.value);}if(e.target.id==='preview-team-style'){this.commit(()=>this.project().preview.team_style=e.target.value,'preview-team-style');this.rerender();}});
     document.addEventListener('click',e=>{
+      if(e.target.closest('[data-coach-picker]')){this.previewOpen=!this.previewOpen;this.renderPreview();if(this.previewOpen)$('#preview-coach-query')?.focus();return;}
+      const preview=e.target.closest('[data-preview-coach]');if(preview){this.previewOpen=false;this.previewQuery='';this.choose(preview.dataset.previewCoach);return;}
       if(e.target.closest('[data-new-coach]'))this.edit();
       if(e.target.closest('[data-cancel-coach]')){this.editing=null;this.rerender();}
       if(e.target.closest('[data-save-coach]'))this.save().catch(e=>this.toast(e.message,true));
@@ -26,6 +29,7 @@ export class CoachUI {
       const use=e.target.closest('[data-use-coach]');if(use)this.choose(use.dataset.useCoach);
       const edit=e.target.closest('[data-edit-coach]');if(edit)this.edit(edit.dataset.editCoach);
     });
+    document.addEventListener('keydown',e=>{if(e.target.id!=='preview-coach-query')return;if(e.key==='Escape'){this.previewOpen=false;this.renderPreview();$('#preview-coach-picker')?.focus();}if(e.key==='Enter'){e.preventDefault();$('#preview-coach-results [data-preview-coach]')?.click();}});
   }
   rows(){const rows=new Map([...(this.catalog.coaches||[]),...this.custom,...(this.project().custom_coaches||[])].map(c=>[c.id,c]));return [...rows.values()];}
   effectText(row){return Object.entries(row.effects||{}).filter(([,v])=>v).map(([index,value])=>`${this.catalog.ABILITIES[index]} ${value>0?'+':''}${value}`).join(' · ')||'无已映射的能力加成';}
@@ -35,13 +39,22 @@ export class CoachUI {
   async uploadPortrait(){const row=this.editing,file=await this.api('dialog',{category:'image'});if(!row||!file.path||this.editing!==row)return;const asset=await this.api('assets/import',{path:file.path,category:'image'});if(this.editing!==row)return;row.portrait={asset_id:asset.id,zoom:1,x:0,y:0};this.rerender();this.toast('头像已载入，调整取景后保存教练');}
   renderPreview(){
     const selected=this.project().preview?.coach_id||'',rows=this.rows(),coach=rows.find(r=>r.id===selected),style=this.project().preview?.team_style||Object.entries(coach?.tactics||{}).sort((a,b)=>b[1]-a[1])[0]?.[0];
-    $('#coach-selection').innerHTML=`<label class="field"><span>教练预览</span><select id="preview-coach"><option value="">不使用教练</option>${rows.map(c=>`<option value="${esc(c.id)}" ${selected===c.id?'selected':''}>${c.type==='custom'?'自建 · ':''}${esc(c.name)}${c.pack_title?' · '+esc(c.pack_title):''}</option>`).join('')}${selected&&!rows.some(c=>c.id===selected)?`<option selected value="${esc(selected)}">工程教练未在当前资料中</option>`:''}</select></label><div id="preview-coach-details"></div><button class="text-link" data-page="coaches">浏览 / 新建教练</button>`;
+    const focused=document.activeElement?.id==='preview-coach-query',selection=focused?document.activeElement.selectionStart:null;
+    $('#coach-selection').innerHTML=`<div class="coach-picker"><span>教练预览</span><button type="button" id="preview-coach-picker" class="coach-picker-toggle" data-coach-picker aria-expanded="${this.previewOpen}" aria-controls="preview-coach-search"><span>${esc(coach?.name||(selected?'工程教练未在当前资料中':'不使用教练'))}</span><span aria-hidden="true">⌕</span></button><div id="preview-coach-search" ${this.previewOpen?'':'hidden'}><label class="field"><span class="sr-only">搜索预览教练</span><input class="input" id="preview-coach-query" type="search" placeholder="搜索中文名、英文名或卡包" value="${esc(this.previewQuery)}" autocomplete="off" aria-controls="preview-coach-results"></label><div id="preview-coach-results" role="listbox" aria-label="教练搜索结果"></div></div></div><div id="preview-coach-details"></div><button class="text-link" data-page="coaches">浏览 / 新建教练</button>`;
+    this.renderPreviewResults();
+    if(focused&&this.previewOpen){$('#preview-coach-query').focus();if(selection!==null)try{$('#preview-coach-query').setSelectionRange(selection,selection);}catch{}}
     this.updatePreview();
     if(coach){const label=document.createElement('label');label.className='field coach-style-field';label.innerHTML=`<span>战术体系</span><select id="preview-team-style">${tactics.map(([k,v])=>`<option value="${k}" ${k===style?'selected':''}>${v} · 熟练度 ${coach.tactics[k]}</option>`).join('')}</select>`;$('#coach-selection').insertBefore(label,$('#preview-coach-details'));}
   }
   updatePreview(){
     const row=this.rows().find(c=>c.id===this.project().preview?.coach_id),el=$('#preview-coach-details');if(!el)return;
     el.innerHTML=row?`<p>${esc(this.effectText(row))}</p>${row.unmapped_abilities?.length?'<small>部分原版特征尚未映射，不计入当前总评。</small>':''}`:'<p>当前显示球员自身与增能效果</p>';
+  }
+  previewMatches(){const query=this.previewQuery.trim().toLocaleLowerCase();return this.rows().filter(row=>[row.name,row.name_en,row.pack_title,row.id].join(' ').toLocaleLowerCase().includes(query));}
+  renderPreviewResults(){
+    const el=$('#preview-coach-results');if(!el||!this.previewOpen)return;
+    const rows=this.previewMatches(),selected=this.project().preview?.coach_id||'';
+    el.innerHTML=`<button type="button" role="option" aria-selected="${!selected}" data-preview-coach="">不使用教练</button>${rows.slice(0,40).map(row=>`<button type="button" role="option" aria-selected="${row.id===selected}" data-preview-coach="${esc(row.id)}"><strong>${esc(row.name)}</strong><small>${row.type==='custom'?'自建 · ':''}${esc(row.name_en||row.pack_title||'')}</small></button>`).join('')}<p class="note">${rows.length?'找到 '+rows.length+' 名'+(rows.length>40?'，显示前 40 名，请输入关键词缩小范围':''):'没有匹配的教练，请更换关键词'}</p>`;
   }
   choose(id){
     const row=this.rows().find(c=>c.id===id);

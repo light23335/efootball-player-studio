@@ -1,6 +1,6 @@
 """Personal language rows in the supplied game's unencrypted STR delta format."""
 import struct,zlib
-from custom_boosters import canonical,context
+from custom_boosters import canonical,context,text_key
 
 def read(raw):
     count,offset=struct.unpack_from('<II',raw)
@@ -53,8 +53,7 @@ def booster_rows(projects,abilities):
             custom[b['id']]=b
     texts={};routes=[]
     for bid,b in sorted(custom.items()):
-        if not 1000<=bid<1024:raise ValueError('自建增能文字编号超出保留范围')
-        key=60000+(bid-1000)*2
+        key=text_key(bid)
         effect='、'.join(abilities[str(k)]+f' +{v}' for k,v in b['effects'].items() if v)
         texts[key]=b['label'];texts[key+1]=effect+'。' if effect else '未设置能力加成。'
         routes.append({'id':bid,'name':(1142<<16)|key,'description':(1142<<16)|(key+1)})

@@ -263,7 +263,11 @@ class GameImport:
                 (staging/'import-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8');staging.rename(destination);staging=None
             self.server.use_resources(destination)
             pointer=self.server.store.root/'active-game.json';temp=pointer.with_suffix('.tmp');temp.write_text(json.dumps({'database':key,'apk':str(apk),'companion':str(companion)},ensure_ascii=False,indent=2),encoding='utf8');os.replace(temp,pointer)
-            self.update(phase='done',message='新版数据库已启用，自建工程与签名已保留',result=json.loads((destination/'import-report.json').read_text(encoding='utf8')))
+            from library_cleanup import cleanup_old_libraries
+            try:cleanup=cleanup_old_libraries(self.server.store,self.server.library.home,destination)
+            except (OSError,ValueError) as exc:cleanup={'warnings':[str(exc)]}
+            result=json.loads((destination/'import-report.json').read_text(encoding='utf8'));result['old_library_cleanup']=cleanup
+            self.update(phase='done',message='新版数据库已启用，旧库已清理，自建工程与签名已保留' if not cleanup.get('warnings') else '新版数据库已启用，部分旧缓存待清理；自建工程与签名已保留',result=result)
         except Exception as exc:
             if self.server.library.resources!=previous_resources:self.server.use_resources(previous_resources)
             if staging and staging.is_dir():

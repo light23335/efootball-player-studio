@@ -69,8 +69,8 @@ def reserve_asset_key(uid,occupied,registry):
     return str(value)
 
 
-def compose(payload,routes,profile,capacity=262144):
-    if not 1<=len(routes)<=1024:raise ValueError('个人美术绑定数量无效')
+def compose(payload,routes,profile,capacity=4194304):
+    if not 1<=len(routes)<=10000:raise ValueError('个人美术绑定数量须为 1–10000')
     seen=set();rows=bytearray();stride=144 if profile.get('acquisition_hook') else (136 if profile.get('club_emblems') or profile.get('position_hook') else 128)
     external=bool(profile.get('external_routes'))
     def small(value):

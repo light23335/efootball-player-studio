@@ -25,6 +25,11 @@ def start(home,native_dir):
         path=export_file(store,name)
         if path.suffix.lower()!='.apk':raise ValueError('只有 APK 可以直接安装；其他文件请使用保存')
         installed_games.validateInstall(str(path))
+        from onboarding import inspect_source
+        from install_pairs import validate_install
+        scanned=json.loads(str(installed_games.scan()))
+        rows=[inspect_source(r['path']) for r in scanned.get('rows',[])];rows=[r for r in rows if r]
+        validate_install(path,rows)
         return {'opened':True,'action':str(native_files.install(str(path)))}
     app.open_export_action=open_export_action
     app.dialog=lambda kind='open',category='project',initial='':str(native_files.pick(kind,category,initial)) or None

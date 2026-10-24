@@ -42,8 +42,11 @@ from coaches import CoachStore, normalize_coach, TACTICS
 from native_appearance import validate as validate_appearance
 from ai_playing_styles import FIELDS as AI_PLAYING_STYLES,project_value as ai_styles,validate as validate_ai_styles
 import packs
+from window_sessions import WindowSessions
+from booster_library import BoosterLibrary
 
-APP_VERSION = "1.9.4"
+APP_VERSION = "1.9.5"
+MAX_PERSONAL_PLAYERS = 10000
 BUNDLE = Path(getattr(sys, "_MEIPASS", Path(__file__).absolute().parent))
 RESOURCE = BUNDLE / "resources"
 WEB = BUNDLE / "web"
@@ -135,11 +138,11 @@ def normalize_project(value):
     for group in CATALOG["training_groups"]:
         training[group["id"]] = int(number(training.get(group["id"]), 0, 40, 0))
     custom = p.setdefault('custom_boosters', [])
-    if not isinstance(custom, list) or len(custom)>24:
-        raise ValueError('一个工程最多保存 24 项自定义增能')
+    if not isinstance(custom, list) or len(custom)>10000:
+        raise ValueError('一个工程最多保存 10000 项自定义增能')
     seen=set()
     for booster in custom:
-        if not isinstance(booster,dict) or type(booster.get('id')) is not int or not 1000<=booster['id']<=1023 or booster['id'] in seen:
+        if not isinstance(booster,dict) or type(booster.get('id')) is not int or not 1<=booster['id']<11000 or booster['id'] in seen:
             raise ValueError('自定义增能身份冲突')
         seen.add(booster['id'])
         booster['uuid']=str(uuid.UUID(booster.get('uuid') or str(uuid.uuid4())))
@@ -154,7 +157,7 @@ def normalize_project(value):
     if not isinstance(boosters, list) or len(boosters) > 2 or any(type(v) is not int or v not in ids for v in boosters):
         raise ValueError("增能编号尚未适配，已保留原文件")
     p["booster_ids"] = (boosters + [0, 0])[:2]
-    if p['booster_ids'][0]>255:
+    if p['booster_ids'][0]>255 and p['booster_ids'][0] not in seen:
         raise ValueError('第一增能槽的原版编号范围为 0–255，请在第二槽选择此增能')
     if p["booster_ids"][0] and p["booster_ids"][0] == p["booster_ids"][1]:
         raise ValueError("两个增能槽请选择不同项目")
@@ -302,6 +305,7 @@ class Store:
             (self.root / folder).mkdir(exist_ok=True)
         self.lock = threading.RLock()
         self.coaches = CoachStore(self.root, CATALOG['ABILITIES'])
+        self.boosters = BoosterLibrary(self.root)
         self.project_path = self.root / "current-project.json"
         self.last_backup = 0
         if self.project_path.exists():
@@ -317,6 +321,7 @@ class Store:
 
     def save(self, project, manual=False):
         p = normalize_project(project)
+        self.boosters.sync(p,getattr(self,'project',None))
         data = json.dumps(p, ensure_ascii=False, indent=2).encode("utf8")
         with self.lock:
             if self.project_path.exists() and (manual or time.monotonic() - self.last_backup > 120):
@@ -373,8 +378,11 @@ class Store:
         entry = {'format': '73efootball-saved-player', 'version': 1,
                  'saved_at': migration.stamp(), 'overall': calculate_overall(p, CATALOG), 'project': p}
         path = self._player_path(p['package_id'])
+        self.boosters.sync(p)
         data = json.dumps(entry, ensure_ascii=False, indent=2).encode('utf8')
         with self.lock:
+            if not path.exists() and sum(1 for _ in (self.root/'players').glob('*.json'))>=MAX_PERSONAL_PLAYERS:
+                raise ValueError('自建球员已达到 10000 名上限，请删除不需要的球员后再新建')
             if path.is_file():
                 backup = self.root / 'backups' / ('saved-player-' + path.stem + '-' + datetime.now().strftime('%Y%m%d-%H%M%S-') + uuid.uuid4().hex[:6] + '.json')
                 shutil.copy2(path, backup)
@@ -387,7 +395,48 @@ class Store:
         return {'saved': True, 'package_id': p['package_id'], 'saved_at': entry['saved_at'],
                 'overall': entry['overall'], 'path': str(path)}
 
-    def list_players(self, query=''):
+    def delete_player(self, package_id, confirmed=False):
+        if confirmed is not True:
+            raise ValueError('请先确认删除这名自建球员')
+        with self.lock:
+            entry = self.saved_player(package_id)
+            path = self._player_path(package_id)
+            if path.is_symlink():
+                raise ValueError('球员文件不能是外部链接')
+            package_id = entry['project']['package_id']
+            pack_path = self.root / 'packs.json'
+            old_packs = pack_path.read_bytes() if pack_path.exists() else None
+            rows = packs.load(self)
+            removed = 0
+            for row in rows:
+                members = row['members']
+                row['members'] = [m for m in members if not (m['kind']=='custom' and m['id']==package_id)]
+                removed += len(members)-len(row['members'])
+            stamp = datetime.now().strftime('%Y%m%d-%H%M%S-') + uuid.uuid4().hex[:6]
+            backup = self.root / 'backups' / ('deleted-player-'+package_id+'-'+stamp+'.json')
+            previous = copy.deepcopy(self.project)
+            current = previous['package_id'] == package_id
+            if removed:
+                (self.root/'backups'/('packs-before-delete-'+stamp+'.json')).write_bytes(old_packs)
+            path.replace(backup)
+            try:
+                if removed:
+                    temp=pack_path.with_suffix('.tmp')
+                    temp.write_text(json.dumps(rows,ensure_ascii=False,indent=2),encoding='utf8')
+                    os.replace(temp,pack_path)
+                if current:
+                    self.save(default_project(), manual=True)
+            except Exception:
+                shutil.copy2(backup,path)
+                if removed:pack_path.write_bytes(old_packs)
+                if current:self.save(previous,manual=True)
+                raise
+            return {'deleted':True,'package_id':package_id,'removed_pack_members':removed,
+                    'current_cleared':current,'project':self.project,'backup':str(backup)}
+
+    def list_players(self, query='', offset=0, limit=None):
+        if type(offset) is not int or offset<0 or (limit is not None and (type(limit) is not int or not 1<=limit<=100)):
+            raise ValueError('球员分页参数无效')
         rows, errors = [], []
         query = str(query).casefold()[:120]
         with self.lock:
@@ -405,7 +454,9 @@ class Store:
                 except (ValueError, KeyError, OSError) as exc:
                     errors.append({'file': path.name, 'message': str(exc)})
         rows.sort(key=lambda item: item['saved_at'], reverse=True)
-        return {'rows': rows, 'total': len(rows), 'errors': errors}
+        total=len(rows)
+        return {'rows':rows[offset:offset+limit] if limit else rows,'total':total,'offset':offset,
+                'saved_total':sum(1 for _ in (self.root/'players').glob('*.json'))-len(errors),'capacity':MAX_PERSONAL_PLAYERS,'errors':errors}
 
     def import_asset(self, path, category):
         source = Path(path).absolute()
@@ -512,6 +563,7 @@ class StudioServer(ThreadingHTTPServer):
         self.setup = Setup(self)
         from updates import UpdateChecker
         self.updates = UpdateChecker(store,RESOURCE,APP_VERSION,globals().get('PLATFORM','pc'))
+        self.window_sessions = WindowSessions(self.shutdown)
         self.token = token or secrets.token_urlsafe(32)
         self.last_seen = time.monotonic()
 
@@ -641,10 +693,25 @@ class Handler(BaseHTTPRequestHandler):
                 backup=store.root/'backups'/('before-template-'+datetime.now().strftime('%Y%m%d-%H%M%S-')+uuid.uuid4().hex[:6]+'.json')
                 with store.lock:backup.write_text(json.dumps(value,ensure_ascii=False,indent=2),encoding='utf8')
                 result={'backed_up':True,'backup':str(backup)}
+            elif path == '/api/window/open':
+                result = self.server.window_sessions.open(body['session'])
+            elif path == '/api/window/close':
+                def save_window():
+                    value=body.get('project')
+                    if value is None and body.get('package_id')==store.project['package_id'] and 'patch' in body:
+                        from window_sessions import apply_project_delta
+                        value=apply_project_delta(store.project,body['patch'])
+                    if value and value.get('package_id')==store.project['package_id']:
+                        store.save(value, manual=True)
+                result = self.server.window_sessions.close(body['session'], save_window)
             elif path == '/api/players/save':
                 result = store.save_player(body['project'])
             elif path == '/api/players/list':
-                result = store.list_players(body.get('query', ''))
+                result = store.list_players(body.get('query', ''),body.get('offset',0),body.get('limit'))
+            elif path == '/api/boosters/list':
+                result = store.boosters.list(body.get('query',''),body.get('offset',0))
+            elif path == '/api/players/delete':
+                result = store.delete_player(body['package_id'], body.get('confirmed', False))
             elif path == '/api/players/open':
                 if store.project['package_id']!=body['package_id'] and store.project['identity']['name'].strip():store.save_player(store.project)
                 result = store.save(store.saved_player(body['package_id'])['project'], manual=True)
@@ -680,6 +747,8 @@ class Handler(BaseHTTPRequestHandler):
                 result = self.server.game_import.start(body)
             elif path == '/api/setup/status':
                 result = self.server.setup.status(body.get('refresh',False))
+            elif path == '/api/setup/check-installed':
+                result = self.server.setup.check_installed(body)
             elif path == '/api/setup/preferences':
                 from onboarding import preferences
                 result = preferences(store,body)
@@ -794,7 +863,7 @@ def open_window(url, data):
                   Path(os.environ.get("PROGRAMFILES", "C:/Program Files")) / "Google/Chrome/Application/chrome.exe"]
     for exe in candidates:
         if exe.is_file():
-            subprocess.Popen([str(exe), "--app=" + url, "--window-size=1580,1020", "--no-first-run",
+            subprocess.Popen([str(exe), "--app=" + url, "--window-size=1580,1020", "--no-first-run", "--disable-background-mode",
                               "--user-data-dir=" + str(Path(data) / "browser")], close_fds=True)
             return
     webbrowser.open(url)

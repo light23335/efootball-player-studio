@@ -6,11 +6,12 @@ PATH='assets/gateway-release/custom-resources/personal-player-studio/players.jso
 
 def read(archive,release):
     if not release.get('personal_player_revision'):return {}
-    if archive.getinfo(PATH).file_size>32*1024*1024:raise ValueError('个人包清单过大')
+    if archive.getinfo(PATH).file_size>256*1024*1024:raise ValueError('个人包清单过大')
     doc=json.loads(archive.read(PATH))
     if doc.get('format')!='personal-player-native-v1' or doc.get('revision')!=release['personal_player_revision']:
         raise ValueError('个人包清单与版本标识不一致')
     players=doc.get('players',[]);seen=set();ids=set()
+    if len(players)>10000:raise ValueError('个人包球员超过 10000 名上限')
     for p in players:
         identity=p['identity'];uid=str(uuid.UUID(identity['package_id']));cid=int(identity['card_id'])
         if uid in seen or cid in ids or p['owned'].get('_personal_player_uuid')!=uid or p['owned']['gameplayer_id']['id']!=cid:
@@ -24,6 +25,7 @@ def merge(old,new,key):
     return list(result.values())
 
 def ownership(doc):
+    custom_ids={int(v) for v in doc.get('editor_registries',{}).get('boosters',{}).values()}|{int(v) for v in doc.get('preview_boosters',{})}
     routes={int(r['cardId']):r for r in doc.get('native_binding',{}).get('routes',[])}
     result={}
     for p in doc.get('players',[]):
@@ -36,7 +38,7 @@ def ownership(doc):
             raise ValueError('个人包永久编号不在工坊专用范围内')
         aliases={cid,*map(int,person_keys(pid)),art,*history}
         result[uid]={'identity':i,'asset_key':art,'aliases':aliases,
-                     'boosters':{int(b) for b in p['base_parameters'][144:147] if 1000<=int(b)<1024}}
+                     'boosters':{int(b) for b in p['base_parameters'][144:147] if int(b) in custom_ids or 1000<=int(b)<1024}}
     used={}
     for uid,p in result.items():
         for alias in p['aliases']:

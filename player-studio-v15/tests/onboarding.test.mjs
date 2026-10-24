@@ -7,7 +7,7 @@ import {LibraryUI} from '../web/library-ui.js';
 
 test('beginner navigation retains all editing and management pages',()=>{
  const all=navigationGroups.flatMap(([,pages])=>pages);
- for(const page of ['library','personal','profile','abilities','training','skills','card','model','packs','coaches','native','apk','tools','migration'])assert.ok(all.includes(page),page);
+ for(const page of ['personal','profile','abilities','training','skills','card','model','packs','coaches','native','apk','tools','migration'])assert.ok(all.includes(page),page);
  assert.ok(tutorialTopics.length>=12);
 });
 test('home shows cache cleanup and tutorial search keeps relevant entries',()=>{
@@ -34,5 +34,14 @@ test('canceling template load does not read a player or change the current slot'
   let calls=0;const project={package_id:'existing'};
   const ui=new LibraryUI({project:()=>project,beforeLoadPlayer:async()=>false,api:async()=>{calls++;},toast:()=>{}});
   await ui.loadPlayer('7511');assert.equal(calls,0);assert.equal(project.package_id,'existing');
+ }finally{globalThis.document=old;}
+});
+
+test('clicks inside a search field do not treat the body navigation mode as a switch button',async()=>{
+ const old=globalThis.document;globalThis.document={addEventListener:()=>{}};
+ try{let changes=0;const ui=new OnboardingUI({api:async()=>{changes++;},setMode:()=>{changes++;}});
+  const body={dataset:{navigation:'simple'},disabled:false,hasAttribute:()=>false};
+  await ui.click({target:{closest:selector=>selector.includes('button[data-navigation]')?null:body}});
+  assert.equal(changes,0);
  }finally{globalThis.document=old;}
 });

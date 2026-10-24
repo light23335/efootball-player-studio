@@ -31,11 +31,11 @@ from overall import maximum_development
 from native_v14_repairs import card_series
 from native_models import person_keys
 import personal_source
-from custom_boosters import issues as booster_issues,validate_projects as validate_boosters,canonical as booster_definition,context as booster_context
+from custom_boosters import issues as booster_issues,validate_projects as validate_boosters,canonical as booster_definition,context as booster_context,reserve_booster
 
 PREFIX='assets/gateway-release/'
 NATIVE='custom-resources/legends-v10/'
-COMPILER_REVISION='v16-onboarding-and-coexist-1.9.4'
+COMPILER_REVISION='v16-ui-pairing-boosters-capacity-1.9.5'
 
 
 def compact(value):return json.dumps(value,ensure_ascii=False,separators=(',',':')).encode('utf8')
@@ -154,7 +154,7 @@ class NativePackage:
                 return copy.deepcopy(self.state)
             current=body['project'];ids=body.get('selected_ids',[current['package_id']])
             if type(body.get('force_fps160',False)) is not bool:raise ValueError('160 帧开关无效')
-            if not isinstance(ids,list) or len(ids)!=len(set(ids)) or len(ids)>200:raise ValueError('球员选择无效')
+            if not isinstance(ids,list) or len(ids)!=len(set(ids)) or len(ids)>10000:raise ValueError('球员选择无效')
             projects=[copy.deepcopy(current) if uid==current['package_id'] else self.store.saved_player(uid)['project'] for uid in ids]
             pack_ids=body.get('pack_ids',[]);packs=[p for p in load_packs(self.store) if p['uuid'] in pack_ids]
             coach_ids=body.get('coach_ids',[]);coaches=[c for c in self.coach_candidates(current) if c['uuid'] in coach_ids]
@@ -216,6 +216,10 @@ class NativePackage:
                 release=json.loads(source.read(PREFIX+'release-manifest.json'))
                 if release['release_id']!=self.library.profile['release_id']:
                     raise ValueError('请选择当前数据库对应的 APK；更换主包请先在 APK 数据更新页导入')
+                from native_tables import BOOSTERS
+                booster_data=unwrap(Cpk(source.read(PREFIX+NATIVE+'dt870_mobile_and.cpk')).read(BOOSTERS))
+                if len(booster_data)%40:raise ValueError('原生增能表结构改变')
+                occupied_boosters={int.from_bytes(booster_data[i+14:i+16],'little')&1023 for i in range(0,len(booster_data),40)}
                 inherited=personal_source.read(source,release)
                 owners=personal_source.seed(inherited,registry,asset_registry)
                 selected_owners=[owners[p['package_id']] for p in projects if p['package_id'] in owners]
@@ -229,14 +233,11 @@ class NativePackage:
                         uid=booster['uuid'];design=booster_definition(booster)
                         if uid in seen_boosters and seen_boosters[uid]!=design:raise ValueError(booster_context(p,booster)+'：同一永久增能的定义不同')
                         seen_boosters[uid]=design
-                        if uid not in booster_registry:
+                        try:
                             prior=(inherited.get('editor_registries',{}).get('boosters',{})).get(uid)
-                            if prior is not None:booster_registry[uid]=prior
-                            else:
-                                free=next((v for v in range(1000,1024) if v not in booster_registry.values() and v not in inherited_boosters),None)
-                                if free is None:raise ValueError(booster_context(p,booster)+'：本机 24 个永久增能编号已分配完，请编辑已有增能；为保留旧存档引用，不自动回收编号')
-                                booster_registry[uid]=free
-                        assigned=booster_registry[uid]
+                            prior_alias=(inherited.get('editor_registries',{}).get('boosters',{})).get(uid+':slot0')
+                            assigned=reserve_booster(uid,booster_registry,occupied_boosters|inherited_boosters,prior,first_slot=booster['id']==p['booster_ids'][0],prior_alias=prior_alias)
+                        except ValueError as exc:raise ValueError(booster_context(p,booster)+'：'+str(exc)) from exc
                         # A shared source booster cannot change an unselected player.
                         shared=[row for row in inherited.get('players',[]) if row['identity']['package_id'] not in selected_uuids and assigned in row['base_parameters'][144:147]]
                         if shared:
