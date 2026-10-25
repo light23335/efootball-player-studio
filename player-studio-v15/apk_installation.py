@@ -11,7 +11,15 @@ COEXIST_RESOURCES='com.efootball.revival.diyassets'
 ALIASES={GAME:COEXIST_GAME,RESOURCES:COEXIST_RESOURCES}
 
 def identity(apk):
- with zipfile.ZipFile(apk) as z:info=Manifest(z.read('AndroidManifest.xml')).info()
+ with zipfile.ZipFile(apk) as z:
+  info=Manifest(z.read('AndroidManifest.xml')).info()
+  if info['package'] in (COEXIST_GAME,COEXIST_RESOURCES):
+   from dex_identity import inspect
+   try:
+    for name in z.namelist():
+     if name.endswith('.dex'):inspect(z.read(name))
+    info['dex_identity_valid']=True
+   except ValueError as exc:info.update(dex_identity_valid=False,dex_identity_error=str(exc))
  return dict(info,signers=signer_fingerprints(apk))
 
 def local_certificate(store):
@@ -20,12 +28,13 @@ def local_certificate(store):
 
 def remember_resource(store,mode,package,certificate):
  path=store.root/'resource-installations.json';value=json.loads(path.read_text(encoding='utf8')) if path.is_file() else {}
- value[mode]={'package':package,'signer':certificate};temp=path.with_suffix('.tmp');temp.write_text(json.dumps(value,ensure_ascii=False),encoding='utf8');temp.replace(path)
+ value[mode]={'package':package,'signer':certificate,'dex_identity_revision':1};temp=path.with_suffix('.tmp');temp.write_text(json.dumps(value,ensure_ascii=False),encoding='utf8');temp.replace(path)
 
 def resources_needed(store,rows,game_package=None):
  cert=local_certificate(store);path=store.root/'resource-installations.json';known=json.loads(path.read_text(encoding='utf8')) if path.is_file() else {};result={}
  for mode,package in [('update',COEXIST_RESOURCES if game_package==COEXIST_GAME else RESOURCES),('coexist',COEXIST_RESOURCES)]:
-  exists=cert and (any(r.get('signer')==cert and r.get('package')==package for r in known.values()) or any(r['package']==package and cert in r['signers'] for r in rows))
+  exists=cert and (any(r.get('signer')==cert and r.get('package')==package and (package!=COEXIST_RESOURCES or r.get('dex_identity_revision')==1) for r in known.values()) or any(r['package']==package and cert in r['signers'] and (package!=COEXIST_RESOURCES or r.get('dex_identity_valid') is True) for r in rows))
+  if package==COEXIST_RESOURCES and any(r['package']==package and cert in r['signers'] and r.get('dex_identity_valid') is False for r in rows):exists=False
   result[mode]=not bool(exists)
  return result
 
@@ -38,27 +47,21 @@ def plan(apk,mode,certificate=None):
          'message':'独立安装工坊版，原游戏及存档保持独立；首次使用需同时生成共存资源包。' if mode=='coexist' else '覆盖保留存档需要包名、签名与已安装游戏匹配。此前本机工坊生成的同包名游戏通常可更新；任意原版或他人 DIY 包不能保证覆盖。'}
 
 def patch_dex(raw):
- if not raw.startswith(b'dex\n') or len(raw)<112:raise ValueError('DEX 格式不支持共存修改')
- out=bytearray(raw);count,offset=struct.unpack_from('<II',out,56);changed=0
- for n in range(count):
-  pos=struct.unpack_from('<I',out,offset+4*n)[0];start=pos
-  for _ in range(5):
-   byte=out[start];start+=1
-   if byte<128:break
-  else:raise ValueError('DEX 字符串长度无效')
-  end=out.index(0,start);old=bytes(out[start:end]);new=old
-  for a,b in ALIASES.items():
-   assert len(a)==len(b);new=new.replace(a.encode(),b.encode())
-  if new!=old:out[start:end]=new;changed+=1
- if changed:
-  out[12:32]=hashlib.sha1(out[32:]).digest();struct.pack_into('<I',out,8,zlib.adler32(out[12:])&0xffffffff)
- return bytes(out),changed
+ from dex_identity import rewrite
+ return rewrite(raw,ALIASES)
 
 def coexist_entries(source,mode):
  if mode=='update':
   metadata={'mode':'update','package':identity(source.filename)['package'],'rewritten_dex_strings':0}
   if metadata['package']==COEXIST_GAME:verify_private_root(source.filename);metadata['private_root_check_verified']=True
-  return {},metadata
+  repaired={}
+  if metadata['package'] in (COEXIST_GAME,COEXIST_RESOURCES):
+   from dex_identity import rewrite
+   for name in source.namelist():
+    if name.endswith('.dex'):
+     original=source.read(name);raw,_=rewrite(original,{})
+     if raw!=original:repaired[name]=raw
+  return repaired,dict(metadata,repaired_dex_files=len(repaired))
  metadata=plan(source.filename,'coexist');document=Manifest(source.read('AndroidManifest.xml'))
  if metadata['package']==COEXIST_GAME:
   verify_private_root(source.filename)
@@ -67,8 +70,8 @@ def coexist_entries(source,mode):
  replacements={'AndroidManifest.xml':document.bytes()};count=0
  for name in source.namelist():
   if name.endswith('.dex'):
-   raw,changed=patch_dex(source.read(name));count+=changed
-   if changed:replacements[name]=raw
+   original=source.read(name);raw,changed=patch_dex(original);count+=changed
+   if raw!=original:replacements[name]=raw
  return replacements,dict(metadata,rewritten_dex_strings=count)
 
 def verify_private_root(apk):

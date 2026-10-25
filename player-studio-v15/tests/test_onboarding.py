@@ -8,6 +8,7 @@ from android_manifest import Manifest
 from onboarding import Setup,preferences
 from personal_runtime import install_package_identity
 from apk_literals import module_reader
+from dex_identity import inspect as inspect_dex
 
 class CoexistTests(unittest.TestCase):
  @classmethod
@@ -23,6 +24,7 @@ class CoexistTests(unittest.TestCase):
     self.assertNotEqual(original,changes['AndroidManifest.xml']);self.assertFalse(any(n.endswith('.so') or n.startswith('assets/') for n in changes))
     for name,raw in changes.items():
      if name.endswith('.dex'):
+      self.assertTrue(inspect_dex(raw)['ordered_string_ids'])
       self.assertEqual(len(raw),len(z.read(name)));self.assertEqual(raw[12:32],hashlib.sha1(raw[32:]).digest());self.assertEqual(struct.unpack_from('<I',raw,8)[0],zlib.adler32(raw[12:])&0xffffffff)
       self.assertIn(b'com.efootball.revival.diyassets',raw)
     self.assertGreater(report['rewritten_dex_strings'],0);changed.append(changes)

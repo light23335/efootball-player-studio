@@ -24,6 +24,10 @@ def check(rows,errors=(),target=None):
             expected=expected_resources(game,resources);resource=next((r for r in resources if r['package']==expected),None)
             passed=bool(resource and set(resource.get('signers',[]))&set(game.get('signers',[])))
             message='游戏和资源包名依赖、签名配套' if passed else '缺少配套资源 '+expected if not resource else '游戏与资源签名不同，不配套'
+            if resource and resource.get('dex_identity_valid') is False:
+                passed=False;message='共存资源 DEX 索引损坏，请使用新版工坊重新生成并同签名覆盖安装资源 APK'
+            elif game.get('dex_identity_valid') is False:
+                passed=False;message='共存游戏 DEX 索引损坏，请使用新版工坊重新生成游戏 APK'
         except ValueError as exc:expected=None;passed=False;message=str(exc)
         results.append({'game':game['package'],'resource':expected,'passed':passed,'message':message})
     if not games:results.append({'game':target or '', 'resource':None,'passed':False,'message':'未发现可检查的游戏 APK'})
@@ -31,6 +35,7 @@ def check(rows,errors=(),target=None):
 
 def validate_install(incoming,installed):
     row=inspect(incoming);rows=[r for r in installed if r['package']!=row['package']]+[row]
+    if row.get('dex_identity_valid') is False:raise ValueError('共存 APK 的 DEX 索引损坏，请使用新版工坊重新生成后安装')
     if row['kind']=='game':
         result=check(rows,target=row['package'])
         if not result['passed']:raise ValueError('安装配套检查未通过：'+result['pairs'][0]['message']+'。请先安装对应资源 APK。')

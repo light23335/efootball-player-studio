@@ -1,6 +1,6 @@
-# 球员工坊 V17 · 1.9.9 Android
+# 球员工坊 V17 · 1.9.9.1 Android
 
-构建 1.9.9-android.2（199001）。与 PC 共用进攻、防守、通用独立改键界面与导出逻辑；使用已经修复 DEX 排序的 1.9.8-android.2 为基包，仅更新软件资产。修复 Chaquopy AssetFinder 虚拟路径导致的 native-skill-bits.json 读取失败。同包名、同签名覆盖安装保留工程。详见 core/RELEASE-1.9.9.md。
+构建 1.9.9.1-android.1（199010）。与 PC 共用共存 DEX 修复和配套检查；旧共存资源需要重新生成并同签名覆盖安装，同签名更新工坊保留工程。详见 core/RELEASE-1.9.9.1.md。
 
 # 球员工坊 V17 · 1.9.8 Android
 
