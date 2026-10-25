@@ -284,22 +284,27 @@ def relocate_code(payload,source,prefix_address,extension_address,route_address)
 
 
 def _thumbnail_hook(payload,blob,routes,profile):
-    """Replace only registered cards' six mini names before native alias lookup.
+    """Set registered cards' mini names and suppress their duplicate F09 date.
 
     The stock C++ string assigner releases any previous heap storage. All
     arguments, SIMD values and flags survive our calls; the displaced native
     call runs with its original arguments and exact return address.
     """
-    rows=bytearray()
+    rows=bytearray();date_offset=profile.get('front_date_offset')
+    if date_offset is not None and (type(date_offset) is not int or not 8<=date_offset<profile['mini_offset'] or date_offset%24!=8):raise ValueError('大卡日期图层位置无效')
     for route in sorted(routes,key=lambda r:r['cardId']):
         values=route.get('thumbnail_names')
-        if values is None:continue
+        has_mini=values is not None
+        if values is None:
+            if date_offset is None:continue
+            values=['']*6
         if not isinstance(values,list) or len(values)!=6:raise ValueError('小头像原生图层数量无效')
         rows.extend(struct.pack('<Q',route['cardId']))
         for value in values:
             if not isinstance(value,str) or len(value)>22 or any(c not in '0123456789abcdefghijklmnopqrstuvwxyz_' for c in value):
                 raise ValueError('小头像原生图层名称无效')
             raw=value.encode('ascii');rows.extend(bytes([len(raw)*2])+raw.ljust(23,b'\0'))
+        rows.extend(struct.pack('<Q',int(has_mini)))
     stock=bytearray()
     for route in sorted(profile.get('stock_routes',[]),key=lambda r:r['key']):
         if type(route['key']) is not int or not 0<=route['key']<2**35 or len(route['names'])!=2:raise ValueError('原版小卡动画索引无效')
@@ -309,7 +314,7 @@ def _thumbnail_hook(payload,blob,routes,profile):
             raw=value.encode('ascii');stock.extend(bytes([len(raw)*2])+raw.ljust(23,b'\0'))
     if not rows and not stock:return
     stock.extend(bytes(56))
-    rows.extend(bytes(152));blob.extend(bytes(-len(blob)%8));start=len(blob);words=[];labels={};branches=[];calls=[]
+    rows.extend(bytes(160));blob.extend(bytes(-len(blob)%8));start=len(blob);words=[];labels={};branches=[];calls=[]
     def emit(w):words.append(w)
     def pair(op,a,b,off,scale):return op|((off//scale)<<15)|(b<<10)|(31<<5)|a
     def branch(kind,label,reg=0):branches.append((len(words),kind,label,reg));emit(0)
@@ -319,13 +324,22 @@ def _thumbnail_hook(payload,blob,routes,profile):
     for reg in range(0,8,2):emit(pair(0xad000000,reg,reg+1,176+reg*16,16))
     table_ref=len(words);emit(0)
     labels['loop']=len(words);emit(0xf9400128);branch('cbz','stock',8)
-    emit(0xeb0802ff);branch('eq','match');emit(0x91026129);branch('b','loop') # cmp x23,x8; add x9,x9,#152
+    emit(0xeb0802ff);branch('eq','match');emit(0x91028129);branch('b','loop') # cmp x23,x8; add x9,x9,#160
     labels['match']=len(words);emit(0xf900a3e9) # resident source record at sp+320
+    emit(0xf9404d22);branch('cbz','date',2) # ldr x2,[x9,#152]; legacy routes retain native mini layers
     for slot in range(6):
         offset=8+slot*24
         emit(0xf940a3e1);emit(0x39400022|(offset<<10));emit(0x53017c42) # ldrb w2,[x1,#offset]; lsr w2,w2,#1
         emit(0x91000021|((offset+1)<<10));emit(0x91000260|((profile['mini_offset']+slot*24)<<10))
         calls.append(len(words));emit(0);emit(0xd63f0200)
+    labels['date']=len(words)
+    if date_offset is not None:
+        # The selected date is already in this card's private F07 portrait.
+        # Clear only this registered card's F09 string, before filename alias
+        # lookup can resolve a shared series donor's original date texture.
+        # Use std::string::assign so previously allocated storage is released.
+        emit(0xf940a3e1);emit(0x91002421);emit(0x2a1f03e2)
+        emit(0x91000260|(date_offset<<10));calls.append(len(words));emit(0);emit(0xd63f0200)
     branch('b','done')
     labels['stock']=len(words);stock_ref=len(words);emit(0);emit(0xd35cfeea);emit(0x9100054a)
     labels['stock_loop']=len(words);emit(0xf9400128);branch('cbz','done',8)

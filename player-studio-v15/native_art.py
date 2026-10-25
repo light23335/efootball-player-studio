@@ -213,8 +213,8 @@ def compile_art(project,identity,library,rigged_path=None,reference_path=None,me
         date_image=Image.new('RGBA',canvas.size);draw=ImageDraw.Draw(date_image)
         draw.text(((box['x']+box['w']/2)*factor,(box['y']+box['h']/2)*factor),label,font=font,anchor='mm',fill='white',stroke_width=1,stroke_fill=(0,0,0,76))
         full_portrait.alpha_composite(date_image)
-        add_texture(person+'_date',date_image.resize((512,512),Image.Resampling.LANCZOS))
-        aliases[f'{style}_f09_{cid}_']=person+'_date'
+    report['date_rendering']={'mode':'private-f07-only','native_f09_suppressed':True,
+                              'visible':bool(card['card_type']=='BigTime' and date and appearance.get('card_date_visible') is not False)}
     # F07 is PlayerImage in BP_PlayerAcquisitionCard.SetPlayerImage. F06 is
     # another card decoration layer; it must not receive a second portrait.
     add_texture(person+'f',full_portrait.resize((512,512),Image.Resampling.LANCZOS))

@@ -35,7 +35,7 @@ from custom_boosters import issues as booster_issues,validate_projects as valida
 
 PREFIX='assets/gateway-release/'
 NATIVE='custom-resources/legends-v10/'
-COMPILER_REVISION='v17-context-controller-banks-1.9.9'
+COMPILER_REVISION='v17-private-date-f07-only-1.9.10'
 
 
 def compact(value):return json.dumps(value,ensure_ascii=False,separators=(',',':')).encode('utf8')
@@ -396,6 +396,12 @@ class NativePackage:
                     mini_profile=self.resources/'native-thumbnail-hook.json'
                     if not mini_profile.is_file():mini_profile=self.profile_resources/'native-thumbnail-hook.json'
                     profile['thumbnail_hook']=json.loads(mini_profile.read_text(encoding='utf8'))
+                    # Imported databases may carry an older copy of this
+                    # interface. Upgrade only an identical native entry point.
+                    current_mini=json.loads((self.profile_resources/'native-thumbnail-hook.json').read_text(encoding='utf8'))
+                    if current_mini.get('front_date_offset') is not None:
+                        if any(profile['thumbnail_hook'].get(k)!=current_mini.get(k) for k in ('address','original_call','assign','mini_offset','expected_hex')):raise ValueError('此版本的大卡日期接口不同，未套用其他版本的图层位置')
+                        for k in ('front_date_offset','front_date_evidence'):profile['thumbnail_hook'][k]=current_mini[k]
                     profile['thumbnail_hook']['stock_routes']=motion['stock_routes']
                     from native_extensions import link_hooks
                     with source.open('lib/arm64-v8a/libUE4.so') as engine:
@@ -408,6 +414,9 @@ class NativePackage:
                         for name in ('position_hook','acquisition_hook','overall_hook','thumbnail_hook'):
                             h=profile[name];engine.seek(h['file_offset'])
                             if engine.read(64).hex()!=h['expected_hex']:raise ValueError('此版本的小头像动画接口不同' if name=='thumbnail_hook' else '此版本的抽卡显示接口不同')
+                        for evidence in profile['thumbnail_hook'].get('front_date_evidence',[]):
+                            engine.seek(evidence['file_offset']);expected=bytes.fromhex(evidence['expected_hex'])
+                            if engine.read(len(expected))!=expected:raise ValueError('此版本的 F09 日期图层布局不同，未生成错误的卡面绑定')
                     booster_routes={r['id']:r for r in inherited.get('native_binding',{}).get('profile',{}).get('boosters',[])}
                     booster_routes.update({r['id']:r for r in table_report['personal_booster_text_routes']})
                     if booster_routes:

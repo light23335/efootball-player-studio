@@ -5,5 +5,23 @@
   "original_call": 129341288,
   "assign": 49514364,
   "mini_offset": 440,
-  "source": "V15 PlayerCardTextureInfo mini M01..M06 before filename conversion; displaced BL preserved"
+  "source": "V17 PlayerCardTextureInfo: F09 at front+0xc0 (object+0xc8), M01..M06 at +0x1b8; both native builders and format string fingerprinted. Displaced BL preserved.",
+  "front_date_offset": 200,
+  "front_date_evidence": [
+    {
+      "address": 129582424,
+      "file_offset": 129566040,
+      "expected_hex": "e376fcb063e42e91e0030091e40314910180805202808052e50314aad0faff97e0030091c91d4294e20300aae0020391e10300917c90ce96"
+    },
+    {
+      "address": 129575828,
+      "file_offset": 129559444,
+      "expected_hex": "e376fcf063e42e91e0230091e42314910180805202808052e50315aa41010094e02300913a244294e20300aae0020391e1230091ed96ce96"
+    },
+    {
+      "address": 10951609,
+      "file_offset": 10951609,
+      "expected_hex": "25735f6630395f256c645f"
+    }
+  ]
 }
