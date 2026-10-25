@@ -5,7 +5,7 @@ integration have a separate readiness gate.
 """
 import struct
 from skill_hook_ir import call, jump
-from custom_skills import (FIRST_ID, FIRST_PARAMETER, FIRST_MATCH_FLAG, COUNT,
+from custom_skills import (FIRST_NATIVE_ID, FIRST_PARAMETER, FIRST_MATCH_FLAG, COUNT,
                            SOURCE_BIT, COMPACT_OFFSET, COMPACT_TAG, messages)
 
 
@@ -92,7 +92,7 @@ original:
 
     address = 0x82a2220
     builder.add('studio_custom_skill_parameter_id', address, f'''
-sub w8,w0,#{FIRST_ID}
+sub w8,w0,#{FIRST_NATIVE_ID}
 cmp w8,#{COUNT-1}
 b.hi original
 add w0,w8,#{FIRST_PARAMETER}
@@ -122,8 +122,44 @@ names: .word {values}
     # Do not enlarge the owned player's 147-parameter override loop. Its source
     # has no extension data; copying virtual zeros would erase the native card's
     # four markers. The native catalogue copy already preserves tagged padding.
-    instruction(builder, 'studio_custom_skill_name_bound', 0x82bb678, 'cmp w0,#77')
-    instruction(builder, 'studio_custom_skill_list_bound', 0x737a314, 'cmp w22,#78')
+    instruction(builder, 'studio_custom_skill_name_bound', 0x82bb678, 'cmp w0,#78')
+    instruction(builder, 'studio_custom_skill_list_bound', 0x737a314, 'cmp w22,#79')
+    instruction(builder, 'studio_custom_skill_library_list_bound', 0x2f45214, 'cmp w21,#79')
+    instruction(builder, 'studio_custom_skill_library_count_bound', 0x2f44f90, 'cmp w22,#79')
+    instruction(builder, 'studio_custom_skill_owned_count_bound', 0x737b6a4, 'cmp w20,#79')
+    instruction(builder, 'studio_custom_skill_additional_text_bound', 0x7b923bc, 'cmp w0,#78')
+    # 74 remains the game's empty additional-skill ID. Skip it while walking
+    # the expanded ID interval; no original parameter or empty slot is reused.
+    for name,address,register,skip in (
+        ('owned_list',0x737a328,'w22',0x737a310),
+        ('library_list',0x2f4521c,'w21',0x2f45210)):
+        builder.add('studio_custom_skill_skip_empty_'+name,address,f'''
+cmp {register},#74
+b.ne real
+{jump('skip')}
+real:
+mov w0,{register}
+{jump('resume')}
+''',{'skip':skip,'resume':address+4})
+    builder.add('studio_custom_skill_skip_empty_library_count',0x2f44f5c,f'''
+cmp w22,#74
+b.ne real
+mov w28,w27
+mov w8,#0
+{jump('skip')}
+real:
+mov w0,w22
+{jump('resume')}
+''',{'skip':0x2f44f80,'resume':0x2f44f60})
+    builder.add('studio_custom_skill_skip_empty_owned_count',0x737b678,f'''
+cmp w20,#74
+b.ne real
+mov w8,#0
+{jump('skip')}
+real:
+mov w0,w20
+{jump('resume')}
+''',{'skip':0x737b698,'resume':0x737b67c})
 
     # Native match flags use three 32-bit words for 75 flags. 79 still occupies
     # exactly those same twelve bytes. Expand the checked count and copy bound.
@@ -135,7 +171,7 @@ names: .word {values}
     original_table = builder.engine[0xc7fec0:0xc7fec0 + 0x250]
     pairs = list(struct.unpack('<' + 'I' * (len(original_table) // 4), original_table))
     for index in range(COUNT):
-        pairs += [FIRST_MATCH_FLAG + index, FIRST_ID + index]
+        pairs += [FIRST_MATCH_FLAG + index, FIRST_NATIVE_ID + index]
     builder.add('studio_custom_skill_match_table', 0x6a74c0c, f'''
 adr x23,table
 {jump('resume')}

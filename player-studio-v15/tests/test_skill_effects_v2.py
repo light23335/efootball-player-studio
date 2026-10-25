@@ -74,10 +74,19 @@ class NativeSkillV2Tests(unittest.TestCase):
                 vm.reg_write(r.UC_ARM64_REG_PC, vm.reg_read(r.UC_ARM64_REG_X30))
         machine.hook_add(u.UC_HOOK_MEM_UNMAPPED, missing)
         machine.hook_add(u.UC_HOOK_CODE, calls)
+        machine.mem_map(0x49000000,0x10000)
+        machine._studio_state_cursor=0x49000000
         return machine
 
     def install(self, machine, row):
-        machine.mem_write(0x20000000, bytes.fromhex(row['body_hex']))
+        machine.mem_write(0x20000000, self.relocate_state(machine,row))
+
+    def relocate_state(self,machine,row):
+        body=bytearray.fromhex(row['body_hex'])
+        for offset,size in row.get('writable_fixups',[]):
+            at=machine._studio_state_cursor;machine._studio_state_cursor+=(size+15)//16*16
+            struct.pack_into('<Q',body,offset,at)
+        return bytes(body)
 
     def install_all(self, machine):
         targets = {}
@@ -85,13 +94,15 @@ class NativeSkillV2Tests(unittest.TestCase):
         cursor = 0x20000000
         for row in self.candidate.get('bundles', self.candidate['hooks']):
             target = cursor
-            body = bytes.fromhex(row['body_hex'])
+            body = self.relocate_state(machine,row)
             self.assertLess(target + len(body), 0x2003f000)
             machine.mem_write(target, body)
             cursor += (len(body) + 4095) & ~4095
             for entry in [row] + row.get('extra_entries', []):
                 targets[entry['address']] = target + entry.get('entry_offset', 0)
             helpers.update({name:target+offset for name,offset in row.get('helper_entries',{}).items()})
+        # Match the real Android loader: code RX, actor state RW, never RWX.
+        machine.mem_protect(0x20000000,0x3f000,self.u.UC_PROT_READ|self.u.UC_PROT_EXEC)
         def redirect(vm, pc, size, user):
             if pc in targets:
                 vm.reg_write(self.r.UC_ARM64_REG_PC, targets[pc])
@@ -435,11 +446,11 @@ class NativeSkillV2Tests(unittest.TestCase):
         def copy_record(m):
             out=m.reg_read(r.UC_ARM64_REG_X8)
             m.mem_write(out,bytes(52)+struct.pack('<I',COMPACT_TAG|15))
-        for additional,wanted in (((),[74,75,76,77]),((74,76),[75,77]),
-                                  ((74,75,76,77),[])):
+        for additional,wanted in (((),[75,76,77,78]),((75,77),[76,78]),
+                                  ((75,76,77,78),[])):
             vm=self.machine({0x7a87f44:copy_record})
             self.install_all(vm)
-            vm.mem_write(0x41000094,struct.pack('<5I',*(list(additional)+[0xffffffff]*(5-len(additional)))))
+            vm.mem_write(0x41000094,struct.pack('<5I',*(list(additional)+[74]*(5-len(additional)))))
             vm.mem_write(0x41000120,struct.pack('<I',1))
             found=[]
             def strings(m,pc,size,user):
@@ -473,6 +484,48 @@ class NativeSkillV2Tests(unittest.TestCase):
         self.assertEqual(bytes(vm.mem_read(frame + 0x80, 34)), bytes(30) + bytes([1] * 4))
         self.assertEqual(struct.unpack('<Q', vm.mem_read(frame - 16, 8))[0], 0x1234abcd5678ef90)
         self.assertEqual(bytes(vm.mem_read(stack + 0x60 + 56, 408)), bytes([0xa5]) * 408)
+
+    def test_library_and_owned_counts_show_all_four_skills_without_empty_id_74(self):
+        r=self.r
+        from custom_skills import COMPACT_TAG
+        for mask in range(16):
+            expected=[75+i for i in range(4) if mask>>i&1]
+            vm=self.machine({});self.install_all(vm)
+            vm.mem_write(0x41001000,bytes(52)+struct.pack('<I',COMPACT_TAG|mask))
+            vm.reg_write(r.UC_ARM64_REG_X25,0x41001000);vm.reg_write(r.UC_ARM64_REG_W21,0)
+            found=[]
+            def capture(m,pc,size,user):
+                if pc==0x2f45244:
+                    found.append(m.reg_read(r.UC_ARM64_REG_W21));m.reg_write(r.UC_ARM64_REG_PC,0x2f45210)
+            vm.hook_add(self.u.UC_HOOK_CODE,capture)
+            self.execute(vm,0x2f4521c,0x2f454f4)
+            self.assertEqual(found,expected)
+            vm.reg_write(r.UC_ARM64_REG_X21,0x41001000)
+            vm.reg_write(r.UC_ARM64_REG_W22,0);vm.reg_write(r.UC_ARM64_REG_W27,0)
+            self.execute(vm,0x2f44f5c,0x2f44f98)
+            self.assertEqual(vm.reg_read(r.UC_ARM64_REG_W27),len(expected))
+
+    def test_relocated_state_lives_outside_rx_code_and_cancellation_can_write_it(self):
+        r=self.r
+        from personal_binding import compose,relocate_code
+        bundle=self.candidate['bundles'][0]
+        payload=compose({'blob_hex':bytes(8).hex(),'hooks':[],'offsets':{},'back_fixup':0},[],
+                        {'sites':{},'templates':{},'native_hooks':[bundle]})
+        raw=bytearray.fromhex(payload['blob_hex']);struct.pack_into('<Q',raw,0,payload['hooks'][0]['address']+4)
+        self.assertEqual(payload['writable_data_bytes'],2816)
+        # Pure relocation refuses an absent state allocation.
+        with self.assertRaisesRegex(ValueError,'尚未分配'):
+            relocate_code(payload,bytes(raw),0,0,0)
+        code,_=relocate_code(payload,bytes(raw),0x20000000,0,0,0x49000000)
+        for at,offset in payload['writable_pointer_fixups']:
+            self.assertEqual(struct.unpack_from('<Q',code,at)[0],0x49000000+offset)
+        vm=self.machine({});self.populate_world(vm);helpers=self.install_all(vm)
+        player=0x44000000;vm.mem_write(player+0x2a38,bytes([9]))
+        vm.reg_write(r.UC_ARM64_REG_X0,player);self.execute(vm,helpers['shared_studio_kick_slot'])
+        slot=vm.reg_read(r.UC_ARM64_REG_X0);self.assertTrue(0x49000000<=slot<0x49001000)
+        vm.mem_write(slot+36,struct.pack('<2I',2,7))
+        vm.reg_write(r.UC_ARM64_REG_X0,player);self.execute(vm,helpers['shared_studio_cancel_committed_kick'])
+        self.assertEqual(bytes(vm.mem_read(slot+36,8)),bytes(8))
 
     def world(self, helper, stubs=None):
         """Synthetic live records; all native lookup routines execute for real."""

@@ -43,7 +43,7 @@ def hooks(engine,resources=None):
             engine.seek(entry['file_offset'])
             if engine.read(64).hex()!=entry['expected_hex']:
                 raise ValueError('此版本的比赛技能接口发生变化，未写入新增技能效果')
-        for key in ('assembly','code','functions','constants','helper_entries','deferred_shared_refs'):
+        for key in ('assembly','code','functions','constants','helper_entries','deferred_shared_refs','writable'):
             hook.pop(key,None)
     return result
 

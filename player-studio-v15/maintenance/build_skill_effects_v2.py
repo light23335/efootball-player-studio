@@ -243,7 +243,7 @@ def build(engine, release=False):
     add_trajectory(builder)
     add_shield(builder)
     bundle = builder.bundle('studio_skill_runtime_v2', builder.rows + builder.helpers)
-    return {'revision': 'skill-effects-v2-1.9.12' if release else 'skill-effects-v2-candidate-2',
+    return {'revision': 'skill-effects-v2-1.9.14' if release else 'skill-effects-v2-candidate-3',
             'production_ready': bool(release),
             'custom_skill_protocol':CUSTOM_PROTOCOL,
             'engine_sha256': ENGINE_SHA, 'hooks': builder.rows, 'helpers': builder.helpers,

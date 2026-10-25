@@ -8,8 +8,9 @@ The ordinary owned-player parameter list remains exactly 147 items.
 import json
 from pathlib import Path
 
-REVISION = 'studio-custom-skills-v2-1'
+REVISION = 'studio-custom-skills-v2-2'
 FIRST_ID = 74
+FIRST_NATIVE_ID = 75  # Native 74 is the empty additional-skill sentinel.
 FIRST_PARAMETER = 147
 SOURCE_BIT = 683
 COMPACT_OFFSET = 0x34
@@ -106,9 +107,26 @@ custom markers are supplied by the card catalogue for either skill category.
 def messages():
     # New keys in the existing skill text groups. All original keys and IDs
     # remain unchanged; these keys are checked against the original strings.
-    return [{'id': row['id'], 'name_msg': (352 << 16) | (60000 + index),
+    return [{'id': FIRST_NATIVE_ID+index, 'name_msg': (352 << 16) | (60000 + index),
              'description_msg': (353 << 16) | (60000 + index)}
             for index, row in enumerate(ROWS)]
+
+
+def native_ids(values):
+    """Editor/project IDs stay stable; never assign native empty-slot ID 74."""
+    return [FIRST_NATIVE_ID+skill-FIRST_ID if FIRST_ID<=skill<FIRST_ID+COUNT else skill for skill in values]
+
+
+def upgrade_definitions(players):
+    """Old DIY APKs used editor IDs in owned additional-skill slots."""
+    for player in players:
+        if not player.get('studio_custom_skills'):continue
+        version=player.get('studio_custom_skill_protocol')
+        if version==REVISION:continue
+        if version not in (None,'studio-custom-skills-v2-1'):
+            raise ValueError('个人包的扩展技能编号协议未知，未修改技能')
+        owned=player['owned'];owned['additional_skill_id']=native_ids(owned.get('additional_skill_id',[]))
+        player['studio_custom_skill_protocol']=REVISION
 
 
 def text_groups(locale='zha'):

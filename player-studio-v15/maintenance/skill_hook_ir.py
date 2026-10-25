@@ -16,9 +16,10 @@ class Hooks:
         self.helpers = []
         self.assembler = Ks(KS_ARCH_ARM64, KS_MODE_LITTLE_ENDIAN)
 
-    def assemble(self, name, code, functions=None, constants=None, evidence=()):
+    def assemble(self, name, code, functions=None, constants=None, evidence=(), writable=None):
         functions = dict(functions or {})
         constants = dict(constants or {})
+        writable = dict(writable or {})
         defined=set(re.findall(r'^([A-Za-z_]\w*):',code,re.M))
         unresolved=sorted(set(re.findall(r'\b(?:bl|b)\s+(shared_\w+)',code))-defined)
         # Helpers may refer to one another before the final bundle is linked.
@@ -28,6 +29,7 @@ class Hooks:
         pool = '\n.align 3\n'
         pool += '\n'.join(f'{key}: .quad {value}' for key, value in functions.items())
         pool += '\n' + '\n'.join(f'{key}: .word {bits(value)}' for key, value in constants.items())
+        pool += '\n.align 3\n' + '\n'.join(f'{key}: .quad {0x5354ee0000000000+i}' for i,key in enumerate(writable))
         assembly = code + '\n' + probes + pool
         body = bytes(self.assembler.asm(assembly)[0])
         fixups = []
@@ -37,9 +39,16 @@ class Hooks:
             if at < 0 or body.find(needle, at + 1) >= 0 or at % 8:
                 raise ValueError(f'Non-unique or unaligned literal: {name}/{key}')
             fixups.append([at, value])
+        data_fixups=[]
+        for i,(key,size) in enumerate(writable.items()):
+            needle=struct.pack('<Q',0x5354ee0000000000+i);at=body.find(needle)
+            if at<0 or body.find(needle,at+1)>=0 or at%8 or not 0<size<=65536:
+                raise ValueError(f'Invalid writable state literal: {name}/{key}')
+            data_fixups.append([at,size])
         return {'name': name, 'body_hex': body.hex(), 'absolute_fixups': fixups,
                'assembly': assembly, 'code': code, 'functions': functions,
                'constants': constants, 'deferred_shared_refs': unresolved,
+               'writable':writable,'writable_fixups':data_fixups,
                'evidence': list(evidence)}
 
     def add(self, name, address, code, functions=None, constants=None, evidence=()):
@@ -49,8 +58,8 @@ class Hooks:
         self.rows.append(row)
         return row
 
-    def helper(self, name, code, functions=None, constants=None, evidence=()):
-        row = self.assemble(name, code, functions, constants, evidence)
+    def helper(self, name, code, functions=None, constants=None, evidence=(), writable=None):
+        row = self.assemble(name, code, functions, constants, evidence, writable)
         self.helpers.append(row)
         return row
 
@@ -60,7 +69,7 @@ class Hooks:
         PC-relative internal references keep working when the installer splits
         its nearby branch stubs from extension code on native-bridge emulators.
         """
-        imports, constants, fragments, entries, evidence = {}, {}, [], [], []
+        imports, constants, fragments, entries, evidence, writable = {}, {}, [], [], [], {}
         for index, row in enumerate(rows):
             entry = 'shared_' + row['name'] if 'address' not in row else 'entry_' + row['name']
             substitutions = {label: f'local_{index}_{label}' for label in
@@ -73,6 +82,8 @@ class Hooks:
                 target = 'float_' + hex(bits(value))[2:]
                 constants[target] = value
                 substitutions[label] = target
+            for label,size in row.get('writable',{}).items():
+                target=f'data_{index}_{label}';writable[target]=size;substitutions[label]=target
             pattern = r'\b(' + '|'.join(map(re.escape, sorted(substitutions, key=len, reverse=True))) + r')\b'
             code = re.sub(pattern, lambda match: substitutions[match[0]], row['code']) if substitutions else row['code']
             fragments.append(entry + ':\n' + code + '\n.align 3\n')
@@ -80,7 +91,7 @@ class Hooks:
             evidence += row.get('evidence', [])
         marker = 0x53545544494f4d32
         fragments.append(f'.quad {marker}\n' + '\n'.join('.quad ' + entry for entry, _ in entries))
-        linked = self.assemble(name, '\n'.join(fragments), imports, constants, evidence)
+        linked = self.assemble(name, '\n'.join(fragments), imports, constants, evidence, writable)
         body = bytes.fromhex(linked['body_hex'])
         at = body.find(struct.pack('<Q', marker))
         if at < 0 or body.find(struct.pack('<Q', marker), at + 1) >= 0:

@@ -12,6 +12,14 @@ from native_skill_effects import decode_skills,required,text_groups
 
 
 class CustomSkillDataTests(unittest.TestCase):
+    def test_old_diy_additional_ids_upgrade_once_and_projects_stay_unchanged(self):
+        from custom_skills import upgrade_definitions
+        players=[{'studio_custom_skills':[74,75,76,77],'owned':{'additional_skill_id':[25,74,75,76,77]}}]
+        upgrade_definitions(players)
+        self.assertEqual(players[0]['owned']['additional_skill_id'],[25,75,76,77,78])
+        upgrade_definitions(players)
+        self.assertEqual(players[0]['owned']['additional_skill_id'],[25,75,76,77,78])
+        self.assertEqual(players[0]['studio_custom_skills'],[74,75,76,77])
     @classmethod
     def setUpClass(cls):
         cls.catalog=copy.deepcopy(app.CATALOG)
@@ -60,7 +68,7 @@ class CustomSkillDataTests(unittest.TestCase):
         for key in ('parameters','_careerplan_base_parameters'):
             self.assertEqual(len(definition['owned'][key]),147)
         self.assertEqual(len(definition['maximum_development']['parameters']),147)
-        self.assertEqual(definition['owned']['additional_skill_id'],[76,77])
+        self.assertEqual(definition['owned']['additional_skill_id'],[77,78])
         self.assertEqual(definition['studio_custom_skills'],[74,75,76,77])
         self.assertTrue(required([definition],self.catalog))
         self.assertEqual(int.from_bytes(record,'little')^int.from_bytes(before_row,'little'),

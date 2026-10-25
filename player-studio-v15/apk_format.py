@@ -6,11 +6,13 @@ the local data directory and are never included in player or delta packages.
 """
 from pathlib import Path
 import copy
+import contextlib
 import datetime
 import hashlib
 import os
 import shutil
 import struct
+import tempfile
 import zipfile
 import zlib
 
@@ -22,6 +24,8 @@ from cryptography.x509.oid import NameOID
 MAGIC=b'APK Sig Block 42'
 V2_ID=0x7109871a
 RSA_SHA256=0x0103
+UINT32_LIMIT=0xffffffff
+SIGNING_RESERVE=16*1024
 
 
 def lp(value):
@@ -64,12 +68,44 @@ def copy_bytes(src,dst,count):
         dst.write(value);count-=len(value)
 
 
-def replace_entries(source,output,replacements):
-    """Retain original local records and offsets, append only changed entries.
+def _zip_extra(raw):
+    """Retain metadata, dropping obsolete ZIP64/alignment padding fields."""
+    out=bytearray();at=0
+    while at<len(raw):
+        if at+4>len(raw):raise ValueError('APK ZIP extra field is truncated')
+        kind,size=struct.unpack_from('<HH',raw,at);end=at+4+size
+        if end>len(raw):raise ValueError('APK ZIP extra field exceeds its record')
+        if kind not in (1,0xd935):out.extend(raw[at:end])
+        at=end
+    return bytes(out)
 
-    Native libraries retain their original 4/16-KiB alignment. Central directory
-    offsets use unsigned 32-bit fields, including offsets above Python's default
-    2-GiB ZIP64 threshold. Android APK v2 does not accept a ZIP64 end record.
+
+def _local_header(item,offset):
+    local=copy.copy(item);local.header_offset=offset
+    if item.compress_type==zipfile.ZIP_STORED:
+        alignment=16384 if item.filename.endswith('.so') else 4
+        name,_=item._encodeFilenameFlags()
+        gap=(-(offset+30+len(name)+len(item.extra)))%alignment
+        if gap:
+            if gap<4:gap+=alignment
+            local.extra=item.extra+struct.pack('<HH',0xd935,gap-4)+bytes(gap-4)
+    if len(local.extra)>65535:raise ValueError('APK alignment extra field is too large')
+    return local.FileHeader(zip64=False)
+
+
+def _size_error(items,estimate):
+    largest=max(items,key=lambda i:i.file_size,default=None)
+    label=('；最大文件 '+largest.filename+'（'+str(largest.file_size)+' 字节）') if largest else ''
+    return ValueError('APK exceeds the unsigned 32-bit ZIP format：整理有效数据后预计 '
+                      +str(estimate)+' 字节，仍超过约 4 GiB 上限'+label+'。请减少内容或拆分配套资源。')
+
+
+def replace_entries(source,output,replacements):
+    """Rewrite current ZIP records, reclaiming superseded local payloads.
+
+    Unchanged compressed bytes are copied directly. Native libraries are
+    16-KiB aligned and other stored entries 4-byte aligned. A complete size
+    preflight runs before writing the output, with room for APK v2 signing.
     """
     source=Path(source);output=Path(output)
     if output.exists() or source.absolute()==output.absolute():raise ValueError('Output APK must be a new file')
@@ -77,43 +113,72 @@ def replace_entries(source,output,replacements):
     with zipfile.ZipFile(source) as z:
         old={i.filename:i for i in z.infolist()}
         if len(old)!=len(z.infolist()):raise ValueError('Source APK has duplicate ZIP entries')
-        # Preserve all original data byte-for-byte, including native alignment.
-        entries=[copy.copy(i) for i in z.infolist() if i.filename not in replacements]
+        entries=[copy.copy(i) for i in z.infolist()]
         comment=z.comment
-    with source.open('rb') as src,output.open('xb') as dst:
-        copy_bytes(src,dst,meta['data_end'])
-        for name,data in replacements.items():
+    if any(name.startswith('/') or '\\' in name or '..' in name.split('/') for name in replacements):
+        raise ValueError('Invalid replacement path')
+    entries.extend(zipfile.ZipInfo(name,(2026,1,1,0,0,0)) for name in replacements if name not in old)
+    if len(entries)>=65535:raise ValueError('Too many APK entries for non-ZIP64 format')
+    with contextlib.ExitStack() as stack,source.open('rb') as src:
+        plans=[];cursor=0
+        for item in entries:
+            name=item.filename
             if name.startswith('/') or '\\' in name or '..' in name.split('/'):
                 raise ValueError('Invalid replacement path')
-            item=copy.copy(old[name]) if name in old else zipfile.ZipInfo(name,(2026,1,1,0,0,0))
+            if item.flag_bits&1:raise ValueError('Encrypted ZIP entries are not supported in APK')
+            item.extra=_zip_extra(item.extra)
             item.flag_bits&=~8
-            item.header_offset=dst.tell();item.file_size=len(data);item.CRC=zlib.crc32(data)&0xffffffff
-            if item.compress_type==zipfile.ZIP_DEFLATED:
-                encoder=zlib.compressobj(9,zlib.DEFLATED,-15);compressed=encoder.compress(data)+encoder.flush()
-            elif item.compress_type==zipfile.ZIP_STORED:compressed=data
-            else:raise ValueError('Unsupported APK entry compression')
-            item.compress_size=len(compressed)
-            # New entries have no ZIP64/alignment extra field; unchanged entries
-            # keep their original data and extra fields.
-            item.extra=b''
-            dst.write(item.FileHeader(zip64=False));dst.write(compressed);entries.append(item)
-        central=dst.tell()
-        if len(entries)>=65535:raise ValueError('Too many APK entries for non-ZIP64 format')
-        for item in entries:
-            if max(item.file_size,item.compress_size,item.header_offset)>=0xffffffff:
-                raise ValueError('APK exceeds the unsigned 32-bit ZIP format')
-            name,flags=item._encodeFilenameFlags()
-            y,mo,day,h,mi,s=item.date_time
-            dos_time=h<<11|mi<<5|s//2;dos_date=(y-1980)<<9|mo<<5|day
-            fields=(0x02014b50,item.create_version|(item.create_system<<8),item.extract_version,flags,item.compress_type,
-                    dos_time,dos_date,item.CRC,item.compress_size,item.file_size,len(name),len(item.extra),len(item.comment),
-                    0,item.internal_attr,item.external_attr,item.header_offset)
-            dst.write(struct.pack('<I6H3I5H2I',*fields));dst.write(name);dst.write(item.extra);dst.write(item.comment)
-        central_size=dst.tell()-central
-        if dst.tell()+22+len(comment)>=0xffffffff:raise ValueError('APK is too large')
-        dst.write(struct.pack('<I4H2IH',0x06054b50,0,0,len(entries),len(entries),central_size,central,len(comment)))
-        dst.write(comment)
-    return layout(output)
+            stream=None;data=None;offset=None
+            if name in replacements:
+                data=replacements[name];item.file_size=len(data);item.CRC=zlib.crc32(data)&0xffffffff
+                if item.file_size>=UINT32_LIMIT:raise _size_error(entries,item.file_size)
+                if item.compress_type==zipfile.ZIP_DEFLATED:
+                    stream=stack.enter_context(tempfile.SpooledTemporaryFile(max_size=8*1024*1024,dir=output.parent))
+                    encoder=zlib.compressobj(9,zlib.DEFLATED,-15)
+                    view=memoryview(data)
+                    for at in range(0,len(view),4*1024*1024):stream.write(encoder.compress(view[at:at+4*1024*1024]))
+                    stream.write(encoder.flush());item.compress_size=stream.tell();stream.seek(0);data=None
+                elif item.compress_type==zipfile.ZIP_STORED:item.compress_size=len(data)
+                else:raise ValueError('Unsupported APK entry compression')
+            else:
+                previous=old[name];src.seek(previous.header_offset);header=src.read(30)
+                if len(header)!=30 or header[:4]!=b'PK\x03\x04':raise ValueError('APK local ZIP header is invalid')
+                flags,method=struct.unpack_from('<HH',header,6);n,e=struct.unpack_from('<HH',header,26)
+                local_name=src.read(n).decode('utf8' if flags&0x800 else 'cp437')
+                if local_name!=name or method!=item.compress_type:raise ValueError('APK local/central ZIP entries disagree')
+                offset=previous.header_offset+30+n+e
+                if offset+item.compress_size>meta['data_end']:raise ValueError('APK compressed entry exceeds source data')
+            if max(item.file_size,item.compress_size,cursor)>=UINT32_LIMIT:raise _size_error(entries,cursor)
+            item.header_offset=cursor;header=_local_header(item,cursor);cursor+=len(header)+item.compress_size
+            plans.append((item,header,offset,stream,data))
+        central=cursor
+        central_size=sum(46+len(i._encodeFilenameFlags()[0])+len(i.extra)+len(i.comment) for i in entries)
+        estimate=central+central_size+22+len(comment)+SIGNING_RESERVE
+        if estimate>=UINT32_LIMIT:raise _size_error(entries,estimate)
+        with output.open('xb') as dst:
+            for item,header,offset,stream,data in plans:
+                dst.write(header)
+                if stream is not None:copy_bytes(stream,dst,item.compress_size)
+                elif data is not None:dst.write(data)
+                else:src.seek(offset);copy_bytes(src,dst,item.compress_size)
+            if dst.tell()!=central:raise ValueError('APK rewritten local records do not match preflight')
+            for item in entries:
+                _write_central(dst,item)
+            dst.write(struct.pack('<I4H2IH',0x06054b50,0,0,len(entries),len(entries),central_size,central,len(comment)))
+            dst.write(comment)
+    result=layout(output)
+    result['compaction']={'compact_rewrite':True,'source_bytes':meta['size'],'unsigned_bytes':result['size'],'entries':len(entries)}
+    return result
+
+
+def _write_central(dst,item):
+    name,flags=item._encodeFilenameFlags()
+    y,mo,day,h,mi,s=item.date_time
+    dos_time=h<<11|mi<<5|s//2;dos_date=(y-1980)<<9|mo<<5|day
+    fields=(0x02014b50,item.create_version|(item.create_system<<8),item.extract_version,flags,item.compress_type,
+            dos_time,dos_date,item.CRC,item.compress_size,item.file_size,len(name),len(item.extra),len(item.comment),
+            0,item.internal_attr,item.external_attr,item.header_offset)
+    dst.write(struct.pack('<I6H3I5H2I',*fields));dst.write(name);dst.write(item.extra);dst.write(item.comment)
 
 
 def content_digest(path,meta=None):
@@ -172,6 +237,8 @@ def sign_v2(unsigned,output,key,certificate):
     if gap<12:gap+=4096
     pair+=struct.pack('<QI',gap-8,0x42726577)+b'\0'*(gap-12)
     length=len(pair)+24;block=struct.pack('<Q',length)+pair+struct.pack('<Q',length)+MAGIC
+    if meta['central']+len(block)>=UINT32_LIMIT or meta['size']+len(block)>=UINT32_LIMIT:
+        raise _size_error([],meta['size']+len(block))
     end=bytearray(meta['end_record']);struct.pack_into('<I',end,16,meta['central']+len(block))
     with unsigned.open('rb') as src,output.open('xb') as dst:
         copy_bytes(src,dst,meta['central']);dst.write(block)

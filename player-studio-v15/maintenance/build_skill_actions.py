@@ -14,15 +14,13 @@ mov w8,#0x2a38
 ldrb w8,[x0,x8]
 cmp w8,#22
 b.hs none
-adr x9,rows
+ldr x9,rows
 add x0,x9,x8,lsl #6
 ret
 none:
 mov x0,#0
 ret
-.align 4
-rows: .space 1408,0
-''', evidence=['separate 64-byte kick provenance per live actor'])
+''', evidence=['separate 64-byte kick provenance per live actor in RW memory'],writable={'rows':1408})
 
     # x0 actor, x1 original request header, x2 selected motion descriptor,
     # x3 durable compact-record destination, x4 final native request.

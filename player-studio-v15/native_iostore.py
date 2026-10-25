@@ -367,10 +367,11 @@ def read_package_header(raw, strict=True):
 
 
 def append_container(source, output, additions, paths, packages, replace_indices=()):
-    """Append personal packages while preserving every original resource block.
+    """Add/replace packages and rebuild UCAS from the currently live blocks.
 
-    Original encrypted/compressed UCAS bytes stay byte-identical. The container
-    header is replaced by a new chunk and its old space is left untouched.
+    Keep every indexed chunk and package dependency. Unchanged compressed or
+    encrypted blocks are copied byte-for-byte, while obsolete physical blocks
+    from previous replacements are reclaimed. Shared live blocks are kept once.
     """
     if not isinstance(source,Container):
         raise TypeError('Expected an inspected source container')
@@ -390,7 +391,7 @@ def append_container(source, output, additions, paths, packages, replace_indices
     new_header=package_header(cid,[replacements.get(p['id'],p) for p in old_packages]+[p for p in packages if p['id'] not in ids])
     chunks=list(source.chunk_ids)
     ranges=list(source.ranges)
-    blocks=list(source.blocks)
+    blocks=[]
     metas=[source.metas[i*33:(i+1)*33] for i in range(len(chunks))]
     if any(c in source.by_id and source.by_id[c] not in replace_indices for c,_ in additions):
         raise ValueError('Personal resource chunk collides with an original chunk')
@@ -405,10 +406,35 @@ def append_container(source, output, additions, paths, packages, replace_indices
     all_paths.update({p:indices[i] for p,i in paths.items()})
     encrypted=bool(source.flags&2)
     method=source.methods.index('Zlib')+1
-    logical=len(blocks)*source.block
+    if not 0<source.block<=4*1024*1024:raise ValueError('Unsupported IoStore block size')
+    overwritten={header_index}|{i for i in indices if i<len(source.chunk_ids)}
+    live=set()
+    for index,(start,size) in enumerate(source.ranges):
+        if index in overwritten or size==0:continue
+        first,last=start//source.block,(start+size-1)//source.block
+        if not 0<=first<=last<len(source.blocks):raise ValueError('IoStore live chunk block range is invalid')
+        if (start+size-1)%source.block>=int.from_bytes(source.blocks[last][8:11],'little'):
+            raise ValueError('IoStore live chunk extends beyond its final block')
+        live.update(range(first,last+1))
+    remap={old:new for new,old in enumerate(sorted(live))}
+    for index,(start,size) in enumerate(source.ranges):
+        if index in overwritten:continue
+        if size==0:ranges[index]=(0,0);continue
+        first,last=start//source.block,(start+size-1)//source.block
+        if remap[last]-remap[first]!=last-first:raise ValueError('IoStore live chunk became non-contiguous')
+        ranges[index]=(remap[first]*source.block+start%source.block,size)
+    logical=len(live)*source.block
     output.parent.mkdir(parents=True,exist_ok=True)
-    shutil.copyfile(source.path.with_suffix('.ucas'),output.with_suffix('.ucas'))
-    with output.with_suffix('.ucas').open('ab') as f:
+    source_file=source.path.with_suffix('.ucas');source_bytes=source_file.stat().st_size
+    retained_bytes=0
+    with source_file.open('rb') as original,output.with_suffix('.ucas').open('xb') as f:
+        for index in sorted(live):
+            block=source.blocks[index];physical=int.from_bytes(block[:5],'little');stored=int.from_bytes(block[5:8],'little')
+            length=stored+(-stored)%16 if encrypted else stored
+            if physical+length>source_bytes:raise ValueError('IoStore live block exceeds source data')
+            original.seek(physical);value=original.read(length)
+            if len(value)!=length:raise ValueError('IoStore source block is truncated')
+            blocks.append(f.tell().to_bytes(5,'little')+block[5:]);f.write(value);retained_bytes+=length
         for index,(chunk_id,raw) in [*zip(indices,additions),(header_index,(chunks[header_index],new_header))]:
             compressed=False
             physical=f.tell()
@@ -438,4 +464,7 @@ def append_container(source, output, additions, paths, packages, replace_indices
     for i,(_,raw) in zip(indices,additions):
         if check.read_chunk(i)!=raw:raise ValueError('Appended native package failed read-back')
     if check.read_chunk(header_index)!=new_header:raise ValueError('New package store failed read-back')
+    check.compaction_report={'compacted':True,'source_ucas_bytes':source_bytes,'retained_source_bytes':retained_bytes,
+        'reclaimed_source_bytes':source_bytes-retained_bytes,'output_ucas_bytes':output.with_suffix('.ucas').stat().st_size,
+        'source_blocks':len(source.blocks),'retained_blocks':len(live),'output_blocks':len(blocks)}
     return check

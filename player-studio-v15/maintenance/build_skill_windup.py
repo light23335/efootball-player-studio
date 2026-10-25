@@ -16,15 +16,13 @@ mov w8,#0x2a38
 ldrb w8,[x0,x8]
 cmp w8,#22
 b.hs none
-adr x9,rows
+ldr x9,rows
 add x0,x9,x8,lsl #6
 ret
 none:
 mov x0,#0
 ret
-.align 4
-rows: .space 1408,0
-''', evidence=['22 slots x 64 bytes', 'slot owns actor pointer, context, motion and generation'])
+''', evidence=['22 slots x 64 bytes in separate RW memory', 'slot owns actor pointer, context, motion and generation'],writable={'rows':1408})
 
     builder.helper('studio_begin_windup', f'''
 stp x19,x20,[sp,#-48]!

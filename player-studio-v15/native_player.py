@@ -110,7 +110,7 @@ def compile_player(project,catalog,costs,identity,template,nation_id,team_id,sou
     base[59]=project_value(project,template,source_record)
     selected_ai_styles=ai_styles(project,template,source_record)
     write_ai_styles(base,selected_ai_styles)
-    from custom_skills import require_catalog,FIRST_ID,COUNT
+    from custom_skills import require_catalog,FIRST_ID,COUNT,native_ids
     custom=require_catalog(project,catalog)
     for index in catalog['PARAMETER_BY_SKILL'].values():
         if 0<=int(index)<147:base[int(index)]=0
@@ -140,7 +140,7 @@ def compile_player(project,catalog,costs,identity,template,nation_id,team_id,sou
              _nation_id=nation_id,initial_base_team_id=team_id,initial_base_national_team_id=0,
              uniform_number=profile['number'],play_style=base[61:63],
              ai_playing_styles=selected_ai_styles,
-             initial_booster_id_list=base[144:147],additional_skill_id=compiled_skills(project.get('additional_skills',[]),profile['height_cm']),
+             initial_booster_id_list=base[144:147],additional_skill_id=native_ids(compiled_skills(project.get('additional_skills',[]),profile['height_cm'])),
              additional_position=[],games=0,goal=0,assist=0,is_lock='YES',type='NORMAL',
              default_rarity=int(project.get('appearance',{}).get('card_rarity',5))-1,
              level_info={'level':level,'level_limit':cap,'exp_total':sum(curve[:level+1]),
@@ -160,5 +160,7 @@ def compile_player(project,catalog,costs,identity,template,nation_id,team_id,sou
             'card_art_source':{k:(project.get('native_card') or {}).get(k) for k in ('source_id','native_style','native_agent')},
             'weekly_condition':project.get('weekly_condition','auto'),
             'maximum_development':maximum,'card_type':project['card_type'],'card_series':project.get('card_series',project['card_type'])}
-    if custom:result['studio_custom_skills']=sorted(custom)
+    if custom:
+        from custom_skills import REVISION
+        result['studio_custom_skills']=sorted(custom);result['studio_custom_skill_protocol']=REVISION
     return result

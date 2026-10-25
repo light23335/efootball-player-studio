@@ -35,7 +35,7 @@ from custom_boosters import issues as booster_issues,validate_projects as valida
 
 PREFIX='assets/gateway-release/'
 NATIVE='custom-resources/legends-v10/'
-COMPILER_REVISION='v17-native-body-tattoo-skin-inheritance-1.9.13'
+COMPILER_REVISION='v17-compact-apk-rw-skill-state-and-ui-1.9.14'
 
 
 def compact(value):return json.dumps(value,ensure_ascii=False,separators=(',',':')).encode('utf8')
@@ -333,7 +333,7 @@ class NativePackage:
                 out=work/'pc3700_mobile_and.utoc'
                 from native_body import container_parts
                 additions,paths,packages=container_parts(art)
-                append_container(src,out,additions,paths,packages,personal_source.owned_art_paths(src,selected_owners)|owned_paths(src,[c['id'] for c in old_coaches])|motion_replacements(src,motion['packages']))
+                resource_build=append_container(src,out,additions,paths,packages,personal_source.owned_art_paths(src,selected_owners)|owned_paths(src,[c['id'] for c in old_coaches])|motion_replacements(src,motion['packages']))
                 replacements={PREFIX+NATIVE+'dt870_mobile_and.cpk':cpk,
                               PREFIX+'livedata/dt870_mobile_and.cpk':cpk}
                 for suffix in ('.utoc','.ucas'):replacements[PREFIX+NATIVE+'pc3700_mobile_and'+suffix]=out.with_suffix(suffix).read_bytes()
@@ -474,8 +474,8 @@ class NativePackage:
                     else:release['files'].append(row)
                 replacements[PREFIX+'release-manifest.json']=compact(release)
                 replacements.update(install_replacements)
-            self.update(message='生成独立安装包并写入本机固定签名')
-            unsigned=work/'unsigned.apk';replace_entries(apk,unsigned,replacements)
+            self.update(message='整理有效资源、回收旧导出数据并签名')
+            unsigned=work/'unsigned.apk';apk_build=replace_entries(apk,unsigned,replacements)
             output=self.store.root/'exports'/('73efootball-'+self.library.profile.get('game_version','V14')+('-工坊共存-' if body.get('installation_mode')=='coexist' else '-个人球员-')+time.strftime('%Y%m%d-%H%M%S-')+uuid.uuid4().hex[:4]+'.apk')
             key,cert=local_signer(self.store.root/'signing')
             sign_v2(unsigned,output,key,cert)
@@ -490,6 +490,7 @@ class NativePackage:
             temp=coach_path.with_suffix('.tmp');temp.write_bytes(compact(coach_registry));temp.replace(coach_path)
             report={'identities':identities,'native_art':art_reports,'packs':[{'uuid':p['uuid'],'agent_id':p['agent_id'],'name':p['name'],'members':len(p['members']),'skipped_members':p.get('skipped_members',[])} for p in packs],
                     'native_tables':table_report,'signature':verified,'live_data':live_report,
+                    'apk_compaction':apk_build['compaction'],'resource_compaction':resource_build.compaction_report,
                     'native_binding_routes':len(document.get('native_binding',{}).get('routes',[])),'frame_rate':document['frame_rate'],'game_settings':export_settings,'render_preflight':document.get('render_preflight'),'card_motion_preflight':card_motion_report,'installation':installation,
                     'coaches':[{'uuid':c['uuid'],'id':c['id'],'name':c['payload']['name']} for c in coaches],'coach_portraits':coach_portrait_report,
                     'source_apk':str(apk),'output':str(output),'engine_profile':release['base_release_id'],'resource_release':release['release_id'],

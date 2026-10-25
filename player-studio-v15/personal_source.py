@@ -18,6 +18,8 @@ def read(archive,release):
         if uid in seen or cid in ids or p['owned'].get('_personal_player_uuid')!=uid or p['owned']['gameplayer_id']['id']!=cid:
             raise ValueError('个人包包含重复或不一致的球员身份')
         seen.add(uid);ids.add(cid)
+    from custom_skills import upgrade_definitions
+    upgrade_definitions(players)
     return doc
 
 def merge(old,new,key):

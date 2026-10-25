@@ -156,6 +156,12 @@ def compose(payload,routes,profile,capacity=4194304):
             if any(h['address']==entry['address'] for h in out['hooks']):raise ValueError('原生扩展接口重复')
             out['hooks'].append({'name':entry['name'],'address':entry['address'],'offset':at+offset,'expected_hex':entry['expected_hex']})
         out.setdefault('absolute_fixups',[]).extend([[at+offset,target] for offset,target in hook['absolute_fixups']])
+        for offset,size in hook.get('writable_fixups',[]):
+            if type(offset) is not int or offset%8 or not 0<=offset<=len(body)-8 or type(size) is not int or not 0<size<=65536:
+                raise ValueError('原生技能状态内存描述无效')
+            data_at=(out.get('writable_data_bytes',0)+15)//16*16
+            out['writable_data_bytes']=data_at+size
+            out.setdefault('writable_pointer_fixups',[]).append([at+offset,data_at])
         blob.extend(body)
     if len(blob)>capacity:raise ValueError('个人美术绑定超出已分配容量')
     if bytes(blob[:len(prefix)])!=prefix:raise ValueError('原版传奇美术绑定被改变')
@@ -241,6 +247,11 @@ def _split_code(payload,prefix_bytes,delegates,back_refs,source=None):
         if at<prefix_bytes:root_fixups.append([at,value])
         else:payload['extension_native_fixups'].append([at-prefix_bytes,value])
     payload['absolute_fixups']=root_fixups
+    payload['extension_writable_pointer_fixups']=[];root_data_fixups=[]
+    for at,relative in payload.get('writable_pointer_fixups',[]):
+        if at<prefix_bytes:root_data_fixups.append([at,relative])
+        else:payload['extension_writable_pointer_fixups'].append([at-prefix_bytes,relative])
+    payload['writable_pointer_fixups']=root_data_fixups
     legacy={};payload['extension_prefix_fixups']=[]
     if source and prefix_bytes<len(bytes.fromhex(source['blob_hex'])):
         _move_native_appendix(source,prefix_bytes,extension,payload)
@@ -271,11 +282,14 @@ def _split_code(payload,prefix_bytes,delegates,back_refs,source=None):
     payload['blob_hex']=root.hex();payload['extension_blob_hex']=extension.hex()
 
 
-def relocate_code(payload,source,prefix_address,extension_address,route_address):
+def relocate_code(payload,source,prefix_address,extension_address,route_address,writable_address=0):
     """Pure relocation, also used by the native-memory regression checks."""
     root=bytearray(source);base=struct.unpack_from('<Q',root,payload['back_fixup'])[0]-payload['hooks'][0]['address']-4
     for at,relative in payload.get('absolute_fixups',[]):struct.pack_into('<Q',root,at,base+relative)
     extension=bytearray.fromhex(payload.get('extension_blob_hex',''))
+    if payload.get('writable_data_bytes') and not writable_address:raise ValueError('原生技能可写状态内存尚未分配')
+    for at,relative in payload.get('writable_pointer_fixups',[]):struct.pack_into('<Q',root,at,writable_address+relative)
+    for at,relative in payload.get('extension_writable_pointer_fixups',[]):struct.pack_into('<Q',extension,at,writable_address+relative)
     if extension:
         for at,relative in payload['extension_entry_fixups']:struct.pack_into('<Q',root,at,extension_address+relative)
         for at,relative in payload['extension_native_fixups']:struct.pack_into('<Q',extension,at,base+relative)
@@ -648,6 +662,10 @@ class _PageOS:
 class _BindingCtypes:
     def __init__(self,original,payload):
         self.original=original;self.payload=payload;self.table=None
+        size=payload.get('writable_data_bytes',0)
+        if type(size) is not int or not 0<=size<=1024*1024:raise ValueError('原生技能状态内存容量无效')
+        self.writable=original.create_string_buffer(size) if size else None
+        if self.writable is not None:_RESIDENT_TABLES.append(self.writable)
         if payload.get('route_table_hex'):
             self.table=original.create_string_buffer(bytes(payload.get('route_header_bytes',0))+bytes.fromhex(payload['route_table_hex']))
             _RESIDENT_TABLES.append(self.table)
@@ -672,7 +690,8 @@ class _BindingCtypes:
                     raise OSError(self.original.get_errno(),'personal code page allocation failed')
             route=0 if self.table is None else self.original.addressof(self.table)+self.payload.get('route_header_bytes',0)
             address=dest if isinstance(dest,int) else dest.value
-            source,extension=relocate_code(self.payload,source,address,extension_address,route)
+            state=0 if self.writable is None else self.original.addressof(self.writable)
+            source,extension=relocate_code(self.payload,source,address,extension_address,route,state)
             if extension:self.original.memmove(extension_address,extension,len(extension))
             result=self.original.memmove(dest,source,size)
             if extension:
