@@ -701,6 +701,7 @@ def apply_coaches(conn,coaches):
                 for field in ('name','name_en','age','ability_id','possession','short_counter','long_counter','side_attack','long_ball','_personal_coach_revision'):
                     data[field]=copy.deepcopy(incoming[field])
                 data['is_coach_texture_use']=incoming.get('is_coach_texture_use','NO')
+                if 'initial_base_team_id' in incoming:data['initial_base_team_id']=copy.deepcopy(incoming['initial_base_team_id'])
                 conn.execute('update coaches set json=? where coach_id=? and serial=?',(compact(data),cid,previous['serial']))
             else:
                 if conn.execute('select 1 from coaches where coach_id=?',(cid,)).fetchone():raise ValueError('个人教练编号与存档冲突')

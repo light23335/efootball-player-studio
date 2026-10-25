@@ -6,7 +6,7 @@ from native_tables import PLAYER,APPEARANCE,VARIATION,ALIASES
 from card_types import editor_card_type
 
 PREFIX='assets/gateway-release/'
-IMPORT_REVISION='apk-catalogue-compatible-v9-coach-links-shirt-number'
+IMPORT_REVISION='apk-catalogue-compatible-v10-coach-country-club'
 
 def active_resources(base,store):
     path=Path(store)/'active-game.json'
@@ -138,6 +138,7 @@ def build_catalogue(apk,resources):
         return {'players':len(records),'managed_cards':len(managed),'coaches':coaches,'boosters':options['boosters'],'skills':options['skills'],'verified_level_cards':sum(row[7] is not None for row in records),'tables':{k:len(v) for k,v in tables.items() if isinstance(v,dict)}}
 
 def read_coaches(archive,resources):
+    from coach_identity import owned_payloads,apply as apply_coach_identity,REVISION as IDENTITY_REVISION
     from native_coaches import COACH,BOOSTER,TACTICS,ATTRIBUTES,ability_ids,SLOT_LAYOUT
     sources=[Cpk(archive.read(n)) for n in (PREFIX+'livedata/dt870_mobile_and.cpk',PREFIX+'custom-resources/legends-v10/dt870_mobile_and.cpk') if n in archive.namelist()]
     raw=bonus=None
@@ -150,14 +151,16 @@ def read_coaches(archive,resources):
     boosts={};attribute={v:k for k,v in ATTRIBUTES.items()}
     for at in range(0,len(bonus),4):
         value=int.from_bytes(bonus[at:at+4],'little');boosts[value&1023]=((value>>15)&31,(value>>10)&31)
-    coaches=[]
+    coaches=[];payloads=owned_payloads(archive)
     for at in range(0,len(raw),176):
         row=raw[at:at+176];value=int.from_bytes(row,'little');cid=str(value&((1<<64)-1))
         local=row[32:78].split(b'\0')[0].decode('utf8','strict');english=row[78:124].split(b'\0')[0].decode('utf8','strict')
         if not cid or not (local or english):continue
         prior=copy.deepcopy(old.get(cid) or next(iter(old.values())));prior.update(id=cid,type='native',name=english or local,name_en=english or local,name_local=local,age=((value>>231)&63)+15)
         if cid not in old:prior['pack_title']=''
-        prior['raw_payload_verified']=cid in old
+        prior['raw_payload_verified']=cid in payloads
+        prior['raw_payload']=copy.deepcopy(payloads.get(cid) or {'sell_gp':0,'is_coach_texture_use':'NO','initial_base_team_id':0,'overload':0,'compability':'TRAINING_SKILL_NONE','team_style':0,'formation_data':'','is_lock':'NO','type':'NORMAL'})
+        apply_coach_identity(prior,row,payloads)
         prior['tactics']={name:(value>>bit)&127 for name,bit in TACTICS.items()}
         ids=ability_ids(row);effects={};unmapped=[]
         for bid in ids[:2]:
@@ -175,6 +178,7 @@ def read_coaches(archive,resources):
     personal=json.loads(archive.read(personal_path)) if personal_path in archive.namelist() else {}
     previous['linkup_types']=read_catalogue(link_source,coaches,resources,personal.get('coach_links',[])) if link_source else []
     previous['coach_options_revision']='native-boosters-2-and-links-2-v1';previous['coach_slot_layout']=SLOT_LAYOUT
+    previous['coach_identity_revision']=IDENTITY_REVISION
     previous['coaches']=coaches;(resources/'coaches.json').write_text(json.dumps(previous,ensure_ascii=False,indent=2),encoding='utf8');return len(coaches)
 
 def index_assets(library):

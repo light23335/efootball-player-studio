@@ -33,9 +33,13 @@ def compile_coaches(cpk,coaches,catalogue,registry,replace_ids=(),replace_booste
     booster_wrapper=cpk.read(BOOSTER);boosters=unwrap(booster_wrapper)
     if len(boosters)%4:raise ValueError('教练增能表长度改变')
     bonus={int.from_bytes(boosters[i:i+4],'little')&1023:boosters[i:i+4] for i in range(0,len(boosters),4)}
-    template=next(c for c in catalogue if int(c['id']) in records and c.get('raw_payload_verified',True))
+    template=next((c for c in catalogue if int(c['id']) in records and c.get('raw_payload_verified',True)),None)
+    if template is None:template=next((c for c in catalogue if int(c['id']) in records),None)
+    if template is None:raise ValueError('当前数据库没有可用的原生教练记录，请重新读取主 APK')
     owned=[];used=registry.setdefault('coaches',{});boost_registry=registry.setdefault('boosters',{})
     for c in coaches:
+        from coach_identity import normalize as identity_fields,NATION_BIT,NATION_WIDTH
+        identity=identity_fields(c)
         uid=c['uuid']
         if uid not in used:
             start=600000+int(hashlib.sha256(uid.encode()).hexdigest()[:12],16)%400000
@@ -73,9 +77,11 @@ def compile_coaches(cpk,coaches,catalogue,registry,replace_ids=(),replace_booste
             bonus[bid]=struct.pack('<I',bid|(amount<<10)|(ATTRIBUTES[index]<<15));abilities.append(bid)
         abilities+= [0]*(2-len(abilities))
         abilities+=list(c.get('_compiled_link_ids') or [0,0])
-        value=int.from_bytes(records[int(template['id'])],'little');value=bitfield(value,0,64,cid)
+        origin=next((r for r in catalogue if str(r['id'])==identity['native_source_id'] and int(r['id']) in records),template)
+        value=int.from_bytes(records[int(origin['id'])],'little');value=bitfield(value,0,64,cid)
+        value=bitfield(value,NATION_BIT,NATION_WIDTH,identity['nation_id'])
         for key,bit in TACTICS.items():value=bitfield(value,bit,7,c['tactics'][key])
-        age=int(c.get('age') or template['age']);value=bitfield(value,231,6,age-15)
+        age=int(c.get('age') or origin['age']);value=bitfield(value,231,6,age-15)
         for bit,bid in zip(ABILITY_BITS,abilities):value=bitfield(value,bit,10,bid)
         row=bytearray(value.to_bytes(176,'little'))
         # Native getters return row+0x20 (Japanese) and row+0x4e
@@ -85,11 +91,11 @@ def compile_coaches(cpk,coaches,catalogue,registry,replace_ids=(),replace_booste
             if len(encoded)>45:raise ValueError(c['name']+'：教练名称最多 45 个 UTF-8 字节，请缩短后实装')
             row[at:at+46]=encoded+bytes(46-len(encoded))
         records[cid]=bytes(row)
-        payload=copy.deepcopy(template['raw_payload'])
+        payload=copy.deepcopy(origin['raw_payload'])
         payload.update(coach_id={'id':cid,'serial':0},name=c['name'],name_en=c.get('name_en') or c['name'],age=age,
-                       ability_id=abilities,**c['tactics'],_personal_coach_uuid=uid)
-        payload['is_coach_texture_use']='YES' if c.get('portrait') else template['raw_payload'].get('is_coach_texture_use','NO')
+                       ability_id=abilities,initial_base_team_id=identity['team_id'],**c['tactics'],_personal_coach_uuid=uid)
+        payload['is_coach_texture_use']='YES' if c.get('portrait') else origin['raw_payload'].get('is_coach_texture_use','NO')
         payload['_personal_coach_revision']=hashlib.sha256(json.dumps(c,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
-        owned.append({'uuid':uid,'id':cid,'payload':payload})
+        owned.append({'uuid':uid,'id':cid,'payload':payload,**identity})
     return {COACH:wrap(b''.join(records[k] for k in sorted(records)),original),
             BOOSTER:wrap(b''.join(bonus[k] for k in sorted(bonus)),booster_wrapper)},owned

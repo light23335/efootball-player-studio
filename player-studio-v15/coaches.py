@@ -20,6 +20,8 @@ def normalize_coach(value, abilities):
     if not row['name']:
         raise ValueError('请填写教练姓名')
     row['name_en'] = str(row.get('name_en') or '')[:80]
+    from coach_identity import normalize as normalize_identity
+    row.update(normalize_identity(row))
     row['tactics'] = row.get('tactics') or {}
     if not isinstance(row['tactics'], dict):
         raise ValueError('教练战术资料格式不正确')

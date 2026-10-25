@@ -355,10 +355,11 @@ class PersonalResourceTests(unittest.TestCase):
         apply_coaches(conn,[definition]);cid,serial,payload=conn.execute('select * from coaches').fetchone()
         saved=json.loads(payload);saved['is_lock']='YES';saved['future_progress']={'games':5}
         conn.execute('update coaches set json=?',(json.dumps(saved),));conn.commit()
-        newer=copy.deepcopy(definition);newer['payload'].update(possession=92,_personal_coach_revision='v2')
+        newer=copy.deepcopy(definition);newer['payload'].update(possession=92,initial_base_team_id=103,_personal_coach_revision='v2')
         apply_coaches(conn,[newer]);after=json.loads(conn.execute('select json from coaches').fetchone()[0])
         self.assertEqual(after['possession'],92);self.assertEqual(after['is_lock'],'YES');self.assertEqual(after['future_progress'],{'games':5})
         self.assertEqual(after['coach_id'],{'id':cid,'serial':serial})
+        self.assertEqual(after['initial_base_team_id'],103)
         conn.execute('delete from coaches');conn.commit();apply_coaches(conn,[newer]);self.assertEqual(conn.execute('select count(*) from coaches').fetchone()[0],0)
 
     def test_drawn_copies_keep_independent_progress_when_initial_copy_was_released(self):

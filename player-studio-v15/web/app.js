@@ -429,7 +429,7 @@ async function boot(){
   boosterLibraryUI=new BoosterLibraryUI({api,toast,project:()=>project,flushSave,commit,rerender:renderPage});
   packUI=new PackUI({api,toast,rerender:renderPage});
   personalUI=new PersonalUI({api,toast,beforeOpenPlayer:async()=>{if(await choosePlayerAction('读取已保存球员','将切换当前编辑内容。当前工程会先备份；切换到其他球员时会保存当前球员。若要创建另一名球员，请使用新建独立槽位。',[{id:'open',label:'备份并读取球员',primary:true}])!=='open')return false;await api('project/checkpoint',{project});return true;},project:()=>project,flushSave,navigate,rerender:renderPage,onPlayerDeleted:id=>{if(packUI.editing)packUI.editing.members=packUI.editing.members.filter(m=>m.kind!=='custom'||m.id!==id);},replaceProject:p=>{past=[];future=[];project=p;version++;savedVersion=version;}});
-  coachUI=new CoachUI({api,toast,catalog,project:()=>project,commit,flushSave,navigate,rerender:renderPage,resourceKey:()=>libraryUI.status.cache_directory+':'+libraryUI.status.phase,custom:data.custom_coaches?.rows||[]});
+  coachUI=new CoachUI({api,toast,catalog,identities:()=>identityOptions,project:()=>project,commit,flushSave,navigate,rerender:renderPage,resourceKey:()=>libraryUI.status.cache_directory+':'+libraryUI.status.phase,custom:data.custom_coaches?.rows||[]});
   presetsUI=new CardPresetsUI({api,toast,project:()=>project,commit,rerender:renderPage});
   nativeCard=new NativeCardRenderer($('#player-card'),state=>{$('#native-card-status').textContent=`原版图层 ${state.layers} · 动画 ${state.videos} · 资料素材 ${state.ui||0}${state.missing?' · '+state.missing+' 项未读取':''}`;$('#card-motion-toggle').hidden=!state.videos;},catalog);
   viewer=new ModelViewer(meta=>{if(meta.error){toast(meta.error,true);return;}modelMetadata=meta;updateModelControls();});

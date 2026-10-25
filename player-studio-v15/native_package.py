@@ -35,7 +35,7 @@ from custom_boosters import issues as booster_issues,validate_projects as valida
 
 PREFIX='assets/gateway-release/'
 NATIVE='custom-resources/legends-v10/'
-COMPILER_REVISION='v17-private-date-f07-only-1.9.10'
+COMPILER_REVISION='v17-coach-country-owned-club-1.9.11'
 
 
 def compact(value):return json.dumps(value,ensure_ascii=False,separators=(',',':')).encode('utf8')

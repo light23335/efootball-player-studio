@@ -45,7 +45,7 @@ import packs
 from window_sessions import WindowSessions
 from booster_library import BoosterLibrary
 
-APP_VERSION = "1.9.10"
+APP_VERSION = "1.9.11"
 MAX_PERSONAL_PLAYERS = 10000
 BUNDLE = Path(getattr(sys, "_MEIPASS", Path(__file__).absolute().parent))
 RESOURCE = BUNDLE / "resources"
@@ -587,6 +587,8 @@ class StudioServer(ThreadingHTTPServer):
         self.catalog=json.loads((Path(resources)/'catalog.json').read_text(encoding='utf8'))
         apply_skill_labels(self.catalog,RESOURCE)
         coach_options=repair_coach_options(json.loads((Path(resources)/'coaches.json').read_text(encoding='utf8')),coach_link_schema(RESOURCE),resources)
+        from coach_identity import repair_catalogue as repair_coach_identity
+        coach_options=repair_coach_identity(coach_options,resources)
         self.catalog['coaches']=coach_options['coaches']
         self.catalog['COACH_LINK_TYPES']=coach_options.get('linkup_types',[])
         self.catalog['COACH_LINK_SCHEMA']=coach_link_schema(RESOURCE)

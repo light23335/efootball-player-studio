@@ -114,10 +114,11 @@ class PlayerIdentityAndNumberTests(unittest.TestCase):
   with tempfile.TemporaryDirectory() as tmp:
    root=Path(tmp);first=app.Store(root/'first');p=self.project();p.pop('native_card',None);p['identity']['name']='Shared player';p['identity']['number']=99
    config=dict(schema()['templates'][7],source_positions=[0],target_positions=[9,10])
-   coach=first.coaches.save({'name':'Shared coach','linkups':[config,None]})['coach'];p['custom_coaches']=[coach]
+   coach=first.coaches.save({'name':'Shared coach','nation_id':210,'team_id':103,'native_source_id':'17605071047055','linkups':[config,None]})['coach'];p['custom_coaches']=[coach]
    exported=first.export_project(p);second=app.Store(root/'second');imported=second.import_project(exported['path'])
    self.assertEqual(imported['identity']['number'],99);self.assertTrue(imported['identity']['bind_original_player'])
    self.assertEqual(imported['identity']['original_player_id'],'7511');self.assertEqual(imported['custom_coaches'][0]['linkups'],[config,None])
+   self.assertEqual((imported['custom_coaches'][0]['nation_id'],imported['custom_coaches'][0]['team_id']),(210,103))
 
 
 @unittest.skipUnless(APK.is_file(),'requires original V17 APK')
