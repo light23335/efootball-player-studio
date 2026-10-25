@@ -35,7 +35,7 @@ from custom_boosters import issues as booster_issues,validate_projects as valida
 
 PREFIX='assets/gateway-release/'
 NATIVE='custom-resources/legends-v10/'
-COMPILER_REVISION='v17-controller-render-card-motion-1.9.7.1'
+COMPILER_REVISION='v17-context-controller-banks-1.9.9'
 
 
 def compact(value):return json.dumps(value,ensure_ascii=False,separators=(',',':')).encode('utf8')
@@ -317,16 +317,18 @@ class NativePackage:
                 from coach_portraits import compile_portraits,owned_paths
                 coach_art,coach_portrait_report=compile_portraits(body.get('coaches',[]),coaches,self.library)
                 art.extend(coach_art)
-                card_motion_report=[]
-                if body['export_settings']['card_motion']['enabled']:
-                    from card_motion import packages as motion_packages
-                    motion_art,card_motion_report=motion_packages(self.library.face_assets(),self.profile_resources)
-                    art.extend(motion_art)
+                from card_presentation import repair_routes
+                prior_card_routes=repair_routes(copy.deepcopy(inherited.get('native_binding',{}).get('routes',[])),inherited.get('players',[]),records)
+                from card_motion import prepare as prepare_card_motion,replacement_indices as motion_replacements
+                motion=prepare_card_motion(self.library,bindings,prior_card_routes,
+                    records,body['export_settings']['card_motion']['enabled'],self.profile_resources)
+                bindings=motion['bindings'];inherited_card_routes=motion['routes']
+                card_motion_report=motion['reports'];art.extend(motion['packages'])
                 cpk,table_report=compile_tables(original,projects,definitions,self.resources,bindings,coach_resources,replace_ids,replace_boosters)
                 src=Container(self.library.containers/'pc3700_mobile_and_10_P.utoc',engine_key)
                 out=work/'pc3700_mobile_and.utoc'
                 paths={'PesMobile/Content/'+name[6:]+'.uasset':i for i,(name,raw,meta) in enumerate(art)}
-                append_container(src,out,[(struct.pack('<QHBB',m['id'],0,0,2),raw) for name,raw,m in art],paths,[m for name,raw,m in art],personal_source.owned_art_paths(src,selected_owners)|owned_paths(src,[c['id'] for c in old_coaches]))
+                append_container(src,out,[(struct.pack('<QHBB',m['id'],0,0,2),raw) for name,raw,m in art],paths,[m for name,raw,m in art],personal_source.owned_art_paths(src,selected_owners)|owned_paths(src,[c['id'] for c in old_coaches])|motion_replacements(src,motion['packages']))
                 replacements={PREFIX+NATIVE+'dt870_mobile_and.cpk':cpk,
                               PREFIX+'livedata/dt870_mobile_and.cpk':cpk}
                 for suffix in ('.utoc','.ucas'):replacements[PREFIX+NATIVE+'pc3700_mobile_and'+suffix]=out.with_suffix(suffix).read_bytes()
@@ -394,9 +396,7 @@ class NativePackage:
                     mini_profile=self.resources/'native-thumbnail-hook.json'
                     if not mini_profile.is_file():mini_profile=self.profile_resources/'native-thumbnail-hook.json'
                     profile['thumbnail_hook']=json.loads(mini_profile.read_text(encoding='utf8'))
-                    if export_settings['card_motion']['enabled']:
-                        from card_motion import stock_routes
-                        profile['thumbnail_hook']['stock_routes']=stock_routes(self.library,records)
+                    profile['thumbnail_hook']['stock_routes']=motion['stock_routes']
                     from native_extensions import link_hooks
                     with source.open('lib/arm64-v8a/libUE4.so') as engine:
                         profile['native_hooks']=link_hooks(document['coach_links'],engine,link_schema(self.profile_resources))
@@ -419,7 +419,7 @@ class NativePackage:
                                 if engine.read(64).hex()!=hook['expected_hex']:raise ValueError('此版本的增能文字接口不同')
                     from native_binding_source import read_installer
                     original_binding,installer_code=read_installer(apk)
-                    routes=[r for r in inherited.get('native_binding',{}).get('routes',[]) if int(r['cardId']) not in replace_ids]
+                    routes=[r for r in inherited_card_routes if int(r['cardId']) not in replace_ids]
                     for identity,binding,definition in zip(identities,bindings,definitions):
                         for cid in sorted({identity['card_id'],*owned_person_aliases(identity),int(binding['asset_key']),*identity['previous_card_ids']}):
                             routes.append({'cardId':cid,'suiteDonorId':identity['card_id'],

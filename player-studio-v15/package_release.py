@@ -3,6 +3,7 @@ from pathlib import Path
 import argparse,hashlib,json,os,re,zipfile
 ROOT=Path(__file__).resolve().parent
 VERSION=re.search(r'APP_VERSION = "([^"]+)"',(ROOT/'app.py').read_text(encoding='utf8'))[1]
+GAME=json.loads((ROOT/'resources/native-resource-profile.json').read_text(encoding='utf8')).get('game_version','V17')
 def sha(path):
     h=hashlib.sha256()
     with Path(path).open('rb') as f:
@@ -29,6 +30,6 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('--dist-dir',required=True);args=p.parse_args();dist=Path(args.dist_dir).resolve()
     report=json.loads((dist/'测试说明.json').read_text(encoding='utf8'))
     if report['version']!=VERSION or report['exe_sha256']!=sha(dist/'球员工坊.exe'):raise ValueError('发布 EXE 与验收版本不一致')
-    results=[archive(dist,ROOT.parent/f'球员工坊-V16-v{VERSION}-免安装分享版.zip',True),archive(ROOT,ROOT.parent/f'球员工坊-V16-v{VERSION}-源码.zip')]
-    print(json.dumps({'game':'V16','version':VERSION,'archives':results},ensure_ascii=False),flush=True)
+    results=[archive(dist,ROOT.parent/f'球员工坊-{GAME}-v{VERSION}-免安装分享版.zip',True),archive(ROOT,ROOT.parent/f'球员工坊-{GAME}-v{VERSION}-源码.zip')]
+    print(json.dumps({'game':GAME,'version':VERSION,'archives':results},ensure_ascii=False),flush=True)
 if __name__=='__main__':main()

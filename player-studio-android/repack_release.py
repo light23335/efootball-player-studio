@@ -7,12 +7,15 @@ Signing uses the operator's existing private release key.
 from pathlib import Path
 import argparse,hashlib,io,json,re,struct,sys,zipfile
 ROOT=Path(__file__).resolve().parent
+VERSION='1.9.9-android.2'
+VERSION_CODE=199001
 
-def compact_editor_apk(source,output,changes):
+def compact_editor_apk(source,output,changes,removed=()):
     """Write one copy of each editor asset and retain 16-KiB .so alignment."""
     import copy
     with zipfile.ZipFile(source) as old,zipfile.ZipFile(output,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as z:
         for entry in old.infolist():
+            if entry.filename in removed:continue
             if re.fullmatch(r'META-INF/[^/]+\.(?:SF|RSA|DSA|EC)',entry.filename,re.I) or entry.filename=='META-INF/MANIFEST.MF':continue
             item=copy.copy(entry);item.extra=b'';item.flag_bits&=~8
             raw=changes.get(item.filename)
@@ -78,17 +81,8 @@ def manifest_version(raw,code,name):
     data[at:at+size]=rebuilt;struct.pack_into('<I',data,4,len(data))
     return bytes(data)
 
-def controller_activity_dex(raw):
-    """Keep the established lifecycle as BaseActivity for the new input entry."""
-    import zlib
-    before=b'Lcom/playerstudio/editor/MainActivity';after=b'Lcom/playerstudio/editor/BaseActivity'
-    if before not in raw:return raw
-    data=bytearray(raw.replace(before,after))
-    data[12:32]=hashlib.sha1(data[32:]).digest();struct.pack_into('<I',data,8,zlib.adler32(data[12:])&0xffffffff)
-    return bytes(data)
-
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--base',required=True);p.add_argument('--output',required=True);p.add_argument('--key',required=True);p.add_argument('--password-file',required=True);p.add_argument('--work',required=True);p.add_argument('--installed-games-dex');p.add_argument('--controller-dex');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--base',required=True);p.add_argument('--output',required=True);p.add_argument('--key',required=True);p.add_argument('--password-file',required=True);p.add_argument('--work',required=True);p.add_argument('--installed-games-dex');p.add_argument('--controller-dex');p.add_argument('--runtime-dex-dir');a=p.parse_args()
     core=ROOT/'core' if (ROOT/'core').is_dir() else ROOT.parent/'player-studio-v15';sys.path.insert(0,str(core))
     from apk_format import replace_entries,sign_v2,verify_v2
     from cryptography.hazmat.primitives.serialization.pkcs12 import load_key_and_certificates
@@ -121,31 +115,40 @@ def main():
         build=json.loads(source.read('assets/chaquopy/build.json'));build['assets']['app.imy']=hashlib.sha1(app.getvalue()).hexdigest()
         changes={'assets/chaquopy/app.imy':app.getvalue(),'assets/chaquopy/build.json':json.dumps(build,separators=(',',':')).encode(),
                  'assets/studio-bundle.zip':bundle.getvalue(),'assets/studio-bundle.sha256':hashlib.sha256(bundle.getvalue()).hexdigest().encode(),
-                 'AndroidManifest.xml':manifest_version(source.read('AndroidManifest.xml'),197010,'1.9.7.1-android.1')}
+                 'AndroidManifest.xml':manifest_version(source.read('AndroidManifest.xml'),VERSION_CODE,VERSION)}
         from android_manifest import Manifest
         manifest=Manifest(changes['AndroidManifest.xml'])
         if not any(name=='queries' for _,name,_ in manifest.nodes()):manifest.add_queries(['com.efootball.revival.local','com.efootball.revival.resources','com.efootball.revival.diyer','com.efootball.revival.diyassets'],launcher=True)
         controller_marker='assets/studio-controller-dex.txt'
+        removed=set()
+        if a.runtime_dex_dir:
+            if a.controller_dex or a.installed_games_dex:raise ValueError('Full runtime DEX cannot be combined with partial helper replacements')
+            runtime={p.name:p.read_bytes() for p in Path(a.runtime_dex_dir).glob('classes*.dex') if re.fullmatch(r'classes\d*\.dex',p.name)}
+            if 'classes.dex' not in runtime:raise ValueError('Compiled runtime must contain classes.dex')
+            changes.update(runtime)
+            removed={n for n in source.namelist() if re.fullmatch(r'classes\d*\.dex',n)}-runtime.keys()
+            changes[controller_marker]=b'classes.dex'
+            changes['assets/studio-installed-games-dex.txt']=b'classes.dex'
         if a.controller_dex:
-            if controller_marker in source.namelist():name=source.read(controller_marker).decode().strip()
-            else:
-                existing=[n for n in source.namelist() if re.fullmatch(r'classes\d*\.dex',n)]
-                for entry in existing:
-                    raw=source.read(entry);updated=controller_activity_dex(raw)
-                    if updated!=raw:changes[entry]=updated
-                name='classes'+str(max([1]+[int(re.fullmatch(r'classes(\d*)\.dex',n).group(1) or 1) for n in existing])+1)+'.dex'
+            if controller_marker not in source.namelist():raise ValueError('Compile BaseActivity and MainActivity with D8 and provide --runtime-dex-dir; binary class renaming is invalid')
+            name=source.read(controller_marker).decode().strip()
+            if name=='classes.dex':raise ValueError('A merged runtime requires --runtime-dex-dir, not a partial controller DEX')
             changes[name]=Path(a.controller_dex).read_bytes();changes[controller_marker]=name.encode()
             manifest.add_activity_alias('com.playerstudio.editor.BaseActivity','com.playerstudio.editor.MainActivity')
-        elif controller_marker not in source.namelist():raise ValueError('This release requires the compiled physical-controller Java helper')
+        elif not a.runtime_dex_dir and controller_marker not in source.namelist():raise ValueError('This release requires the compiled physical-controller Java helper')
         changes['AndroidManifest.xml']=manifest.bytes()
         marker='assets/studio-installed-games-dex.txt'
         if a.installed_games_dex:
             name=source.read(marker).decode().strip() if marker in source.namelist() else 'classes'+str(max([1]+[int(m.group(1) or 1) for n in source.namelist() if (m:=re.fullmatch(r'classes(\d*)\.dex',n))])+1)+'.dex'
+            if name=='classes.dex':raise ValueError('A merged runtime requires --runtime-dex-dir, not a partial InstalledGames DEX')
             changes[name]=Path(a.installed_games_dex).read_bytes();changes[marker]=name.encode()
-        elif marker not in source.namelist():raise ValueError('This release requires the compiled InstalledGames Java helper')
+        elif not a.runtime_dex_dir and marker not in source.namelist():raise ValueError('This release requires the compiled InstalledGames Java helper')
+        from dex_checks import inspect_runtime
+        dex_names={n for n in source.namelist() if re.fullmatch(r'classes\d*\.dex',n)}|{n for n in changes if re.fullmatch(r'classes\d*\.dex',n)}
+        dex_preflight=inspect_runtime({n:changes[n] if n in changes else source.read(n) for n in dex_names-removed})
         # Added DEX and marker entries must also be written, not only replacements.
         missing={k:v for k,v in changes.items() if k not in source.namelist()}
-    compact_editor_apk(a.base,work/'unsigned-android.apk',changes)
+    compact_editor_apk(a.base,work/'unsigned-android.apk',changes,removed)
     if missing:
         with zipfile.ZipFile(work/'unsigned-android.apk','a',zipfile.ZIP_DEFLATED) as z:
             for name,raw in missing.items():z.writestr(name,raw)
@@ -161,7 +164,7 @@ def main():
                 raw.seek(entry.header_offset+26);length,extra=struct.unpack('<HH',raw.read(4))
                 alignment=16384 if entry.filename.endswith('.so') else 4
                 if (entry.header_offset+30+length+extra)%alignment:raise ValueError('APK alignment failure: '+entry.filename)
-    report={'version':'1.9.7.1-android.1','version_code':197010,'path':str(Path(a.output).resolve()),'bytes':Path(a.output).stat().st_size,'sha256':hashlib.sha256(Path(a.output).read_bytes()).hexdigest(),'signature':verification,'base_activity_lifecycle_preserved':True,'physical_controller_helper_added':bool(a.controller_dex),'native_codecs_unchanged':True,'installed_games_helper_added':True}
+    report={'version':VERSION,'version_code':VERSION_CODE,'path':str(Path(a.output).resolve()),'bytes':Path(a.output).stat().st_size,'sha256':hashlib.sha256(Path(a.output).read_bytes()).hexdigest(),'signature':verification,'base_activity_lifecycle_preserved':True,'physical_controller_helper_added':bool(a.controller_dex),'native_codecs_unchanged':True,'installed_games_helper_added':True,'dex_preflight':dex_preflight,'compiled_runtime_replaced':bool(a.runtime_dex_dir)}
     Path(a.output).with_suffix('.build.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8');print(json.dumps(report,ensure_ascii=False))
 
 if __name__=='__main__':main()

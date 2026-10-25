@@ -12,7 +12,13 @@ def start(home,native_dir):
     install()
     data=home/'data';(data/'tmp').mkdir(parents=True,exist_ok=True);tempfile.tempdir=str(data/'tmp')
     logging.basicConfig(filename=data/'studio.log',level=logging.INFO,encoding='utf8')
+    # Chaquopy forwards stderr to logcat, so caught export errors remain
+    # diagnosable even when the installed app is not debuggable.
+    logging.getLogger().addHandler(logging.StreamHandler())
     import app,apk_database,native_library,native_presets,native_package
+    from native_skill_effects import skill_bits
+    verified_skills=skill_bits(app.RESOURCE)
+    logging.info('Bundled native-skill-bits.json validated: %d skill mappings',len(verified_skills))
     from android_library import AndroidLibrary,index_assets,android_movie
     from android_package import AndroidPackage,sign_v2_in_place
     from java import jclass

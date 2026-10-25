@@ -1,13 +1,14 @@
 """Verified match-time effects; no permanent ability inflation."""
 import copy,json
 from pathlib import Path
+from studio_resources import bundled_resources
 
 VISIBLE={25:'重炮攻门',43:'长传好手',52:'健步如飞'}
 DESCRIPTIONS={25:'凌空抽射或蓄力达到 50% 的射门，射门偏差降低 20%。',
               24:'普通射门与紫色射门均可触发；保留原生低于 50% 蓄力及其他动作条件。',
               43:'空中传球的动作前摇缩短 12%，地面传球不变。',
               52:'按身高采用爆发加速（≤175 cm）、掌控加速（176–185 cm）或漫长加速（≥186 cm）。'}
-RESOURCE=Path(__file__).parent/'resources'
+RESOURCE=bundled_resources()
 
 def compiled_skills(values,height):
     variant=51 if height<=175 else 52 if height<=185 else 68

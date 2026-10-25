@@ -2,10 +2,11 @@
 import copy
 import json
 from pathlib import Path
+from studio_resources import bundled_resources
 from native_cpk import unwrap,wrap
 
 TABLE='common/etc/pesdb/CoachLink.bin'
-RESOURCE=Path(__file__).parent/'resources'
+RESOURCE=bundled_resources()
 
 
 def schema(resources=None):

@@ -2,6 +2,7 @@
 from pathlib import Path
 from functools import lru_cache
 import json,zipfile
+from studio_resources import bundled_resources
 
 REFERENCE='assets/gateway-release/outputs/reference/excluded_card_catalog.json'
 
@@ -32,7 +33,7 @@ def exclusions(resources):
         source=Path(json.loads(pointer.read_text(encoding='utf8')).get('apk',''))
         if source.is_file():
             s=source.stat();return _apk(str(source),s.st_mtime_ns,s.st_size)
-    bundled=Path(__file__).resolve().parent/'resources'
+    bundled=bundled_resources()
     if resources!=bundled and (bundled/'pack-exclusions.json').is_file():
         try:
             old=json.loads((resources/'native-resource-profile.json').read_text(encoding='utf8'))

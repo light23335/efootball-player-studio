@@ -1,10 +1,11 @@
 """Validate the public JNI console entry before queuing render settings."""
 import json
 from pathlib import Path
+from studio_resources import bundled_resources
 from native_fps import EngineMemory
 
 def verify_display(engine,resources=None):
-    p=(Path(resources) if resources else Path(__file__).parent/'resources')/'native-display.json'
+    p=(Path(resources) if resources else bundled_resources())/'native-display.json'
     data=json.loads(p.read_text(encoding='utf8'));memory=EngineMemory(engine)
     try:
         if memory.read(data['address'],64).hex()!=data['expected_hex']:raise ValueError('此版本的游戏渲染设置接口发生变化，未写入分辨率')

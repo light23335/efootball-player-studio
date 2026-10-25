@@ -1,4 +1,16 @@
-# 球员工坊 V17 · 1.9.6
+# 球员工坊 V17 · 1.9.9 Android
+
+构建 1.9.9-android.2（199001）。与 PC 共用进攻、防守、通用独立改键界面与导出逻辑；使用已经修复 DEX 排序的 1.9.8-android.2 为基包，仅更新软件资产。修复 Chaquopy AssetFinder 虚拟路径导致的 native-skill-bits.json 读取失败。同包名、同签名覆盖安装保留工程。详见 core/RELEASE-1.9.9.md。
+
+# 球员工坊 V17 · 1.9.8 Android
+
+当前构建为 1.9.8-android.2（versionCode 198001），同包名、同签名覆盖安装保留已有工程。包含已经游戏验证的测试3卡面独立纹理修复，并修复 DEX 字符串表排序错误造成的启动闪退。已在 MuMu 覆盖安装并进入工坊首页。
+
+正常源码构建请编译完整的 BaseActivity、MainActivity 及其他 Java 类。不能直接修改 DEX 中的类名字符串；这会破坏索引排序。repack_release.py 会验证所有 DEX；使用旧的损坏基包时，应先用 D8 将其所有 DEX 重新编译到一个目录，再传 --runtime-dex-dir。重建包保留所有启动组件和现有 Python/原生库依赖。
+
+本轮仅完成卡面动画和启动修复，其余四项按后续四轮处理。完整改动见 core/RELEASE-1.9.8.md。
+
+## 1.9.6 历史说明
 
 PC 与 Android 同步更新。新版编辑器保留已有工程、素材和签名；本次发布为干净分享包，不含个人球员、游戏 APK 或原版资源缓存。
 

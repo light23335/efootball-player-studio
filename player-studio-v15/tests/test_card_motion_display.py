@@ -2,7 +2,7 @@ from pathlib import Path
 import copy,json,struct,sys,unittest,sqlite3
 from types import SimpleNamespace
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from card_motion import patch_tick,stock_routes
+from card_motion import restore_widget,stock_routes,_exports
 from card_presentation import repair_routes,key
 from personal_runtime import render_commands
 
@@ -25,22 +25,35 @@ class RenderAndCardTests(unittest.TestCase):
    if name!='suiteDonorId':self.assertEqual(route[name],value)
   definition.pop('card_art_source');route['thumbnail_names'][1]='0501_278_m02';route['suiteDonorId']=bound
   self.assertEqual(repair_routes([route],[definition],{original:b''})[0]['suiteDonorId'],original)
+  route['thumbnail_names'][1]='smi_0487430ec492'
+  self.assertEqual(repair_routes([route],[definition],{original:b'',bound:b''})[0]['suiteDonorId'],original)
+  route['suiteDonorId']=bound
+  with self.assertRaises(ValueError):repair_routes([route],[definition],{original:b'',bound:b''})
 
 @unittest.skipUnless((Path(__file__).resolve().parents[2]/'球员工坊-V17/library/versions/V17-1f38a585/containers').is_dir(),'requires original card widget cache')
 class NativeWidgetTests(unittest.TestCase):
- def test_tick_inserts_only_an_idempotent_play_check_and_keeps_destruct(self):
+ def test_original_widgets_and_legacy_tick_and_stop_are_restored_without_other_changes(self):
   from native_art import Assets
   from card_motion import packages
   from native_iostore import package_names
   root=Path(__file__).resolve().parents[2];assets=Assets(root/'球员工坊-V17/library/versions/V17-1f38a585/containers')
   for row in json.loads((root/'player-studio-v15/resources/native-card-motion.json').read_text())['widgets']:
-   raw,meta=assets.get(row['path']);patched,report=patch_tick(raw,row)
-   self.assertEqual(len(patched),len(raw)+6);self.assertEqual(package_names(raw),package_names(patched));self.assertTrue(report['native_destruct_cleanup_preserved']);self.assertEqual(patch_tick(patched,row)[0],patched)
-   # Destruct's generated call bytes survive byte-for-byte elsewhere in the package.
-   self.assertIn(bytes.fromhex('040b53'),patched)
-   corrupted=bytearray(raw);h=struct.unpack_from('<16I',raw);corrupted[h[13]+h[14]+1]^=1
-   # Exact Tick verification is exercised by changing its recorded script.
+   raw,meta=assets.get(row['path']);self.assertEqual(restore_widget(raw,row)[0],raw)
+   # Reproduce precisely the 1.9.7.1 extension, including serialized offsets.
+   exports=_exports(raw);tick=next(v for v in exports if v['name']=='Tick');play=next(i+1 for i,v in enumerate(exports) if v['name']=='PlayManaVideo')
+   start=tick['actual']+row['script_header'];memory,size=struct.unpack_from('<II',raw,start)
+   call=b'\x46'+struct.pack('<i',play)+b'\x16';legacy=bytearray(raw)
+   legacy[start+8+size-3:start+8+size-3]=call
+   struct.pack_into('<II',legacy,start,memory+10,size+len(call));struct.pack_into('<Q',legacy,tick['at']+8,tick['size']+len(call))
+   for v in exports:
+    if v['offset']>tick['offset']:struct.pack_into('<Q',legacy,v['at'],v['offset']+len(call))
+   restored,report=restore_widget(legacy,row)
+   self.assertEqual(restored,raw);self.assertTrue(report['legacy_tick_removed'])
+   stop=next(v for v in exports if v['name']=='StopManaVideo');diagnostic=bytearray(raw)
+   diagnostic[stop['actual']+row['stock_stop']['script_header']+8]=0x06
+   restored,report=restore_widget(diagnostic,row)
+   self.assertEqual(restored,raw);self.assertTrue(report['diagnostic_stop_bypass_removed'])
    bad=copy.deepcopy(row);bad['script_hex']='00'
-   with self.assertRaises(ValueError):patch_tick(raw,bad)
+   with self.assertRaises(ValueError):restore_widget(raw,bad)
 
 if __name__=='__main__':unittest.main()

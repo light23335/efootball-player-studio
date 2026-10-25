@@ -16,6 +16,10 @@ def donor(definition,route,records,series):
         match=next((m for name in route.get('thumbnail_names',[]) if (m:=re.match(r'^(\d{4})_(\d+)_(?:f02|m02)(?:_lim)?$',name))),None)
         if not match:
             current=key(cid)
+            # Isolated mini names no longer encode a card series. Retain a
+            # previously resolved original donor, never a private agent ID.
+            existing=route.get('suiteDonorId')
+            if existing in records and key(existing)[1]<4048 and key(existing)[0::2]==current[0::2]:return existing
             previous=[old for old in reversed(identity.get('previous_card_ids',[])) if key(old)[0::2]==current[0::2] and key(old)[1]<4048]
             if previous:
                 candidates=[previous[0]] if previous[0] in records else series.get(key(previous[0]),[])

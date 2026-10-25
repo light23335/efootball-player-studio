@@ -5,12 +5,14 @@
       "path": "/Game/Assets/ui/Data/Widget/Parts/Components/Placeholders/UiPlayerCard/MobileIcon",
       "script_header": 122,
       "memory_size": 54,
+      "stock_stop": {"script_header":369,"return_offset":441,"export_sha256":"8221438bfb641a53c497c6fc9edcf39b0dbc7ebff3179e40b8e4871d7f1c5269"},
       "script_hex": "640100000023010000000000000100000000010000008801000000000000030000006401000000210100000000000001000000000100000005010000000000000300000046010000001d2100000016040b53"
     },
     {
       "path": "/Game/Assets/ui/Data/Widget/Parts/Components/Placeholders/UiPlayerCard/PlayerCardRT",
       "script_header": 122,
       "memory_size": 54,
+      "stock_stop": {"script_header":714,"return_offset":881,"export_sha256":"9bd0db7a481360b29288b991b342b458fc4f500cdb685217aac2c389780d50c2"},
       "script_hex": "6401000000bd010000000000000100000000010000004e02000000000000030000006401000000bc0100000000000001000000000100000091010000000000000300000046010000001d2f02000016040b53"
     }
   ]

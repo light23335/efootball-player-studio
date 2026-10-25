@@ -1,10 +1,11 @@
 """Stable, locally verified skill names independent of APK editor labels."""
 import json
 from pathlib import Path
+from studio_resources import bundled_resources
 
 
 def apply_labels(catalog, resources=None):
-    resources=Path(resources) if resources else Path(__file__).parent/'resources'
+    resources=Path(resources) if resources else bundled_resources()
     path=resources/'skill-labels-zh.json'
     if not path.is_file():return
     data=json.loads(path.read_text(encoding='utf8'))
