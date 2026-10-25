@@ -424,7 +424,7 @@ async function boot(){
   updateUI=new GameImportUI({api,toast,apk:data.default_apk,companion:data.default_companion,rerender:renderPage});
   nativePackageUI=new NativePackageUI({api,toast,platform:data.platform,project:()=>project,apk:data.default_apk,companion:data.default_companion,installationMode:setup.recommended_mode,resourcesNeeded:setup.resources_needed,rigged:data.default_rigged||''});
   releaseUpdatesUI=new ReleaseUpdatesUI({api,toast});
-  onboardingUI=new OnboardingUI({api,toast,flushSave,mode:()=>navigationMode,setMode:mode=>{navigationMode=mode;renderNavigation();renderPage();},setSources:(selected,mode)=>{for(const ui of [libraryUI,updateUI,nativePackageUI])for(const key of ['apk','companion'])if(selected[key])ui[key]=selected[key];migrationState.apk=selected.apk||migrationState.apk;}});
+  onboardingUI=new OnboardingUI({api,toast,flushSave,mode:()=>navigationMode,setMode:mode=>{navigationMode=mode;renderNavigation();renderPage();},setSources:(selected,mode)=>{for(const ui of [libraryUI,updateUI])for(const key of ['apk','companion'])if(selected[key])ui[key]=selected[key];migrationState.apk=selected.apk||migrationState.apk;}});
   toolsUI=new WorkspaceTools({api,toast,project:()=>project,flushSave});
   boosterLibraryUI=new BoosterLibraryUI({api,toast,project:()=>project,flushSave,commit,rerender:renderPage});
   packUI=new PackUI({api,toast,rerender:renderPage});

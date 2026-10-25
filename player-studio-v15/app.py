@@ -45,7 +45,7 @@ import packs
 from window_sessions import WindowSessions
 from booster_library import BoosterLibrary
 
-APP_VERSION = "1.9.14.1"
+APP_VERSION = "1.9.14.2"
 MAX_PERSONAL_PLAYERS = 10000
 BUNDLE = Path(getattr(sys, "_MEIPASS", Path(__file__).absolute().parent))
 RESOURCE = BUNDLE / "resources"
@@ -647,11 +647,12 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/bootstrap":
             self.server.updates.start()
             app_root = self.server.library.home.parent
-            active=json.loads((self.server.store.root/'active-game.json').read_text(encoding='utf8')) if (self.server.store.root/'active-game.json').is_file() else {}
+            from apk_sources import resolve as resolve_sources
+            selected=resolve_sources(self.server.library,self.server.store)
             return self.send({"project": self.server.store.project, "catalog": self.server.catalog, "version": APP_VERSION,
                               "platform":globals().get('PLATFORM','pc'),
-                              "data_directory": str(self.server.store.root), "default_apk": source_apk(self.server.library.home, active.get('apk'), "73efootball-"+self.server.library.profile.get('game_version','V16')+".apk"),
-                              "default_companion": source_apk(self.server.library.home, active.get('companion'), "73efootball-离线资源包-V9+.apk"), "library": self.server.library.summary(),
+                              "data_directory": str(self.server.store.root), "default_apk": selected['apk'],
+                              "default_companion": selected['companion'], "library": self.server.library.summary(),
                               "migration_profile": migration.PROFILE, "identities": self.server.library.identities(),
                               "custom_coaches": self.server.store.coaches.list(),
                               "default_rigged":str(app_root/'我的脸模/我的头部-接缝修复-V13骨架.glb') if (app_root/'我的脸模/我的头部-接缝修复-V13骨架.glb').is_file() else ''})
@@ -796,6 +797,9 @@ class Handler(BaseHTTPRequestHandler):
                 result = self.server.native_package.start(body if body.get('operation')=='companion' else {**body,'project':normalize_project(body['project'])})
             elif path == '/api/native-apk/candidates':
                 result = self.server.native_package.candidates(normalize_project(body['project']))
+            elif path == '/api/native-apk/sources':
+                from apk_sources import resolve as resolve_sources
+                result = resolve_sources(self.server.library,self.server.store)
             elif path == '/api/packs/list':
                 result = {'rows':packs.load(store),'banners':json.loads((RESOURCE/'native-pack-template.json').read_text(encoding='utf8'))['banners']}
             elif path == '/api/packs/save':

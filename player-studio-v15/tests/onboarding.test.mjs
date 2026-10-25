@@ -5,6 +5,18 @@ import {NativePackageUI} from '../web/native-package-ui.js';
 import {playerLoadChoices} from '../web/player-prompts.js';
 import {LibraryUI} from '../web/library-ui.js';
 
+test('export refresh uses imported paths, preserves manual picks and follows a changed database',()=>{
+ const old=globalThis.document;globalThis.document={addEventListener:()=>{},querySelector:()=>null};
+ try{const ui=new NativePackageUI({});
+  ui.syncSources({recorded:true,source_key:'one',apk:'picked/game.apk',companion:'picked/resource.apk'});
+  assert.equal(ui.companion,'picked/resource.apk');ui.companion='manual/resource.apk';ui.manualSources.add('companion');
+  ui.syncSources({recorded:true,source_key:'one',apk:'picked/game.apk',companion:'picked/resource.apk'});
+  assert.equal(ui.companion,'manual/resource.apk');
+  ui.syncSources({recorded:true,source_key:'two',apk:'next/game.apk',companion:'next/resource.apk'});
+  assert.equal(ui.companion,'next/resource.apk');assert.equal(ui.apk,'next/game.apk');
+ }finally{globalThis.document=old;}
+});
+
 test('beginner navigation retains all editing and management pages',()=>{
  const all=navigationGroups.flatMap(([,pages])=>pages);
  for(const page of ['personal','profile','abilities','training','skills','card','model','packs','coaches','native','apk','tools','migration'])assert.ok(all.includes(page),page);
