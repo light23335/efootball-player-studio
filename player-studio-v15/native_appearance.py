@@ -24,6 +24,8 @@ def compact_table(records):
     return b''.join(result)
 
 def validate(model):
+    if 'skin_tone_edited' in model and type(model['skin_tone_edited']) is not bool:
+        raise ValueError('肤色编辑标记必须为开关值')
     values=model.get('physique') or {}
     if not isinstance(values,dict) or values.keys()-{key for key,_ in FIELDS}:
         raise ValueError('未知的原生体型参数')
@@ -39,7 +41,10 @@ def patch(row,model):
         if key in (model.get('physique') or {}):
             bit=64+i*4;value=(value&~(15<<bit))|(model['physique'][key]<<bit)
     if model.get('skin_tone') is not None:
-        value=(value&~(7<<292))|(model['skin_tone']<<292)
+        # Older editors displayed native default 0 as 1. Merely copying that
+        # displayed value must not turn a native default into an override.
+        native_default=(value>>292)&7==0 and model['skin_tone']==1 and not model.get('skin_tone_edited')
+        if not native_default:value=(value&~(7<<292))|(model['skin_tone']<<292)
     return value.to_bytes(64,'little')
 
 def face_skin(raw,tone):
@@ -74,6 +79,23 @@ def original_face_skin(raw,model,resources,source_id=None):
               if original_tone is not None else '无法确认原版肤色，请重新从原版资源库载入此球员')
         raise ValueError(f'此原版脸模不支持当前肤色修改（{exc}）；{hint}') from exc
     return result,{'mode':'modified','requested':tone,'original':original_tone}
+
+
+def donor(project,records,fallback):
+    """Card decoration changes must not replace the copied player's body."""
+    explicit=(project.get('model') or {}).get('appearance_source_id')
+    if explicit is not None:
+        ident=int(explicit)
+        if ident not in records:raise ValueError('所选体型没有对应的原版外观记录')
+        return ident
+    source=(project.get('source_player') or {}).get('id')
+    if source is not None:
+        from native_models import person_keys
+        for ident in map(int,person_keys(source)):
+            if ident in records:return ident
+    ident=int(fallback)
+    if ident not in records:raise ValueError('所选体型没有已核对的原版外观记录')
+    return ident
 
 
 def profile(resources,pid):

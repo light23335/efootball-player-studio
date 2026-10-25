@@ -80,7 +80,7 @@ async function api(path,body){
 }
 function toast(message,error=false){const el=document.createElement('div');el.className='toast'+(error?' error':'');el.textContent=message;$('#toasts').append(el);while($('#toasts').children.length>3)$('#toasts').firstElementChild.remove();setTimeout(()=>el.remove(),error?8500:4200);}
 function get(path){return path.split('.').reduce((v,k)=>v?.[k],project);}
-function set(path,value){const keys=path.split('.');let target=project;for(const key of keys.slice(0,-1))target=target[key]??=( {});target[keys.at(-1)]=value;if(path==='model.torso_length')project.model.physique.leg_length=14-value;if(path==='model.physique.leg_length')project.model.torso_length=14-value;if(path==='model.torso_length'||path==='model.physique.leg_length'){for(const k of ['model.torso_length','model.physique.leg_length'])$$(`[data-bind="${k}"]`).forEach(el=>el.value=get(k));}}
+function set(path,value){const keys=path.split('.');let target=project;for(const key of keys.slice(0,-1))target=target[key]??=( {});target[keys.at(-1)]=value;if(path==='model.skin_tone')project.model.skin_tone_edited=true;if(path==='model.torso_length')project.model.physique.leg_length=14-value;if(path==='model.physique.leg_length')project.model.torso_length=14-value;if(path==='model.torso_length'||path==='model.physique.leg_length'){for(const k of ['model.torso_length','model.physique.leg_length'])$$(`[data-bind="${k}"]`).forEach(el=>el.value=get(k));}}
 function commit(mutator,key='action'){
   const now=performance.now();if(key!==lastChangeKey||now-lastChangeTime>600){past.push(clone(project));if(past.length>60)past.shift();}
   lastChangeKey=key;lastChangeTime=now;future=[];mutator();version++;scheduleSave();updateLive();updateUndo();libraryUI?.scheduleCardInfo();

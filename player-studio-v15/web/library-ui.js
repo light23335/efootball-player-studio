@@ -84,6 +84,7 @@ export class LibraryUI {
       const boosterIds=new Set(this.catalog.boosters.map(b=>b.id));p.booster_ids=(payload.initial_booster_id_list||[]).slice(0,2).map(id=>boosterIds.has(id)?id:0);while(p.booster_ids.length<2)p.booster_ids.push(0);
       p.appearance.portrait=image?.asset_id||null;p.appearance.background_image=background?.asset_id||null;p.appearance.photo_zoom=1;p.appearance.photo_x=0;p.appearance.photo_y=0;p.native_art={portrait:image,background,foreground:null,full:null};p.model.asset=model?.asset_id||null;p.model.native_source=model;p.model.morphs={};
       p.model.variants=row.face_variants||[];p.model.resolution=row.model_resolution;
+      p.model.skin_tone_edited=false;
       if(row.appearance_profile?.physique){p.model.physique=row.appearance_profile.physique;p.model.skin_tone=row.appearance_profile.skin_tone||1;p.model.appearance_source_id=row.appearance_profile.source_id;p.model.torso_length=14-p.model.physique.leg_length;}else{delete p.model.physique;delete p.model.skin_tone;delete p.model.appearance_source_id;}
       Object.assign(p.appearance,{thumbnail_image:thumbnail?.asset_id||null,thumbnail_mode:thumbnail?'image':'card',thumbnail_zoom:1,thumbnail_x:0,thumbnail_y:0});p.native_art.thumbnail=thumbnail;
       p.native_card=card;p.native_card_disabled=false;

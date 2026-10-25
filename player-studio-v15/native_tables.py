@@ -5,7 +5,7 @@ import json
 import struct
 
 from native_cpk import Cpk,unwrap,wrap
-from native_appearance import patch as patch_appearance
+from native_appearance import patch as patch_appearance,donor as appearance_donor
 from native_strings import booster_rows,merge as merge_strings
 from native_models import person_keys
 from player_identity_binding import owned_person_aliases
@@ -157,7 +157,7 @@ def compile_tables(original,projects,definitions,resources,bindings,extra=None,r
         for target in basic:
             if target in players:raise ValueError('个人基础资料别名与原版球员冲突')
             base_record=bytearray(record);struct.pack_into('<Q',base_record,8,target);players[target]=bytes(base_record)
-        donor=int(project.get('model',{}).get('appearance_source_id') or binding['appearance_id'])
+        donor=appearance_donor(project,original_appearances,binding['appearance_id'])
         if donor not in original_appearances:raise ValueError('所选体型没有已核对的原版外观记录')
         for target in {cid,*basic}:
             appearance=bytearray(patch_sleeves(patch_appearance(original_appearances[donor],project.get('model',{})),project.get('equipment',{})));struct.pack_into('<Q',appearance,0,target);appearances[target]=bytes(appearance)

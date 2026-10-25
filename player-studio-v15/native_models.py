@@ -13,10 +13,10 @@ def person_keys(player_id):
 
 
 def resolve_face(rows, player_id):
-    faces=[r for r in rows if re.fullmatch(r'SK_\d+(?:(?:ep|lg)\d+v\d+)?_Face',r['name'])]
+    faces=[r for r in rows if re.fullmatch(r'SK_\d+(?:(?:ep|lg|hi|sp)\d+v\d+)?_Face',r['name'])]
     agent=(int(player_id)>>28)&4095
     exact=next((r for r in faces if r['name']==f'SK_{player_id}_Face'),None)
-    versioned=[r for r in faces if re.search(rf'(?:ep|lg)\d+v{agent:04d}_Face$',r['name'])]
+    versioned=[r for r in faces if re.search(rf'(?:ep|lg|hi|sp)\d+v{agent:04d}_Face$',r['name'])]
     generic=next((r for r in faces if re.fullmatch(r'SK_\d+_Face',r['name'])),None)
     if exact:return exact,{'method':'card-id','exact':True}
     if versioned:return versioned[0],{'method':'native-variant','exact':True,'variant':versioned[0]['name']}

@@ -35,7 +35,7 @@ from custom_boosters import issues as booster_issues,validate_projects as valida
 
 PREFIX='assets/gateway-release/'
 NATIVE='custom-resources/legends-v10/'
-COMPILER_REVISION='v17-committed-skill-effects-four-custom-1.9.12'
+COMPILER_REVISION='v17-native-body-tattoo-skin-inheritance-1.9.13'
 
 
 def compact(value):return json.dumps(value,ensure_ascii=False,separators=(',',':')).encode('utf8')
@@ -331,8 +331,9 @@ class NativePackage:
                 cpk,table_report=compile_tables(original,projects,definitions,self.resources,bindings,coach_resources,replace_ids,replace_boosters)
                 src=Container(self.library.containers/'pc3700_mobile_and_10_P.utoc',engine_key)
                 out=work/'pc3700_mobile_and.utoc'
-                paths={'PesMobile/Content/'+name[6:]+'.uasset':i for i,(name,raw,meta) in enumerate(art)}
-                append_container(src,out,[(struct.pack('<QHBB',m['id'],0,0,2),raw) for name,raw,m in art],paths,[m for name,raw,m in art],personal_source.owned_art_paths(src,selected_owners)|owned_paths(src,[c['id'] for c in old_coaches])|motion_replacements(src,motion['packages']))
+                from native_body import container_parts
+                additions,paths,packages=container_parts(art)
+                append_container(src,out,additions,paths,packages,personal_source.owned_art_paths(src,selected_owners)|owned_paths(src,[c['id'] for c in old_coaches])|motion_replacements(src,motion['packages']))
                 replacements={PREFIX+NATIVE+'dt870_mobile_and.cpk':cpk,
                               PREFIX+'livedata/dt870_mobile_and.cpk':cpk}
                 for suffix in ('.utoc','.ucas'):replacements[PREFIX+NATIVE+'pc3700_mobile_and'+suffix]=out.with_suffix(suffix).read_bytes()

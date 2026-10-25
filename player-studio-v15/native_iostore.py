@@ -270,7 +270,7 @@ def export_rebindings(raw,new_name,replacements=None):
     return result
 
 
-def rename_package(raw, name, replacements=None, import_hashes=None, package_ids=None):
+def rename_package(raw, name, replacements=None, import_hashes=None, package_ids=None, extra_names=()):
     """Clone an inspected UE4 IoStore package without changing its exports.
 
     Name batches and all affected header offsets are rebuilt; package/object
@@ -295,6 +295,10 @@ def rename_package(raw, name, replacements=None, import_hashes=None, package_ids
     old_basename = old_name.rsplit('/',1)[-1]
     changes = {old_name:name,old_basename:basename,**(replacements or {})}
     names = [changes.get(n,n) for n in names]
+    for value in extra_names:
+        if not isinstance(value,str) or not value or '\0' in value:raise ValueError('Invalid extra package name')
+        if value not in names:names.append(value)
+    h[9]=(len(names)+1)*8
     batch = bytearray()
     for value in names:
         encoded = value.encode('utf8')

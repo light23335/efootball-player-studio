@@ -230,6 +230,9 @@ def compile_art(project,identity,library,rigged_path=None,reference_path=None,me
         encoded,newmeta=rename_package(raw,target)
         newmeta.update(imports=meta['imports'],bundles=meta['bundles'])
         result.append((target,encoded,newmeta))
+        from native_body import compile_body
+        body_packages,report['body_appearance']=compile_body(assets,raw,path,person)
+        result.extend(body_packages)
         report.update(native_packages=len(result),model='original-game-face',source=path,
                       original_video_resources_preserved=True,in_game_tested=False)
         return result,binding,report
@@ -247,13 +250,22 @@ def compile_art(project,identity,library,rigged_path=None,reference_path=None,me
     original=source.read('../../../PesMobile/Content/Assets/character/RealFace/SK_133543_Face.uasset')
     original_meta=assets.metadata(source,struct.pack('<QHBB',package_id(face+'SK_133543_Face'),0,0,2))
     converted,report['mesh']=replace_head(original,bound,reference,mesh_metadata,model.get('neck_seam') is not False,model.get('head_vertical_cm',0),model.get('preserve_expression') is not False,model.get('binding_handles'))
+    from native_body import face_body_source,transfer_body_settings,compile_body
+    body_source=face_body_source(assets,project)
+    if body_source:
+        body_head,body_path,body_proof=body_source
+        source_id=model.get('appearance_source_id') or (project.get('source_player') or {}).get('id')
+        converted=transfer_body_settings(converted,body_head,model,library.resources,source_id)
+        body_packages,report['body_appearance']=compile_body(assets,body_head,body_path,person)
+        report['body_appearance']['resolution']=body_proof
+        result.extend(body_packages)
     from native_skeletal import allow_closeup_lod
     converted,report['closeup_lod']=allow_closeup_lod(converted)
     packages={face+'SK_133543_Face':(original,original_meta)}
     for name in ['MI_133543_Head_FaceUpcon_HQ','MI_133543_Head_FaceUpcon_MQ','T_133543_Face_D','T_133543_Face_N','T_133543_Face_SRO']:
         packages[face+name]=assets.get(face+name)
     renames={name:name.replace('133543',person) for name in packages}
-    overrides={face+'SK_133543_Face':face_skin(converted,model.get('skin_tone'))}
+    overrides={face+'SK_133543_Face':converted if body_source else face_skin(converted,model.get('skin_tone'))}
     maps={'D':Image.open(io.BytesIO(static.image())).convert('RGBA'),
           'N':Image.new('RGBA',(4,4),(128,128,255,255)),
           'SRO':Image.new('RGBA',(4,4),(64,160,255,255))}
