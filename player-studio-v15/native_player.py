@@ -163,4 +163,5 @@ def compile_player(project,catalog,costs,identity,template,nation_id,team_id,sou
     if custom:
         from custom_skills import REVISION
         result['studio_custom_skills']=sorted(custom);result['studio_custom_skill_protocol']=REVISION
+        p['_studio_custom_skill_protocol']=REVISION
     return result

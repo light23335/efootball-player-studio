@@ -12,6 +12,17 @@ from native_skill_effects import decode_skills,required,text_groups
 
 
 class CustomSkillDataTests(unittest.TestCase):
+    def test_owned_legacy_additional_ids_migrate_even_when_design_revision_matches(self):
+        from personal_runtime import _update_owned
+        for values,expected in (([2,74,76],[2,75,77]),([2,75,77],[2,75,77])):
+            current={'_personal_design_revision':'same','additional_skill_id':values,'earned_xp':98765}
+            definition={'owned':{'_personal_design_revision':'same','additional_skill_id':[2,75,77],
+                                '_studio_custom_skill_protocol':REVISION}}
+            updated=_update_owned(current,definition,{},[])
+            self.assertEqual(updated['additional_skill_id'],expected)
+            self.assertEqual(updated['earned_xp'],98765)
+            self.assertEqual(current['additional_skill_id'],values)
+            self.assertEqual(_update_owned(updated,definition,{},[]),updated)
     def test_old_diy_additional_ids_upgrade_once_and_projects_stay_unchanged(self):
         from custom_skills import upgrade_definitions
         players=[{'studio_custom_skills':[74,75,76,77],'owned':{'additional_skill_id':[25,74,75,76,77]}}]

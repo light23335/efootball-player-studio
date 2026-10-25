@@ -272,6 +272,21 @@ def upgrades_from_spent(points):
 
 def _update_owned(current,definition,ledger,groups):
     incoming=definition['owned']
+    protocol=incoming.get('_studio_custom_skill_protocol')
+    if protocol=='studio-custom-skills-v2-2' and current.get('_studio_custom_skill_protocol')!=protocol:
+        # Preserve learned vanilla skills. Old exports used editor IDs 74..77;
+        # 1.9.14 already-granted copies may contain native IDs 75..78. Compare
+        # against the design before migrating, so a repeat update never shifts
+        # the same additional skills twice.
+        values=current.get('additional_skill_id',[])
+        actual={s for s in values if type(s) is int and 74<=s<=78}
+        expected={s for s in incoming.get('additional_skill_id',[]) if type(s) is int and 75<=s<=78}
+        legacy={s-1 for s in expected}
+        if actual==legacy or 74 in actual:
+            current=copy.deepcopy(current)
+            current['additional_skill_id']=[s+1 if type(s) is int and 74<=s<=77 else s for s in values]
+        if not actual or actual==expected or actual==legacy or 74 in actual:
+            current=copy.deepcopy(current);current['_studio_custom_skill_protocol']=protocol
     if current.get('_personal_design_revision')==incoming['_personal_design_revision']:
         return current
     out=copy.deepcopy(current)

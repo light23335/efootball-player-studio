@@ -122,10 +122,13 @@ def upgrade_definitions(players):
     for player in players:
         if not player.get('studio_custom_skills'):continue
         version=player.get('studio_custom_skill_protocol')
-        if version==REVISION:continue
+        if version==REVISION:
+            player['owned'].setdefault('_studio_custom_skill_protocol',REVISION)
+            continue
         if version not in (None,'studio-custom-skills-v2-1'):
             raise ValueError('个人包的扩展技能编号协议未知，未修改技能')
         owned=player['owned'];owned['additional_skill_id']=native_ids(owned.get('additional_skill_id',[]))
+        owned['_studio_custom_skill_protocol']=REVISION
         player['studio_custom_skill_protocol']=REVISION
 
 
