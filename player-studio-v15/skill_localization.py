@@ -27,3 +27,5 @@ def apply_labels(catalog, resources=None):
         key=str(skill);aliases[key]=sorted(set(aliases.get(key,[])+[labels.get(key,'')])-{''})
         labels[key]=label
     catalog.update(SKILL_LABELS=labels,SKILL_ALIASES=aliases,SKILL_DESCRIPTIONS={str(k):v for k,v in DESCRIPTIONS.items()})
+    from custom_skills import enabled,extend_catalog
+    if enabled():extend_catalog(catalog)

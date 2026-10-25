@@ -17,19 +17,34 @@ def compiled_skills(values,height):
 def visible_skills(values):
     return list(dict.fromkeys(52 if skill in (51,68) else skill for skill in values))
 
+
+def decode_skills(value,parameters,catalog,fields):
+    """Read client ownership without extending the native 147-item array."""
+    selected=[]
+    for ident,field in fields.items():
+        if (value>>field['bit'])&1:
+            selected.append(int(ident))
+            index=int(catalog['PARAMETER_BY_SKILL'][str(ident)])
+            if index<147:parameters[index]=1
+    return selected
+
 def required(definitions,catalog):
     skills=(24,25,43,51,52,68)
     indices=[int(catalog['PARAMETER_BY_SKILL'][str(skill)]) for skill in skills]
-    return any(any(p['base_parameters'][index] for index in indices) or set(p['owned'].get('additional_skill_id',[]))&set(skills) for p in definitions)
+    return any(p.get('studio_custom_skills') or any(p['base_parameters'][index] for index in indices) or set(p['owned'].get('additional_skill_id',[]))&set(skills) for p in definitions)
 
 def hooks(engine,resources=None):
     data=json.loads(((Path(resources) if resources else RESOURCE)/'native-skill-effects.json').read_text(encoding='utf8'))
-    result=copy.deepcopy(data['hooks'])
+    if data.get('production_ready') is False:
+        raise ValueError('此技能适配仍在验证中，尚不能写入游戏 APK')
+    result=copy.deepcopy(data.get('bundles') or data['hooks'])
     for hook in result:
-        engine.seek(hook['file_offset'])
-        if engine.read(64).hex()!=hook['expected_hex']:
-            raise ValueError('此版本的比赛技能接口发生变化，未写入新增技能效果')
-        hook.pop('assembly',None)
+        for entry in [hook]+list(hook.get('extra_entries',[])):
+            engine.seek(entry['file_offset'])
+            if engine.read(64).hex()!=entry['expected_hex']:
+                raise ValueError('此版本的比赛技能接口发生变化，未写入新增技能效果')
+        for key in ('assembly','code','functions','constants','helper_entries','deferred_shared_refs'):
+            hook.pop(key,None)
     return result
 
 def text_groups(resources=None,locale='zha'):
@@ -52,6 +67,10 @@ def text_groups(resources=None,locale='zha'):
             message=row[kind+'_msg'];gid=message>>16;key=message&65535
             group=result.setdefault(gid,{'name':row[kind+'_group'],'id':gid,'items':{}})
             group['items'][key]=(VISIBLE[skill] if chinese else names[skill]) if kind=='name' else (DESCRIPTIONS[skill] if chinese else descriptions[skill])
+    from custom_skills import enabled,text_groups as custom_text_groups
+    if enabled():
+        for row in custom_text_groups(locale):
+            result.setdefault(row['id'],{'name':row['name'],'id':row['id'],'items':{}})['items'].update(row['items'])
     return list(result.values())
 
 def skill_bits(resources):
@@ -59,4 +78,6 @@ def skill_bits(resources):
     verified=json.loads((RESOURCE/'native-skill-bits.json').read_text(encoding='utf8'))
     for skill in (14,25,43,51,52,63,68,70):
         if str(skill) not in result:result[str(skill)]=verified[str(skill)]
+    from custom_skills import enabled,source_fields
+    if enabled():result.update(source_fields())
     return result

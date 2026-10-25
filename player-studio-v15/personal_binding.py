@@ -148,9 +148,13 @@ def compose(payload,routes,profile,capacity=4194304):
     if profile.get('overall_hook'):_overall_hook(out,blob,table,stride,profile['overall_hook'])
     if profile.get('thumbnail_hook'):_thumbnail_hook(out,blob,routes,profile['thumbnail_hook'])
     for hook in profile.get('native_hooks',[]):
-        if any(h['address']==hook['address'] for h in out['hooks']):raise ValueError('原生扩展接口重复')
         blob.extend(bytes(-len(blob)%8));at=len(blob);body=bytes.fromhex(hook['body_hex'])
-        out['hooks'].append({'name':hook['name'],'address':hook['address'],'offset':at,'expected_hex':hook['expected_hex']})
+        entries=[hook]+list(hook.get('extra_entries',[]))
+        for entry in entries:
+            offset=entry.get('entry_offset',0)
+            if type(offset) is not int or offset%4 or not 0<=offset<len(body):raise ValueError('原生扩展入口超出代码范围')
+            if any(h['address']==entry['address'] for h in out['hooks']):raise ValueError('原生扩展接口重复')
+            out['hooks'].append({'name':entry['name'],'address':entry['address'],'offset':at+offset,'expected_hex':entry['expected_hex']})
         out.setdefault('absolute_fixups',[]).extend([[at+offset,target] for offset,target in hook['absolute_fixups']])
         blob.extend(body)
     if len(blob)>capacity:raise ValueError('个人美术绑定超出已分配容量')

@@ -106,7 +106,7 @@ class StudioTests(unittest.TestCase):
         self.assertEqual((other.root/'assets'/asset['id']).read_bytes(),data)
 
     def test_unknown_skills_and_extra_slot_overflow_rejected(self):
-        p=copy.deepcopy(self.store.project);p['innate_skills']=[74]
+        p=copy.deepcopy(self.store.project);p['innate_skills']=[9999]
         with self.assertRaises(ValueError):app.normalize_project(p)
         p['innate_skills']=[];p['additional_skills']=[0,1,2,3,4,5]
         with self.assertRaises(ValueError):app.normalize_project(p)

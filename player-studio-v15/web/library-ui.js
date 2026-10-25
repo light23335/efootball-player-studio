@@ -77,7 +77,8 @@ export class LibraryUI {
       p.max_level=Math.max(1,Math.min(100,row.level_limit||35));p.max_level_known=Boolean(row.level_limit);p.initial_level=1;
       p.base_abilities=Object.fromEntries(Object.keys(this.catalog.ABILITIES).map(i=>[i,params[i]]));
       const visibleSkills=values=>[...new Set(values.map(i=>[51,68].includes(i)?52:i))].filter(i=>!this.catalog.SKILL_LABELS[i]?.includes('预留'));
-      p.innate_skills=visibleSkills(payload._studio_skill_ids||Object.entries(this.catalog.PARAMETER_BY_SKILL).filter(([i,index])=>params[index]===1).map(([i])=>Number(i)));
+      const customAdditional=new Set((payload.additional_skill_id||[]).filter(i=>(this.catalog.CUSTOM_SKILL_IDS||[]).includes(i)));
+      p.innate_skills=visibleSkills(payload._studio_skill_ids||Object.entries(this.catalog.PARAMETER_BY_SKILL).filter(([i,index])=>params[index]===1).map(([i])=>Number(i))).filter(i=>!customAdditional.has(i));
       p.additional_skills=visibleSkills(payload.additional_skill_id||[]).filter(i=>!p.innate_skills.includes(i));p.position_aptitudes=Object.fromEntries(this.catalog.APTITUDES.map((pos,i)=>[pos,params[i+1]||0]));
       p.play_style={attack:payload.play_style?.[0]||0,defense:payload.play_style?.[1]||0};p.training=Object.fromEntries(this.catalog.training_groups.map(g=>[g.id,0]));
       const boosterIds=new Set(this.catalog.boosters.map(b=>b.id));p.booster_ids=(payload.initial_booster_id_list||[]).slice(0,2).map(id=>boosterIds.has(id)?id:0);while(p.booster_ids.length<2)p.booster_ids.push(0);

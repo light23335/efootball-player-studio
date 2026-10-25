@@ -35,7 +35,7 @@ from custom_boosters import issues as booster_issues,validate_projects as valida
 
 PREFIX='assets/gateway-release/'
 NATIVE='custom-resources/legends-v10/'
-COMPILER_REVISION='v17-coach-country-owned-club-1.9.11'
+COMPILER_REVISION='v17-committed-skill-effects-four-custom-1.9.12'
 
 
 def compact(value):return json.dumps(value,ensure_ascii=False,separators=(',',':')).encode('utf8')
@@ -124,6 +124,8 @@ class NativePackage:
         saved=self.store.list_players();projects={r['package_id']:self.store.saved_player(r['package_id'])['project'] for r in saved['rows']}
         projects[current['package_id']]=current;rows=[]
         catalog=json.loads((self.resources/'catalog.json').read_text(encoding='utf8'))
+        from skill_localization import apply_labels
+        apply_labels(catalog,self.resources)
         for uid,p in projects.items():
             error=''
             try:self.model_binding(p)
@@ -265,6 +267,8 @@ class NativePackage:
                 records=rows(unwrap(Cpk(original).read(PLAYER)),400,8)
                 occupied=set(records)|{k&0xfffffff for k in records}
                 catalog=json.loads((self.resources/'catalog.json').read_text(encoding='utf8'))
+                from skill_localization import apply_labels
+                apply_labels(catalog,self.resources)
                 costs=json.loads((self.resources/'native-progression.json').read_text(encoding='utf8'))['costs']
                 definitions=[];identities=[]
                 with sqlite3.connect(self.resources/'library.sqlite3') as db:

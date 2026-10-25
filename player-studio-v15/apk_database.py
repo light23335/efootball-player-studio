@@ -41,7 +41,11 @@ def read_tables(archive):
 def build_catalogue(apk,resources):
     """Use declared bit fields plus the APK's own complete card payloads."""
     resources=Path(resources);catalog=json.loads((resources/'catalog.json').read_text(encoding='utf8'))
-    fields=json.loads((resources/'native-player-fields.json').read_text(encoding='utf8'));ability=json.loads((resources/'native-ability-bits.json').read_text(encoding='utf8'));skills=json.loads((resources/'native-skill-bits.json').read_text(encoding='utf8'))
+    from skill_localization import apply_labels
+    apply_labels(catalog,resources)
+    fields=json.loads((resources/'native-player-fields.json').read_text(encoding='utf8'));ability=json.loads((resources/'native-ability-bits.json').read_text(encoding='utf8'))
+    from native_skill_effects import skill_bits
+    skills=skill_bits(resources)
     with zipfile.ZipFile(apk) as z:
         from pack_catalogue import catalogue_from_archive
         (resources/'pack-exclusions.json').write_text(json.dumps(catalogue_from_archive(z),ensure_ascii=False),encoding='utf8')
@@ -78,9 +82,8 @@ def build_catalogue(apk,resources):
             for i,key in ((33,'weak_foot_accuracy'),(41,'form'),(42,'injury_resistance'),(43,'foot'),(45,'weak_foot_usage')):params[i]=get(key)
             params[46:49]=[get('age')+10,get('height_cm')+100,get('weight_kg')+30]
             if not 140<=params[47]<=220:params[47]=0
-            selected=[]
-            for i,m in skills.items():
-                if (bits>>m['bit'])&1:selected.append(int(i));params[int(catalog['PARAMETER_BY_SKILL'][i])]=1
+            from native_skill_effects import decode_skills
+            selected=decode_skills(bits,params,catalog,skills)
             attack,defense=get('style.in_possession'),get('style.out_of_possession');params[61:63]=[attack,defense]
             p={'gameplayer_id':{'id':ident,'serial':0},'parameters':params,'level_info':{'level':1,'level_limit':None},'play_style':[attack,defense],
                'initial_base_team_id':get('club'),'_nation_id':get('nationality'),'_studio_unknown_level_limit':True,'_studio_partial_skill_mapping':True,'_studio_skill_ids':selected}

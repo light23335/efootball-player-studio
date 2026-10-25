@@ -56,8 +56,12 @@ def player_record(template,project,definition,fields,ability_bits,skill_bits):
     for field in AI_FIELDS.values():value=set_bits(value,field['bit'],1,base[field['parameter']])
     from native_skill_effects import compiled_skills
     selected=set(compiled_skills(project['innate_skills'],identity['height_cm']))
-    # All selected skills are written to the verified 147-parameter owned
-    # protocol. Unknown client-table bits are left untouched, never guessed.
+    # Extended match markers carry custom ownership from either editor list.
+    # The owned JSON still keeps the user's innate/additional choice separate.
+    from custom_skills import selected as selected_custom
+    selected.update(selected_custom(project))
+    # Native skills keep the 147-parameter protocol. Extended skills use their
+    # separately verified client markers; unknown table bits remain untouched.
     for skill,field in skill_bits.items():value=set_bits(value,field['bit'],1,int(int(skill) in selected))
     result=bytearray(value.to_bytes(400,'little'))
     # The historical card club is a separate native header from the current

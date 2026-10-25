@@ -57,10 +57,8 @@ def main():
             aptitude_order=CAT['APTITUDES']
             p[aptitude_order.index(pos)+1]=get('aptitude.'+pos)
         p[33]=get('weak_foot_accuracy');p[41]=get('form');p[42]=get('injury_resistance');p[43]=get('foot');p[45]=get('weak_foot_usage');p[46]=get('age')+10;p[47]=get('height_cm')+100;p[48]=get('weight_kg')+30
-        skill_ids=[]
-        for i,mapping in mobile_skills.items():
-            if (value>>mapping['bit'])&1:
-                skill_ids.append(int(i));p[CAT['PARAMETER_BY_SKILL'][i]]=1
+        from native_skill_effects import decode_skills
+        skill_ids=decode_skills(value,p,CAT,mobile_skills)
         attack,defense=get('style.in_possession'),get('style.out_of_possession')
         if attack in (9,16,17):defense,attack=attack,0
         p[61]=attack or defense

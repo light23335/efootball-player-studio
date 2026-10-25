@@ -110,9 +110,14 @@ def compile_player(project,catalog,costs,identity,template,nation_id,team_id,sou
     base[59]=project_value(project,template,source_record)
     selected_ai_styles=ai_styles(project,template,source_record)
     write_ai_styles(base,selected_ai_styles)
-    for index in catalog['PARAMETER_BY_SKILL'].values():base[int(index)]=0
+    from custom_skills import require_catalog,FIRST_ID,COUNT
+    custom=require_catalog(project,catalog)
+    for index in catalog['PARAMETER_BY_SKILL'].values():
+        if 0<=int(index)<147:base[int(index)]=0
     from native_skill_effects import compiled_skills
-    for skill in compiled_skills(project.get('innate_skills',[]),profile['height_cm']):base[int(catalog['PARAMETER_BY_SKILL'][str(skill)])]=1
+    for skill in compiled_skills(project.get('innate_skills',[]),profile['height_cm']):
+        if FIRST_ID<=skill<FIRST_ID+COUNT:continue
+        base[int(catalog['PARAMETER_BY_SKILL'][str(skill)])]=1
     style=project.get('play_style') or {}
     base[61:63]=[int(style.get('attack',0)),int(style.get('defense',0))]
     base[144:147]=list(project['booster_ids'])+[0]
@@ -151,7 +156,9 @@ def compile_player(project,catalog,costs,identity,template,nation_id,team_id,sou
     display_parameters=list(base)
     for i,n in maximum.pop('parameters').items():display_parameters[int(i)]=n
     maximum['parameters']=display_parameters
-    return {'identity':identity,'owned':p,'base_parameters':base,'allocation':ledger,
+    result={'identity':identity,'owned':p,'base_parameters':base,'allocation':ledger,
             'card_art_source':{k:(project.get('native_card') or {}).get(k) for k in ('source_id','native_style','native_agent')},
             'weekly_condition':project.get('weekly_condition','auto'),
             'maximum_development':maximum,'card_type':project['card_type'],'card_series':project.get('card_series',project['card_type'])}
+    if custom:result['studio_custom_skills']=sorted(custom)
+    return result
