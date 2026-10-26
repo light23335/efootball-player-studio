@@ -38,10 +38,12 @@ def ownership(doc):
         art=int(route['portraitKey'])
         history=set(map(int,i.get('previous_card_ids',[])))|{cid}
         independent=i.get('independent_person_id',pid);bound=i.get('bound_original_player_id')
-        bound_valid=type(bound) is int and 0<bound<2**63 and pid==(bound&0x3ffff)
+        bound_valid=type(bound) is int and 0<bound<2**63 and pid==(bound&0xfffffff)
         bound_people=set(i.get('bound_person_ids',[]))
         if bound_valid:bound_people.add(pid)
-        if not 240000<=independent<260000 or not (240000<=pid<260000 or bound_valid) or not 8000000<=art<9000000 or any((k&0x3ffff)!=independent and not ((k>>28)&4095>=BOUND_AGENT_MIN and (k&0x3ffff) in bound_people) for k in history):
+        # Match native_player.reserve_identity's V17 namespace and low-28-bit
+        # person key. XI uses its own smaller namespace in its separate branch.
+        if not 90000000<=independent<99000000 or not (90000000<=pid<99000000 or bound_valid) or not 8000000<=art<9000000 or any((k&0xfffffff)!=independent and not ((k>>28)&4095>=BOUND_AGENT_MIN and (k&0xfffffff) in bound_people) for k in history):
             raise ValueError('个人包永久编号不在工坊专用范围内')
         aliases={cid,*owned_person_aliases(i),art,*history}
         result[uid]={'identity':i,'asset_key':art,'aliases':aliases,

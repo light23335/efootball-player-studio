@@ -1,3 +1,7 @@
+# 球员工坊 V17 · 1.9.14.5
+
+修复个人 APK 再次导出误报“个人包永久编号不在工坊专用范围内”。PC、Android 同步；保留原有永久身份、工程和签名，无需重建球员。详见 [1.9.14.5 更新说明](player-studio-v15/RELEASE-1.9.14.5.md)。
+
 # 球员工坊 V17 · 1.9.14.4
 
 修复原版 GLB 往返导入、接合与面部测试，补齐自建球员的大师联赛头像资源；额外技能支持 10 项，资料页可修改球衣袖长与球鞋。详见 [1.9.14.4 更新说明](player-studio-v15/RELEASE-1.9.14.4.md)。
@@ -211,8 +215,3 @@ Windows 本地球员编辑、预览、APK 实装与存档迁移工具。双击�
 
 
 1.9.0 新增功能与使用方式见 RELEASE-1.9.0.md。
-
-
-
-
-源码：player-studio-v15 与 player-studio-android。首次克隆运行 `python prepare_source.py` 还原默认数据库。成品见 GitHub Releases。
