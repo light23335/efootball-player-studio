@@ -88,6 +88,8 @@ def reserve_identity(project, occupied, registry):
 
 
 def compile_player(project,catalog,costs,identity,template,nation_id,team_id,source_record=None):
+    if len(project.get('innate_skills',[]))>20:raise ValueError('天生技能最多 20 项')
+    if len(project.get('additional_skills',[]))>10:raise ValueError('额外习得技能最多 10 项')
     p=copy.deepcopy(template)
     base=list(p.get('parameters') or [])
     if len(base)!=147:raise ValueError('实装模板不是已核对的 147 项参数布局')
@@ -148,6 +150,8 @@ def compile_player(project,catalog,costs,identity,template,nation_id,team_id,sou
                          'customize_point':budget-sum(ledger.values())})
     for key in list(p):
         if key.startswith(('_e16','_studio','_training_auto','_level_training','_editor_ability_caps')):p.pop(key,None)
+    p['_studio_additional_design']=list(p['additional_skill_id'])
+    p['_studio_innate_design']=native_ids(compiled_skills(project.get('innate_skills',[]),profile['height_cm']))
     # Never inherit the template player's rating. The original preview module
     # otherwise treats Messi's rating as this custom player's native baseline.
     p['_overall']=calculate(project,catalog)['base']
@@ -164,4 +168,5 @@ def compile_player(project,catalog,costs,identity,template,nation_id,team_id,sou
         from custom_skills import REVISION
         result['studio_custom_skills']=sorted(custom);result['studio_custom_skill_protocol']=REVISION
         p['_studio_custom_skill_protocol']=REVISION
-    return result
+    from native_motion import apply_definition
+    return apply_definition(project,result)

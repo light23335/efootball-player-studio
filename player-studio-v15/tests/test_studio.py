@@ -119,6 +119,17 @@ class StudioTests(unittest.TestCase):
         self.store.save(normalized)
         self.assertEqual(app.Store(self.store.root).project['additional_skills'],p['additional_skills'])
 
+    def test_twenty_innate_and_ten_additional_save_without_reclassification(self):
+        p=copy.deepcopy(self.store.project)
+        skills=[int(k) for k in app.CATALOG['PARAMETER_BY_SKILL'] if '预留' not in app.CATALOG['SKILL_LABELS'].get(str(k),'')]
+        p['innate_skills']=skills[:20];p['additional_skills']=skills[20:30]
+        self.store.save(app.normalize_project(p))
+        restored=app.Store(self.store.root).project
+        self.assertEqual(restored['innate_skills'],skills[:20])
+        self.assertEqual(restored['additional_skills'],skills[20:30])
+        p['innate_skills']=skills[:21]
+        with self.assertRaisesRegex(ValueError,'20'):app.normalize_project(p)
+
     def test_second_booster_slot_does_not_shift(self):
         p=copy.deepcopy(self.store.project);p['booster_ids']=[0,201]
         self.assertEqual(app.normalize_project(p)['booster_ids'],[0,201])

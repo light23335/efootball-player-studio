@@ -270,6 +270,35 @@ def upgrades_from_spent(points):
     raise ValueError('Unrecognized personal-player training ledger')
 
 
+def sync_additional_design(current,incoming):
+    """Apply edited slots once, retaining independently learned save skills.
+
+    Earlier importers preserved even an empty legacy list, so configuring ten
+    skills in the workshop never reached already owned copies. Track the last
+    applied selection separately from the live, game-editable slots. Unrelated
+    design updates must not undo subsequent in-game learning or removal.
+    """
+    def ids(values):
+        return list(dict.fromkeys(v for v in values or ()
+                                  if type(v) is int and 0<=v<=78 and v!=74))
+    selected=ids(incoming.get('_studio_additional_design',incoming.get('additional_skill_id',[])))
+    previous=current.get('_studio_additional_design')
+    if previous is None and not selected:return current
+    if previous==selected:return current
+    live=ids(current.get('additional_skill_id',[]))
+    older=set(ids(previous)) if previous is not None else set()
+    innate=set(ids(incoming.get('_studio_innate_design',[])))
+    learned=ids([*live,*current.get('_studio_additional_retained',[])])
+    learned=[v for v in learned if v not in older and v not in innate and v not in selected]
+    merged=[*selected,*learned]
+    out=copy.deepcopy(current)
+    out['additional_skill_id']=merged[:10]
+    out['_studio_additional_design']=selected
+    # Preserve displaced learned values privately, never send >10 live slots.
+    out['_studio_additional_retained']=merged[10:]
+    return out
+
+
 def _update_owned(current,definition,ledger,groups):
     incoming=definition['owned']
     protocol=incoming.get('_studio_custom_skill_protocol')
@@ -287,6 +316,7 @@ def _update_owned(current,definition,ledger,groups):
             current['additional_skill_id']=[s+1 if type(s) is int and 74<=s<=77 else s for s in values]
         if not actual or actual==expected or actual==legacy or 74 in actual:
             current=copy.deepcopy(current);current['_studio_custom_skill_protocol']=protocol
+    current=sync_additional_design(current,incoming)
     if current.get('_personal_design_revision')==incoming['_personal_design_revision']:
         return current
     out=copy.deepcopy(current)
@@ -298,7 +328,7 @@ def _update_owned(current,definition,ledger,groups):
     cap=incoming['level_info']['level_limit']
     if cap<current['level_info']['level']:
         raise ValueError('New design level cap is below earned player level')
-    # Preserve XP, level, point balance, match counters, additional skills,
+    # Preserve XP, level, point balance, match counters, independently learned skills,
     # added positions, lock state, acquisition and every unknown runtime field.
     fields=('name','name_en','player_name','_nation_id','initial_base_team_id',
             'initial_base_national_team_id','uniform_number','play_style',
@@ -715,6 +745,7 @@ def apply_coaches(conn,coaches):
                 data=json.loads(record[0]);incoming=definition['payload']
                 for field in ('name','name_en','age','ability_id','possession','short_counter','long_counter','side_attack','long_ball','_personal_coach_revision'):
                     data[field]=copy.deepcopy(incoming[field])
+                data['overload']=copy.deepcopy(incoming.get('overload',data.get('overload',0)))
                 data['is_coach_texture_use']=incoming.get('is_coach_texture_use','NO')
                 if 'initial_base_team_id' in incoming:data['initial_base_team_id']=copy.deepcopy(incoming['initial_base_team_id'])
                 conn.execute('update coaches set json=? where coach_id=? and serial=?',(compact(data),cid,previous['serial']))

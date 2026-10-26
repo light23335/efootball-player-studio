@@ -14,7 +14,9 @@ export const tutorialTopics=[
  ['画质、手柄、AI 组别和清理','更多设置','在“导出与游戏设置”选择最高 4K 渲染目标、自定义 15–999 FPS 上限，并连接实体手柄录入单键或组合键。提供游戏默认和 FC 两套预设；保存后重新生成游戏 APK，实际画质和帧数依设备性能与屏幕而定。导出与游戏设置中可修改 AI 组别、积分与战绩；按界面规则保存后重新生成 APK。清除缓存只删除导出文件，不删除球员工程、素材及签名；删除前先保存要保留的包。','tools'],
  ['找不到 APK、资源或权限不足','常见问题','自动发现不到时，用“手动选择”读取完整本地 APK；不同名字和目录均可，云盘占位文件和系统分包安装不一定可读。已安装游戏更新后路径可能变化，点击“重新查找”。资源未完成或模型纹理不全时先核对配套资源版本。遇到 Permission denied 先保留日志并检查旧目录权限；不要直接清除应用数据或删除 SaveData。','home'],
 ];
-export const navigationGroups=[['开始',['home','tutorial']],['1 · 选择与保存',['personal']],['2 · 编辑球员',['profile','abilities','training','skills','card','model']],['3 · 卡包与教练',['packs','coaches']],['4 · 生成与安装',['native']],['更多工具',['apk','tools','migration']]];
+export const navigationGroups=[['开始',['home','tutorial']],['1 · 选择与保存',['personal']],['2 · 编辑球员',['profile','abilities','training','skills','motion','card','model']],['3 · 卡包与教练',['packs','coaches']],['4 · 生成与安装',['native']],['更多工具',['apk','tools','migration']]];
+
+tutorialTopics.push(['每张卡的动作风格','姿态继承','先读取球员，再到动作风格选择参考卡片。只继承四项原生姿态参数，能力、卡面和模型不改变。可保存为预设，供其他球员复用；人物专属动画不在本功能范围。','motion']);
 
 export class OnboardingUI{
  constructor(context){Object.assign(this,context);this.state=null;this.query='';document.addEventListener('click',e=>this.click(e));document.addEventListener('input',e=>{if(e.target.id==='tutorial-query'){this.query=e.target.value;this.showTopics();}});document.addEventListener('change',e=>{if(e.target.dataset.setupSource)this.choose(e.target.dataset.setupSource,e.target.value);});}

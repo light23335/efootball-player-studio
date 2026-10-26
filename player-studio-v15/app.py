@@ -45,7 +45,8 @@ import packs
 from window_sessions import WindowSessions
 from booster_library import BoosterLibrary
 
-APP_VERSION = "1.9.14.5"
+APP_VERSION = "1.9.15.4"
+GAME_PLATFORM = "android"
 MAX_PERSONAL_PLAYERS = 10000
 BUNDLE = Path(getattr(sys, "_MEIPASS", Path(__file__).absolute().parent))
 RESOURCE = BUNDLE / "resources"
@@ -57,6 +58,8 @@ from skill_localization import apply_labels as apply_skill_labels
 apply_skill_labels(CATALOG,RESOURCE)
 from native_coach_links import schema as coach_link_schema,repair_legacy as repair_coach_options
 _coach_options=repair_coach_options(json.loads((RESOURCE / 'coaches.json').read_text(encoding='utf8')),coach_link_schema(RESOURCE),RESOURCE)
+from coach_tactics import repair_catalogue as repair_coach_tactics
+_coach_options=repair_coach_tactics(_coach_options,RESOURCE)
 CATALOG['coaches'] = _coach_options['coaches']
 CATALOG['COACH_LINK_TYPES'] = _coach_options.get('linkup_types',[])
 CATALOG['COACH_LINK_SCHEMA']=coach_link_schema(RESOURCE)
@@ -88,6 +91,7 @@ def normalize_project(value):
     p["format"] = "73efootball-personal-player-project"
     p["version"] = 1
     p["studio_version"] = APP_VERSION
+    p["game_platform"] = GAME_PLATFORM
     p["display_name"] = str(p.get("display_name") or "")[:40]
     identity = p.setdefault("identity", {})
     if not isinstance(identity, dict):
@@ -113,6 +117,9 @@ def normalize_project(value):
         validate_celebration(celebration)
     if p.get('ai_playing_styles') is not None:p['ai_playing_styles']=validate_ai_styles(p['ai_playing_styles'])
     elif (p.get('source_player') or {}).get('original_payload'):p['ai_playing_styles']=ai_styles(p)
+    if p.get('motion_style') is not None:
+        from native_motion import normalize as normalize_motion
+        p['motion_style']=normalize_motion(p['motion_style'])
     p["card_type"] = p.get("card_type") or "Epic"
     if p["card_type"] not in CARD_TYPES:
         raise ValueError("未知的基础卡种")
@@ -134,6 +141,8 @@ def normalize_project(value):
             if type(v) is not int or str(v) not in CATALOG["PARAMETER_BY_SKILL"] or "预留" in CATALOG["SKILL_LABELS"].get(str(v), ""):
                 raise ValueError("工程包含未适配的技能编号，已保留原文件；请先核对技能目录")
         p[key] = list(dict.fromkeys(values))
+    if len(p["innate_skills"]) > 20:
+        raise ValueError("天生技能最多 20 项")
     if len(p["additional_skills"]) > 10:
         raise ValueError("额外习得技能最多 10 项")
     p["additional_skills"] = [v for v in p["additional_skills"] if v not in p["innate_skills"]]
@@ -526,17 +535,20 @@ class Store:
                     if name.startswith("assets/") and (len(data) > MAX_ASSET or name[7:71] != migration.digest(data)):
                         raise ValueError("资源内容与永久文件名不一致")
                     files[name] = data
-                p = normalize_project(migration.read_json(files["project.json"]))
+                from project_transfer import prepare as transfer_project
+                p = normalize_project(transfer_project(migration.read_json(files["project.json"]),GAME_PLATFORM,m.get("game_platform")))
                 for name in referenced_assets(p):
                     if "assets/" + name not in files:
                         raise ValueError("工程包缺少引用的资源")
+                needed=referenced_assets(p)
                 for name, data in files.items():
-                    if name.startswith("assets/"):
+                    if name.startswith("assets/") and name[7:] in needed:
                         (self.root / name).write_bytes(data)
         else:
             if source.stat().st_size > 8 * 1024 * 1024:
                 raise ValueError("工程 JSON 过大")
-            p = normalize_project(migration.read_json(source.read_bytes()))
+            from project_transfer import prepare as transfer_project
+            p = normalize_project(transfer_project(migration.read_json(source.read_bytes()),GAME_PLATFORM))
         existing=self._player_path(p['package_id'])
         if existing.is_file() and self.saved_player(p['package_id'])['project']!=p:
             p['package_id']=str(uuid.uuid4());p['card_id']=None;p['serial']=0
@@ -554,7 +566,7 @@ class Store:
                 raise ValueError("工程引用的资源缺失，请重新导入图片或模型")
             files["assets/" + name] = source.read_bytes()
         manifest = {"format": "73efootball-studio-project", "version": 1, "package_id": p["package_id"],
-                    "created_at": migration.stamp(), "sha256": {k: migration.digest(v) for k, v in files.items()}}
+                    "game_platform":GAME_PLATFORM, "created_at": migration.stamp(), "sha256": {k: migration.digest(v) for k, v in files.items()}}
         files["manifest.json"] = migration.compact(manifest).encode("utf8")
         filename = "球员工程-" + datetime.now().strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:4] + ".efproject"
         (self.root / "exports" / filename).write_bytes(migration.archive_bytes(files))
@@ -576,6 +588,8 @@ class StudioServer(ThreadingHTTPServer):
         from updates import UpdateChecker
         self.updates = UpdateChecker(store,RESOURCE,APP_VERSION,globals().get('PLATFORM','pc'))
         self.window_sessions = WindowSessions(self.shutdown)
+        from native_motion import MotionPresets
+        self.motion_presets=MotionPresets(store)
         self.token = token or secrets.token_urlsafe(32)
         self.last_seen = time.monotonic()
 
@@ -589,6 +603,7 @@ class StudioServer(ThreadingHTTPServer):
         coach_options=repair_coach_options(json.loads((Path(resources)/'coaches.json').read_text(encoding='utf8')),coach_link_schema(RESOURCE),resources)
         from coach_identity import repair_catalogue as repair_coach_identity
         coach_options=repair_coach_identity(coach_options,resources)
+        coach_options=repair_coach_tactics(coach_options,resources,RESOURCE)
         self.catalog['coaches']=coach_options['coaches']
         self.catalog['COACH_LINK_TYPES']=coach_options.get('linkup_types',[])
         self.catalog['COACH_LINK_SCHEMA']=coach_link_schema(RESOURCE)
@@ -740,6 +755,13 @@ class Handler(BaseHTTPRequestHandler):
                 result = store.coaches.save(body['coach'])
             elif path == '/api/coaches/list':
                 result = store.coaches.list()
+            elif path=='/api/motion/source':
+                from native_motion import from_player
+                result=from_player(self.server.library.player(str(body.get('id',''))))
+            elif path=='/api/motion/presets':
+                result={'rows':self.server.motion_presets.list()}
+            elif path=='/api/motion/presets/save':
+                result=self.server.motion_presets.save(body)
             elif path == '/api/coaches/portraits':
                 from coach_portraits import original_portraits
                 result = original_portraits(self.server.library,self.server.catalog['coaches'],body.get('ids'))

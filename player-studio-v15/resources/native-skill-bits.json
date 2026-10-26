@@ -56,11 +56,8 @@
     "margin": 578
   },
   "9": {
-    "bit": 649,
-    "agreement": 1.0,
-    "overlap": 14379,
-    "positives": 4,
-    "margin": 4
+    "bit": 644,
+    "source": "V17 original source decoder 0x82aa124 and parameter getter 0x82a84d4; independent one-bit instruction audit"
   },
   "10": {
     "bit": 676,
@@ -196,11 +193,8 @@
     "margin": 201
   },
   "31": {
-    "bit": 623,
-    "agreement": 1.0,
-    "overlap": 14379,
-    "positives": 29,
-    "margin": 29
+    "bit": 627,
+    "source": "V17 original source decoder 0x82aa124 and parameter getter 0x82a84d4; independent one-bit instruction audit"
   },
   "32": {
     "bit": 645,

@@ -1,4 +1,4 @@
-export const editorPages=new Set(['profile','abilities','training','skills','card','model']);
+export const editorPages=new Set(['profile','abilities','training','skills','card','model','motion']);
 export function playerReady(project){
  const authored=project&&(project.native_card||project.model?.asset||project.appearance?.portrait);
  return Boolean(project&&(project.source_player?.id||project.editor_ready||

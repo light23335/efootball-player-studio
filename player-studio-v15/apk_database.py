@@ -176,6 +176,8 @@ def read_coaches(archive,resources):
         coaches.append(prior)
     if not coaches:raise ValueError('新版教练目录为空，未启用数据库')
     from native_coach_links import read_catalogue
+    from coach_tactics import REVISION as TACTICS_REVISION
+    previous['coach_tactics_revision']=TACTICS_REVISION
     link_source=next((source for source in reversed(sources) if 'common/etc/pesdb/CoachLink.bin' in source.files),None)
     from personal_source import PATH as personal_path
     personal=json.loads(archive.read(personal_path)) if personal_path in archive.namelist() else {}

@@ -4,7 +4,8 @@ from native_cpk import unwrap,wrap
 
 COACH='common/etc/pesdb/Coach.bin'
 BOOSTER='common/etc/pesdb/CoachBooster.bin'
-TACTICS={'possession':206,'short_counter':224,'long_counter':238,'side_attack':213,'long_ball':199}
+TACTICS={'possession':206,'short_counter':224,'long_counter':238,'side_attack':213,'long_ball':199,'overload':192}
+# V17 getter 0x825081c reads the low seven bits at row+0x18.
 # Native disk getters 0x8236464 / 0x823648c / 0x82364b4 / 0x82364dc.
 ABILITY_BITS=(160,148,128,138)
 SLOT_LAYOUT='native-coach-four-10bit-v2'
@@ -80,7 +81,8 @@ def compile_coaches(cpk,coaches,catalogue,registry,replace_ids=(),replace_booste
         origin=next((r for r in catalogue if str(r['id'])==identity['native_source_id'] and int(r['id']) in records),template)
         value=int.from_bytes(records[int(origin['id'])],'little');value=bitfield(value,0,64,cid)
         value=bitfield(value,NATION_BIT,NATION_WIDTH,identity['nation_id'])
-        for key,bit in TACTICS.items():value=bitfield(value,bit,7,c['tactics'][key])
+        tactics={key:c['tactics'].get(key,0) for key in TACTICS}
+        for key,bit in TACTICS.items():value=bitfield(value,bit,7,tactics[key])
         age=int(c.get('age') or origin['age']);value=bitfield(value,231,6,age-15)
         for bit,bid in zip(ABILITY_BITS,abilities):value=bitfield(value,bit,10,bid)
         row=bytearray(value.to_bytes(176,'little'))
@@ -93,7 +95,7 @@ def compile_coaches(cpk,coaches,catalogue,registry,replace_ids=(),replace_booste
         records[cid]=bytes(row)
         payload=copy.deepcopy(origin['raw_payload'])
         payload.update(coach_id={'id':cid,'serial':0},name=c['name'],name_en=c.get('name_en') or c['name'],age=age,
-                       ability_id=abilities,initial_base_team_id=identity['team_id'],**c['tactics'],_personal_coach_uuid=uid)
+                       ability_id=abilities,initial_base_team_id=identity['team_id'],**tactics,_personal_coach_uuid=uid)
         payload['is_coach_texture_use']='YES' if c.get('portrait') else origin['raw_payload'].get('is_coach_texture_use','NO')
         payload['_personal_coach_revision']=hashlib.sha256(json.dumps(c,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
         owned.append({'uuid':uid,'id':cid,'payload':payload,**identity})

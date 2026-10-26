@@ -1,3 +1,15 @@
+# 球员工坊 V17 · 1.9.15.4
+
+PC 和 Android 同步。修复已有自建球员追加技巧为空、施丹式转身显示 Dummy；修改基础手柄键时，相关预设组合自动跟随，单独配置的组合保持独立。包含 20 项自带 / 10 项追加技巧列表修复。
+
+成品下载：[GitHub Releases](https://github.com/light23335/efootball-player-studio/releases/latest)。Windows 保留 data、library 与签名后覆盖更新；Android 使用同签名 APK 覆盖安装，不要卸载旧工坊。游戏端修复需重新生成并安装游戏 APK 才生效。
+
+## 历史说明
+
+# 球员工坊 V17 · 1.9.15.1 本地版
+
+保留动作风格、风格位置提示和任务中心；回滚球队球衣与主题动效。补齐教练“压上进攻”的读取、编辑、预览和游戏写入。PC、Android 同步，数据与签名保留，不上传 GitHub。详见 [1.9.15.1 更新说明](player-studio-v15/RELEASE-1.9.15.1.md)。
+
 # 球员工坊 V17 · 1.9.14.5
 
 修复个人 APK 再次导出误报“个人包永久编号不在工坊专用范围内”。PC、Android 同步；保留原有永久身份、工程和签名，无需重建球员。详见 [1.9.14.5 更新说明](player-studio-v15/RELEASE-1.9.14.5.md)。
@@ -215,3 +227,8 @@ Windows 本地球员编辑、预览、APK 实装与存档迁移工具。双击�
 
 
 1.9.0 新增功能与使用方式见 RELEASE-1.9.0.md。
+
+
+
+
+源码位于 player-studio-v15 和 player-studio-android（历史目录名）。首次克隆运行 `python prepare_source.py` 还原默认数据库；打包工具依赖见两个目录的构建脚本。成品位于 GitHub Releases。

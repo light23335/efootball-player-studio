@@ -58,7 +58,7 @@ class NativeUiProtocolTests(unittest.TestCase):
    self.assertEqual(message,proof['message']);self.assertEqual(field['label'],proof['label']);self.assertEqual(field['english'],proof['english'])
  def test_game_skill_name_getter_and_description_table_resolve_patched_text(self):
   metadata=json.loads((app.RESOURCE/'native-skill-ui.json').read_text(encoding='utf8'))['rows']
-  for locale,names in (('zha',{25:'重炮攻门',43:'长传好手',51:'健步如飞',52:'健步如飞',68:'健步如飞'}),('eng',{25:'Power Strike',43:'Lofted Pass Specialist',51:'Quick Stride',52:'Quick Stride',68:'Quick Stride'})):
+  for locale,names in (('zha',{9:'施丹式转身',25:'重炮攻门',43:'长传好手',51:'健步如飞',52:'健步如飞',68:'健步如飞'}),('eng',{9:'Zidane Turn',25:'Power Strike',43:'Lofted Pass Specialist',51:'Quick Stride',52:'Quick Stride',68:'Quick Stride'})):
    texts={(g['id']<<16)|k:v for g in text_groups(locale=locale) for k,v in g['items'].items()}
    for row in metadata:
     self.assertEqual(struct.unpack_from('<III',self.engine,row['address']), (row['id'],row['name_msg'],row['description_msg']))

@@ -7,8 +7,9 @@ Signing uses the operator's existing private release key.
 from pathlib import Path
 import argparse,hashlib,io,json,re,struct,sys,zipfile
 ROOT=Path(__file__).resolve().parent
-VERSION='1.9.14.5-android.1'
-VERSION_CODE=199145
+VERSION='1.9.15.4-android.1'
+VERSION_CODE=199154
+RETIRED_CORE_MODULES={'team_workshop.py','team_cpk.py','team_workshop.pyc','team_cpk.pyc'}
 
 def compact_editor_apk(source,output,changes,removed=()):
     """Write one copy of each editor asset and retain 16-KiB .so alignment."""
@@ -93,7 +94,7 @@ def main():
             replacements={p.name:p.read_bytes() for p in core.glob('*.py') if not p.name.startswith(('build_','prepare_','annotate_','package_release','enrich_'))}
             replacements.update({p.name:p.read_bytes() for p in (ROOT/'app/src/main/python').glob('*.py')})
             for entry in old.infolist():
-                if entry.filename not in replacements:z.writestr(entry,old.read(entry))
+                if entry.filename not in replacements and entry.filename not in RETIRED_CORE_MODULES:z.writestr(entry,old.read(entry))
             for name,raw in replacements.items():compile(raw,name,'exec');z.writestr(name,raw)
         bundle=io.BytesIO()
         with zipfile.ZipFile(bundle,'w',zipfile.ZIP_DEFLATED,compresslevel=1) as z:

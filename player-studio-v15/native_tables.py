@@ -72,7 +72,8 @@ def player_record(template,project,definition,fields,ability_bits,skill_bits):
         encoded=name.encode('utf8')
         if len(encoded)>60:raise ValueError('原版姓名字段最多 60 个 UTF-8 字节，请缩短姓名后导出')
         result[88+61*index:149+61*index]=encoded+b'\0'*(61-len(encoded))
-    return bytes(result)
+    from native_motion import patch_record
+    return patch_record(bytes(result),project)
 
 
 def booster_table(data,projects,replace_ids=()):

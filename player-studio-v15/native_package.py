@@ -35,7 +35,7 @@ from custom_boosters import issues as booster_issues,validate_projects as valida
 
 PREFIX='assets/gateway-release/'
 NATIVE='custom-resources/legends-v10/'
-COMPILER_REVISION='v17-compact-apk-rw-skill-state-and-ui-1.9.14'
+COMPILER_REVISION='v17-additional-design-sync-and-zidane-text-1.9.15.4'
 
 
 def compact(value):return json.dumps(value,ensure_ascii=False,separators=(',',':')).encode('utf8')
@@ -417,6 +417,11 @@ class NativePackage:
                         profile['native_hooks']+=controller_hooks(export_settings['controller'],engine,self.profile_resources)
                         from native_skill_effects import hooks as skill_hooks,required as skill_effects_required
                         if skill_effects_required(document['players'],catalog):profile['native_hooks']+=skill_hooks(engine,self.profile_resources)
+                        if document['game_version']=='V17':
+                            from native_skill_capacity import hooks as capacity_hooks,REVISION as SKILL_CAPACITY_REVISION
+                            profile['native_hooks']+=capacity_hooks(engine)
+                            document['skill_capacity']={'innate':20,'additional':10,'display':'native-lists',
+                                                        'revision':SKILL_CAPACITY_REVISION}
                     with source.open('lib/arm64-v8a/libUE4.so') as engine:
                         for name in ('position_hook','acquisition_hook','overall_hook','thumbnail_hook'):
                             h=profile[name];engine.seek(h['file_offset'])

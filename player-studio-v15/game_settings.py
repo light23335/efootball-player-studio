@@ -77,7 +77,7 @@ def migrate_controller(c):
     c['bindings']=rows
 
 DEFAULTS={'frame_rate':{'enabled':False,'target':160},'display':{'enabled':False,'height':1080},'card_motion':{'enabled':True},
-          'controller':{'enabled':False,'preset':'default','mapping_revision':3,'bindings':preset(),'swap_sticks':False,'invert_right_y':False}}
+          'controller':{'enabled':False,'preset':'default','mapping_revision':3,'bindings':preset(),'manual_shortcuts':[],'swap_sticks':False,'invert_right_y':False}}
 
 def normalize(body):
     if not isinstance(body,dict):raise ValueError('游戏设置格式无效')
@@ -121,6 +121,17 @@ def normalize(body):
             if source and source in used:raise ValueError(SCOPES[scope]+'按键冲突：'+used[source]+' 与 '+row['label'])
             if source:used[source]=row['label']
     c['bindings']=normalized
+    shortcuts={r['id'] for r in normalized if len(r['output'])>1}
+    manual=c.get('manual_shortcuts',[])
+    if not isinstance(manual,list) or len(manual)!=len(set(manual)) or any(k not in shortcuts for k in manual):
+        raise ValueError('手柄独立组合键设置无效')
+    if 'manual_shortcuts' not in body.get('controller',{}):
+        # Old customized shortcuts should not be silently reinterpreted as
+        # generated preset combinations when a basic key is edited later.
+        presets=[{r['id']:r['input'] for r in preset(name)} for name in ('default','fc')]
+        manual=[r['id'] for r in normalized if r['id'] in shortcuts and
+                all(set(r['input'])!=set(p[r['id']]) for p in presets)]
+    c['manual_shortcuts']=manual
     return out
 
 def settings(store,body=None):

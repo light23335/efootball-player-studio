@@ -2,7 +2,7 @@ import {renderLinkups,updateLinkup,linkupText} from './coach-links.js';
 import {coachIdentity,identityField,identityLabel,identityMatches} from './coach-identities.js';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $=s=>document.querySelector(s);
-export const tactics=[['possession','控球游戏'],['short_counter','快速反击'],['long_counter','长传反击'],['side_attack','外侧进攻'],['long_ball','长传战术']];
+export const tactics=[['possession','控球游戏'],['short_counter','快速反击'],['long_counter','长传反击'],['side_attack','外侧进攻'],['long_ball','长传战术'],['overload','压上进攻']];
 
 export class CoachUI {
   constructor(context){

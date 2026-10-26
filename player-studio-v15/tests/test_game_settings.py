@@ -39,6 +39,14 @@ class GameSettingsTests(unittest.TestCase):
    for target in (0,1000,True):
     bad=copy.deepcopy(v);bad['frame_rate']['target']=target
     with self.assertRaises(ValueError):settings(store,bad)
+ def test_independent_combo_metadata_survives_save_and_legacy_custom_detection(self):
+  v=copy.deepcopy(DEFAULTS);c=v['controller'];c.update(preset='custom',bindings=preset('fc'))
+  next(r for r in c['bindings'] if r['id']=='attack.finesse')['input']=['LS','B']
+  del c['manual_shortcuts']
+  got=normalize(v);self.assertIn('attack.finesse',got['controller']['manual_shortcuts'])
+  self.assertEqual(normalize(got),got)
+  got['controller']['manual_shortcuts']=['attack.X']
+  with self.assertRaisesRegex(ValueError,'独立组合键'):normalize(got)
  def test_legacy_fc_preset_migrates_to_mobile_shoulder_layout(self):
   value=copy.deepcopy(DEFAULTS);value['controller'].update(preset='fc',bindings=legacy_preset('default'));value['controller'].pop('mapping_revision')
   self.assertEqual(normalize(value)['controller']['bindings'],preset('fc'))
@@ -117,6 +125,12 @@ class NativeControllerTests(unittest.TestCase):
   for source,target in [('B','X'),('X','B'),('RB','LT'),('RT','RT'),('A','A'),('Y','Y'),('LB','LB'),('LT','RB'),('START','START'),('SELECT','SELECT')]:
    got,_=self.machine([source]);self.assertEqual(got,{target})
    self.assertEqual(self.machine([])[0],set())
+ def test_unlisted_two_tap_and_fake_sequences_preserve_native_button_edges(self):
+  # Long pass is X in FC. Nothing in the shortcut table names these gestures:
+  # the game must receive B down/up/down, and B then B+A, with the same frames.
+  physical=[[],['X'],[],['X'],[],['X'],['X','A'],['A'],[]]
+  native=[set(),{'B'},set(),{'B'},set(),{'B'},{'B','A'},{'A'},set()]
+  self.assertEqual([self.machine(keys)[0] for keys in physical],native)
  def test_fc_combos_suppress_single_actions_and_accept_trigger_axes(self):
   self.assertEqual(self.machine(['RB','B'])[0],{'RB','X'})
   self.assertEqual(self.machine(['LT','RT'])[0],{'RB','RT'})

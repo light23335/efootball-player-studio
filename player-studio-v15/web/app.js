@@ -1,3 +1,6 @@
+import {renderStyleHelp,syncStyleHelp,setStyleCheckPosition} from './playing-style-ui.js';
+import {MotionUI} from './motion-ui.js';
+import {TaskCenter} from './task-center.js';
 import {ReleaseUpdatesUI} from './release-updates.js';
 import {AndroidSidebarResize} from './sidebar-layout.js';
 import {WindowSession} from './window-session.js';
@@ -56,6 +59,7 @@ const pages={
  tools:{title:'导出与游戏设置',short:'导出与设置',icon:'archive',description:'管理导出文件、直接安装及 AI 组别进度。'},
  personal:{title:'我的球员',short:'我的球员',icon:'folder',description:'保存多名自建球员，随时打开编辑或导出独立工程。'},
  packs:{title:'卡包编辑',short:'卡包编辑',icon:'archive',description:'混编原版与自建球员，设置抽取权重、卡池规则与原版封面。'},
+ motion:{title:'动作风格',short:'动作风格',icon:'grow',description:'参考原版球员的比赛姿态，为每张卡保存和复用动作预设。'},
  coaches:{title:'教练管理',short:'教练管理',icon:'user',description:'选择原版教练，或新建教练并自定义战术与能力加成。'},
  library:{title:'从已有球员复制',short:'复制球员',icon:'search',description:'复制原版球员到独立自建槽位；编辑和保存不会影响原球员数据。'},
  profile:{title:'球员资料',short:'资料',icon:'user',description:'从名字到球场位置，定义属于你的球员。'},
@@ -70,14 +74,14 @@ const pages={
 };
 let project,catalog,currentPage='home',preview='card',abilityFilter='all',skillQuery='',skillMode='innate',skillSelectedOnly=false;
 let past=[],future=[],lastChangeKey='',lastChangeTime=0,version=0,savedVersion=0,saveTimer=null,savePromise=null,viewer;
-let toolsUI,onboardingUI,releaseUpdatesUI,boosterLibraryUI,navigationMode='simple';
+let toolsUI,onboardingUI,releaseUpdatesUI,boosterLibraryUI,motionUI,taskCenter,navigationMode='simple';
 const workspaceNavigation=new WorkspaceNavigation($('#navigation'));
 let simulation,imageCache=new Map(),cardDrawVersion=0,modelMetadata={},libraryUI,updateUI,nativePackageUI,personalUI,coachUI,presetsUI,packUI,nativeCard,identityOptions={nation:[],team:[]};
 const migrationState={mode:'export',save:'',apk:'',package:'',previous:'',prefer:'package',players:[],selected:null,plan:null,status:'',statusType:'',resultUrl:null};
 
 async function api(path,body){
   const response=await fetch('/api/'+path,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json','X-Studio-Token':token},body:body===undefined?undefined:JSON.stringify(body)});
-  const data=await response.json();if(!response.ok)throw Error(data.error||'操作未完成');return data;
+  const data=await response.json();if(!response.ok)throw Error(data.error||'操作未完成');taskCenter?.observe(path,data);return data;
 }
 function toast(message,error=false){const el=document.createElement('div');el.className='toast'+(error?' error':'');el.textContent=message;$('#toasts').append(el);while($('#toasts').children.length>3)$('#toasts').firstElementChild.remove();setTimeout(()=>el.remove(),error?8500:4200);}
 function get(path){return path.split('.').reduce((v,k)=>v?.[k],project);}
@@ -140,8 +144,8 @@ function renderTraining(){
 }
 
 function renderSkills(){
-  return `<div class="skill-toolbar"><div class="segmented"><button data-skill-mode="innate" class="${skillMode==='innate'?'active':''}">天生技能</button><button data-skill-mode="additional" class="${skillMode==='additional'?'active':''}">额外习得</button></div><div class="skill-counts"><span>天生 <strong id="innate-count">${project.innate_skills.length}</strong></span><span>追加 <strong id="additional-count">${project.additional_skills.length}/10</strong></span></div></div><div class="search-box">${icon('search')}<input id="skill-search" placeholder="搜索中文名称、英文技能或编号" value="${esc(skillQuery)}"><label class="switch-label"><input type="checkbox" id="selected-skills-only" ${skillSelectedOnly?'checked':''}>已选</label></div><div class="skill-legend"><span><i></i>天生</span><span><i class="blue"></i>追加</span><span>点击添加，再次点击取消</span></div><div class="skill-grid" id="skill-grid"></div><div style="height:20px"></div>`+
-  panel('比赛风格',`<div class="field-grid">${bindInput('play_style.attack','进攻比赛风格','text',{numeric:true,choices:Object.entries(catalog.PLAY_STYLES.attack).map(([id,name])=>[id,name])})}${bindInput('play_style.defense','防守比赛风格','text',{numeric:true,choices:Object.entries(catalog.PLAY_STYLES.defense).map(([id,name])=>[id,name])})}</div>`)+
+  return `<div class="skill-toolbar"><div class="segmented"><button data-skill-mode="innate" class="${skillMode==='innate'?'active':''}">天生技能</button><button data-skill-mode="additional" class="${skillMode==='additional'?'active':''}">额外习得</button></div><div class="skill-counts"><span>天生 <strong id="innate-count">${project.innate_skills.length}/20</strong></span><span>追加 <strong id="additional-count">${project.additional_skills.length}/10</strong></span></div></div><div class="search-box">${icon('search')}<input id="skill-search" placeholder="搜索中文名称、英文技能或编号" value="${esc(skillQuery)}"><label class="switch-label"><input type="checkbox" id="selected-skills-only" ${skillSelectedOnly?'checked':''}>已选</label></div><div class="skill-legend"><span><i></i>天生</span><span><i class="blue"></i>追加</span><span>点击添加，再次点击取消</span></div><div class="skill-grid" id="skill-grid"></div><div style="height:20px"></div>`+
+  panel('比赛风格与适用位置',renderStyleHelp(project,catalog,bindInput))+
   panel('AI 比赛风格',`<p class="panel-description">影响电脑控制球员时的倾向。可多选，也可全部取消；载入原版资料时自动读取该球员的设置。</p><div class="ai-style-grid">${Object.entries(catalog.AI_PLAYING_STYLES).map(([key,f])=>`<label class="ai-style-option"><input type="checkbox" data-ai-style="${key}" ${(project.ai_playing_styles||[]).includes(key)?'checked':''}><span>${esc(f.label)}<small>${esc(f.english)}</small></span></label>`).join('')}</div>`)+
   panel('位置适应度',`<div class="field-grid three">${catalog.POSITIONS.map(pos=>bindInput('position_aptitudes.'+pos,`${pos} · ${positionNames[pos]}`,'text',{numeric:true,choices:[[0,'不适应'],[1,'部分适应'],[2,'完全适应']]})).join('')}</div>`);
 }
@@ -153,7 +157,7 @@ function updateSkillGrid(){
     const innate=project.innate_skills.includes(s.id),additional=project.additional_skills.includes(s.id),unsupported=catalog.PARAMETER_BY_SKILL[s.id]===undefined||s.name.includes('预留');
     return `<button class="skill-tile ${innate?'innate':additional?'additional':''} ${unsupported?'unsupported':''}" data-skill="${s.id}" ${unsupported?'disabled':''} aria-pressed="${innate||additional}" title="${esc(unsupported?'本版预留或映射未核对，暂不写入':catalog.SKILL_DESCRIPTIONS?.[s.id]||s.code)}"><span class="skill-name">${esc(s.name)}<small>${String(s.id).padStart(2,'0')} · ${esc(unsupported?'本版预留 / 待适配':s.code)}</small>${catalog.SKILL_DESCRIPTIONS?.[s.id]?`<small>${esc(catalog.SKILL_DESCRIPTIONS[s.id])}</small>`:''}</span><span class="skill-state">${innate?'天':additional?'追':'+'}</span></button>`;
   }).join(''):'<div class="no-matches">没有匹配的技能</div>';
-  $('#innate-count').textContent=project.innate_skills.length;$('#additional-count').textContent=project.additional_skills.length+'/10';
+  $('#innate-count').textContent=project.innate_skills.length+'/20';$('#additional-count').textContent=project.additional_skills.length+'/10';
 }
 
 function renderCard(){
@@ -197,7 +201,7 @@ function renderPage(){
   $('#page-title').textContent=page.title;$('#breadcrumb-page').textContent=page.short;$('#page-description').textContent=page.description;
   $('#page-eyebrow').textContent=currentPage==='migration'?'KEEP YOUR PROGRESS':currentPage==='model'?'SHAPE YOUR PLAYER':'CREATE YOUR OWN LEGACY';
   $$('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.page===currentPage));
-  $('#editor-content').innerHTML=({home:()=>onboardingUI.render(),tutorial:()=>onboardingUI.renderTutorial(),tools:()=>toolsUI.render(),packs:()=>packUI.render(),personal:()=>personalUI.render(),coaches:()=>coachUI.render(),library:()=>libraryUI.render(),profile:renderProfile,abilities:renderAbilities,training:renderTraining,skills:renderSkills,card:renderCard,model:renderModel,migration:renderMigration,apk:()=>updateUI.render(),native:()=>nativePackageUI.render()})[currentPage]();
+  $('#editor-content').innerHTML=({home:()=>onboardingUI.render(),tutorial:()=>onboardingUI.renderTutorial(),tools:()=>toolsUI.render(),packs:()=>packUI.render(),personal:()=>personalUI.render(),coaches:()=>coachUI.render(),library:()=>libraryUI.render(),profile:renderProfile,abilities:renderAbilities,training:renderTraining,skills:renderSkills,motion:()=>motionUI.render(),card:renderCard,model:renderModel,migration:renderMigration,apk:()=>updateUI.render(),native:()=>nativePackageUI.render()})[currentPage]();
   workspaceNavigation.activate(currentPage,playerReady(project));
   if(currentPage==='skills')updateSkillGrid();
   if(currentPage==='migration')updateMigrationOutput();
@@ -208,6 +212,7 @@ function renderPage(){
   releaseUpdatesUI?.activate(currentPage).catch(()=>{});
   onboardingUI?.activate(currentPage).catch(e=>toast(e.message,true));
   packUI?.activate(currentPage);toolsUI?.activate(currentPage).catch(e=>toast(e.message,true));
+  motionUI?.activate(currentPage);
   if(currentPage==='card')presetsUI.refresh();
 }
 function navigate(page){if(!pages[page])return;if(editorPages.has(page)&&!playerReady(project)){toast('请先从资源库读取球员，或打开“我的球员”中的工程');$('#compact-page-select').value=currentPage==='library'?'personal':currentPage;return;}currentPage=page;if(!project||!viewer)return;renderPage();window.scrollTo({top:0,behavior:'instant'});}
@@ -222,6 +227,7 @@ function sixStats(values){
 function updateLive(){
   if(!project||!catalog)return;
   simulation=simulate(project,catalog);
+  syncStyleHelp(project,catalog);
   $$('[data-identity-code]').forEach(el=>el.textContent=project.identity[el.dataset.identityCode==='nation'?'nation_id':'team_id']??'未选择');
   $('#project-uuid').textContent=project.package_id.slice(0,8)+' · '+project.package_id.slice(-8);
   $('#preview-series').textContent=(project.card_series||project.card_type).replace('BigTime','BIG TIME').toUpperCase()+' · '+(project.appearance.card_title||'PERSONAL EDITION');
@@ -371,7 +377,7 @@ document.addEventListener('click',event=>{
   const filter=event.target.closest('[data-ability-filter]');if(filter){abilityFilter=filter.dataset.abilityFilter;renderPage();return;}
   const step=event.target.closest('[data-step]');if(step){const key=step.dataset.group,delta=Number(step.dataset.step);commit(()=>project.training[key]=Math.max(0,Math.min(40,project.training[key]+delta)),'training.'+key);$$(`[data-bind="training.${key}"]`).forEach(n=>n.value=project.training[key]);return;}
   const mode=event.target.closest('[data-skill-mode]');if(mode){skillMode=mode.dataset.skillMode;$$('[data-skill-mode]').forEach(n=>n.classList.toggle('active',n===mode));return;}
-  const skill=event.target.closest('[data-skill]');if(skill&&!skill.disabled){const id=Number(skill.dataset.skill),target=skillMode==='innate'?'innate_skills':'additional_skills';if(!project[target].includes(id)&&target==='additional_skills'&&project.additional_skills.length>=10)return toast('额外习得技能最多 10 项，请先取消其中一项',true);commit(()=>{const selected=project[target].includes(id);project.innate_skills=project.innate_skills.filter(v=>v!==id);project.additional_skills=project.additional_skills.filter(v=>v!==id);if(!selected)project[target].push(id);},'skill'+id);updateSkillGrid();return;}
+  const skill=event.target.closest('[data-skill]');if(skill&&!skill.disabled){const id=Number(skill.dataset.skill),target=skillMode==='innate'?'innate_skills':'additional_skills';if(!project[target].includes(id)&&target==='innate_skills'&&project.innate_skills.length>=20)return toast('天生技能最多 20 项，请先取消其中一项',true);if(!project[target].includes(id)&&target==='additional_skills'&&project.additional_skills.length>=10)return toast('额外习得技能最多 10 项，请先取消其中一项',true);commit(()=>{const selected=project[target].includes(id);project.innate_skills=project.innate_skills.filter(v=>v!==id);project.additional_skills=project.additional_skills.filter(v=>v!==id);if(!selected)project[target].push(id);},'skill'+id);updateSkillGrid();return;}
   const palette=event.target.closest('[data-palette]');if(palette){const [accent,background,jersey]=palette.dataset.palette.split(',');commit(()=>Object.assign(project.appearance,{accent,background,jersey}),'palette');renderPage();return;}
   const view=event.target.closest('[data-view]');if(view)return viewer.view(view.dataset.view);
   const migrationMode=event.target.closest('[data-migration-mode]');if(migrationMode){migrationState.mode=migrationMode.dataset.migrationMode;migrationState.plan=null;migrationState.status='';migrationState.resultUrl=null;renderPage();return;}
@@ -379,7 +385,7 @@ document.addEventListener('click',event=>{
 });
 
 $('#undo-button').onclick=undo;$('#redo-button').onclick=redo;
-$('#open-project').onclick=event=>busy(event.currentTarget,async()=>{await flushSave();const path=await choose('project');if(!path)return;const data=await api('project/import',{path});past=[];future=[];project=data.project;version++;savedVersion=version;renderPage();toast('工程已打开，永久身份与资源已恢复');});
+$('#open-project').onclick=event=>busy(event.currentTarget,async()=>{await flushSave();const path=await choose('project');if(!path)return;const data=await api('project/import',{path});past=[];future=[];project=data.project;version++;savedVersion=version;renderPage();toast(project.project_import?.models_skipped?'工程已打开；跨平台模型已跳过，资料与卡图已导入':'工程已打开，永久身份与资源已恢复');});
 $('#export-project').onclick=()=>toolsUI.exportDialog().catch(e=>toast(e.message,true));
 async function createPlayerSlot(prompt=true){
  if(prompt&&await choosePlayerAction('新建独立球员','将建立新的球员槽位和永久身份。当前球员会先保存到“我的球员”，已有球员和游戏存档不变。',[{id:'new',label:'确认新建独立球员',primary:true}])!=='new')return false;
@@ -420,6 +426,7 @@ function renderNavigation(){
 
 async function boot(){
   hydrateIcons();
+  taskCenter=new TaskCenter({api,navigate,toast,page:()=>currentPage});
   const data=await api('bootstrap');new AndroidSidebarResize(data.platform);const setup=await api('setup/status',{}).catch(()=>({preferences:{navigation:'simple'},recommended_mode:'coexist',resources_needed:{update:true,coexist:true}}));navigationMode=setup.preferences.navigation;renderNavigation();project=data.project;catalog=data.catalog;identityOptions=data.identities||identityOptions;migrationState.apk=data.default_apk;
   libraryUI=new LibraryUI({api,commit,project:()=>project,catalog,toast,navigate,rerender:renderPage,beforeLoadPlayer:preparePlayerLoad,status:data.library,apk:data.default_apk,companion:data.default_companion});
   updateUI=new GameImportUI({api,toast,apk:data.default_apk,companion:data.default_companion,rerender:renderPage});
@@ -429,6 +436,7 @@ async function boot(){
   toolsUI=new WorkspaceTools({api,toast,project:()=>project,flushSave});
   boosterLibraryUI=new BoosterLibraryUI({api,toast,project:()=>project,flushSave,commit,rerender:renderPage});
   packUI=new PackUI({api,toast,rerender:renderPage});
+  motionUI=new MotionUI({api,toast,project:()=>project,commit,rerender:renderPage});
   personalUI=new PersonalUI({api,toast,beforeOpenPlayer:async()=>{if(await choosePlayerAction('读取已保存球员','将切换当前编辑内容。当前工程会先备份；切换到其他球员时会保存当前球员。若要创建另一名球员，请使用新建独立槽位。',[{id:'open',label:'备份并读取球员',primary:true}])!=='open')return false;await api('project/checkpoint',{project});return true;},project:()=>project,flushSave,navigate,rerender:renderPage,onPlayerDeleted:id=>{if(packUI.editing)packUI.editing.members=packUI.editing.members.filter(m=>m.kind!=='custom'||m.id!==id);},replaceProject:p=>{past=[];future=[];project=p;version++;savedVersion=version;}});
   coachUI=new CoachUI({api,toast,catalog,identities:()=>identityOptions,project:()=>project,commit,flushSave,navigate,rerender:renderPage,resourceKey:()=>libraryUI.status.cache_directory+':'+libraryUI.status.phase,custom:data.custom_coaches?.rows||[]});
   presetsUI=new CardPresetsUI({api,toast,project:()=>project,commit,rerender:renderPage});
@@ -441,8 +449,12 @@ async function boot(){
   viewer.attach($('#mini-model-stage'));renderPage();
   if(data.platform==='pc')await new WindowSession(api,()=>project,token).start();
   releaseUpdatesUI.poll();
+  for(const path of ['native-apk/status','game-import/status','library/status'])api(path,{}).catch(()=>{});
   libraryUI.refreshLoaded();
   setInterval(()=>api('ping').catch(()=>{}),12000);
   window.__studio={get project(){return project;},get simulation(){return simulation;},get catalog(){return catalog;},get viewer(){return viewer;},get library(){return libraryUI;},get presets(){return presetsUI;},get nativeCard(){return nativeCard;},flushSave,navigate};
 }
 boot().catch(error=>{$('#editor-content').innerHTML=`<div class="empty-state">软件未能打开工程<br>${esc(error.message)}<br>请关闭窗口后重新启动球员工坊。</div>`;toast(error.message,true);});
+
+
+document.addEventListener('change',event=>{const group=event.target.dataset.styleCheckPosition;if(group&&project){setStyleCheckPosition(group,event.target.value,project,catalog);syncStyleHelp(project,catalog);}});

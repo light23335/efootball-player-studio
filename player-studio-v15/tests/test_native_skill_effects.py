@@ -5,6 +5,15 @@ from native_skill_effects import compiled_skills,visible_skills,hooks,text_group
 APK=Path('C:/Users/1/Downloads/73efootball-V17.apk')
 
 class SkillDataTests(unittest.TestCase):
+ def test_old_imported_skill_aliases_use_independent_verified_flags(self):
+  import tempfile
+  from native_skill_effects import skill_bits
+  with tempfile.TemporaryDirectory() as folder:
+   path=Path(folder)/'native-skill-bits.json'
+   path.write_text(json.dumps({'9':{'bit':649},'31':{'bit':623}}),encoding='utf8')
+   result=skill_bits(folder)
+   self.assertEqual(result['9']['bit'],644);self.assertEqual(result['31']['bit'],627)
+   self.assertEqual(json.loads(path.read_text())['9']['bit'],649)
  def test_height_profiles_are_applied_to_skill_ids_and_roundtrip(self):
   for height,variant in ((140,51),(175,51),(176,52),(185,52),(186,68),(220,68)):
    self.assertEqual(compiled_skills([25,52,43],height),[25,variant,43])

@@ -42,7 +42,7 @@ class Hooks:
         data_fixups=[]
         for i,(key,size) in enumerate(writable.items()):
             needle=struct.pack('<Q',0x5354ee0000000000+i);at=body.find(needle)
-            if at<0 or body.find(needle,at+1)>=0 or at%8 or not 0<size<=65536:
+            if at<0 or body.find(needle,at+1)>=0 or at%8 or not 0<size<=8*1024*1024:
                 raise ValueError(f'Invalid writable state literal: {name}/{key}')
             data_fixups.append([at,size])
         return {'name': name, 'body_hex': body.hex(), 'absolute_fixups': fixups,

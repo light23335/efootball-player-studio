@@ -6,7 +6,7 @@ import os
 import threading
 import uuid
 
-TACTICS = ('possession', 'short_counter', 'long_counter', 'side_attack', 'long_ball')
+TACTICS = ('possession', 'short_counter', 'long_counter', 'side_attack', 'long_ball', 'overload')
 
 
 def normalize_coach(value, abilities):
@@ -26,7 +26,7 @@ def normalize_coach(value, abilities):
     if not isinstance(row['tactics'], dict):
         raise ValueError('教练战术资料格式不正确')
     for key in TACTICS:
-        value = row['tactics'].get(key, 70)
+        value = row['tactics'].get(key, 0 if key=='overload' else 70)
         if type(value) is not int or not 0 <= value <= 100:
             raise ValueError('战术熟练度请填写 0–100 的整数')
         row['tactics'][key] = value

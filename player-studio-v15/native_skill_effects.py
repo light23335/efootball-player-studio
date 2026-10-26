@@ -3,8 +3,9 @@ import copy,json
 from pathlib import Path
 from studio_resources import bundled_resources
 
-VISIBLE={25:'重炮攻门',43:'长传好手',52:'健步如飞'}
-DESCRIPTIONS={25:'凌空抽射或蓄力达到 50% 的射门，射门偏差降低 20%。',
+VISIBLE={9:'施丹式转身',25:'重炮攻门',43:'长传好手',52:'健步如飞'}
+DESCRIPTIONS={9:'带球时使用施丹式转身；动作由游戏原生操作触发。',
+              25:'凌空抽射或蓄力达到 50% 的射门，射门偏差降低 20%。',
               24:'普通射门与紫色射门均可触发；保留原生低于 50% 蓄力及其他动作条件。',
               43:'空中传球的动作前摇缩短 12%，地面传球不变。',
               52:'按身高采用爆发加速（≤175 cm）、掌控加速（176–185 cm）或漫长加速（≥186 cm）。'}
@@ -53,9 +54,15 @@ def text_groups(resources=None,locale='zha'):
     path=(Path(resources) if resources else RESOURCE)/'native-skill-ui.json'
     if not path.is_file():path=RESOURCE/'native-skill-ui.json'
     data=json.loads(path.read_text(encoding='utf8'))
+    # Imported databases predate the Spring Cut text audit. Do not require a
+    # database reimport just to repair this already verified native message.
+    if not any(row['id']==9 for row in data['rows']):
+        verified=json.loads((RESOURCE/'native-skill-ui.json').read_text(encoding='utf8'))
+        data['rows'].extend(row for row in verified['rows'] if row['id']==9)
     chinese=locale in ('zha','chi')
-    names={25:'Power Strike',43:'Lofted Pass Specialist',52:'Quick Stride'}
-    descriptions={25:'Reduces shot error by 20% for volleys or shots with at least 50% power.',
+    names={9:'Zidane Turn',25:'Power Strike',43:'Lofted Pass Specialist',52:'Quick Stride'}
+    descriptions={9:'Performs a Zidane turn while dribbling using the native game controls.',
+                  25:'Reduces shot error by 20% for volleys or shots with at least 50% power.',
                   24:'Increases the speed of eligible low-power shots below 50% power. Applies to normal and Stunning Shots; other native motion conditions still apply.',
                   43:'Reduces the wind-up for lofted passes by 12%. Ground passes are unchanged.',
                   52:'Uses explosive acceleration up to 175 cm, controlled acceleration from 176 to 185 cm, and lengthy acceleration from 186 cm.'}
@@ -76,8 +83,11 @@ def text_groups(resources=None,locale='zha'):
 def skill_bits(resources):
     result=json.loads((Path(resources)/'native-skill-bits.json').read_text(encoding='utf8'))
     verified=json.loads((RESOURCE/'native-skill-bits.json').read_text(encoding='utf8'))
-    for skill in (14,25,43,51,52,63,68,70):
+    for skill in (9,14,25,31,43,51,52,63,68,70):
         if str(skill) not in result:result[str(skill)]=verified[str(skill)]
+    # Older imported V17 databases contain two correlation-derived aliases.
+    # The instruction audit resolves these to independent source flags.
+    for skill in (9,31):result[str(skill)]=verified[str(skill)]
     from custom_skills import enabled,source_fields
     if enabled():result.update(source_fields())
     return result

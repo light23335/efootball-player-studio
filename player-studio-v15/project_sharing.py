@@ -13,7 +13,7 @@ def export_selected(store,selected,current):
             if not path.is_file():raise ValueError(project['identity']['name']+'：工程引用的资源缺失')
             files['assets/'+name]=path.read_bytes()
     if sum(map(len,files.values()))>512*1024*1024:raise ValueError('工程包总大小超过 512 MB，请分批导出')
-    manifest={'format':'73efootball-studio-project','version':2,'players':len(projects),'sha256':{k:app.migration.digest(v) for k,v in files.items()}}
+    manifest={'format':'73efootball-studio-project','version':2,'game_platform':app.GAME_PLATFORM,'players':len(projects),'sha256':{k:app.migration.digest(v) for k,v in files.items()}}
     files['manifest.json']=app.migration.compact(manifest).encode()
     name='球员合集-'+str(len(projects))+'人-'+uuid.uuid4().hex[:8]+'.efproject';target=store.root/'exports'/name;target.write_bytes(app.migration.archive_bytes(files))
     return {'url':'/exports/'+name,'filename':name,'path':str(target),'players':len(projects)}
@@ -30,7 +30,8 @@ def import_selected(store,archive,manifest):
         files[name]=raw
     rows=app.migration.read_json(files['projects.json'])
     if not isinstance(rows,list) or not 1<=len(rows)<=100:raise ValueError('工程合集人数无效')
-    projects=[app.normalize_project(p) for p in rows]
+    from project_transfer import prepare as transfer_project
+    projects=[app.normalize_project(transfer_project(p,app.GAME_PLATFORM,manifest.get('game_platform'))) for p in rows]
     if len({p['package_id'] for p in projects})!=len(projects):raise ValueError('工程合集包含重复身份')
     for p in projects:
         if not p['identity']['name'].strip():raise ValueError('工程合集包含未命名球员')
@@ -40,8 +41,9 @@ def import_selected(store,archive,manifest):
             old=store.saved_player(p['package_id'])['project']
             if old!=p:p['package_id']=str(uuid.uuid4());p['card_id']=None;p['serial']=0
     # Validation finishes before any local project or asset is changed.
+    needed=set().union(*(app.referenced_assets(p) for p in projects))
     for name,raw in files.items():
-        if name.startswith('assets/') and not (store.root/name).exists():(store.root/name).write_bytes(raw)
+        if name.startswith('assets/') and name[7:] in needed and not (store.root/name).exists():(store.root/name).write_bytes(raw)
     if store.project['identity']['name'].strip():store.save_player(store.project)
     for p in projects:store.save_player(p)
     store.save(projects[0],manual=True)

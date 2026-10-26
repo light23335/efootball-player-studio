@@ -1,0 +1,720 @@
+{
+  "revision": "v17-owned-skills-20-10-v2-widgets",
+  "production_ready": true,
+  "engine_sha256": "efd257d9e41b622d6ecb8f51f7b0a8ee8820113fd427c5572025df1c8eecc7b8",
+  "innate_limit": 20,
+  "additional_limit": 10,
+  "cache_capacity": 65536,
+  "hooks": [
+    {
+      "name": "skill_capacity_transport",
+      "body_hex": "ff830cd1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f24f09a9f4570aa9f65f0ba9f8670ca9fa6f0da9fc770ea9fe7b00f9e00708ade20f09ade4170aade61f0bade8270cadea2f0dadec370eadee3f0fadf04710adf24f11adf45712adf65f13adf86714adfa6f15adfc7716adfe7f17ad11423bd5f18301f9ff0301d14809805209008052e85b29b8290500113f290071a1ffff546aae4da96b010acb6bfd42d37f2900f14c0180d26b318c9a090080522b0100b4487969b81f3901714c09805208918c1ae87b29b8290500913f010beb23ffff54e82740a9ea1340b9884206f889c206f88a7600b9e00314aae1030091e2030b2a2300805227000094ff030191f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c919000005800021fd6e0ff21d41f2003d58c63650700000000",
+      "absolute_fixups": [
+        [
+          432,
+          124085132
+        ]
+      ],
+      "assembly": "sub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nsub sp,sp,#64\nmov w8,#74\nmov w9,#0\nfill:\nstr w8,[sp,w9,uxtw #2]\nadd w9,w9,#1\ncmp w9,#10\nb.ne fill\nldp x10,x11,[x19,#0xd8]\nsub x11,x11,x10\nlsr x11,x11,#2\ncmp x11,#10\nmov x12,#10\ncsel x11,x11,x12,lo\nmov w9,#0\ncbz x11,copy_inline\ncopy_input:\nldr w8,[x10,x9,lsl #2]\ncmp w8,#78\nmov w12,#74\ncsel w8,w8,w12,ls\nstr w8,[sp,x9,lsl #2]\nadd x9,x9,#1\ncmp x9,x11\nb.lo copy_input\ncopy_inline:\nldp x8,x9,[sp]\nldr w10,[sp,#16]\nstur x8,[x20,#0x64]\nstur x9,[x20,#0x6c]\nstr w10,[x20,#0x74]\nmov x0,x20\nmov x1,sp\nmov w2,w11\nmov w3,#1\nbl shared_skill_capacity_cache\nadd sp,sp,#64\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nldr x16,resume\nbr x16\nshared_skill_capacity_cache: brk #4095\n.align 3\nresume: .quad 124085132\n\n.align 3\n",
+      "code": "sub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nsub sp,sp,#64\nmov w8,#74\nmov w9,#0\nfill:\nstr w8,[sp,w9,uxtw #2]\nadd w9,w9,#1\ncmp w9,#10\nb.ne fill\nldp x10,x11,[x19,#0xd8]\nsub x11,x11,x10\nlsr x11,x11,#2\ncmp x11,#10\nmov x12,#10\ncsel x11,x11,x12,lo\nmov w9,#0\ncbz x11,copy_inline\ncopy_input:\nldr w8,[x10,x9,lsl #2]\ncmp w8,#78\nmov w12,#74\ncsel w8,w8,w12,ls\nstr w8,[sp,x9,lsl #2]\nadd x9,x9,#1\ncmp x9,x11\nb.lo copy_input\ncopy_inline:\nldp x8,x9,[sp]\nldr w10,[sp,#16]\nstur x8,[x20,#0x64]\nstur x9,[x20,#0x6c]\nstr w10,[x20,#0x74]\nmov x0,x20\nmov x1,sp\nmov w2,w11\nmov w3,#1\nbl shared_skill_capacity_cache\nadd sp,sp,#64\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nldr x16,resume\nbr x16",
+      "functions": {
+        "resume": 124085132
+      },
+      "constants": {},
+      "deferred_shared_refs": [
+        "shared_skill_capacity_cache"
+      ],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [
+        "fixed DTO additional IDs +0x64..0x74 only",
+        "dynamic JSON input vector +0xd8",
+        "native sentinel 74; new skill IDs 75..78",
+        "all callee state restored"
+      ],
+      "address": 124084540,
+      "file_offset": 124068156,
+      "expected_hex": "69a24da90a0109eb4012005448fd42932b0140b91f0500f108859f9a7f25017148010054ec031faa2db2fcf0ad713c91ae696cb8df010b6b200100548c210091"
+    },
+    {
+      "name": "skill_capacity_list_frame",
+      "body_hex": "ff0301d1ff4303d15000005800021fd670a6370700000000",
+      "absolute_fixups": [
+        [
+          16,
+          121087600
+        ]
+      ],
+      "assembly": "sub sp,sp,#64\nsub sp,sp,#0xd0\nldr x16,resume\nbr x16\n\n.align 3\nresume: .quad 121087600\n\n.align 3\n",
+      "code": "sub sp,sp,#64\nsub sp,sp,#0xd0\nldr x16,resume\nbr x16",
+      "functions": {
+        "resume": 121087600
+      },
+      "constants": {},
+      "deferred_shared_refs": [],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [],
+      "address": 121087596,
+      "file_offset": 121071212,
+      "expected_hex": "ff4303d1fd7b07a9fc6f08a9fa6709a9f85f0aa9f6570ba9f44f0ca9fdc3019148d03bd5a98300d1e80700f9eac30091f30302aaf40301aaf50300aa081540f9"
+    },
+    {
+      "name": "skill_capacity_list_return",
+      "body_hex": "ff4304917000005800021fd61f2003d598ac370700000000",
+      "absolute_fixups": [
+        [
+          16,
+          121089176
+        ]
+      ],
+      "assembly": "add sp,sp,#0x110\nldr x16,resume\nbr x16\n\n.align 3\nresume: .quad 121089176\n\n.align 3\n",
+      "code": "add sp,sp,#0x110\nldr x16,resume\nbr x16",
+      "functions": {
+        "resume": 121089176
+      },
+      "constants": {},
+      "deferred_shared_refs": [],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [],
+      "address": 121089172,
+      "file_offset": 121072788,
+      "expected_hex": "ff430391c0035fd6e98f6294e88f6294e78f6294e68f6294e58f6294e48f6294d3836294fd7bbaa9fc6f01a9fa6702a9f85f03a9f65704a9f44f05a9fd030091"
+    },
+    {
+      "name": "skill_capacity_list_snapshot",
+      "body_hex": "ff830cd1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f24f09a9f4570aa9f65f0ba9f8670ca9fa6f0da9fc770ea9fe7b00f9e00708ade20f09ade4170aade61f0bade8270cadea2f0dadec370eadee3f0fadf04710adf24f11adf45712adf65f13adf86714adfa6f15adfc7716adfe7f17ad11423bd5f18301f9a0c20091e1c30f910300805230000094e02304b91f140071ad000054e8c30f910949208be8a70da904000014a8520291a9a20291e8a70da9f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c919000005800021fd6e0ff21d41f2003d5b4a6370700000000",
+      "absolute_fixups": [
+        [
+          352,
+          121087668
+        ]
+      ],
+      "assembly": "sub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nadd x0,x21,#0x30\nadd x1,sp,#1008\nmov w3,#0\nbl shared_skill_capacity_cache\nstr w0,[sp,#1056]\ncmp w0,#5\nb.le original\nadd x8,sp,#1008\nadd x9,x8,w0,uxtw #2\nstp x8,x9,[sp,#216]\nb done\noriginal:\nadd x8,x21,#0x94\nadd x9,x21,#0xa8\nstp x8,x9,[sp,#216]\ndone:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nldr x16,resume\nbr x16\nshared_skill_capacity_cache: brk #4095\n.align 3\nresume: .quad 121087668\n\n.align 3\n",
+      "code": "sub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nadd x0,x21,#0x30\nadd x1,sp,#1008\nmov w3,#0\nbl shared_skill_capacity_cache\nstr w0,[sp,#1056]\ncmp w0,#5\nb.le original\nadd x8,sp,#1008\nadd x9,x8,w0,uxtw #2\nstp x8,x9,[sp,#216]\nb done\noriginal:\nadd x8,x21,#0x94\nadd x9,x21,#0xa8\nstp x8,x9,[sp,#216]\ndone:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nldr x16,resume\nbr x16",
+      "functions": {
+        "resume": 121087668
+      },
+      "constants": {},
+      "deferred_shared_refs": [
+        "shared_skill_capacity_cache"
+      ],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [],
+      "address": 121087660,
+      "file_offset": 121071276,
+      "expected_hex": "1b5002911ca002912b0140b2490140b2e92f02a9a8831ff8e00b00f9040000147b1300917f031ceb60150054a82241b928150034760340b9df2a017120ffff54"
+    },
+    {
+      "name": "skill_capacity_list_padding",
+      "body_hex": "ea0341b95f150071aa0080524d0000544a0180527000005800021fd61f2003d588a9370700000000",
+      "absolute_fixups": [
+        [
+          32,
+          121088392
+        ]
+      ],
+      "assembly": "\nldr w10,[sp,#0x100]\ncmp w10,#5\nmov w10,#5\nb.le done\nmov w10,#10\ndone:\nldr x16,resume\nbr x16\n\n.align 3\nresume: .quad 121088392\n\n.align 3\n",
+      "code": "\nldr w10,[sp,#0x100]\ncmp w10,#5\nmov w10,#5\nb.le done\nmov w10,#10\ndone:\nldr x16,resume\nbr x16",
+      "functions": {
+        "resume": 121088392
+      },
+      "constants": {},
+      "deferred_shared_refs": [],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [],
+      "address": 121088388,
+      "file_offset": 121072004,
+      "expected_hex": "aa008052080109cbe9f3003208fd43d31829091b98160034a88300d1e9c30091f9031f2a1a0140b23b0140b2f30f00f904000014390700113f03186b40150054"
+    },
+    {
+      "name": "skill_capacity_innate_filter",
+      "body_hex": "ff0301d1ff830cd1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f24f09a9f4570aa9f65f0ba9f8670ca9fa6f0da9fc770ea9fe7b00f9e00708ade20f09ade4170aade61f0bade8270cadea2f0dadec370eadee3f0fadf04710adf24f11adf45712adf65f13adf86714adfa6f15adfc7716adfe7f17ad11423bd5f18301f9a0c20091e1830c91030080527e0000941f140071ad0a005409008052e8830c91085969b81f01166b40050054290500113f01006b43ffff54f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c91ff030191100a005800021fd6f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c91ff0301919005005800021fd6f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c91ff030191a82241b9f000005800021fd6e0ff21d480a337070000000010a337070000000054a3370700000000",
+      "absolute_fixups": [
+        [
+          664,
+          121086848
+        ],
+        [
+          672,
+          121086736
+        ],
+        [
+          680,
+          121086804
+        ]
+      ],
+      "assembly": "sub sp,sp,#64\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nadd x0,x21,#0x30\nadd x1,sp,#800\nmov w3,#0\nbl shared_skill_capacity_cache\ncmp w0,#5\nb.le original\nmov w9,#0\nscan:\nadd x8,sp,#800\nldr w8,[x8,w9,uxtw #2]\ncmp w8,w22\nb.eq excluded\nadd w9,w9,#1\ncmp w9,w0\nb.lo scan\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr x16,included\nbr x16\nexcluded:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr x16,excluded_resume\nbr x16\noriginal:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr w8,[x21,#0x120]\nldr x16,resume\nbr x16\nshared_skill_capacity_cache: brk #4095\n.align 3\nincluded: .quad 121086848\nexcluded_resume: .quad 121086736\nresume: .quad 121086804\n\n.align 3\n",
+      "code": "sub sp,sp,#64\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nadd x0,x21,#0x30\nadd x1,sp,#800\nmov w3,#0\nbl shared_skill_capacity_cache\ncmp w0,#5\nb.le original\nmov w9,#0\nscan:\nadd x8,sp,#800\nldr w8,[x8,w9,uxtw #2]\ncmp w8,w22\nb.eq excluded\nadd w9,w9,#1\ncmp w9,w0\nb.lo scan\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr x16,included\nbr x16\nexcluded:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr x16,excluded_resume\nbr x16\noriginal:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr w8,[x21,#0x120]\nldr x16,resume\nbr x16",
+      "functions": {
+        "included": 121086848,
+        "excluded_resume": 121086736,
+        "resume": 121086804
+      },
+      "constants": {},
+      "deferred_shared_refs": [
+        "shared_skill_capacity_cache"
+      ],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [],
+      "address": 121086800,
+      "file_offset": 121070416,
+      "expected_hex": "a82241b968010034a042c93cc10e044e008ca16e0028610e00a8702e0800261e08fd0737a8a640b91f01166ba0fcff54e003162aff7f04a9ff2b00f9a59f3c94"
+    },
+    {
+      "name": "skill_capacity_innate_count",
+      "body_hex": "ff0301d1ff830cd1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f24f09a9f4570aa9f65f0ba9f8670ca9fa6f0da9fc770ea9fe7b00f9e00708ade20f09ade4170aade61f0bade8270cadea2f0dadec370eadee3f0fadf04710adf24f11adf45712adf65f13adf86714adfa6f15adfc7716adfe7f17ad11423bd5f18301f960c20091e1830c9103008052520000941f1400712d050054e803004be82300f9f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c91ff0301915005005800021fd6f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c91ff030191682241b9b000005800021fd6e0ff21d40cb7370700000000b0b6370700000000",
+      "absolute_fixups": [
+        [
+          488,
+          121091852
+        ],
+        [
+          496,
+          121091760
+        ]
+      ],
+      "assembly": "sub sp,sp,#64\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nadd x0,x19,#0x30\nadd x1,sp,#800\nmov w3,#0\nbl shared_skill_capacity_cache\ncmp w0,#5\nb.le original\nneg w8,w0\nstr x8,[sp,#64]\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr x16,count_resume\nbr x16\noriginal:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr w8,[x19,#0x120]\nldr x16,resume\nbr x16\nshared_skill_capacity_cache: brk #4095\n.align 3\ncount_resume: .quad 121091852\nresume: .quad 121091760\n\n.align 3\n",
+      "code": "sub sp,sp,#64\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nadd x0,x19,#0x30\nadd x1,sp,#800\nmov w3,#0\nbl shared_skill_capacity_cache\ncmp w0,#5\nb.le original\nneg w8,w0\nstr x8,[sp,#64]\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr x16,count_resume\nbr x16\noriginal:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr w8,[x19,#0x120]\nldr x16,resume\nbr x16",
+      "functions": {
+        "count_resume": 121091852,
+        "resume": 121091760
+      },
+      "constants": {},
+      "deferred_shared_refs": [
+        "shared_skill_capacity_cache"
+      ],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [],
+      "address": 121091756,
+      "file_offset": 121075372,
+      "expected_hex": "682241b9e80200344005024f6142c93c208ca06e0058206e0028610e083c020e093c060e0a3c0a0e0b3c0e0e0801001228011f3348011e33080d0b2a080d0012"
+    },
+    {
+      "name": "skill_widget_owned_innate_bound",
+      "body_hex": "1f5100717000005800021fd61f2003d59815050300000000",
+      "absolute_fixups": [
+        [
+          16,
+          50664856
+        ]
+      ],
+      "assembly": "cmp w8,#20\nldr x16,resume\nbr x16\n\n.align 3\nresume: .quad 50664856\n\n.align 3\n",
+      "code": "cmp w8,#20\nldr x16,resume\nbr x16",
+      "functions": {
+        "resume": 50664856
+      },
+      "constants": {},
+      "deferred_shared_refs": [],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [],
+      "address": 50664852,
+      "file_offset": 50648468,
+      "expected_hex": "1f290071ac070054e00313aa4d2800941f040071cb06005439008052080340f9fa0318aaf60318aaa80000b50c000014c80240f9fa0316aa280100b4f60308aa"
+    },
+    {
+      "name": "skill_widget_library_innate_bound",
+      "body_hex": "1f5100717000005800021fd61f2003d5d457f40200000000",
+      "absolute_fixups": [
+        [
+          16,
+          49567700
+        ]
+      ],
+      "assembly": "cmp w8,#20\nldr x16,resume\nbr x16\n\n.align 3\nresume: .quad 49567700\n\n.align 3\n",
+      "code": "cmp w8,#20\nldr x16,resume\nbr x16",
+      "functions": {
+        "resume": 49567700
+      },
+      "constants": {},
+      "deferred_shared_refs": [],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [],
+      "address": 49567696,
+      "file_offset": 49551312,
+      "expected_hex": "1f290071cc0600547f0700716b060054e80740b9360080528803080b15050011e85340f9f70319aaf40319aaa80000b50c000014880240f9f70314aa280100b4"
+    },
+    {
+      "name": "skill_widget_additional_creation",
+      "body_hex": "ff0301d1ff830cd1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f24f09a9f4570aa9f65f0ba9f8670ca9fa6f0da9fc770ea9fe7b00f9e00708ade20f09ade4170aade61f0bade8270cadea2f0dadec370eadee3f0fadf04710adf24f11adf45712adf65f13adf86714adfa6f15adfc7716adfe7f17ad11423bd5f18301f9e00313aab00b005800023fd6000600b400c00091e1830c9103008052540000941f1400714d050054e00313aae10314aa50000094f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c91ff0301917006005800021fd6f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c91ff0301913001005800023fd63001005800021fd6e0ff21d4e0ff21d41f2003d580b4020300000000342405030000000010bb04030000000070be040300000000",
+      "absolute_fixups": [
+        [
+          520,
+          50508928
+        ],
+        [
+          528,
+          50668596
+        ],
+        [
+          536,
+          50641680
+        ],
+        [
+          544,
+          50642544
+        ]
+      ],
+      "assembly": "sub sp,sp,#64\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nmov x0,x19\nldr x16,player\nblr x16\ncbz x0,original\nadd x0,x0,#0x30\nadd x1,sp,#800\nmov w3,#0\nbl shared_skill_capacity_cache\ncmp w0,#5\nb.le original\nmov x0,x19\nmov x1,x20\nbl shared_skill_widget_create_ten\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr x16,done\nbr x16\noriginal:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr x16,create\nblr x16\nldr x16,resume\nbr x16\nshared_skill_capacity_cache: brk #4095\nshared_skill_widget_create_ten: brk #4095\n.align 3\nplayer: .quad 50508928\ncreate: .quad 50668596\nresume: .quad 50641680\ndone: .quad 50642544\n\n.align 3\n",
+      "code": "sub sp,sp,#64\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nmov x0,x19\nldr x16,player\nblr x16\ncbz x0,original\nadd x0,x0,#0x30\nadd x1,sp,#800\nmov w3,#0\nbl shared_skill_capacity_cache\ncmp w0,#5\nb.le original\nmov x0,x19\nmov x1,x20\nbl shared_skill_widget_create_ten\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr x16,done\nbr x16\noriginal:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr x16,create\nblr x16\nldr x16,resume\nbr x16",
+      "functions": {
+        "player": 50508928,
+        "create": 50668596,
+        "resume": 50641680,
+        "done": 50642544
+      },
+      "constants": {},
+      "deferred_shared_refs": [
+        "shared_skill_capacity_cache",
+        "shared_skill_widget_create_ten"
+      ],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [],
+      "address": 50641676,
+      "file_offset": 50625292,
+      "expected_hex": "4a1a0094f50300aa68b249f9f90318aaf60318aaa80000b50c000014c80240f9f90316aa280100b4f60308aa082140b91f0500714cffff5420030054c80640f9"
+    },
+    {
+      "name": "skill_widget_additional_display",
+      "body_hex": "1f1500712d0a00541f290071ac090054ff830cd1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f24f09a9f4570aa9f65f0ba9f8670ca9fa6f0da9fc770ea9fe7b00f9e00708ade20f09ade4170aade61f0bade8270cadea2f0dadec370eadee3f0fadf04710adf24f11adf45712adf65f13adf86714adfa6f15adfc7716adfe7f17ad11423bd5f18301f9e00313aae10315aae20314aa2b000094f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c911001005800021fd6d000005800021fd61f150071b000005800021fd6e0ff21d48c200503000000002019050300000000",
+      "absolute_fixups": [
+        [
+          344,
+          50667660
+        ],
+        [
+          352,
+          50665760
+        ]
+      ],
+      "assembly": "\ncmp w8,#5\nb.le original\ncmp w8,#10\nb.gt invalid\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nmov x0,x19\nmov x1,x21\nmov x2,x20\nbl shared_skill_widget_fill_ten\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nldr x16,done\nbr x16\ninvalid:\nldr x16,done\nbr x16\noriginal:\ncmp w8,#5\nldr x16,resume\nbr x16\nshared_skill_widget_fill_ten: brk #4095\n.align 3\ndone: .quad 50667660\nresume: .quad 50665760\n\n.align 3\n",
+      "code": "\ncmp w8,#5\nb.le original\ncmp w8,#10\nb.gt invalid\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nmov x0,x19\nmov x1,x21\nmov x2,x20\nbl shared_skill_widget_fill_ten\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nldr x16,done\nbr x16\ninvalid:\nldr x16,done\nbr x16\noriginal:\ncmp w8,#5\nldr x16,resume\nbr x16",
+      "functions": {
+        "done": 50667660,
+        "resume": 50665760
+      },
+      "constants": {},
+      "deferred_shared_refs": [
+        "shared_skill_widget_fill_ten"
+      ],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [],
+      "address": 50665756,
+      "file_offset": 50649372,
+      "expected_hex": "1f1500716c3b0054e00313aaf0260094e0230036086c82527802088b68b249f9f90318aaf60318aaa80000b50c000014c80240f9f90316aa280100b4f60308aa"
+    },
+    {
+      "name": "skill_widget_additional_modal",
+      "body_hex": "68f252b91f150071ed0a0054ff830cd1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f24f09a9f4570aa9f65f0ba9f8670ca9fa6f0da9fc770ea9fe7b00f9e00708ade20f09ade4170aade61f0bade8270cadea2f0dadec370eadee3f0fadf04710adf24f11adf45712adf65f13adf86714adfa6f15adfc7716adfe7f17ad11423bd5f18301f9180080d279f252b93f2b00714801805239d3881a687649f9027978b8e00313aae10314aab005005800023fd6180700911f0319eb0bffff54f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c91f000005800021fd6f000005800021fd61f2003d51cb50f0300000000b0b10f0300000000e0b00f0300000000",
+      "absolute_fixups": [
+        [
+          368,
+          51361052
+        ],
+        [
+          376,
+          51360176
+        ],
+        [
+          384,
+          51359968
+        ]
+      ],
+      "assembly": "\nldr w8,[x19,#0x12f0]\ncmp w8,#5\nb.le original\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nmov x24,#0\nldr w25,[x19,#0x12f0]\ncmp w25,#10\nmov w8,#10\ncsel w25,w25,w8,le\nloop:\nldr x8,[x19,#0x12e8]\nldr w2,[x8,x24,lsl #2]\nmov x0,x19\nmov x1,x20\nldr x16,add_row\nblr x16\nadd x24,x24,#1\ncmp x24,x25\nb.lt loop\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nldr x16,done\nbr x16\noriginal:\nldr x16,resume\nbr x16\n\n.align 3\nadd_row: .quad 51361052\ndone: .quad 51360176\nresume: .quad 51359968\n\n.align 3\n",
+      "code": "\nldr w8,[x19,#0x12f0]\ncmp w8,#5\nb.le original\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nmov x24,#0\nldr w25,[x19,#0x12f0]\ncmp w25,#10\nmov w8,#10\ncsel w25,w25,w8,le\nloop:\nldr x8,[x19,#0x12e8]\nldr w2,[x8,x24,lsl #2]\nmov x0,x19\nmov x1,x20\nldr x16,add_row\nblr x16\nadd x24,x24,#1\ncmp x24,x25\nb.lt loop\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nldr x16,done\nbr x16\noriginal:\nldr x16,resume\nbr x16",
+      "functions": {
+        "add_row": 51361052,
+        "done": 51360176,
+        "resume": 51359968
+      },
+      "constants": {},
+      "deferred_shared_refs": [],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [],
+      "address": 51359964,
+      "file_offset": 51343580,
+      "expected_hex": "68f252b9e22e8052228ea0721f0500716b000054687649f9020140b9e00313aae10314aa0701009468f252b9e22e8052228ea0721f0500716d000054687649f9"
+    }
+  ],
+  "helpers": [
+    {
+      "name": "skill_capacity_cache",
+      "body_hex": "06060058c7fc5f88e7ffff3527008052c77c088888ffff35049440a9898044ca290105ca298145ca293d00122a00a052cb0001916b19098b6c3540a92c0100b49f0104eba00145fa4001005429050011293d00124a050071c1feff5415000014830200345f1400714d020054641500a923010034621100b9200440ad2c1040f96041813c6141823c6c4103f8e003022a09000014601140b96041c13c6141c23c6c4143f8200400ad2c1000f90200001400008012dffc9f88c0035fd61f2003d50000000000ee5453",
+      "absolute_fixups": [],
+      "assembly": "\n// x0 common player, x1 40-byte IDs, w2 count, w3 0 read / 1 write.\n// A short native lock protects publication and the entire snapshot copy.\nldr x6,state\nacquire:\nldaxr w7,[x6]\ncbnz w7,acquire\nmov w7,#1\nstxr w8,w7,[x6]\ncbnz w8,acquire\nldp x4,x5,[x0,#8]\neor x9,x4,x4,lsr #32\neor x9,x9,x5\neor x9,x9,x5,lsr #32\nand w9,w9,#65535\nmov w10,#65536\nprobe:\nadd x11,x6,#64\nadd x11,x11,x9,lsl #6\nldp x12,x13,[x11]\ncbz x12,empty\ncmp x12,x4\nccmp x13,x5,#0,eq\nb.eq found\nnext:\nadd w9,w9,#1\nand w9,w9,#65535\nsubs w10,w10,#1\nb.ne probe\nb miss\nempty:\ncbz w3,miss\ncmp w2,#5\nb.le miss\nstp x4,x5,[x11]\nfound:\ncbz w3,read\nstr w2,[x11,#16]\nldp q0,q1,[x1]\nldr x12,[x1,#32]\nstur q0,[x11,#20]\nstur q1,[x11,#36]\nstr x12,[x11,#52]\nmov w0,w2\nb release\nread:\nldr w0,[x11,#16]\nldur q0,[x11,#20]\nldur q1,[x11,#36]\nldr x12,[x11,#52]\nstp q0,q1,[x1]\nstr x12,[x1,#32]\nb release\nmiss:\nmov w0,#-1\nrelease:\nstlr wzr,[x6]\nret\n\n\n.align 3\n\n\n.align 3\nstate: .quad 6004685886959124480",
+      "code": "\n// x0 common player, x1 40-byte IDs, w2 count, w3 0 read / 1 write.\n// A short native lock protects publication and the entire snapshot copy.\nldr x6,state\nacquire:\nldaxr w7,[x6]\ncbnz w7,acquire\nmov w7,#1\nstxr w8,w7,[x6]\ncbnz w8,acquire\nldp x4,x5,[x0,#8]\neor x9,x4,x4,lsr #32\neor x9,x9,x5\neor x9,x9,x5,lsr #32\nand w9,w9,#65535\nmov w10,#65536\nprobe:\nadd x11,x6,#64\nadd x11,x11,x9,lsl #6\nldp x12,x13,[x11]\ncbz x12,empty\ncmp x12,x4\nccmp x13,x5,#0,eq\nb.eq found\nnext:\nadd w9,w9,#1\nand w9,w9,#65535\nsubs w10,w10,#1\nb.ne probe\nb miss\nempty:\ncbz w3,miss\ncmp w2,#5\nb.le miss\nstp x4,x5,[x11]\nfound:\ncbz w3,read\nstr w2,[x11,#16]\nldp q0,q1,[x1]\nldr x12,[x1,#32]\nstur q0,[x11,#20]\nstur q1,[x11,#36]\nstr x12,[x11,#52]\nmov w0,w2\nb release\nread:\nldr w0,[x11,#16]\nldur q0,[x11,#20]\nldur q1,[x11,#36]\nldr x12,[x11,#52]\nstp q0,q1,[x1]\nstr x12,[x1,#32]\nb release\nmiss:\nmov w0,#-1\nrelease:\nstlr wzr,[x6]\nret\n",
+      "functions": {},
+      "constants": {},
+      "deferred_shared_refs": [],
+      "writable": {
+        "state": 4194368
+      },
+      "writable_fixups": [
+        [
+          192,
+          4194368
+        ]
+      ],
+      "evidence": []
+    },
+    {
+      "name": "skill_widget_assign",
+      "body_hex": "f353bca9f55b01a9f77b02a9f30300aaf403012af50302aa77220091f60317aae80240f9880100b4092140b99f02096bc0000054f60308aa1721009117b1979ae80240f9f8ffff17151500f9e00308aa17000014000680525003005800023fd6e90300aa3f7d00a9360900f9342100b9351500f9e90200f9680240f9080140f9480000b4680200f9f50309aa600640f9e10309aab001005800023fd6680a40f908050091680a00f9e00315aaf77b42a9f55b41a9f353c4a8c0035fd61f2003d5d0bbc108000000008c6ef40200000000",
+      "absolute_fixups": [
+        [
+          192,
+          146914256
+        ],
+        [
+          200,
+          49573516
+        ]
+      ],
+      "assembly": "\n// x0 libc++ map begin/header, w1 row index, x2 widget. Return node.\nstp x19,x20,[sp,#-64]!\nstp x21,x22,[sp,#16]\nstp x23,x30,[sp,#32]\nmov x19,x0\nmov w20,w1\nmov x21,x2\nadd x23,x19,#8\nmov x22,x23\nldr x8,[x23]\nsearch:\ncbz x8,insert\nldr w9,[x8,#32]\ncmp w20,w9\nb.eq existing\nmov x22,x8\nadd x23,x8,#8\ncsel x23,x8,x23,lt\nldr x8,[x23]\nb search\nexisting:\nstr x21,[x8,#40]\nmov x0,x8\nb done\ninsert:\nmov w0,#48\nldr x16,allocate\nblr x16\nmov x9,x0\nstp xzr,xzr,[x9]\nstr x22,[x9,#16]\nstr w20,[x9,#32]\nstr x21,[x9,#40]\nstr x9,[x23]\nldr x8,[x19]\nldr x8,[x8]\ncbz x8,begin_ready\nstr x8,[x19]\nbegin_ready:\nmov x21,x9\nldr x0,[x19,#8]\nmov x1,x9\nldr x16,balance\nblr x16\nldr x8,[x19,#16]\nadd x8,x8,#1\nstr x8,[x19,#16]\nmov x0,x21\ndone:\nldp x23,x30,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#64\nret\n\n\n.align 3\nallocate: .quad 146914256\nbalance: .quad 49573516\n\n.align 3\n",
+      "code": "\n// x0 libc++ map begin/header, w1 row index, x2 widget. Return node.\nstp x19,x20,[sp,#-64]!\nstp x21,x22,[sp,#16]\nstp x23,x30,[sp,#32]\nmov x19,x0\nmov w20,w1\nmov x21,x2\nadd x23,x19,#8\nmov x22,x23\nldr x8,[x23]\nsearch:\ncbz x8,insert\nldr w9,[x8,#32]\ncmp w20,w9\nb.eq existing\nmov x22,x8\nadd x23,x8,#8\ncsel x23,x8,x23,lt\nldr x8,[x23]\nb search\nexisting:\nstr x21,[x8,#40]\nmov x0,x8\nb done\ninsert:\nmov w0,#48\nldr x16,allocate\nblr x16\nmov x9,x0\nstp xzr,xzr,[x9]\nstr x22,[x9,#16]\nstr w20,[x9,#32]\nstr x21,[x9,#40]\nstr x9,[x23]\nldr x8,[x19]\nldr x8,[x8]\ncbz x8,begin_ready\nstr x8,[x19]\nbegin_ready:\nmov x21,x9\nldr x0,[x19,#8]\nmov x1,x9\nldr x16,balance\nblr x16\nldr x8,[x19,#16]\nadd x8,x8,#1\nstr x8,[x19,#16]\nmov x0,x21\ndone:\nldp x23,x30,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#64\nret\n",
+      "functions": {
+        "allocate": 146914256,
+        "balance": 49573516
+      },
+      "constants": {},
+      "deferred_shared_refs": [],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": []
+    },
+    {
+      "name": "skill_widget_find",
+      "body_hex": "080440f9480100b4092140b93f00096ba00000540a2100910ab18a9a480140f9f9ffff17001540f9c0035fd6e0031faac0035fd61f2003d5",
+      "absolute_fixups": [],
+      "assembly": "\n// x0 map begin/header, w1 index. Return widget, or null without mutation.\nldr x8,[x0,#8]\nsearch:\ncbz x8,missing\nldr w9,[x8,#32]\ncmp w1,w9\nb.eq found\nadd x10,x8,#8\ncsel x10,x8,x10,lt\nldr x8,[x10]\nb search\nfound:\nldr x0,[x8,#40]\nret\nmissing:\nmov x0,xzr\nret\n\n\n.align 3\n\n\n.align 3\n",
+      "code": "\n// x0 map begin/header, w1 index. Return widget, or null without mutation.\nldr x8,[x0,#8]\nsearch:\ncbz x8,missing\nldr w9,[x8,#32]\ncmp w1,w9\nb.eq found\nadd x10,x8,#8\ncsel x10,x8,x10,lt\nldr x8,[x10]\nb search\nfound:\nldr x0,[x8,#40]\nret\nmissing:\nmov x0,xzr\nret\n",
+      "functions": {},
+      "constants": {},
+      "deferred_shared_refs": [],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": []
+    },
+    {
+      "name": "skill_widget_create_ten",
+      "body_hex": "f353bda9f57b01a9f30300aaf40301aa35008052e00313aae10314aaf001005800023fd6e20300aae103152a086b82526002088b07000094b5060011bf2e0071a1feff54f57b41a9f353c3a8c0035fd6e0ff21d41f2003d53424050300000000",
+      "absolute_fixups": [
+        [
+          88,
+          50668596
+        ]
+      ],
+      "assembly": "\nstp x19,x20,[sp,#-48]!\nstp x21,x30,[sp,#16]\nmov x19,x0\nmov x20,x1\nmov w21,#1\nloop:\nmov x0,x19\nmov x1,x20\nldr x16,create\nblr x16\nmov x2,x0\nmov w1,w21\nmov w8,#0x1358\nadd x0,x19,x8\nbl shared_skill_widget_assign\nadd w21,w21,#1\ncmp w21,#11\nb.ne loop\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#48\nret\n\nshared_skill_widget_assign: brk #4095\n.align 3\ncreate: .quad 50668596\n\n.align 3\n",
+      "code": "\nstp x19,x20,[sp,#-48]!\nstp x21,x30,[sp,#16]\nmov x19,x0\nmov x20,x1\nmov w21,#1\nloop:\nmov x0,x19\nmov x1,x20\nldr x16,create\nblr x16\nmov x2,x0\nmov w1,w21\nmov w8,#0x1358\nadd x0,x19,x8\nbl shared_skill_widget_assign\nadd w21,w21,#1\ncmp w21,#11\nb.ne loop\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#48\nret\n",
+      "functions": {
+        "create": 50668596
+      },
+      "constants": {},
+      "deferred_shared_refs": [
+        "shared_skill_widget_assign"
+      ],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": []
+    },
+    {
+      "name": "skill_widget_fill_ten",
+      "body_hex": "f353bba9f55b01a9f76302a9f97b03a9f30300aaf40301aaf50302aa960a40b9a80a40b9df02086bd6d2881adf2a007148018052d6d2881a086b82526002088b0100805224000094600100b4f80300aae00313aac10080521004005800023fd6e103002ae00318aa22008052b003005800023fd617008052df0600712b020054086b82526002088be106001112000094200100b4880240f90151378ba80240f9085977b81f290171e2079f1af001005800023fd6f7060011ff02166b2bfeff54f97b43a9f76342a9f55b41a9f353c5a8c0035fd6e0ff21d414b7050300000000f0680403000000000871040300000000",
+      "absolute_fixups": [
+        [
+          216,
+          50706196
+        ],
+        [
+          224,
+          50620656
+        ],
+        [
+          232,
+          50622728
+        ]
+      ],
+      "assembly": "\nstp x19,x20,[sp,#-80]!\nstp x21,x22,[sp,#16]\nstp x23,x24,[sp,#32]\nstp x25,x30,[sp,#48]\nmov x19,x0\nmov x20,x1\nmov x21,x2\nldr w22,[x20,#8]\nldr w8,[x21,#8]\ncmp w22,w8\ncsel w22,w22,w8,le\ncmp w22,#10\nmov w8,#10\ncsel w22,w22,w8,le\nmov w8,#0x1358\nadd x0,x19,x8\nmov w1,#0\nbl shared_skill_widget_find\ncbz x0,rows\nmov x24,x0\nmov x0,x19\nmov w1,#6\nldr x16,heading\nblr x16\nmov w1,w0\nmov x0,x24\nmov w2,#1\nldr x16,set_heading\nblr x16\nrows:\nmov w23,#0\ncmp w22,#1\nb.lt done\nloop:\nmov w8,#0x1358\nadd x0,x19,x8\nadd w1,w23,#1\nbl shared_skill_widget_find\ncbz x0,next\nldr x8,[x20]\nadd x1,x8,w23,uxtw #4\nldr x8,[x21]\nldr w8,[x8,w23,uxtw #2]\ncmp w8,#74\ncset w2,ne\nldr x16,set_row\nblr x16\nnext:\nadd w23,w23,#1\ncmp w23,w22\nb.lt loop\ndone:\nldp x25,x30,[sp,#48]\nldp x23,x24,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#80\nret\n\nshared_skill_widget_find: brk #4095\n.align 3\nheading: .quad 50706196\nset_heading: .quad 50620656\nset_row: .quad 50622728\n\n.align 3\n",
+      "code": "\nstp x19,x20,[sp,#-80]!\nstp x21,x22,[sp,#16]\nstp x23,x24,[sp,#32]\nstp x25,x30,[sp,#48]\nmov x19,x0\nmov x20,x1\nmov x21,x2\nldr w22,[x20,#8]\nldr w8,[x21,#8]\ncmp w22,w8\ncsel w22,w22,w8,le\ncmp w22,#10\nmov w8,#10\ncsel w22,w22,w8,le\nmov w8,#0x1358\nadd x0,x19,x8\nmov w1,#0\nbl shared_skill_widget_find\ncbz x0,rows\nmov x24,x0\nmov x0,x19\nmov w1,#6\nldr x16,heading\nblr x16\nmov w1,w0\nmov x0,x24\nmov w2,#1\nldr x16,set_heading\nblr x16\nrows:\nmov w23,#0\ncmp w22,#1\nb.lt done\nloop:\nmov w8,#0x1358\nadd x0,x19,x8\nadd w1,w23,#1\nbl shared_skill_widget_find\ncbz x0,next\nldr x8,[x20]\nadd x1,x8,w23,uxtw #4\nldr x8,[x21]\nldr w8,[x8,w23,uxtw #2]\ncmp w8,#74\ncset w2,ne\nldr x16,set_row\nblr x16\nnext:\nadd w23,w23,#1\ncmp w23,w22\nb.lt loop\ndone:\nldp x25,x30,[sp,#48]\nldp x23,x24,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#80\nret\n",
+      "functions": {
+        "heading": 50706196,
+        "set_heading": 50620656,
+        "set_row": 50622728
+      },
+      "constants": {},
+      "deferred_shared_refs": [
+        "shared_skill_widget_find"
+      ],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": []
+    }
+  ],
+  "bundles": [
+    {
+      "name": "studio_skill_capacity",
+      "body_hex": "ff830cd1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f24f09a9f4570aa9f65f0ba9f8670ca9fa6f0da9fc770ea9fe7b00f9e00708ade20f09ade4170aade61f0bade8270cadea2f0dadec370eadee3f0fadf04710adf24f11adf45712adf65f13adf86714adfa6f15adfc7716adfe7f17ad11423bd5f18301f9ff0301d14809805209008052e85b29b8290500113f290071a1ffff546aae4da96b010acb6bfd42d37f2900f14c0180d26b318c9a090080522b0100b4487969b81f3901714c09805208918c1ae87b29b8290500913f010beb23ffff54e82740a9ea1340b9884206f889c206f88a7600b9e00314aae1030091e2030b2a23008052e7020094ff030191f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c91d073005800021fd6ff0301d1ff4303d19073005800021fd6ff4304917073005800021fd61f2003d5ff830cd1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f24f09a9f4570aa9f65f0ba9f8670ca9fa6f0da9fc770ea9fe7b00f9e00708ade20f09ade4170aade61f0bade8270cadea2f0dadec370eadee3f0fadf04710adf24f11adf45712adf65f13adf86714adfa6f15adfc7716adfe7f17ad11423bd5f18301f9a0c20091e1c30f910300805292020094e02304b91f140071ad000054e8c30f910949208be8a70da904000014a8520291a9a20291e8a70da9f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c91d068005800021fd6ea0341b95f150071aa0080524d0000544a0180523068005800021fd61f2003d5ff0301d1ff830cd1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f24f09a9f4570aa9f65f0ba9f8670ca9fa6f0da9fc770ea9fe7b00f9e00708ade20f09ade4170aade61f0bade8270cadea2f0dadec370eadee3f0fadf04710adf24f11adf45712adf65f13adf86714adfa6f15adfc7716adfe7f17ad11423bd5f18301f9a0c20091e1830c9103008052330200941f140071ad0a005409008052e8830c91085969b81f01166b40050054290500113f01006b43ffff54f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c91ff030191505d005800021fd6f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c91ff030191d058005800021fd6f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c91ff030191a82241b93054005800021fd61f2003d5ff0301d1ff830cd1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f24f09a9f4570aa9f65f0ba9f8670ca9fa6f0da9fc770ea9fe7b00f9e00708ade20f09ade4170aade61f0bade8270cadea2f0dadec370eadee3f0fadf04710adf24f11adf45712adf65f13adf86714adfa6f15adfc7716adfe7f17ad11423bd5f18301f960c20091e1830c91030080528d0100941f1400712d050054e803004be82300f9f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c91ff030191104a005800021fd6f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c91ff030191682241b97045005800021fd61f2003d51f5100713045005800021fd61f2003d51f510071f044005800021fd61f2003d5ff0301d1ff830cd1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f24f09a9f4570aa9f65f0ba9f8670ca9fa6f0da9fc770ea9fe7b00f9e00708ade20f09ade4170aade61f0bade8270cadea2f0dadec370eadee3f0fadf04710adf24f11adf45712adf65f13adf86714adfa6f15adfc7716adfe7f17ad11423bd5f18301f9e00313aa3040005800023fd6000600b400c00091e1830c9103008052070100941f1400714d050054e00313aae10314aa70010094f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c91ff030191f03a005800021fd6f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c91ff030191b035005800023fd6b035005800021fd61f2003d51f1500712d0a00541f290071ac090054ff830cd1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f24f09a9f4570aa9f65f0ba9f8670ca9fa6f0da9fc770ea9fe7b00f9e00708ade20f09ade4170aade61f0bade8270cadea2f0dadec370eadee3f0fadf04710adf24f11adf45712adf65f13adf86714adfa6f15adfc7716adfe7f17ad11423bd5f18301f9e00313aae10315aae20314aa0a010094f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c91102c005800021fd6d02b005800021fd61f150071b02b005800021fd61f2003d568f252b91f150071ed0a0054ff830cd1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f24f09a9f4570aa9f65f0ba9f8670ca9fa6f0da9fc770ea9fe7b00f9e00708ade20f09ade4170aade61f0bade8270cadea2f0dadec370eadee3f0fadf04710adf24f11adf45712adf65f13adf86714adfa6f15adfc7716adfe7f17ad11423bd5f18301f9180080d279f252b93f2b00714801805239d3881a687649f9027978b8e00313aae10314aab025005800023fd6180700911f0319eb0bffff54f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c91f020005800021fd6f020005800021fd61f2003d506220058c7fc5f88e7ffff3527008052c77c088888ffff35049440a9898044ca290105ca298145ca293d00122a00a052cb0001916b19098b6c3540a92c0100b49f0104eba00145fa4001005429050011293d00124a050071c1feff5415000014830200345f1400714d020054641500a923010034621100b9200440ad2c1040f96041813c6141823c6c4103f8e003022a09000014601140b96041c13c6141c23c6c4143f8200400ad2c1000f90200001400008012dffc9f88c0035fd61f2003d5f353bca9f55b01a9f77b02a9f30300aaf403012af50302aa77220091f60317aae80240f9880100b4092140b99f02096bc0000054f60308aa1721009117b1979ae80240f9f8ffff17151500f9e00308aa17000014000680521018005800023fd6e90300aa3f7d00a9360900f9342100b9351500f9e90200f9680240f9080140f9480000b4680200f9f50309aa600640f9e10309aa7016005800023fd6680a40f908050091680a00f9e00315aaf77b42a9f55b41a9f353c4a8c0035fd61f2003d5080440f9480100b4092140b93f00096ba00000540a2100910ab18a9a480140f9f9ffff17001540f9c0035fd6e0031faac0035fd61f2003d5f353bda9f57b01a9f30300aaf40301aa35008052e00313aae10314aa3010005800023fd6e20300aae103152a086b82526002088bb5ffff97b5060011bf2e0071a1feff54f57b41a9f353c3a8c0035fd6f353bba9f55b01a9f76302a9f97b03a9f30300aaf40301aaf50302aa960a40b9a80a40b9df02086bd6d2881adf2a007148018052d6d2881a086b82526002088b01008052cdffff97600100b4f80300aae00313aac1008052500e005800023fd6e103002ae00318aa22008052f00d005800023fd617008052df0600712b020054086b82526002088be1060011bbffff97200100b4880240f90151378ba80240f9085977b81f290171e2079f1a300c005800023fd6f7060011ff02166b2bfeff54f97b43a9f76342a9f55b41a9f353c5a8c0035fd61f2003d5324d4f49445554530000000000000000a801000000000000b801000000000000c80100000000000020030000000000004003000000000000d805000000000000c007000000000000d007000000000000e007000000000000e009000000000000380b000000000000a80c000000000000680d000000000000280e000000000000600e000000000000b00e0000000000008c6365070000000070a637070000000098ac370700000000b4a637070000000088a937070000000080a337070000000010a337070000000054a33707000000000cb7370700000000b0b63707000000009815050300000000d457f4020000000080b4020300000000342405030000000010bb04030000000070be0403000000008c2005030000000020190503000000001cb50f0300000000b0b10f0300000000e0b00f0300000000d0bbc108000000008c6ef4020000000014b7050300000000f06804030000000008710403000000000000000000ee5453",
+      "absolute_fixups": [
+        [
+          4120,
+          124085132
+        ],
+        [
+          4128,
+          121087600
+        ],
+        [
+          4136,
+          121089176
+        ],
+        [
+          4144,
+          121087668
+        ],
+        [
+          4152,
+          121088392
+        ],
+        [
+          4160,
+          121086848
+        ],
+        [
+          4168,
+          121086736
+        ],
+        [
+          4176,
+          121086804
+        ],
+        [
+          4184,
+          121091852
+        ],
+        [
+          4192,
+          121091760
+        ],
+        [
+          4200,
+          50664856
+        ],
+        [
+          4208,
+          49567700
+        ],
+        [
+          4216,
+          50508928
+        ],
+        [
+          4224,
+          50668596
+        ],
+        [
+          4232,
+          50641680
+        ],
+        [
+          4240,
+          50642544
+        ],
+        [
+          4248,
+          50667660
+        ],
+        [
+          4256,
+          50665760
+        ],
+        [
+          4264,
+          51361052
+        ],
+        [
+          4272,
+          51360176
+        ],
+        [
+          4280,
+          51359968
+        ],
+        [
+          4288,
+          146914256
+        ],
+        [
+          4296,
+          49573516
+        ],
+        [
+          4304,
+          50706196
+        ],
+        [
+          4312,
+          50620656
+        ],
+        [
+          4320,
+          50622728
+        ]
+      ],
+      "assembly": "entry_skill_capacity_transport:\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nsub sp,sp,#64\nmov w8,#74\nmov w9,#0\nlocal_0_fill:\nstr w8,[sp,w9,uxtw #2]\nadd w9,w9,#1\ncmp w9,#10\nb.ne local_0_fill\nldp x10,x11,[x19,#0xd8]\nsub x11,x11,x10\nlsr x11,x11,#2\ncmp x11,#10\nmov x12,#10\ncsel x11,x11,x12,lo\nmov w9,#0\ncbz x11,local_0_copy_inline\nlocal_0_copy_input:\nldr w8,[x10,x9,lsl #2]\ncmp w8,#78\nmov w12,#74\ncsel w8,w8,w12,ls\nstr w8,[sp,x9,lsl #2]\nadd x9,x9,#1\ncmp x9,x11\nb.lo local_0_copy_input\nlocal_0_copy_inline:\nldp x8,x9,[sp]\nldr w10,[sp,#16]\nstur x8,[x20,#0x64]\nstur x9,[x20,#0x6c]\nstr w10,[x20,#0x74]\nmov x0,x20\nmov x1,sp\nmov w2,w11\nmov w3,#1\nbl shared_skill_capacity_cache\nadd sp,sp,#64\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nldr x16,native_765638c\nbr x16\n.align 3\n\nentry_skill_capacity_list_frame:\nsub sp,sp,#64\nsub sp,sp,#0xd0\nldr x16,native_737a670\nbr x16\n.align 3\n\nentry_skill_capacity_list_return:\nadd sp,sp,#0x110\nldr x16,native_737ac98\nbr x16\n.align 3\n\nentry_skill_capacity_list_snapshot:\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nadd x0,x21,#0x30\nadd x1,sp,#1008\nmov w3,#0\nbl shared_skill_capacity_cache\nstr w0,[sp,#1056]\ncmp w0,#5\nb.le local_3_original\nadd x8,sp,#1008\nadd x9,x8,w0,uxtw #2\nstp x8,x9,[sp,#216]\nb local_3_done\nlocal_3_original:\nadd x8,x21,#0x94\nadd x9,x21,#0xa8\nstp x8,x9,[sp,#216]\nlocal_3_done:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nldr x16,native_737a6b4\nbr x16\n.align 3\n\nentry_skill_capacity_list_padding:\n\nldr w10,[sp,#0x100]\ncmp w10,#5\nmov w10,#5\nb.le local_4_done\nmov w10,#10\nlocal_4_done:\nldr x16,native_737a988\nbr x16\n.align 3\n\nentry_skill_capacity_innate_filter:\nsub sp,sp,#64\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nadd x0,x21,#0x30\nadd x1,sp,#800\nmov w3,#0\nbl shared_skill_capacity_cache\ncmp w0,#5\nb.le local_5_original\nmov w9,#0\nlocal_5_scan:\nadd x8,sp,#800\nldr w8,[x8,w9,uxtw #2]\ncmp w8,w22\nb.eq local_5_excluded\nadd w9,w9,#1\ncmp w9,w0\nb.lo local_5_scan\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr x16,native_737a380\nbr x16\nlocal_5_excluded:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr x16,native_737a310\nbr x16\nlocal_5_original:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr w8,[x21,#0x120]\nldr x16,native_737a354\nbr x16\n.align 3\n\nentry_skill_capacity_innate_count:\nsub sp,sp,#64\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nadd x0,x19,#0x30\nadd x1,sp,#800\nmov w3,#0\nbl shared_skill_capacity_cache\ncmp w0,#5\nb.le local_6_original\nneg w8,w0\nstr x8,[sp,#64]\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr x16,native_737b70c\nbr x16\nlocal_6_original:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr w8,[x19,#0x120]\nldr x16,native_737b6b0\nbr x16\n.align 3\n\nentry_skill_widget_owned_innate_bound:\ncmp w8,#20\nldr x16,native_3051598\nbr x16\n.align 3\n\nentry_skill_widget_library_innate_bound:\ncmp w8,#20\nldr x16,native_2f457d4\nbr x16\n.align 3\n\nentry_skill_widget_additional_creation:\nsub sp,sp,#64\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nmov x0,x19\nldr x16,native_302b480\nblr x16\ncbz x0,local_9_original\nadd x0,x0,#0x30\nadd x1,sp,#800\nmov w3,#0\nbl shared_skill_capacity_cache\ncmp w0,#5\nb.le local_9_original\nmov x0,x19\nmov x1,x20\nbl shared_skill_widget_create_ten\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr x16,native_304be70\nbr x16\nlocal_9_original:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr x16,native_3052434\nblr x16\nldr x16,native_304bb10\nbr x16\n.align 3\n\nentry_skill_widget_additional_display:\n\ncmp w8,#5\nb.le local_10_original\ncmp w8,#10\nb.gt local_10_invalid\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nmov x0,x19\nmov x1,x21\nmov x2,x20\nbl shared_skill_widget_fill_ten\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nldr x16,native_305208c\nbr x16\nlocal_10_invalid:\nldr x16,native_305208c\nbr x16\nlocal_10_original:\ncmp w8,#5\nldr x16,native_3051920\nbr x16\n.align 3\n\nentry_skill_widget_additional_modal:\n\nldr w8,[x19,#0x12f0]\ncmp w8,#5\nb.le local_11_original\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nmov x24,#0\nldr w25,[x19,#0x12f0]\ncmp w25,#10\nmov w8,#10\ncsel w25,w25,w8,le\nlocal_11_loop:\nldr x8,[x19,#0x12e8]\nldr w2,[x8,x24,lsl #2]\nmov x0,x19\nmov x1,x20\nldr x16,native_30fb51c\nblr x16\nadd x24,x24,#1\ncmp x24,x25\nb.lt local_11_loop\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nldr x16,native_30fb1b0\nbr x16\nlocal_11_original:\nldr x16,native_30fb0e0\nbr x16\n.align 3\n\nshared_skill_capacity_cache:\n\n// x0 common player, x1 40-byte IDs, w2 count, w3 0 local_12_read / 1 write.\n// A short native lock protects publication and the entire snapshot copy.\nldr x6,data_12_state\nlocal_12_acquire:\nldaxr w7,[x6]\ncbnz w7,local_12_acquire\nmov w7,#1\nstxr w8,w7,[x6]\ncbnz w8,local_12_acquire\nldp x4,x5,[x0,#8]\neor x9,x4,x4,lsr #32\neor x9,x9,x5\neor x9,x9,x5,lsr #32\nand w9,w9,#65535\nmov w10,#65536\nlocal_12_probe:\nadd x11,x6,#64\nadd x11,x11,x9,lsl #6\nldp x12,x13,[x11]\ncbz x12,local_12_empty\ncmp x12,x4\nccmp x13,x5,#0,eq\nb.eq local_12_found\nlocal_12_next:\nadd w9,w9,#1\nand w9,w9,#65535\nsubs w10,w10,#1\nb.ne local_12_probe\nb local_12_miss\nlocal_12_empty:\ncbz w3,local_12_miss\ncmp w2,#5\nb.le local_12_miss\nstp x4,x5,[x11]\nlocal_12_found:\ncbz w3,local_12_read\nstr w2,[x11,#16]\nldp q0,q1,[x1]\nldr x12,[x1,#32]\nstur q0,[x11,#20]\nstur q1,[x11,#36]\nstr x12,[x11,#52]\nmov w0,w2\nb local_12_release\nlocal_12_read:\nldr w0,[x11,#16]\nldur q0,[x11,#20]\nldur q1,[x11,#36]\nldr x12,[x11,#52]\nstp q0,q1,[x1]\nstr x12,[x1,#32]\nb local_12_release\nlocal_12_miss:\nmov w0,#-1\nlocal_12_release:\nstlr wzr,[x6]\nret\n\n.align 3\n\nshared_skill_widget_assign:\n\n// x0 libc++ map begin/header, w1 row index, x2 widget. Return node.\nstp x19,x20,[sp,#-64]!\nstp x21,x22,[sp,#16]\nstp x23,x30,[sp,#32]\nmov x19,x0\nmov w20,w1\nmov x21,x2\nadd x23,x19,#8\nmov x22,x23\nldr x8,[x23]\nlocal_13_search:\ncbz x8,local_13_insert\nldr w9,[x8,#32]\ncmp w20,w9\nb.eq local_13_existing\nmov x22,x8\nadd x23,x8,#8\ncsel x23,x8,x23,lt\nldr x8,[x23]\nb local_13_search\nlocal_13_existing:\nstr x21,[x8,#40]\nmov x0,x8\nb local_13_done\nlocal_13_insert:\nmov w0,#48\nldr x16,native_8c1bbd0\nblr x16\nmov x9,x0\nstp xzr,xzr,[x9]\nstr x22,[x9,#16]\nstr w20,[x9,#32]\nstr x21,[x9,#40]\nstr x9,[x23]\nldr x8,[x19]\nldr x8,[x8]\ncbz x8,local_13_begin_ready\nstr x8,[x19]\nlocal_13_begin_ready:\nmov x21,x9\nldr x0,[x19,#8]\nmov x1,x9\nldr x16,native_2f46e8c\nblr x16\nldr x8,[x19,#16]\nadd x8,x8,#1\nstr x8,[x19,#16]\nmov x0,x21\nlocal_13_done:\nldp x23,x30,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#64\nret\n\n.align 3\n\nshared_skill_widget_find:\n\n// x0 map begin/header, w1 index. Return widget, or null without mutation.\nldr x8,[x0,#8]\nlocal_14_search:\ncbz x8,local_14_missing\nldr w9,[x8,#32]\ncmp w1,w9\nb.eq local_14_found\nadd x10,x8,#8\ncsel x10,x8,x10,lt\nldr x8,[x10]\nb local_14_search\nlocal_14_found:\nldr x0,[x8,#40]\nret\nlocal_14_missing:\nmov x0,xzr\nret\n\n.align 3\n\nshared_skill_widget_create_ten:\n\nstp x19,x20,[sp,#-48]!\nstp x21,x30,[sp,#16]\nmov x19,x0\nmov x20,x1\nmov w21,#1\nlocal_15_loop:\nmov x0,x19\nmov x1,x20\nldr x16,native_3052434\nblr x16\nmov x2,x0\nmov w1,w21\nmov w8,#0x1358\nadd x0,x19,x8\nbl shared_skill_widget_assign\nadd w21,w21,#1\ncmp w21,#11\nb.ne local_15_loop\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#48\nret\n\n.align 3\n\nshared_skill_widget_fill_ten:\n\nstp x19,x20,[sp,#-80]!\nstp x21,x22,[sp,#16]\nstp x23,x24,[sp,#32]\nstp x25,x30,[sp,#48]\nmov x19,x0\nmov x20,x1\nmov x21,x2\nldr w22,[x20,#8]\nldr w8,[x21,#8]\ncmp w22,w8\ncsel w22,w22,w8,le\ncmp w22,#10\nmov w8,#10\ncsel w22,w22,w8,le\nmov w8,#0x1358\nadd x0,x19,x8\nmov w1,#0\nbl shared_skill_widget_find\ncbz x0,local_16_rows\nmov x24,x0\nmov x0,x19\nmov w1,#6\nldr x16,native_305b714\nblr x16\nmov w1,w0\nmov x0,x24\nmov w2,#1\nldr x16,native_30468f0\nblr x16\nlocal_16_rows:\nmov w23,#0\ncmp w22,#1\nb.lt local_16_done\nlocal_16_loop:\nmov w8,#0x1358\nadd x0,x19,x8\nadd w1,w23,#1\nbl shared_skill_widget_find\ncbz x0,local_16_next\nldr x8,[x20]\nadd x1,x8,w23,uxtw #4\nldr x8,[x21]\nldr w8,[x8,w23,uxtw #2]\ncmp w8,#74\ncset w2,ne\nldr x16,native_3047108\nblr x16\nlocal_16_next:\nadd w23,w23,#1\ncmp w23,w22\nb.lt local_16_loop\nlocal_16_done:\nldp x25,x30,[sp,#48]\nldp x23,x24,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#80\nret\n\n.align 3\n\n.quad 6004517954967784754\n.quad entry_skill_capacity_transport\n.quad entry_skill_capacity_list_frame\n.quad entry_skill_capacity_list_return\n.quad entry_skill_capacity_list_snapshot\n.quad entry_skill_capacity_list_padding\n.quad entry_skill_capacity_innate_filter\n.quad entry_skill_capacity_innate_count\n.quad entry_skill_widget_owned_innate_bound\n.quad entry_skill_widget_library_innate_bound\n.quad entry_skill_widget_additional_creation\n.quad entry_skill_widget_additional_display\n.quad entry_skill_widget_additional_modal\n.quad shared_skill_capacity_cache\n.quad shared_skill_widget_assign\n.quad shared_skill_widget_find\n.quad shared_skill_widget_create_ten\n.quad shared_skill_widget_fill_ten\n\n.align 3\nnative_765638c: .quad 124085132\nnative_737a670: .quad 121087600\nnative_737ac98: .quad 121089176\nnative_737a6b4: .quad 121087668\nnative_737a988: .quad 121088392\nnative_737a380: .quad 121086848\nnative_737a310: .quad 121086736\nnative_737a354: .quad 121086804\nnative_737b70c: .quad 121091852\nnative_737b6b0: .quad 121091760\nnative_3051598: .quad 50664856\nnative_2f457d4: .quad 49567700\nnative_302b480: .quad 50508928\nnative_3052434: .quad 50668596\nnative_304bb10: .quad 50641680\nnative_304be70: .quad 50642544\nnative_305208c: .quad 50667660\nnative_3051920: .quad 50665760\nnative_30fb51c: .quad 51361052\nnative_30fb1b0: .quad 51360176\nnative_30fb0e0: .quad 51359968\nnative_8c1bbd0: .quad 146914256\nnative_2f46e8c: .quad 49573516\nnative_305b714: .quad 50706196\nnative_30468f0: .quad 50620656\nnative_3047108: .quad 50622728\n\n.align 3\ndata_12_state: .quad 6004685886959124480",
+      "code": "entry_skill_capacity_transport:\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nsub sp,sp,#64\nmov w8,#74\nmov w9,#0\nlocal_0_fill:\nstr w8,[sp,w9,uxtw #2]\nadd w9,w9,#1\ncmp w9,#10\nb.ne local_0_fill\nldp x10,x11,[x19,#0xd8]\nsub x11,x11,x10\nlsr x11,x11,#2\ncmp x11,#10\nmov x12,#10\ncsel x11,x11,x12,lo\nmov w9,#0\ncbz x11,local_0_copy_inline\nlocal_0_copy_input:\nldr w8,[x10,x9,lsl #2]\ncmp w8,#78\nmov w12,#74\ncsel w8,w8,w12,ls\nstr w8,[sp,x9,lsl #2]\nadd x9,x9,#1\ncmp x9,x11\nb.lo local_0_copy_input\nlocal_0_copy_inline:\nldp x8,x9,[sp]\nldr w10,[sp,#16]\nstur x8,[x20,#0x64]\nstur x9,[x20,#0x6c]\nstr w10,[x20,#0x74]\nmov x0,x20\nmov x1,sp\nmov w2,w11\nmov w3,#1\nbl shared_skill_capacity_cache\nadd sp,sp,#64\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nldr x16,native_765638c\nbr x16\n.align 3\n\nentry_skill_capacity_list_frame:\nsub sp,sp,#64\nsub sp,sp,#0xd0\nldr x16,native_737a670\nbr x16\n.align 3\n\nentry_skill_capacity_list_return:\nadd sp,sp,#0x110\nldr x16,native_737ac98\nbr x16\n.align 3\n\nentry_skill_capacity_list_snapshot:\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nadd x0,x21,#0x30\nadd x1,sp,#1008\nmov w3,#0\nbl shared_skill_capacity_cache\nstr w0,[sp,#1056]\ncmp w0,#5\nb.le local_3_original\nadd x8,sp,#1008\nadd x9,x8,w0,uxtw #2\nstp x8,x9,[sp,#216]\nb local_3_done\nlocal_3_original:\nadd x8,x21,#0x94\nadd x9,x21,#0xa8\nstp x8,x9,[sp,#216]\nlocal_3_done:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nldr x16,native_737a6b4\nbr x16\n.align 3\n\nentry_skill_capacity_list_padding:\n\nldr w10,[sp,#0x100]\ncmp w10,#5\nmov w10,#5\nb.le local_4_done\nmov w10,#10\nlocal_4_done:\nldr x16,native_737a988\nbr x16\n.align 3\n\nentry_skill_capacity_innate_filter:\nsub sp,sp,#64\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nadd x0,x21,#0x30\nadd x1,sp,#800\nmov w3,#0\nbl shared_skill_capacity_cache\ncmp w0,#5\nb.le local_5_original\nmov w9,#0\nlocal_5_scan:\nadd x8,sp,#800\nldr w8,[x8,w9,uxtw #2]\ncmp w8,w22\nb.eq local_5_excluded\nadd w9,w9,#1\ncmp w9,w0\nb.lo local_5_scan\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr x16,native_737a380\nbr x16\nlocal_5_excluded:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr x16,native_737a310\nbr x16\nlocal_5_original:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr w8,[x21,#0x120]\nldr x16,native_737a354\nbr x16\n.align 3\n\nentry_skill_capacity_innate_count:\nsub sp,sp,#64\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nadd x0,x19,#0x30\nadd x1,sp,#800\nmov w3,#0\nbl shared_skill_capacity_cache\ncmp w0,#5\nb.le local_6_original\nneg w8,w0\nstr x8,[sp,#64]\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr x16,native_737b70c\nbr x16\nlocal_6_original:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr w8,[x19,#0x120]\nldr x16,native_737b6b0\nbr x16\n.align 3\n\nentry_skill_widget_owned_innate_bound:\ncmp w8,#20\nldr x16,native_3051598\nbr x16\n.align 3\n\nentry_skill_widget_library_innate_bound:\ncmp w8,#20\nldr x16,native_2f457d4\nbr x16\n.align 3\n\nentry_skill_widget_additional_creation:\nsub sp,sp,#64\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nmov x0,x19\nldr x16,native_302b480\nblr x16\ncbz x0,local_9_original\nadd x0,x0,#0x30\nadd x1,sp,#800\nmov w3,#0\nbl shared_skill_capacity_cache\ncmp w0,#5\nb.le local_9_original\nmov x0,x19\nmov x1,x20\nbl shared_skill_widget_create_ten\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr x16,native_304be70\nbr x16\nlocal_9_original:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nadd sp,sp,#64\nldr x16,native_3052434\nblr x16\nldr x16,native_304bb10\nbr x16\n.align 3\n\nentry_skill_widget_additional_display:\n\ncmp w8,#5\nb.le local_10_original\ncmp w8,#10\nb.gt local_10_invalid\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nmov x0,x19\nmov x1,x21\nmov x2,x20\nbl shared_skill_widget_fill_ten\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nldr x16,native_305208c\nbr x16\nlocal_10_invalid:\nldr x16,native_305208c\nbr x16\nlocal_10_original:\ncmp w8,#5\nldr x16,native_3051920\nbr x16\n.align 3\n\nentry_skill_widget_additional_modal:\n\nldr w8,[x19,#0x12f0]\ncmp w8,#5\nb.le local_11_original\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nmov x24,#0\nldr w25,[x19,#0x12f0]\ncmp w25,#10\nmov w8,#10\ncsel w25,w25,w8,le\nlocal_11_loop:\nldr x8,[x19,#0x12e8]\nldr w2,[x8,x24,lsl #2]\nmov x0,x19\nmov x1,x20\nldr x16,native_30fb51c\nblr x16\nadd x24,x24,#1\ncmp x24,x25\nb.lt local_11_loop\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\nldr x16,native_30fb1b0\nbr x16\nlocal_11_original:\nldr x16,native_30fb0e0\nbr x16\n.align 3\n\nshared_skill_capacity_cache:\n\n// x0 common player, x1 40-byte IDs, w2 count, w3 0 local_12_read / 1 write.\n// A short native lock protects publication and the entire snapshot copy.\nldr x6,data_12_state\nlocal_12_acquire:\nldaxr w7,[x6]\ncbnz w7,local_12_acquire\nmov w7,#1\nstxr w8,w7,[x6]\ncbnz w8,local_12_acquire\nldp x4,x5,[x0,#8]\neor x9,x4,x4,lsr #32\neor x9,x9,x5\neor x9,x9,x5,lsr #32\nand w9,w9,#65535\nmov w10,#65536\nlocal_12_probe:\nadd x11,x6,#64\nadd x11,x11,x9,lsl #6\nldp x12,x13,[x11]\ncbz x12,local_12_empty\ncmp x12,x4\nccmp x13,x5,#0,eq\nb.eq local_12_found\nlocal_12_next:\nadd w9,w9,#1\nand w9,w9,#65535\nsubs w10,w10,#1\nb.ne local_12_probe\nb local_12_miss\nlocal_12_empty:\ncbz w3,local_12_miss\ncmp w2,#5\nb.le local_12_miss\nstp x4,x5,[x11]\nlocal_12_found:\ncbz w3,local_12_read\nstr w2,[x11,#16]\nldp q0,q1,[x1]\nldr x12,[x1,#32]\nstur q0,[x11,#20]\nstur q1,[x11,#36]\nstr x12,[x11,#52]\nmov w0,w2\nb local_12_release\nlocal_12_read:\nldr w0,[x11,#16]\nldur q0,[x11,#20]\nldur q1,[x11,#36]\nldr x12,[x11,#52]\nstp q0,q1,[x1]\nstr x12,[x1,#32]\nb local_12_release\nlocal_12_miss:\nmov w0,#-1\nlocal_12_release:\nstlr wzr,[x6]\nret\n\n.align 3\n\nshared_skill_widget_assign:\n\n// x0 libc++ map begin/header, w1 row index, x2 widget. Return node.\nstp x19,x20,[sp,#-64]!\nstp x21,x22,[sp,#16]\nstp x23,x30,[sp,#32]\nmov x19,x0\nmov w20,w1\nmov x21,x2\nadd x23,x19,#8\nmov x22,x23\nldr x8,[x23]\nlocal_13_search:\ncbz x8,local_13_insert\nldr w9,[x8,#32]\ncmp w20,w9\nb.eq local_13_existing\nmov x22,x8\nadd x23,x8,#8\ncsel x23,x8,x23,lt\nldr x8,[x23]\nb local_13_search\nlocal_13_existing:\nstr x21,[x8,#40]\nmov x0,x8\nb local_13_done\nlocal_13_insert:\nmov w0,#48\nldr x16,native_8c1bbd0\nblr x16\nmov x9,x0\nstp xzr,xzr,[x9]\nstr x22,[x9,#16]\nstr w20,[x9,#32]\nstr x21,[x9,#40]\nstr x9,[x23]\nldr x8,[x19]\nldr x8,[x8]\ncbz x8,local_13_begin_ready\nstr x8,[x19]\nlocal_13_begin_ready:\nmov x21,x9\nldr x0,[x19,#8]\nmov x1,x9\nldr x16,native_2f46e8c\nblr x16\nldr x8,[x19,#16]\nadd x8,x8,#1\nstr x8,[x19,#16]\nmov x0,x21\nlocal_13_done:\nldp x23,x30,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#64\nret\n\n.align 3\n\nshared_skill_widget_find:\n\n// x0 map begin/header, w1 index. Return widget, or null without mutation.\nldr x8,[x0,#8]\nlocal_14_search:\ncbz x8,local_14_missing\nldr w9,[x8,#32]\ncmp w1,w9\nb.eq local_14_found\nadd x10,x8,#8\ncsel x10,x8,x10,lt\nldr x8,[x10]\nb local_14_search\nlocal_14_found:\nldr x0,[x8,#40]\nret\nlocal_14_missing:\nmov x0,xzr\nret\n\n.align 3\n\nshared_skill_widget_create_ten:\n\nstp x19,x20,[sp,#-48]!\nstp x21,x30,[sp,#16]\nmov x19,x0\nmov x20,x1\nmov w21,#1\nlocal_15_loop:\nmov x0,x19\nmov x1,x20\nldr x16,native_3052434\nblr x16\nmov x2,x0\nmov w1,w21\nmov w8,#0x1358\nadd x0,x19,x8\nbl shared_skill_widget_assign\nadd w21,w21,#1\ncmp w21,#11\nb.ne local_15_loop\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#48\nret\n\n.align 3\n\nshared_skill_widget_fill_ten:\n\nstp x19,x20,[sp,#-80]!\nstp x21,x22,[sp,#16]\nstp x23,x24,[sp,#32]\nstp x25,x30,[sp,#48]\nmov x19,x0\nmov x20,x1\nmov x21,x2\nldr w22,[x20,#8]\nldr w8,[x21,#8]\ncmp w22,w8\ncsel w22,w22,w8,le\ncmp w22,#10\nmov w8,#10\ncsel w22,w22,w8,le\nmov w8,#0x1358\nadd x0,x19,x8\nmov w1,#0\nbl shared_skill_widget_find\ncbz x0,local_16_rows\nmov x24,x0\nmov x0,x19\nmov w1,#6\nldr x16,native_305b714\nblr x16\nmov w1,w0\nmov x0,x24\nmov w2,#1\nldr x16,native_30468f0\nblr x16\nlocal_16_rows:\nmov w23,#0\ncmp w22,#1\nb.lt local_16_done\nlocal_16_loop:\nmov w8,#0x1358\nadd x0,x19,x8\nadd w1,w23,#1\nbl shared_skill_widget_find\ncbz x0,local_16_next\nldr x8,[x20]\nadd x1,x8,w23,uxtw #4\nldr x8,[x21]\nldr w8,[x8,w23,uxtw #2]\ncmp w8,#74\ncset w2,ne\nldr x16,native_3047108\nblr x16\nlocal_16_next:\nadd w23,w23,#1\ncmp w23,w22\nb.lt local_16_loop\nlocal_16_done:\nldp x25,x30,[sp,#48]\nldp x23,x24,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#80\nret\n\n.align 3\n\n.quad 6004517954967784754\n.quad entry_skill_capacity_transport\n.quad entry_skill_capacity_list_frame\n.quad entry_skill_capacity_list_return\n.quad entry_skill_capacity_list_snapshot\n.quad entry_skill_capacity_list_padding\n.quad entry_skill_capacity_innate_filter\n.quad entry_skill_capacity_innate_count\n.quad entry_skill_widget_owned_innate_bound\n.quad entry_skill_widget_library_innate_bound\n.quad entry_skill_widget_additional_creation\n.quad entry_skill_widget_additional_display\n.quad entry_skill_widget_additional_modal\n.quad shared_skill_capacity_cache\n.quad shared_skill_widget_assign\n.quad shared_skill_widget_find\n.quad shared_skill_widget_create_ten\n.quad shared_skill_widget_fill_ten",
+      "functions": {
+        "native_765638c": 124085132,
+        "native_737a670": 121087600,
+        "native_737ac98": 121089176,
+        "native_737a6b4": 121087668,
+        "native_737a988": 121088392,
+        "native_737a380": 121086848,
+        "native_737a310": 121086736,
+        "native_737a354": 121086804,
+        "native_737b70c": 121091852,
+        "native_737b6b0": 121091760,
+        "native_3051598": 50664856,
+        "native_2f457d4": 49567700,
+        "native_302b480": 50508928,
+        "native_3052434": 50668596,
+        "native_304bb10": 50641680,
+        "native_304be70": 50642544,
+        "native_305208c": 50667660,
+        "native_3051920": 50665760,
+        "native_30fb51c": 51361052,
+        "native_30fb1b0": 51360176,
+        "native_30fb0e0": 51359968,
+        "native_8c1bbd0": 146914256,
+        "native_2f46e8c": 49573516,
+        "native_305b714": 50706196,
+        "native_30468f0": 50620656,
+        "native_3047108": 50622728
+      },
+      "constants": {},
+      "deferred_shared_refs": [],
+      "writable": {
+        "data_12_state": 4194368
+      },
+      "writable_fixups": [
+        [
+          4328,
+          4194368
+        ]
+      ],
+      "evidence": [
+        "fixed DTO additional IDs +0x64..0x74 only",
+        "dynamic JSON input vector +0xd8",
+        "native sentinel 74; new skill IDs 75..78",
+        "all callee state restored"
+      ],
+      "address": 124084540,
+      "file_offset": 124068156,
+      "expected_hex": "69a24da90a0109eb4012005448fd42932b0140b91f0500f108859f9a7f25017148010054ec031faa2db2fcf0ad713c91ae696cb8df010b6b200100548c210091",
+      "entry_offset": 0,
+      "extra_entries": [
+        {
+          "name": "skill_capacity_list_frame",
+          "address": 121087596,
+          "file_offset": 121071212,
+          "expected_hex": "ff4303d1fd7b07a9fc6f08a9fa6709a9f85f0aa9f6570ba9f44f0ca9fdc3019148d03bd5a98300d1e80700f9eac30091f30302aaf40301aaf50300aa081540f9",
+          "entry_offset": 424
+        },
+        {
+          "name": "skill_capacity_list_return",
+          "address": 121089172,
+          "file_offset": 121072788,
+          "expected_hex": "ff430391c0035fd6e98f6294e88f6294e78f6294e68f6294e58f6294e48f6294d3836294fd7bbaa9fc6f01a9fa6702a9f85f03a9f65704a9f44f05a9fd030091",
+          "entry_offset": 440
+        },
+        {
+          "name": "skill_capacity_list_snapshot",
+          "address": 121087660,
+          "file_offset": 121071276,
+          "expected_hex": "1b5002911ca002912b0140b2490140b2e92f02a9a8831ff8e00b00f9040000147b1300917f031ceb60150054a82241b928150034760340b9df2a017120ffff54",
+          "entry_offset": 456
+        },
+        {
+          "name": "skill_capacity_list_padding",
+          "address": 121088388,
+          "file_offset": 121072004,
+          "expected_hex": "aa008052080109cbe9f3003208fd43d31829091b98160034a88300d1e9c30091f9031f2a1a0140b23b0140b2f30f00f904000014390700113f03186b40150054",
+          "entry_offset": 800
+        },
+        {
+          "name": "skill_capacity_innate_filter",
+          "address": 121086800,
+          "file_offset": 121070416,
+          "expected_hex": "a82241b968010034a042c93cc10e044e008ca16e0028610e00a8702e0800261e08fd0737a8a640b91f01166ba0fcff54e003162aff7f04a9ff2b00f9a59f3c94",
+          "entry_offset": 832
+        },
+        {
+          "name": "skill_capacity_innate_count",
+          "address": 121091756,
+          "file_offset": 121075372,
+          "expected_hex": "682241b9e80200344005024f6142c93c208ca06e0058206e0028610e083c020e093c060e0a3c0a0e0b3c0e0e0801001228011f3348011e33080d0b2a080d0012",
+          "entry_offset": 1496
+        },
+        {
+          "name": "skill_widget_owned_innate_bound",
+          "address": 50664852,
+          "file_offset": 50648468,
+          "expected_hex": "1f290071ac070054e00313aa4d2800941f040071cb06005439008052080340f9fa0318aaf60318aaa80000b50c000014c80240f9fa0316aa280100b4f60308aa",
+          "entry_offset": 1984
+        },
+        {
+          "name": "skill_widget_library_innate_bound",
+          "address": 49567696,
+          "file_offset": 49551312,
+          "expected_hex": "1f290071cc0600547f0700716b060054e80740b9360080528803080b15050011e85340f9f70319aaf40319aaa80000b50c000014880240f9f70314aa280100b4",
+          "entry_offset": 2000
+        },
+        {
+          "name": "skill_widget_additional_creation",
+          "address": 50641676,
+          "file_offset": 50625292,
+          "expected_hex": "4a1a0094f50300aa68b249f9f90318aaf60318aaa80000b50c000014c80240f9f90316aa280100b4f60308aa082140b91f0500714cffff5420030054c80640f9",
+          "entry_offset": 2016
+        },
+        {
+          "name": "skill_widget_additional_display",
+          "address": 50665756,
+          "file_offset": 50649372,
+          "expected_hex": "1f1500716c3b0054e00313aaf0260094e0230036086c82527802088b68b249f9f90318aaf60318aaa80000b50c000014c80240f9f90316aa280100b4f60308aa",
+          "entry_offset": 2528
+        },
+        {
+          "name": "skill_widget_additional_modal",
+          "address": 51359964,
+          "file_offset": 51343580,
+          "expected_hex": "68f252b9e22e8052228ea0721f0500716b000054687649f9020140b9e00313aae10314aa0701009468f252b9e22e8052228ea0721f0500716d000054687649f9",
+          "entry_offset": 2872
+        }
+      ],
+      "helper_entries": {
+        "shared_skill_capacity_cache": 3240,
+        "shared_skill_widget_assign": 3432,
+        "shared_skill_widget_find": 3624,
+        "shared_skill_widget_create_ten": 3680,
+        "shared_skill_widget_fill_ten": 3760
+      }
+    }
+  ],
+  "validation": {
+    "arm64_widget_regression": "tests/test_skill_capacity.py",
+    "original_empty_page_reproduced": true,
+    "actual_widget_setters_reached": true,
+    "ten_additional_row_controls_created": true,
+    "normal_five_row_path_preserved": true,
+    "gameplay_requires_user_confirmation": true
+  }
+}

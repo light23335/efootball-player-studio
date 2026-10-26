@@ -157,10 +157,11 @@ def compose(payload,routes,profile,capacity=4194304):
             out['hooks'].append({'name':entry['name'],'address':entry['address'],'offset':at+offset,'expected_hex':entry['expected_hex']})
         out.setdefault('absolute_fixups',[]).extend([[at+offset,target] for offset,target in hook['absolute_fixups']])
         for offset,size in hook.get('writable_fixups',[]):
-            if type(offset) is not int or offset%8 or not 0<=offset<=len(body)-8 or type(size) is not int or not 0<size<=65536:
+            if type(offset) is not int or offset%8 or not 0<=offset<=len(body)-8 or type(size) is not int or not 0<size<=8*1024*1024:
                 raise ValueError('原生技能状态内存描述无效')
             data_at=(out.get('writable_data_bytes',0)+15)//16*16
             out['writable_data_bytes']=data_at+size
+            if out['writable_data_bytes']>8*1024*1024:raise ValueError('原生技能状态内存总容量无效')
             out.setdefault('writable_pointer_fixups',[]).append([at+offset,data_at])
         blob.extend(body)
     if len(blob)>capacity:raise ValueError('个人美术绑定超出已分配容量')
@@ -663,7 +664,7 @@ class _BindingCtypes:
     def __init__(self,original,payload):
         self.original=original;self.payload=payload;self.table=None
         size=payload.get('writable_data_bytes',0)
-        if type(size) is not int or not 0<=size<=1024*1024:raise ValueError('原生技能状态内存容量无效')
+        if type(size) is not int or not 0<=size<=8*1024*1024:raise ValueError('原生技能状态内存容量无效')
         self.writable=original.create_string_buffer(size) if size else None
         if self.writable is not None:_RESIDENT_TABLES.append(self.writable)
         if payload.get('route_table_hex'):
