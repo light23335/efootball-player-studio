@@ -5,11 +5,11 @@ import {TransformControls} from 'three/addons/controls/TransformControls.js';
 export class HeadTools{
   static async load(viewer,spec){
     const tools=new HeadTools(viewer,spec),loader=new GLTFLoader();
-    const [actual,raw,reference]=await Promise.all([loader.loadAsync(spec.export_url),loader.loadAsync(spec.raw_url),loader.loadAsync(spec.reference_url)]);
-    tools.actual=actual.scene;tools.raw=raw.scene;tools.reference=reference.scene;
+    const [actual,raw,reference]=await Promise.all([loader.loadAsync(spec.export_url),loader.loadAsync(spec.raw_url),spec.reference_url?loader.loadAsync(spec.reference_url):Promise.resolve(null)]);
+    tools.actual=actual.scene;tools.raw=raw.scene;tools.reference=reference?.scene||new THREE.Group();
     for(const [role,root] of [['export',tools.actual],['raw',tools.raw],['reference',tools.reference]]){
       root.name='HeadPreview-'+role;root.userData.previewOnly=role!=='export';tools.root.add(root);
-      root.traverse(n=>{if(n.isSkinnedMesh)tools.base.set(n.uuid,n.skeleton.bones.map(b=>({bone:b,quaternion:b.quaternion.clone()})));
+      root.traverse(n=>{if(n.isSkinnedMesh)tools.base.set(n.uuid,n.skeleton.bones.map((b,i)=>({bone:b,quaternion:b.quaternion.clone(),axis:new THREE.Vector3(1,0,0).transformDirection(n.skeleton.boneInverses[i])})));
         if(n.isMesh&&role==='reference'){n.userData.referenceMesh=true;n.material=new THREE.MeshBasicMaterial({color:0x80dcca,wireframe:true,transparent:true,opacity:.32,depthWrite:false});n.renderOrder=2;}
       });
     }
@@ -46,19 +46,19 @@ export class HeadTools{
     for(const [key,label] of [['head','Head'],['neck_root','Root']]){
       const values=[...(handles[key]||[0,0,0])];if(key==='head')values[1]+=Number(m.head_vertical_cm)||0;
       for(const root of [this.actual,this.raw])root.traverse(mesh=>{if(!mesh.morphTargetDictionary)return;for(let i=0;i<3;i++){const index=mesh.morphTargetDictionary['Studio'+label+'XYZ'[i]];if(index!==undefined)mesh.morphTargetInfluences[index]=values[i];}});
-      this.markers.get(key).position.fromArray(this.spec.anchors[key]).add(new THREE.Vector3().fromArray(values).multiplyScalar(.01));
+      if(this.markers.has(key))this.markers.get(key).position.fromArray(this.spec.anchors[key]).add(new THREE.Vector3().fromArray(values).multiplyScalar(.01));
     }
     this.applyTest();
   }
-  setTest(values){Object.assign(this.test,values);this.actual.visible=!this.test.raw;this.raw.visible=this.test.raw;this.reference.visible=this.test.reference;
+  setTest(values){Object.assign(this.test,values);this.testing=this.test.jaw>0||this.test.blink>0;this.actual.visible=!(this.test.raw||this.testing);this.raw.visible=this.test.raw||this.testing;this.reference.visible=this.test.reference;
     for(const marker of this.markers.values())marker.visible=this.test.handles;
-    if(this.control){this.control.detach();if(this.test.handles)this.control.attach(this.markers.get(this.test.selected));this.gizmo.visible=this.test.handles;}
+    if(this.control){this.control.detach();if(this.test.handles&&this.markers.has(this.test.selected))this.control.attach(this.markers.get(this.test.selected));this.gizmo.visible=this.test.handles&&this.markers.size>0;}
     this.applyTest();
   }
   applyTest(){
-    for(const poses of this.base.values())for(const {bone,quaternion}of poses){bone.quaternion.copy(quaternion);
+    for(const poses of this.base.values())for(const {bone,quaternion,axis}of poses){bone.quaternion.copy(quaternion);
       const angle=bone.name==='skf_jaw'?this.test.jaw*28:bone.name.startsWith('skf_eyelid_t_')?this.test.blink*18:bone.name.startsWith('skf_eyelid_b_')?this.test.blink*-8:0;
-      if(angle)bone.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),THREE.MathUtils.degToRad(angle)));
+      if(angle)bone.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(axis,THREE.MathUtils.degToRad(angle)));
     }
     this.root.updateMatrixWorld(true);this.root.traverse(mesh=>{if(mesh.isSkinnedMesh)mesh.skeleton.update();});
   }
@@ -67,5 +67,7 @@ export class HeadTools{
 export function headPanel(project,viewer){
  const m=project.model,custom=!!m.asset&&!m.native_source?.path;
  const coordinate=(key,label)=>`<fieldset class="field"><legend>${label}（厘米）</legend><div class="field-grid">${['X','Y','Z'].map((axis,i)=>`<label class="field"><span>${axis} · ${['左右','上下','前后'][i]}</span><input type="number" step="0.1" min="-10" max="10" data-bind="model.binding_handles.${key}.${i}" value="${m.binding_handles?.[key]?.[i]||0}"></label>`).join('')}</div></fieldset>`;
- return `<section class="panel"><div class="panel-title"><h2>头模接合与表情设置</h2><span class="tag">每名球员独立保存</span></div><div class="panel-body"><label class="switch-label"><input type="checkbox" data-bind="model.preserve_expression" ${m.preserve_expression!==false?'checked':''}>导入游戏时保持导入表情（自制头模）</label><p class="note">开启后保护下颌和眼睑，头颈仍随游戏动作运动；关闭后使用导入的面部蒙皮，需自行核对游戏中的大幅表情。游戏原版脸模沿用原版表情。</p>${custom?`<div class="model-view-options"><label class="switch-label"><input type="checkbox" data-head-option="reference">叠加原版头模对照</label><label class="switch-label"><input type="checkbox" data-head-option="handles">显示可拖动定位点</label><label class="switch-label"><input type="checkbox" data-head-option="raw">原始绑定检查（不改变导出设置）</label></div><label class="field"><span>选择定位点，也可点击画面中的圆点</span><select data-head-option="selected"><option value="head">头部定位 · 暖黄色</option><option value="neck_root">颈根定位 · 绿色</option></select></label><p class="note">拖动坐标箭头调整；定位点修改网格接合，原生骨骼结构保持不变。对照使用相同游戏坐标和缩放。较完整的锁骨、胸口模型会保留原有颈部形状。</p>${coordinate('head','头部定位')}${coordinate('neck_root','颈根定位')}<button class="button secondary" data-action="head-handles-reset">重置这名球员的定位点</button><div class="field-grid"><label class="field"><span>张嘴检查</span><input type="range" min="0" max="1" step=".01" value="0" data-head-test="jaw"></label><label class="field"><span>闭眼检查</span><input type="range" min="0" max="1" step=".01" value="0" data-head-test="blink"></label></div><p class="note">默认显示 APK 导出效果。保持表情开启时，张嘴与闭眼不会拉动面部；勾选原始绑定检查可查看原来的面部权重。检查动作是本地测试，不是原游戏动作。</p><p class="note" id="head-fit-notice"></p>`:'<p class="note">选择已绑定游戏骨架的自制头模后，可使用原版对照、定位点和面部检查。</p>'}</div></section>`;
+ const positioning=custom?`<div class="model-view-options"><label class="switch-label"><input type="checkbox" data-head-option="reference">叠加原版头模对照</label><label class="switch-label"><input type="checkbox" data-head-option="handles">显示可拖动定位点</label><label class="switch-label"><input type="checkbox" data-head-option="raw">原始绑定检查（不改变导出设置）</label></div><label class="field"><span>选择定位点，也可点击画面中的圆点</span><select data-head-option="selected"><option value="head">头部定位 · 暖黄色</option><option value="neck_root">颈根定位 · 绿色</option></select></label><p class="note">拖动坐标箭头调整网格接合，保留原生骨架。较完整的锁骨、胸口模型会保留原有颈部形状。</p>${coordinate('head','头部定位')}${coordinate('neck_root','颈根定位')}<button class="button secondary" data-action="head-handles-reset">重置这名球员的定位点</button>`:'';
+ const tests=m.asset?`<div class="field-grid"><label class="field"><span>张嘴检查</span><input type="range" min="0" max="1" step=".01" value="0" data-head-test="jaw"></label><label class="field"><span>闭眼检查</span><input type="range" min="0" max="1" step=".01" value="0" data-head-test="blink"></label></div><p class="note">拖动时临时使用原始面部权重；归零恢复导出效果，不改变保持表情开关。没有对应骨骼权重的模型无法产生相应动作。检查动作仅供本地核对。</p><p class="note" id="head-fit-notice"></p>`:'<p class="note">请先选择或导入头模。</p>';
+ return `<section class="panel"><div class="panel-title"><h2>头模接合与表情设置</h2><span class="tag">每名球员独立保存</span></div><div class="panel-body"><label class="switch-label"><input type="checkbox" data-bind="model.preserve_expression" ${m.preserve_expression!==false?'checked':''}>导入游戏时保持导入表情（自制头模）</label><p class="note">开启后保护下颌和眼睑，头颈仍随游戏动作运动；关闭后使用导入的面部权重。游戏原版脸模沿用原版表情。</p>${positioning}${tests}</div></section>`;
 }

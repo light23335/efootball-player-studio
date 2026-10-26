@@ -1,8 +1,6 @@
-# 球员工坊 V17 · 1.9.14.2
+# 球员工坊 V17 · 1.9.14.4
 
-导出来源优先使用当前资源库实际导入的主 APK 和离线资源 APK；修复安卓首页扫描安装包后反复改填 base.apk 的问题。PC 与 Android 共用此路径逻辑。详见 [1.9.14.2 更新说明](player-studio-v15/RELEASE-1.9.14.2.md)。
-
-保留已有工程、素材和签名。重新生成游戏 APK 后外观修正生效；旧工程可继续使用。保留 1.9.12 的四项新技能与技能修正。资源、参数和导出读回已检查，比赛画面与完整运动效果仍需实机验收。
+修复原版 GLB 往返导入、接合与面部测试，补齐自建球员的大师联赛头像资源；额外技能支持 10 项，资料页可修改球衣袖长与球鞋。详见 [1.9.14.4 更新说明](player-studio-v15/RELEASE-1.9.14.4.md)。
 
 # 球员工坊 V17 · 1.9.8
 
@@ -217,4 +215,4 @@ Windows 本地球员编辑、预览、APK 实装与存档迁移工具。双击�
 
 
 
-源码位于 player-studio-v15 和 player-studio-android（历史目录名）。首次克隆运行 `python prepare_source.py` 还原默认数据库；打包工具依赖见两个目录的构建脚本。成品位于 GitHub Releases。
+源码：player-studio-v15 与 player-studio-android。首次克隆运行 `python prepare_source.py` 还原默认数据库。成品见 GitHub Releases。

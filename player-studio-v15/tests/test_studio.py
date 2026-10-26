@@ -108,8 +108,16 @@ class StudioTests(unittest.TestCase):
     def test_unknown_skills_and_extra_slot_overflow_rejected(self):
         p=copy.deepcopy(self.store.project);p['innate_skills']=[9999]
         with self.assertRaises(ValueError):app.normalize_project(p)
-        p['innate_skills']=[];p['additional_skills']=[0,1,2,3,4,5]
+        p['innate_skills']=[];p['additional_skills']=[int(k) for k in app.CATALOG['PARAMETER_BY_SKILL'] if '预留' not in app.CATALOG['SKILL_LABELS'].get(str(k),'')][:11]
         with self.assertRaises(ValueError):app.normalize_project(p)
+
+    def test_ten_additional_skills_save_and_reopen(self):
+        p=copy.deepcopy(self.store.project);p['innate_skills']=[]
+        p['additional_skills']=[int(k) for k in app.CATALOG['PARAMETER_BY_SKILL'] if '预留' not in app.CATALOG['SKILL_LABELS'].get(str(k),'')][:10]
+        normalized=app.normalize_project(p)
+        self.assertEqual(normalized['additional_skills'],p['additional_skills'])
+        self.store.save(normalized)
+        self.assertEqual(app.Store(self.store.root).project['additional_skills'],p['additional_skills'])
 
     def test_second_booster_slot_does_not_shift(self):
         p=copy.deepcopy(self.store.project);p['booster_ids']=[0,201]

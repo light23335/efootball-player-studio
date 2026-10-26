@@ -76,17 +76,3 @@ class Setup:
   return {**self.cache,'rows':rows,'errors':self.cache['errors']+source['errors'],'preferences':preferences(self.server.store),'library':self.server.library.summary(),'resources_needed':resources_needed(self.server.store,installed,game['package'] if game else None),'selected':chosen,'recommended_mode':'update' if (matching and game and matching['package']==game['package']) or (not provider and cert) else 'coexist',
           'save_notice':'自动读取安装包和资源，不读取其他应用的私有存档。共存版使用独立存档；同包名、同签名覆盖安装才可保留原游戏存档。'}
  def install_plan(self,body):return plan(body['apk'],body.get('installation_mode','update'),local_certificate(self.server.store))
- def check_installed(self,body):
-  from install_pairs import check
-  state=self.status(True)
-  if state['installed_discovery']:
-   rows=[r for r in state['rows'] if r.get('installed')]
-   from apk_installation import COEXIST_GAME
-   source=inspect_source(body.get('apk',''))
-   target=COEXIST_GAME if body.get('installation_mode')=='coexist' else (source or {}).get('package')
-   result=check(rows,state['errors']);result['scope']='installed'
-   if target:result['passed']=check(rows,target=target)['passed'];result['target']=target
-  else:
-   rows=[inspect_source(body.get(k,'')) for k in ('apk','companion')];rows=[r for r in rows if r]
-   result=check(rows);result['scope']='files'
-  return result

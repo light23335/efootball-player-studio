@@ -19,6 +19,20 @@ class GameSettingsTests(unittest.TestCase):
   for source in ('B','RB','LT'):
    v=copy.deepcopy(DEFAULTS);next(r for r in v['controller']['bindings'] if r['id']=='common.START')['input']=[source]
    with self.assertRaisesRegex(ValueError,'按键冲突'):normalize(v)
+ def test_defensive_cancel_removed_and_old_custom_bindings_preserved(self):
+  for name in ('default','fc'):
+   ids={r['id'] for r in preset(name)}
+   self.assertIn('attack.cancel',ids);self.assertNotIn('defense.cancel',ids)
+  v=copy.deepcopy(DEFAULTS);c=v['controller'];c.update(enabled=True,preset='custom',bindings=preset('fc'))
+  for row in c['bindings']:
+   if row['id']=='defense.B':row['input']=['X']
+   elif row['id']=='defense.X':row['input']=['B']
+  expected=copy.deepcopy(c['bindings'])
+  c['bindings'].append({'id':'defense.cancel','scope':'defense','label':'超级取消','input':['LT','RT'],'output':['RB','RT']})
+  got=normalize(v)['controller'];self.assertEqual(got['bindings'],expected);self.assertEqual(got['preset'],'custom')
+  self.assertEqual(normalize({'controller':got})['controller'],got)
+  c['bindings'].append(copy.deepcopy(c['bindings'][-1]))
+  with self.assertRaisesRegex(ValueError,'动作重复'):normalize(v)
  def test_save_roundtrip_and_validation(self):
   with tempfile.TemporaryDirectory() as folder:
    store=type('Store',(),{'root':Path(folder)})();v=settings(store);v['frame_rate']={'enabled':True,'target':240};v['display']={'enabled':True,'height':2160};self.assertEqual(settings(store,v),settings(store))
@@ -46,7 +60,7 @@ class NativeControllerTests(unittest.TestCase):
    from unicorn import arm64_const
   except ImportError:raise unittest.SkipTest('ARM64 emulator unavailable')
   cls.u=unicorn;cls.r=arm64_const;cls.root=Path(__file__).resolve().parents[1];cls.profile=json.loads((cls.root/'resources/native-controller.json').read_text())
- def machine(self,buttons=(),preset_name='fc',triggers=(0.,0.),node=0x300000,options=None,mode=1,port=0,user=0,valid=True,missing=None,relocation=0):
+ def machine(self,buttons=(),preset_name='fc',triggers=(0.,0.),node=0x300000,options=None,mode=1,port=0,user=0,valid=True,missing=None,relocation=0,reset=None):
   c=copy.deepcopy(DEFAULTS['controller']);c.update(enabled=True,preset=preset_name,bindings=preset(preset_name));c.update(options or {})
   p=self.profile
   class Engine:
@@ -56,18 +70,34 @@ class NativeControllerTests(unittest.TestCase):
   hook=controller_hooks(c,engine)[0]
   u=self.u;r=self.r;vm=u.Uc(u.UC_ARCH_ARM64,u.UC_MODE_ARM)
   for base in (0x100000,0x200000,0x300000,(hook['address']+relocation)&~4095,(0xa58de28+relocation)&~4095):vm.mem_map(base,0x10000 if base<0x1000000 else 4096)
+  for entry in hook['extra_entries']:vm.mem_map((entry['address']+relocation)&~4095,4096)
   vm.mem_map(0x400000,0x100000)
   body=bytearray.fromhex(hook['body_hex'])
   for at,value in hook['absolute_fixups']:struct.pack_into('<Q',body,at,value+relocation)
+  for at,size in hook['writable_fixups']:struct.pack_into('<Q',body,at,0x4f0000)
   def q(at,n):vm.mem_write(at,struct.pack('<Q',n))
   def w(at,n):vm.mem_write(at,struct.pack('<I',n))
   q(0xa58de28+relocation,0 if missing=='world' else 0x400000)
   q(0x400340,0 if missing=='users' else 0x460000);w(0x400054,3 if missing=='handler_type' else 0)
-  q(0x400070,0 if missing=='handler' else 0x410000);q(0x410180,0 if missing=='commands' else 0x420000)
+  # Reproduce the real MuMu crash: this scene field contains two floats, not
+  # a command-manager pointer. The input hook must never dereference it.
+  q(0x400070,0 if missing=='handler' else 0x410000);q(0x410180,0x3ec2d7c53e269b6b)
   for i in range(24):w(0x460008+i*0xd0,255)
   w(0x460004+user*0xd0,16 if valid else 0);w(0x460008+user*0xd0,port if missing!='port' else 255)
   w(0x420000+0x2b4ec+user*0x2c,mode)
-  vm.mem_write(0x100000,bytes(body));vm.mem_write(node,bytes(96))
+  vm.mem_write(0x100000,bytes(body));vm.mem_protect(0x100000,0x10000,u.UC_PROT_READ|u.UC_PROT_EXEC);vm.mem_write(node,bytes(96))
+  if not missing:
+   entry=next(e for e in hook['extra_entries'] if e['name']=='studio_controller_mode_mode')
+   vm.reg_write(r.UC_ARM64_REG_SP,0x208000);vm.reg_write(r.UC_ARM64_REG_X20,0x460000+user*0xd0);vm.reg_write(r.UC_ARM64_REG_X19,0x420000+0x2b4ec+user*0x2c)
+   vm.reg_write(r.UC_ARM64_REG_W0,2)
+   vm.emu_start(0x100000+entry['entry_offset'],entry['address']+16+relocation,count=1000)
+   self.assertEqual(vm.reg_read(r.UC_ARM64_REG_W8),2)
+   self.assertEqual(vm.reg_read(r.UC_ARM64_REG_NZCV),0x20000000)
+  if reset:
+   entry=next(e for e in hook['extra_entries'] if e['name']=='studio_controller_mode_'+reset)
+   vm.reg_write(r.UC_ARM64_REG_SP,0x208000)
+   vm.emu_start(0x100000+entry['entry_offset'],entry['address']+16+relocation,count=1000)
+   self.assertEqual(bytes(vm.mem_read(0x4f0000,64)),bytes(64))
   for key in buttons:
    index=BUTTONS.index(key)
    vm.mem_write(node+p['digital_offsets'][index],b'\1')
@@ -118,14 +148,51 @@ class NativeControllerTests(unittest.TestCase):
  def test_missing_or_non_match_state_retains_stock_controls(self):
   for missing in ('world','users','handler_type','handler','commands','port'):
    self.assertEqual(self.machine(['RB','B'],missing=missing)[0],{'RB','B'})
-  self.assertEqual(self.machine(['RB'],valid=False)[0],{'RB'})
   self.assertEqual(self.machine(['B'],mode=0xffffffff)[0],{'B'})
+ def test_command_lifetime_clears_cached_banks_before_menus(self):
+  for reset in ('create','destroy'):
+   self.assertEqual(self.machine(['B'],mode=1,reset=reset)[0],{'B'})
+ def test_native_port_lookup_does_not_require_unrelated_user_flag(self):
+  # Execute the original APK's lookup, including its stride/port helpers.
+  # It must select the same record with flags either cleared or set.
+  p=self.profile;u=self.u;r=self.r
+  for flags in (0,16):
+   vm=u.Uc(u.UC_ARCH_ARM64,u.UC_MODE_ARM)
+   for base,size in ((0x698f000,4096),(0x460000,0x2000),(0x500000,4096),(0x200000,4096)):vm.mem_map(base,size)
+   for probe in p['context_probes']:
+    if probe['name'] in ('user_lookup','user_stride','user_port'):vm.mem_write(probe['address'],bytes.fromhex(probe['expected_hex']))
+   for i in range(24):vm.mem_write(0x460008+i*0xd0,struct.pack('<I',255))
+   vm.mem_write(0x460004+9*0xd0,struct.pack('<II',flags,2))
+   vm.reg_write(r.UC_ARM64_REG_X0,0x460000);vm.reg_write(r.UC_ARM64_REG_W1,2)
+   vm.reg_write(r.UC_ARM64_REG_X30,0x500000);vm.reg_write(r.UC_ARM64_REG_SP,0x200ff0)
+   vm.emu_start(0x698f7f8,0x500000,count=1000)
+   self.assertEqual(vm.reg_read(r.UC_ARM64_REG_W0),9)
+   self.assertEqual(self.machine(['B'],mode=1,port=2,user=9,valid=bool(flags))[0],{'X'})
+ def test_fc_with_only_defensive_b_x_swapped_retains_attack_mapping(self):
+  rows=preset('fc')
+  for row in rows:
+   if row['id']=='defense.B':row['input']=['X']
+   elif row['id']=='defense.X':row['input']=['B']
+  for mode in (1,2,3,4,5,6,7,8):
+   for flags in (False,True):
+    self.assertEqual(self.machine(['B'],mode=mode,valid=flags,options={'bindings':rows,'preset':'custom'})[0],{'X'})
+    self.assertEqual(self.machine(['X'],mode=mode,valid=flags,options={'bindings':rows,'preset':'custom'})[0],{'B'})
+  self.assertEqual(self.machine(['B'],mode=0,valid=False,options={'bindings':rows,'preset':'custom'})[0],{'B'})
  def test_defence_mapping_is_independent_including_combinations(self):
   self.assertEqual(self.machine(['RB','B'],mode=5)[0],{'RB','B'})
   rows=preset('fc');next(r for r in rows if r['id']=='defense.RB')['input']=['A','RB']
   self.assertEqual(self.machine(['RB'],mode=5,options={'bindings':rows})[0],set())
   self.assertEqual(self.machine(['RB','A'],mode=5,options={'bindings':rows})[0],{'RB'})
   self.assertEqual(self.machine(['RB','B'],mode=1,options={'bindings':rows})[0],{'RB','X'})
+ def test_defence_matchup_and_sprint_stay_independent_with_legacy_cancel(self):
+  rows=preset('fc')+[{'id':'defense.cancel','scope':'defense','input':['LT','RT'],'output':['RB','RT']}]
+  for mode in (5,7,8):
+   self.assertEqual(self.machine(['LT','RT'],mode=mode,options={'bindings':rows})[0],{'LT','RT'})
+   got,raw=self.machine([],mode=mode,triggers=(.8,.9),options={'bindings':rows})
+   self.assertEqual(got,{'LT','RT'})
+   self.assertAlmostEqual(struct.unpack_from('<f',raw,0x4c)[0],.8,places=6)
+   self.assertAlmostEqual(struct.unpack_from('<f',raw,0x50)[0],.9,places=6)
+  self.assertEqual(self.machine(['LT','RT'],mode=1,options={'bindings':rows})[0],{'RB','RT'})
  def test_stunning_shortcuts_preserve_trigger_pressure_and_do_not_force_full_power(self):
   for mode in (1,2,3,4,6):
    for amount in (.31,.6,1.):

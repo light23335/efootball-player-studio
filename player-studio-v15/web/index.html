@@ -9,15 +9,16 @@
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/onboarding.css">
   <link rel="stylesheet" href="/packs.css">
+  <link rel="stylesheet" href="/sidebar-layout.css">
   <script type="importmap">{"imports":{"three":"/vendor/three/build/three.module.js","three/addons/":"/vendor/three/examples/jsm/"}}</script>
 </head>
 <body>
   <dialog id="disclaimer-dialog"><h2>使用声明</h2><p>本软件仅供个人娱乐、学习与交流，完全免费。不得销售、付费分发、捆绑收费或用于任何盈利活动。</p><p>游戏、球员及相关素材权利归各原权利人所有。本软件为非官方工具，与游戏官方无关联。请仅处理你有权使用的本地文件，并自行保管工程与存档。</p><button class="button primary" id="disclaimer-accept">我已了解，进入软件</button></dialog>
   <script>document.getElementById('disclaimer-accept').onclick=()=>{sessionStorage.setItem('studio-disclaimer','1');document.getElementById('disclaimer-dialog').close()};if(sessionStorage.getItem('studio-disclaimer')!=='1')document.getElementById('disclaimer-dialog').showModal();</script>
   <div class="app-shell">
-    <aside class="sidebar">
+    <aside class="sidebar" id="workspace-sidebar">
       <a class="brand" href="#"><img src="/icon.svg" alt=""><span>球员工坊<small>PLAYER STUDIO</small></span></a>
-      <div class="workspace-badge"><span class="status-dot"></span>本地工作区<span>V17 · 1.9.14.2</span></div>
+      <div class="workspace-badge"><span class="status-dot"></span>本地工作区<span>V17 · 1.9.14.3</span></div>
       <div class="nav-label">工作区</div><button class="quiet-button navigation-mode-toggle" id="navigation-mode-toggle" data-navigation="full">切换完整导航</button>
       <nav id="navigation" aria-label="工作区导航"></nav>
       <div class="nav-divider"></div>
@@ -27,6 +28,7 @@
         <button class="quiet-button" id="help-button"><span data-icon="help"></span>使用说明</button>
       </div>
     </aside>
+    <div class="sidebar-resizer" id="sidebar-resizer" role="separator" aria-orientation="vertical" aria-controls="workspace-sidebar" aria-label="左右拖动调整导航宽度" title="左右拖动调整导航宽度，双击恢复默认" tabindex="0" hidden><span aria-hidden="true">⋮</span></div>
     <main class="main-shell">
       <header class="topbar"><label class="compact-navigation">工作区<select id="compact-page-select" aria-label="切换工作区"></select></label>
         <div class="breadcrumb">个人球员<span>/</span><strong id="breadcrumb-page">资料</strong></div>

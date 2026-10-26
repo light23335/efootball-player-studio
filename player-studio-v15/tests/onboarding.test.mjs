@@ -5,6 +5,13 @@ import {NativePackageUI} from '../web/native-package-ui.js';
 import {playerLoadChoices} from '../web/player-prompts.js';
 import {LibraryUI} from '../web/library-ui.js';
 
+test('pairing check is removed from both installation pages',()=>{
+ const old=globalThis.document;globalThis.document={addEventListener:()=>{}};
+ try{for(const platform of ['android','pc']){const html=new NativePackageUI({platform}).render();
+  assert.doesNotMatch(html,/data-check-installed|installed-pair-result|配套检查|检查所选 APK/);
+ }}finally{globalThis.document=old;}
+});
+
 test('export refresh uses imported paths, preserves manual picks and follows a changed database',()=>{
  const old=globalThis.document;globalThis.document={addEventListener:()=>{},querySelector:()=>null};
  try{const ui=new NativePackageUI({});

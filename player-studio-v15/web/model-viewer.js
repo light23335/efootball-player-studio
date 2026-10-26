@@ -113,7 +113,7 @@ export class ModelViewer {
           }
           if(!custom&&project.model.native_source?.path&&this.previewApi){
             spec=await this.previewApi(project);
-            const gltf=await new GLTFLoader().loadAsync(spec.url);object=gltf.scene;animations=gltf.animations;
+            headTools=await HeadTools.load(this,spec);object=headTools.root;
           }
           if(!object){
             if(asset.endsWith('.glb')){const gltf=await new GLTFLoader().loadAsync('/assets/'+asset);object=gltf.scene;animations=custom?[]:gltf.animations;}
@@ -147,7 +147,7 @@ export class ModelViewer {
       this.readout.innerHTML='<strong>尚未选择游戏原版模型</strong>从球员库的“原版模型”中选择；这里只显示已有网格。';
     }
     for(const morph of this.metadata?.morphs||[]){const value=project.model.morphs?.[morph.key];if(value!==undefined)this.setMorph(morph.mesh,morph.index,value);}
-    if(this.headTools)this.readout.textContent=(this.headTools.test.raw?'原始绑定检查 · 不改变导出':'APK 导出接合预览 · '+(project.model.preserve_expression!==false?'保持导入表情':'使用导入面部权重'))+' · '+this.metadata.triangles.toLocaleString()+' 三角面';
+    if(this.headTools)this.readout.textContent=(this.headTools.testing?'面部权重检查 · 仅预览，不改变导出':this.headTools.test.raw?'原始绑定检查 · 不改变导出':this.headTools.spec.original_game_face?'游戏原版头模':'APK 导出接合预览 · '+(project.model.preserve_expression!==false?'保持导入表情':'使用导入面部权重'))+' · '+this.metadata.triangles.toLocaleString()+' 三角面';
     this.applyOptions();
   }
 
@@ -192,11 +192,20 @@ export class ModelViewer {
   }
   async exportGLB(){
     if(this.failed||!this.subject)throw Error('模型尚未准备完成');
+    // Original heads must not acquire preview scale, centering, or test poses.
+    if(this.project.model.native_source?.path){
+      const response=await fetch(this.headTools?.spec.url||('/assets/'+this.asset));
+      if(!response.ok)throw Error('原版头模导出失败，请重新载入模型');
+      return response.arrayBuffer();
+    }
     const helpers=[];this.subject.traverse(n=>{if(n.userData.previewOnly){helpers.push([n,n.visible]);n.visible=false;}});
     const actual=this.headTools?.actual,shown=actual?.visible;if(actual)actual.visible=true;
+    const exportRoot=this.headTools?.raw||this.subject.children[0],exportVisible=exportRoot.visible;
     const tests=this.headTools?{...this.headTools.test}:null;
     if(tests)this.headTools.setTest({jaw:0,blink:0,raw:false,reference:false,handles:false});
-    try{return await new GLTFExporter().parseAsync(this.subject,{binary:true,animations:this.animations,onlyVisible:true});}
-    finally{if(tests)this.headTools.setTest(tests);for(const [n,visible]of helpers)n.visible=visible;if(actual)actual.visible=shown;}
+    const previewOnly=exportRoot.userData.previewOnly;delete exportRoot.userData.previewOnly;
+    exportRoot.visible=true;
+    try{return await new GLTFExporter().parseAsync(exportRoot,{binary:true,animations:[],onlyVisible:true});}
+    finally{if(previewOnly!==undefined)exportRoot.userData.previewOnly=previewOnly;exportRoot.visible=exportVisible;if(tests)this.headTools.setTest(tests);for(const [n,visible]of helpers)n.visible=visible;if(actual)actual.visible=shown;}
   }
 }

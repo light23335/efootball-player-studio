@@ -1,0 +1,47 @@
+.sidebar-resizer{display:none}
+.sidebar-resizer[hidden]{display:none!important}
+@media(orientation:landscape){
+ body[data-platform="android"]{--sidebar:var(--android-sidebar-width,232px)}
+ body[data-platform="android"] .sidebar{display:flex!important;width:var(--sidebar);height:100dvh;padding:12px 10px 8px}
+ body[data-platform="android"] .main-shell{margin-left:var(--sidebar)!important;width:calc(100% - var(--sidebar))!important;min-width:0}
+ body[data-platform="android"] .sidebar-resizer{display:flex;position:fixed;left:calc(var(--sidebar) - 10px);top:0;width:20px;height:100dvh;z-index:25;align-items:center;justify-content:center;cursor:col-resize;touch-action:none;user-select:none;-webkit-user-select:none}
+ body[data-platform="android"] .sidebar-resizer:before{content:"";position:absolute;width:2px;height:100%;background:#4a675c66}
+ body[data-platform="android"] .sidebar-resizer>span{position:relative;display:grid;place-items:center;width:18px;height:56px;border:1px solid #557b6c;border-radius:9px;background:#203e35;color:#a8f1d7;font-size:23px;line-height:1}
+ body[data-platform="android"] .sidebar-resizer:focus-visible{outline:2px solid var(--mint);outline-offset:-3px}
+ body[data-platform="android"].sidebar-resizing{cursor:col-resize;user-select:none;-webkit-user-select:none}
+ body[data-platform="android"].sidebar-resizing .sidebar-resizer>span{background:#366c57;border-color:var(--mint)}
+ body[data-platform="android"] .sidebar .brand{padding:0 8px;justify-content:flex-start;gap:9px;min-height:34px}
+ body[data-platform="android"] .sidebar .brand img{width:32px;height:32px}
+ body[data-platform="android"] .sidebar .brand>span{display:block;font-size:17px;letter-spacing:.4px}
+ body[data-platform="android"] .sidebar .brand small{font-size:8px;letter-spacing:1.1px}
+ body[data-platform="android"] .sidebar .workspace-badge{display:flex;margin:10px 3px 8px;padding:7px 8px;white-space:nowrap}
+ body[data-platform="android"] .sidebar .nav-label{display:none}
+ body[data-platform="android"] .sidebar .navigation-mode-toggle{display:flex;min-height:44px;font-size:15px;padding:8px 10px;margin:0 2px 6px}
+ body[data-platform="android"] .sidebar #navigation{margin-top:0;flex:1 1 0;min-height:0;overscroll-behavior:contain}
+ body[data-platform="android"] .sidebar .nav-group{margin:0 0 6px}
+ body[data-platform="android"] .sidebar [data-nav-group]{min-height:48px;padding:10px 9px;font-size:16px;line-height:1.4}
+ body[data-platform="android"] .sidebar .nav-item{justify-content:flex-start;gap:11px;min-height:54px;padding:12px 10px;margin:3px 0;font-size:17px;line-height:1.4}
+ body[data-platform="android"] .sidebar .nav-item>span:nth-child(2){display:block;min-width:0;overflow-wrap:anywhere}
+ body[data-platform="android"] .sidebar .nav-item svg{width:24px;height:24px}
+ body[data-platform="android"] .sidebar .nav-arrow{display:block;font-size:18px}
+ body[data-platform="android"] .sidebar .nav-item.active:before{height:32px}
+ body[data-platform="android"] .sidebar .nav-divider{margin:5px 6px}
+ body[data-platform="android"] .sidebar-bottom{padding:4px 6px 0;margin-top:0}
+ body[data-platform="android"] .sidebar-bottom .identity-mark{display:none}
+ body[data-platform="android"] .sidebar-bottom .quiet-button{display:flex;min-height:44px;font-size:15px;margin-top:2px;padding:8px 4px}
+ body[data-platform="android"] .sidebar-bottom .quiet-button svg{width:23px;height:23px}
+ body[data-platform="android"] .topbar{height:auto;min-height:64px;padding:10px 14px;flex-wrap:wrap;gap:8px}
+ body[data-platform="android"] .compact-navigation{display:none}
+ body[data-platform="android"] .top-actions{width:auto;flex:1 1 auto;flex-wrap:wrap;gap:8px;justify-content:flex-start}
+ body[data-platform="android"] .button,body[data-platform="android"] .top-actions .button{min-height:44px;font-size:14px;padding:10px 12px}
+ body[data-platform="android"] .top-actions .icon-button{width:44px;height:44px}
+ body[data-platform="android"] .workbench{grid-template-columns:minmax(0,1fr);max-width:100%;padding:20px 16px}
+ body[data-platform="android"] .preview-area{position:static;width:100%;max-height:none;order:1}
+ body[data-platform="android"] .editor-area{order:0}
+ body[data-platform="android"] .page-heading{flex-wrap:wrap}
+ body[data-platform="android"] .input-row{min-width:0;flex-wrap:wrap}
+ body[data-platform="android"] .input-row>.input{min-width:0;flex:1 1 200px}
+}
+@media(orientation:landscape) and (max-height:500px){
+ body[data-platform="android"] .sidebar .workspace-badge{display:none}
+}

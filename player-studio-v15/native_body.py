@@ -30,12 +30,13 @@ def face_body_source(assets,project):
     return raw,selected['path'],proof
 
 
-def _body_properties(raw):
+def _body_properties(raw,optional=False):
     names=package_names(raw);h=struct.unpack_from('<16I',raw)
     base=h[13]+h[14];first=struct.unpack_from('<Q',raw,h[11])[0];delta=first-base
     matches=[]
     for at in range(h[11],h[12],72):
         if names[struct.unpack_from('<I',raw,at+16)[0]&0x3fffffff]=='PesFaceAssetDataMobile':matches.append(at)
+    if not matches and optional:return None
     if len(matches)!=1:raise ValueError('脸模身体外观数据对象不唯一')
     export=matches[0];cooked,size=struct.unpack_from('<QQ',raw,export);start=cooked-delta;end=start+size
     if not base<=start<end<=len(raw):raise ValueError('脸模身体外观数据范围无效')
@@ -65,9 +66,16 @@ def _body_properties(raw):
 def transfer_body_settings(target,source,model,resources,source_id):
     """Transfer only native skin/unique-arm settings, preserving custom geometry."""
     from native_appearance import profile
-    source_fields=_body_properties(source)[4]
+    source_body=_body_properties(source,optional=True)
+    source_fields=source_body[4] if source_body else []
     values={name:(kind,value) for name,kind,value,_,_ in source_fields if name in ('SkinColor','bHasUniqueArm')}
     baseline=profile(resources,source_id) if source_id is not None else None
+    if source_body is None:
+        # Some native DIY heads contain a skeletal mesh and Datasmith data,
+        # with body colours supplied solely by PlayerAppearance.bin. They
+        # must not inherit the carrier's skin or unique-arm flag by accident.
+        values={'SkinColor':('IntProperty',baseline['skin_tone'] if baseline else 0),
+                'bHasUniqueArm':('BoolProperty',False)}
     tone=model.get('skin_tone')
     if tone is not None and (baseline is None or tone!=(baseline['skin_tone'] or 1)
             or model.get('skin_tone_edited') and baseline['skin_tone']==0):values['SkinColor']=('IntProperty',tone)

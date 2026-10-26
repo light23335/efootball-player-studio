@@ -9,24 +9,13 @@ lines=['sub sp,sp,#448']
 for n in range(0,18,2):lines.append(f'stp x{n},x{n+1},[sp,#{n*8}]')
 lines+=['stp x18,x30,[sp,#144]','mrs x17,nzcv','str x17,[sp,#160]']
 for n in range(0,8,2):lines.append(f'stp q{n},q{n+1},[sp,#{176+n*16}]')
-# Read the game's cached control mode for THIS physical port. No game calls,
-# no locks, no allocation and no writes to the match or user objects here.
-# Native classification: 6fad3e4 (0x5e) = kick/attack modes; 6fad400
-# (0x1a0) = defence modes. Other states retain stock menu controls.
-lines += ['mov w18,wzr','ldr x10,world_root','ldr x10,[x10]','cbz x10,context_done',
-          'ldr x11,[x10,#0x340]','cbz x11,context_done','ldr w12,[x10,#0x54]',
-          'cmp w12,#2','b.hi context_done','mov w13,#0x50','umaddl x12,w12,w13,x10',
-          'ldr x12,[x12,#0x70]','cbz x12,context_done','ldr x14,[x12,#0x180]',
-          'cbz x14,context_done','add x14,x14,#0x2b,lsl #12','add x14,x14,#0x4ec',
-          'ldr w15,[sp,#64]','cmp w15,#3','b.hi context_done','mov w16,wzr',
-          'context_loop:','ldr w12,[x11,#8]','cmp w12,w15','b.ne context_next',
-          'ldr w12,[x11,#4]','tbz w12,#4,context_next','ldr w17,[x14]',
-          'cmp w17,#8','b.hi context_done','mov w12,#0x5e','lsr w12,w12,w17',
-          'tbnz w12,#0,context_attack','mov w12,#0x1a0','lsr w12,w12,w17',
-          'tbz w12,#0,context_done','mov w18,#2','b context_done',
-          'context_attack:','mov w18,#1','b context_done','context_next:',
-          'add x11,x11,#0xd0','add x14,x14,#0x2c','add w16,w16,#1',
-          'cmp w16,#24','b.lo context_loop','context_done:','str w18,[sp,#304]',
+# Input polling must never traverse a scene object: the active scene handler
+# is not the command component and +0x180 may contain floating point data.
+# Cache modes only where the game owns live user/mode objects, then read this
+# private, separately writable per-port bank from the input thread.
+lines += ['mov w18,wzr','ldr w15,[sp,#64]','cmp w15,#3','b.hi context_done',
+          'ldr x10,controller_state','add x10,x10,x15,lsl #4','ldr w18,[x10]',
+          'cmp w18,#2','csel w18,w18,wzr,ls','context_done:','str w18,[sp,#304]',
           'mov w9,wzr']
 offsets=[0x20,0x21,0x22,0x23,0x24,0x27,0x25,0x28,0x26,0x29,0x2f,0x2e,0x2a,0x2b,0x2c,0x2d]
 for bit,off in enumerate(offsets):lines += [f'ldrb w10,[x28,#{off}]','cmp w10,#0','cset w10,ne',f'orr w9,w9,w10,lsl #{bit}']
@@ -50,15 +39,41 @@ for n in range(0,8,2):lines.append(f'ldp q{n},q{n+1},[sp,#{176+n*16}]')
 lines+=['ldr x17,[sp,#160]','msr nzcv,x17']
 for n in range(0,18,2):lines.append(f'ldp x{n},x{n+1},[sp,#{n*8}]')
 lines+=['ldp x18,x30,[sp,#144]','add sp,sp,#448','ldrb w9,[x28,#0x38]','nop','umaddl x8,w8,w27,x23','ldr s0,[x28,#0x20]','ldr x16,resume','br x16','.align 3',f'resume: .quad {address+16}',
-        'world_root: .quad 0xa58de28','threshold: .word 0x3e99999a','options: .word 0x75a13842,0x6531a65b',
-        'axis_sources: .quad 0x13ba68275f0348ca,0,0','.align 3','table_menu: .quad 0x63edc7261a09e0b5']
-asm='\n'.join(lines);body=bytearray(ks.asm(asm)[0]);resume=body.index(struct.pack('<Q',address+16));world=body.index(struct.pack('<Q',0xa58de28));options=body.index(struct.pack('<II',0x75a13842,0x6531a65b));axes=body.index(struct.pack('<Q',0x13ba68275f0348ca));table=body.index(struct.pack('<Q',0x63edc7261a09e0b5));body[options:options+8]=bytes(8);body[axes:axes+24]=bytes(24);body[table:]=bytes(768*3)
+        'controller_state: .quad 0x4a52d1e9f713b068','threshold: .word 0x3e99999a','options: .word 0x75a13842,0x6531a65b',
+        'axis_sources: .quad 0x13ba68275f0348ca,0,0','.align 3','table_menu: .quad 0x63edc7261a09e0b5','.space 2296']
+def save_int():
+    return ['sub sp,sp,#176']+[f'stp x{n},x{n+1},[sp,#{n*8}]' for n in range(0,18,2)]+['stp x18,x30,[sp,#144]','mrs x17,nzcv','str x17,[sp,#160]']
+def restore_int():
+    return ['ldr x17,[sp,#160]','msr nzcv,x17']+[f'ldp x{n},x{n+1},[sp,#{n*8}]' for n in range(0,18,2)]+['ldp x18,x30,[sp,#144]','add sp,sp,#176']
+def displaced(at):return [f'.word {v}' for v in struct.unpack_from('<4I',raw,at-16384)]
+collector=0x6fa59e0;constructor=0x6fa2fd8;destructor=0x6fa32dc
+entries=[]
+for name,at,marker in [('mode',collector,0x6a327c9e5d310b47),('create',constructor,0x3e517a06f8c249bd),('destroy',destructor,0x2b6e9348a10dcf75)]:
+    entries.append((name,at,marker));lines+=['.align 3',f'.quad {marker}',name+'_entry:']+save_int()
+    lines+=['ldr x10,controller_state']
+    if name=='mode':
+        # At this exact exit path x20 is the game's live user record, x19 is
+        # its finished control-state object. Invalid-user exits skip this site.
+        lines+=['ldr w15,[x20,#8]','cmp w15,#3','b.hi mode_done','add x10,x10,x15,lsl #4',
+                'ldr w17,[x19]','mov w18,wzr','cmp w17,#8','b.hi mode_store',
+                'mov w12,#0x5e','lsr w12,w12,w17','tbnz w12,#0,mode_attack',
+                'mov w12,#0x1a0','lsr w12,w12,w17','tbz w12,#0,mode_store',
+                'mov w18,#2','b mode_store','mode_attack:','mov w18,#1','mode_store:',
+                'str w18,[x10]','str w17,[x10,#4]','ldr x12,[x10,#8]','add x12,x12,#1','str x12,[x10,#8]','mode_done:']
+    else:lines += [f'stp xzr,xzr,[x10,#{off}]' for off in (0,16,32,48)]
+    lines+=restore_int()+displaced(at)+[f'ldr x16,{name}_resume','br x16','.align 3',f'{name}_resume: .quad {at+16}']
+asm='\n'.join(lines);body=bytearray(ks.asm(asm)[0]);resume=body.index(struct.pack('<Q',address+16));state=body.index(struct.pack('<Q',0x4a52d1e9f713b068));options=body.index(struct.pack('<II',0x75a13842,0x6531a65b));axes=body.index(struct.pack('<Q',0x13ba68275f0348ca));table=body.index(struct.pack('<Q',0x63edc7261a09e0b5));body[options:options+8]=bytes(8);body[axes:axes+24]=bytes(24);body[table:table+768*3]=bytes(768*3);body[state:state+8]=bytes(8)
+extras=[];fixes=[[resume,address+16]]
+for name,at,marker in entries:
+    extras.append({'name':'studio_controller_mode_'+name,'address':at,'file_offset':at-16384,'expected_hex':raw[at-16384:at-16384+64].hex(),'entry_offset':body.index(struct.pack('<Q',marker))+8})
+    fixes.append([body.index(struct.pack('<Q',at+16)),at+16])
 probes=[]
-for name,at,size in [('world_root',0x698f7e0,16),('users',0x698f7f0,8),('user_stride',0x698fc74,24),('user_port',0x698fc6c,8),('match_handler',0x72d8e20,44),('command_state',0x6b01d24,96),('mode_stride',0x6fa5640,48),('attack_modes',0x6fad3e4,28),('defence_modes',0x6fad400,28)]:
+for name,at,size in [('world_root',0x698f7e0,16),('users',0x698f7f0,8),('user_lookup',0x698f7f8,720),('user_stride',0x698fc74,24),('user_port',0x698fc6c,8),('match_handler',0x72d8e20,44),('command_state',0x6b01d24,96),('mode_stride',0x6fa5640,48),('attack_modes',0x6fad3e4,28),('defence_modes',0x6fad400,28)]:
     probes.append({'name':name,'address':at,'file_offset':at-16384,'expected_hex':raw[at-16384:at-16384+size].hex()})
-data={'format':'native-controller-context-v3','proof':'Only the cloned per-device snapshot is written. Bank selection reads the same per-user cached control modes as 0x6fa5a70: attack mask 0x5e, defence mask 0x1a0; absent/non-match modes use stock menu controls. Port is matched to a valid user, not assumed to be team 0.','digital_offsets':offsets,'trigger_axes':[0x4c,0x50],'hat_axes':[0x54,0x58],
+for entry in extras:probes.append({k:entry[k] for k in ('name','address','file_offset','expected_hex')})
+data={'format':'native-controller-context-v5','proof':'Input polling reads only a private RW per-port bank. The native mode update publishes its live x20 user port and finished x19 mode; it never walks a scene handler. Command-manager construction and destruction clear all banks. Mode masks are the native 0x5e/0x1a0. No user flags are required.','digital_offsets':offsets,'trigger_axes':[0x4c,0x50],'hat_axes':[0x54,0x58],
       'table_offsets':{'menu':table,'attack':table+768,'defense':table+1536},'table_capacity':768,'axis_sources_offset':axes,'options_offset':options,'context_probes':probes,
-      'hook':{'name':'studio_connected_controller_mapping','address':address,'file_offset':address-16384,'expected_hex':raw[address-16384:address-16384+64].hex(),'body_hex':body.hex(),'absolute_fixups':[[resume,address+16],[world,0xa58de28]],'assembly':asm}}
+      'hook':{'name':'studio_connected_controller_mapping','address':address,'file_offset':address-16384,'expected_hex':raw[address-16384:address-16384+64].hex(),'body_hex':body.hex(),'absolute_fixups':fixes,'writable_fixups':[[state,64]],'extra_entries':extras,'assembly':asm}}
 key_address=0x677277c
 key_asm='''sub w8,w21,#19
 cmp w8,#3

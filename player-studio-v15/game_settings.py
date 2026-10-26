@@ -41,7 +41,8 @@ def preset(name='default'):
                 # of its LT native modifier mapping.
                 source=[{'X':'B','B':'X'}.get(k,k) for k in output] if name=='fc' else list(output)
                 result.append({'id':scope+'.'+key,'scope':scope,'label':label,'input':source,'output':list(output)})
-        result.append({'id':scope+'.cancel','scope':scope,'label':'超级取消','input':['LT','RT'] if name=='fc' else ['RB','RT'],'output':['RB','RT']})
+        if scope=='attack':
+            result.append({'id':'attack.cancel','scope':scope,'label':'超级取消','input':['LT','RT'] if name=='fc' else ['RB','RT'],'output':['RB','RT']})
     for key in COMMON:
         result.append({'id':'common.'+key,'scope':'common','label':ACTION_LABELS[key],'input':[key],'output':[key]})
     return result
@@ -97,6 +98,12 @@ def normalize(body):
     for key in ('swap_sticks','invert_right_y'):
         if type(c[key]) is not bool:raise ValueError('摇杆设置无效')
     rows=c['bindings']
+    if isinstance(rows,list):
+        # Older scoped settings included a synthetic defensive cancel combo.
+        # Drop that obsolete row only; retain every actual action's custom keys.
+        obsolete=[r for r in rows if isinstance(r,dict) and r.get('id')=='defense.cancel']
+        if len(obsolete)>1:raise ValueError('手柄动作重复或无效')
+        rows=[r for r in rows if not isinstance(r,dict) or r.get('id')!='defense.cancel']
     if not isinstance(rows,list) or len(rows)!=len(preset()):raise ValueError('手柄绑定数量无效')
     expected={r['id']:r for r in preset()};seen=set();normalized=[]
     for row in rows:
@@ -124,7 +131,7 @@ def settings(store,body=None):
 def schema():return {'buttons':[{'id':k,'label':LABELS[k]} for k in BUTTONS],'scopes':[{'id':k,'label':v} for k,v in SCOPES.items()],'presets':{k:preset(k) for k in ('default','fc')}}
 
 def controller_table(controller,scope='attack'):
-    rows=[r for r in controller['bindings'] if r['input'] and r['scope'] in (scope,'common')]
+    rows=[r for r in controller['bindings'] if r['input'] and r['scope'] in (scope,'common') and r['id']!='defense.cancel']
     if scope=='menu':rows=[{'input':[k],'output':[k]} for k in BUTTONS]
     rows.sort(key=lambda r:-len(r['input']))
     def mask(keys):return sum(1<<BUTTONS.index(k) for k in keys)

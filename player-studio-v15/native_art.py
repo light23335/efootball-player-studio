@@ -163,7 +163,7 @@ def compile_art(project,identity,library,rigged_path=None,reference_path=None,me
     portrait=appearance.get('portrait')
     if not portrait or appearance.get('hide_portrait'):raise ValueError('请先选择需要实装的球员卡图')
     base='/Game/Assets/ui/Data/Thumbnail/Player/'
-    template,_=assets.get('/Game/Assets/character/RealFace/56321_')
+    template,_=assets.get('/Game/Assets/ui/Data/Thumbnail/Player/7511_')
     from native_thumbnail import card_portrait
     canvas=card_portrait(project,library.store.root/'assets')
     def add_texture(name,pixels,original=template):
@@ -183,7 +183,7 @@ def compile_art(project,identity,library,rigged_path=None,reference_path=None,me
     foreground=render_thumbnail(project,library.store.root/'assets',mini_portrait)
     # Use the actual MobileIcon texture contract, not the RealFace 512px
     # portrait template. User crop coordinates remain in the 512px canvas.
-    mini_template,_=assets.get('/Game/Assets/ui/Data/Thumbnail/Player/100012_')
+    mini_template,_=assets.get('/Game/Assets/ui/Data/Thumbnail/Player/7511_')
     backdrop=backdrop.resize((128,128),Image.Resampling.LANCZOS)
     foreground=foreground.resize((128,128),Image.Resampling.LANCZOS)
     flat=backdrop.copy();flat.alpha_composite(foreground);add_texture(person+'_',flat,mini_template)
@@ -218,6 +218,16 @@ def compile_art(project,identity,library,rigged_path=None,reference_path=None,me
     # F07 is PlayerImage in BP_PlayerAcquisitionCard.SetPlayerImage. F06 is
     # another card decoration layer; it must not receive a second portrait.
     add_texture(person+'f',full_portrait.resize((512,512),Image.Resampling.LANCZOS))
+    # League/gameplan readers may request the owned ID directly and use _l,
+    # bypassing the Dream Team portrait getter and filename-conversion table.
+    # Supply real packages for owned identities only; never replace a shared
+    # original person's portrait when identity binding is enabled.
+    from player_identity_binding import owned_person_aliases
+    league_keys={person,str(identity['card_id']),*map(str,owned_person_aliases(identity))}
+    for key in sorted(league_keys):
+        if key!=person:add_texture(key+'_',flat,mini_template)
+        add_texture(key+'_l',flat,mini_template)
+    report['league_portraits']={'direct_keys':sorted(league_keys),'suffixes':['_','_l'],'native_size':[128,128],'shared_originals_preserved':True}
     binding={'appearance_id':int(card['source_id']),'portrait_name':person+'_','asset_key':person,'card_aliases':aliases,
              'thumbnail_names':names(person,motion)}
     report['portrait_locations']=verify_portrait_locations(result,binding)
@@ -266,7 +276,7 @@ def compile_art(project,identity,library,rigged_path=None,reference_path=None,me
         packages[face+name]=assets.get(face+name)
     renames={name:name.replace('133543',person) for name in packages}
     overrides={face+'SK_133543_Face':converted if body_source else face_skin(converted,model.get('skin_tone'))}
-    maps={'D':Image.open(io.BytesIO(static.image())).convert('RGBA'),
+    maps={'D':Image.open(io.BytesIO(bound.image())).convert('RGBA'),
           'N':Image.new('RGBA',(4,4),(128,128,255,255)),
           'SRO':Image.new('RGBA',(4,4),(64,160,255,255))}
     for name,raw,meta in clone_group(packages,renames,overrides):

@@ -45,7 +45,7 @@ import packs
 from window_sessions import WindowSessions
 from booster_library import BoosterLibrary
 
-APP_VERSION = "1.9.14.2"
+APP_VERSION = "1.9.14.4"
 MAX_PERSONAL_PLAYERS = 10000
 BUNDLE = Path(getattr(sys, "_MEIPASS", Path(__file__).absolute().parent))
 RESOURCE = BUNDLE / "resources"
@@ -134,8 +134,8 @@ def normalize_project(value):
             if type(v) is not int or str(v) not in CATALOG["PARAMETER_BY_SKILL"] or "预留" in CATALOG["SKILL_LABELS"].get(str(v), ""):
                 raise ValueError("工程包含未适配的技能编号，已保留原文件；请先核对技能目录")
         p[key] = list(dict.fromkeys(values))
-    if len(p["additional_skills"]) > 5:
-        raise ValueError("额外习得技能最多 5 项")
+    if len(p["additional_skills"]) > 10:
+        raise ValueError("额外习得技能最多 10 项")
     p["additional_skills"] = [v for v in p["additional_skills"] if v not in p["innate_skills"]]
     p["initial_level"] = int(number(p.get("initial_level"), 1, 100, 1))
     p["max_level"] = int(number(p.get("max_level"), 1, 100, 35))
@@ -769,8 +769,6 @@ class Handler(BaseHTTPRequestHandler):
                 result = self.server.game_import.start(body)
             elif path == '/api/setup/status':
                 result = self.server.setup.status(body.get('refresh',False))
-            elif path == '/api/setup/check-installed':
-                result = self.server.setup.check_installed(body)
             elif path == '/api/setup/preferences':
                 from onboarding import preferences
                 result = preferences(store,body)

@@ -7,7 +7,7 @@ from native_mesh import custom_face_bone_map,retained_bone_map
 from native_neck import fit
 from head_placement import place_without_extension
 
-REVISION='head-only-export-placement-v2'
+REVISION='native-roundtrip-head-preview-v3'
 
 def preview_head(glb,reference,protected=True,neck_seam=True):
     verify_skeleton(glb,reference);doc=copy.deepcopy(glb.doc);binary=bytearray(glb.binary)
@@ -60,6 +60,8 @@ class HeadPreview:
     def __init__(self,library,package):
         self.library=library;self.package=package;self.store=library.store;self.lock=threading.Lock();self.cache={}
     def prepare(self,project):
+        from project_resource_migration import prepare as prepare_project
+        project,migrations=prepare_project(project,self.library.resources,self.library.face_assets())
         model=project['model'];asset=model.get('asset')
         if not asset:raise ValueError('请先选择头模')
         if (model.get('native_source') or {}).get('path'):
@@ -70,8 +72,10 @@ class HeadPreview:
             if row:
                 hit=self.library.convert({'ids':[row[0]]})['results'][row[0]]
                 if hit.get('error'):raise ValueError(hit['error'])
-                return {'revision':REVISION,'url':hit['url'],'original_game_face':True,'protected':False,'face_source':hit.get('face_source')}
-            return {'revision':REVISION,'url':'/assets/'+asset,'original_game_face':True,'protected':False}
+                url=hit['url']
+            else:url='/assets/'+asset
+            return {'revision':REVISION,'url':url,'export_url':url,'raw_url':url,'original_game_face':True,'protected':False,
+                    'anchors':{},'migrations':migrations,'notice':'原版头模保留原始面部权重；张嘴和闭眼仅用于预览检查。'}
         signature=hashlib.sha256(json.dumps([REVISION,asset,model.get('rigged_asset'),model.get('neck_seam',True),model.get('preserve_expression',True)],sort_keys=True).encode()).hexdigest()
         with self.lock:
             if signature in self.cache:return copy.deepcopy(self.cache[signature])

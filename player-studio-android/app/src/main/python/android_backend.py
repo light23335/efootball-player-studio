@@ -3,6 +3,15 @@ from pathlib import Path
 import hashlib,json,logging,os,secrets,shutil,sys,tempfile,threading,time
 
 _server=None
+
+def install_exported_apk(store,name,native_files,installed_games):
+    """Open our generated APK without requiring an installed resource pair."""
+    from workspace_tools import export_file
+    path=export_file(store,name)
+    if path.suffix.lower()!='.apk':raise ValueError('只有 APK 可以直接安装；其他文件请使用保存')
+    installed_games.validateInstall(str(path))
+    return {'opened':True,'action':str(native_files.install(str(path)))}
+
 def start(home,native_dir):
     global _server
     if _server:return json.dumps({'port':_server.server_port,'url':_server.launch_url})
@@ -49,16 +58,7 @@ def start(home,native_dir):
     app.PLATFORM='android'
     app.open_update_action=lambda url:bool(installed_games.openReleasePage(url))
     def open_export_action(store,name):
-        from workspace_tools import export_file
-        path=export_file(store,name)
-        if path.suffix.lower()!='.apk':raise ValueError('只有 APK 可以直接安装；其他文件请使用保存')
-        installed_games.validateInstall(str(path))
-        from onboarding import inspect_source
-        from install_pairs import validate_install
-        scanned=json.loads(str(installed_games.scan()))
-        rows=[inspect_source(r['path']) for r in scanned.get('rows',[])];rows=[r for r in rows if r]
-        validate_install(path,rows)
-        return {'opened':True,'action':str(native_files.install(str(path)))}
+        return install_exported_apk(store,name,native_files,installed_games)
     app.open_export_action=open_export_action
     app.dialog=lambda kind='open',category='project',initial='':str(native_files.pick(kind,category,initial)) or None
     app.NativeLibrary=AndroidLibrary;native_library.NativeLibrary=AndroidLibrary

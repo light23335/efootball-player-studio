@@ -4,8 +4,12 @@ import numpy as np
 from native_glb import Glb,verify_skeleton
 
 def adapt_skeleton(glb,reference):
-    try:return _adapt_skeleton(glb,reference)
-    except ValueError as exc:return attach_to_native(glb,reference,str(exc))
+    from glb_import import normalize_head
+    glb,sections=normalize_head(glb)
+    try:result,report=_adapt_skeleton(glb,reference)
+    except ValueError as exc:result,report=attach_to_native(glb,reference,str(exc))
+    report['sections']=sections
+    return result,report
 
 
 def attach_to_native(glb,reference,reason):
@@ -46,10 +50,23 @@ def _adapt_skeleton(glb,reference):
     attrs=glb.head()['attributes'];joints=glb.read(attrs['JOINTS_0']);weights=glb.read(attrs['WEIGHTS_0']);used=set(joints[weights>1e-7].astype(int))
     inverse=glb.read(own[0]['inverseBindMatrices']);target=reference.read(game[0]['inverseBindMatrices'])
     if inverse.shape!=target.shape:raise ValueError('新版绑定矩阵数量改变')
+    # Native player heads have individual facial pivots. THREE also writes
+    # bone TRS as matrices, sometimes with a preview pose. Compare the actual
+    # bind matrices, not missing TRS fields; retain all facial influences.
+    native_names=len(left)==166 and left[0].get('name')=='root_main' and right[7].get('name')=='sk_head'
+    native_bind=native_names
+    if native_bind:
+        old_global=np.linalg.inv(inverse.reshape(-1,4,4).transpose(0,2,1))
+        new_global=np.linalg.inv(target.reshape(-1,4,4).transpose(0,2,1))
+        for i in used:
+            facial=left[i].get('name','').startswith(('skf_','hair'))
+            distance=np.linalg.norm(old_global[i,:3,3]-new_global[i,:3,3])
+            if distance>(.03 if facial else .003):native_bind=False;break
+            if not facial and np.max(np.abs(old_global[i,:3,:3]-new_global[i,:3,:3]))>.035:native_bind=False;break
     adjusted=[]
     for i,(a,b) in enumerate(zip(left,right)):
         name=a.get('name','');facial=name.startswith('skf_')
-        if i in used:
+        if i in used and not native_bind:
             # Never silently retarget a different head/neck/body pivot. Facial
             # template drift up to 1 mm is safe to rebind at the same neutral
             # mesh; actual facial behaviour still follows the player's switch.
@@ -73,4 +90,4 @@ def _adapt_skeleton(glb,reference):
     # Neutral vertices, topology, UVs and embedded textures are never changed.
     for key in ('POSITION','NORMAL','TEXCOORD_0','JOINTS_0','WEIGHTS_0'):
         if not np.array_equal(glb.read(attrs[key]),result.read(result.head()['attributes'][key])):raise ValueError('迁移绑定意外改变了头模网格，已停止')
-    return result,{'status':'compatible-template-rebind','adjusted_bones':adjusted,'authored_geometry_unchanged':True,'maximum_used_facial_pivot_tolerance_m':.001}
+    return result,{'status':'native-player-template-rebind' if native_bind else 'compatible-template-rebind','adjusted_bones':adjusted,'authored_geometry_unchanged':True,'facial_weights_preserved':True}

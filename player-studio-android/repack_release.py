@@ -7,8 +7,8 @@ Signing uses the operator's existing private release key.
 from pathlib import Path
 import argparse,hashlib,io,json,re,struct,sys,zipfile
 ROOT=Path(__file__).resolve().parent
-VERSION='1.9.14.2-android.1'
-VERSION_CODE=199142
+VERSION='1.9.14.4-android.1'
+VERSION_CODE=199144
 
 def compact_editor_apk(source,output,changes,removed=()):
     """Write one copy of each editor asset and retain 16-KiB .so alignment."""

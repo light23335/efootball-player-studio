@@ -158,6 +158,8 @@ class NativePackage:
             if type(body.get('force_fps160',False)) is not bool:raise ValueError('160 帧开关无效')
             if not isinstance(ids,list) or len(ids)!=len(set(ids)) or len(ids)>10000:raise ValueError('球员选择无效')
             projects=[copy.deepcopy(current) if uid==current['package_id'] else self.store.saved_player(uid)['project'] for uid in ids]
+            from project_resource_migration import prepare as prepare_project
+            projects=[prepare_project(p,self.resources,self.library.face_assets())[0] for p in projects]
             pack_ids=body.get('pack_ids',[]);packs=[p for p in load_packs(self.store) if p['uuid'] in pack_ids]
             coach_ids=body.get('coach_ids',[]);coaches=[c for c in self.coach_candidates(current) if c['uuid'] in coach_ids]
             if len(coaches)!=len(set(coach_ids)):raise ValueError('所选教练不存在')
