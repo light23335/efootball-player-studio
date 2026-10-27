@@ -75,11 +75,13 @@ missing:
 mov x0,xzr
 ret
 ''')
-    b.helper('skill_widget_create_ten', '''
+    b.helper('skill_widget_create_rows', '''
 stp x19,x20,[sp,#-48]!
-stp x21,x30,[sp,#16]
+stp x21,x22,[sp,#16]
+str x30,[sp,#32]
 mov x19,x0
 mov x20,x1
+mov w22,w2
 mov w21,#1
 loop:
 mov x0,x19
@@ -91,13 +93,14 @@ mov w8,#0x1358
 add x0,x19,x8
 bl shared_skill_widget_assign
 add w21,w21,#1
-cmp w21,#11
-b.ne loop
-ldp x21,x30,[sp,#16]
+cmp w21,w22
+b.le loop
+ldr x30,[sp,#32]
+ldp x21,x22,[sp,#16]
 ldp x19,x20,[sp],#48
 ret
 ''',{'create':0x3052434})
-    b.helper('skill_widget_fill_ten', '''
+    b.helper('skill_widget_fill_rows', '''
 stp x19,x20,[sp,#-80]!
 stp x21,x22,[sp,#16]
 stp x23,x24,[sp,#32]
@@ -109,8 +112,8 @@ ldr w22,[x20,#8]
 ldr w8,[x21,#8]
 cmp w22,w8
 csel w22,w22,w8,le
-cmp w22,#10
-mov w8,#10
+cmp w22,#100
+mov w8,#100
 csel w22,w22,w8,le
 mov w8,#0x1358
 add x0,x19,x8
@@ -156,11 +159,11 @@ ret
     # These two signed guards are the direct cause of an entirely blank page.
     for name,address in (('owned',0x3051594),('library',0x2f457d0)):
         b.add('skill_widget_'+name+'_innate_bound',address,
-              'cmp w8,#20\n'+jump('resume'),{'resume':address+4})
+              'cmp w8,#100\n'+jump('resume'),{'resume':address+4})
     # The original constructor creates its heading before this first row call.
     # Existing <=5 layouts use the unmodified five-row constructor.
     b.add('skill_widget_additional_creation',0x304bb0c,
-          'sub sp,sp,#64\n'+save_all()+f'''
+          'sub sp,sp,#512\n'+save_all()+f'''
 mov x0,x19
 ''' + call('player') + f'''
 cbz x0,original
@@ -170,23 +173,24 @@ mov w3,#0
 bl shared_skill_capacity_cache
 cmp w0,#5
 b.le original
+mov w2,w0
 mov x0,x19
 mov x1,x20
-bl shared_skill_widget_create_ten
-'''+restore_all()+'add sp,sp,#64\n'+jump('done')+'''
+bl shared_skill_widget_create_rows
+'''+restore_all()+'add sp,sp,#512\n'+jump('done')+'''
 original:
-'''+restore_all()+'add sp,sp,#64\n'+call('create')+'\n'+jump('resume'),
+'''+restore_all()+'add sp,sp,#512\n'+call('create')+'\n'+jump('resume'),
           {'player':0x302b480,'create':0x3052434,'resume':0x304bb10,'done':0x304be70})
     b.add('skill_widget_additional_display',0x305191c, '''
 cmp w8,#5
 b.le original
-cmp w8,#10
+cmp w8,#100
 b.gt invalid
 '''+save_all()+'''
 mov x0,x19
 mov x1,x21
 mov x2,x20
-bl shared_skill_widget_fill_ten
+bl shared_skill_widget_fill_rows
 '''+restore_all()+jump('done')+'''
 invalid:
 '''+jump('done')+'''
@@ -201,8 +205,8 @@ b.le original
 '''+save_all()+'''
 mov x24,#0
 ldr w25,[x19,#0x12f0]
-cmp w25,#10
-mov w8,#10
+cmp w25,#100
+mov w8,#100
 csel w25,w25,w8,le
 loop:
 ldr x8,[x19,#0x12e8]

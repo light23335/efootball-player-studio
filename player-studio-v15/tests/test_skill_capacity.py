@@ -38,7 +38,7 @@ class SkillCapacityNativeTests(unittest.TestCase):
         u,r=self.u,self.r
         vm=u.Uc(u.UC_ARCH_ARM64,u.UC_MODE_ARM)
         for a,n in ((0x30000000,0x10000),(0x40000000,0x20000),
-                    (0x50000000,0x402000),(0x60000000,0x200000)):
+                    (0x50000000,0x802000),(0x60000000,0x200000)):
             vm.mem_map(a,n)
         vm.reg_write(r.UC_ARM64_REG_SP,0x40010000)
         vm.reg_write(r.UC_ARM64_REG_TPIDR_EL0,0x4001f000)
@@ -138,11 +138,11 @@ class SkillCapacityNativeTests(unittest.TestCase):
         for index in range(1,count+1):self.helper(vm,'skill_widget_assign',table,index,0x62000000+index*256)
         names,ids=0x4000b000,0x4000b020
         vm.mem_write(names,struct.pack('<QII',0x4000b100,count,count))
-        vm.mem_write(ids,struct.pack('<QII',0x4000b500,count,count))
+        vm.mem_write(ids,struct.pack('<QII',0x4000b900,count,count))
         for index in range(count):
             text=('技能 '+str(index+1)).encode('utf-16le')+b'\0\0';at=0x4000c000+index*64
             vm.mem_write(at,text);vm.mem_write(0x4000b100+index*16,struct.pack('<QII',at,len(text)//2,len(text)//2))
-            vm.mem_write(0x4000b500+index*4,struct.pack('<I',index))
+            vm.mem_write(0x4000b900+index*4,struct.pack('<I',index))
         return owner,names,ids,rows,created,headings
 
     def display_widgets(self,vm,owner,names,ids,additional):
@@ -161,15 +161,16 @@ class SkillCapacityNativeTests(unittest.TestCase):
             self.assertEqual(rows,[])
 
     def test_final_widget_consumers_receive_every_innate_and_additional_label(self):
-        for additional,count in ((False,11),(False,20),(True,6),(True,10),(True,5)):
+        for additional,count in ((False,11),(False,20),(False,21),(False,78),(False,100),
+                                 (True,6),(True,10),(True,11),(True,78),(True,100),(True,5)):
             vm=self.machine();common=self.parse(vm,list(range(10)))
             owner,names,ids,rows,_,headings=self.widget_fixture(vm,common,count,additional)
             self.display_widgets(vm,owner,names,ids,additional)
             self.assertEqual([row[1] for row in rows],['技能 '+str(i+1) for i in range(count)])
             self.assertEqual(len(headings),1)
 
-    def test_extended_additional_constructor_creates_ten_real_row_slots(self):
-        for count,expected in ((10,10),(6,10),(5,1)):
+    def test_extended_additional_constructor_creates_actual_rows_up_to_100(self):
+        for count,expected in ((100,100),(78,78),(11,11),(10,10),(6,6),(5,1)):
             vm=self.machine();common=self.parse(vm,list(range(count)))
             owner,names,ids,_,created,_=self.widget_fixture(vm,common,0)
             vm.reg_write(self.r.UC_ARM64_REG_X19,owner);vm.reg_write(self.r.UC_ARM64_REG_X20,0x63000000)
@@ -178,8 +179,8 @@ class SkillCapacityNativeTests(unittest.TestCase):
             if count>5:
                 for index,widget in enumerate(created,1):self.assertEqual(self.helper(vm,'skill_widget_find',owner+0x1358,index),widget)
 
-    def test_secondary_skill_info_modal_builds_all_ten_rows(self):
-        for count,expected in ((10,10),(6,6),(5,5)):
+    def test_secondary_skill_info_modal_builds_all_rows_up_to_100(self):
+        for count,expected in ((100,100),(78,78),(11,11),(10,10),(6,6),(5,5)):
             vm=self.machine();r=self.r;observed=[];owner=0x40006000
             vm.mem_write(owner+0x12e8,struct.pack('<QII',0x40009000,count,count))
             vm.mem_write(0x40009000,struct.pack('<'+'I'*count,*range(100,100+count)))
@@ -218,8 +219,8 @@ class SkillCapacityNativeTests(unittest.TestCase):
         labels=[bytes(vm.mem_read(p+1,vm.mem_read(p,1)[0]//2)).decode() for p in range(a,z,24)]
         return values,labels
 
-    def test_parser_accepts_zero_to_ten_without_touching_adjacent_fields(self):
-        for n in range(11):
+    def test_parser_accepts_up_to_100_without_touching_adjacent_fields(self):
+        for n in [*range(11),11,20,21,50,78,99,100,101]:
             vm=self.machine();common=self.parse(vm,list(range(n)))
             self.assertEqual(list(struct.unpack('<5I',vm.mem_read(common+0x64,20))),list(range(min(n,5)))+[74]*max(0,5-n))
 
@@ -230,17 +231,33 @@ class SkillCapacityNativeTests(unittest.TestCase):
             self.assertEqual(ids,skills)
             self.assertEqual(labels,['S'+str(self.params[i]) for i in skills])
 
+    def test_100_additional_slots_snapshot_names_and_capacity_clamp(self):
+        valid=[i for i in range(79) if i!=74]
+        for count in (11,21,78,100,101):
+            skills=[valid[i%len(valid)] for i in range(count)]
+            vm=self.machine();common=self.parse(vm,skills)
+            ids,labels=self.listing(vm,common)
+            self.assertEqual(ids,skills[:100])
+            self.assertEqual(labels,['S'+str(self.params[i]) for i in skills[:100]])
+
+    def test_all_available_innate_skills_display_without_additional(self):
+        innate=[i for i in range(79) if i!=74]
+        vm=self.machine();common=self.parse(vm,[])
+        ids,labels=self.listing(vm,common,False,innate)
+        self.assertEqual(ids,innate)
+        self.assertEqual(len(labels),len(innate))
+
     def test_twenty_innate_plus_ten_additional_are_separate(self):
-        innate=list(range(20));additional=list(range(20,30))
+        innate=list(range(30));additional=[i for i in range(30,79) if i!=74]
         vm=self.machine();common=self.parse(vm,additional)
         ids,labels=self.listing(vm,common,False,innate+additional)
-        self.assertEqual(ids,innate);self.assertEqual(len(labels),20)
+        self.assertEqual(ids,innate);self.assertEqual(len(labels),30)
         self.assertEqual(self.listing(vm,common)[0],additional)
         vm.reg_write(self.r.UC_ARM64_REG_X0,common-0x30)
         vm.reg_write(self.r.UC_ARM64_REG_X30,0x40000000)
         self.flags={self.params[i] for i in innate+additional}
         vm.emu_start(0x737b638,0x40000000,count=1000000)
-        self.assertEqual(vm.reg_read(self.r.UC_ARM64_REG_W0),20)
+        self.assertEqual(vm.reg_read(self.r.UC_ARM64_REG_W0),30)
 
     def test_normal_player_keeps_five_slots(self):
         vm=self.machine();common=self.parse(vm,[1,2])
@@ -249,11 +266,12 @@ class SkillCapacityNativeTests(unittest.TestCase):
 
     def test_six_to_ten_padding_and_editing_back_to_five(self):
         vm=self.machine()
-        for n in (10,6,9,5,0,10):
-            common=self.parse(vm,list(range(n)))
+        for n in (100,10,6,9,5,0,10):
+            skills=[i%74 for i in range(n)]
+            common=self.parse(vm,skills)
             ids,_=self.listing(vm,common)
-            width=10 if n>5 else 5
-            self.assertEqual(ids,list(range(n))+[74]*(width-n))
+            width=n if n>5 else 5
+            self.assertEqual(ids,skills+[74]*(width-n))
 
     def test_two_owned_copies_and_hash_collisions_do_not_share_skills(self):
         vm=self.machine()

@@ -105,11 +105,11 @@ class StudioTests(unittest.TestCase):
         self.assertEqual(restored['package_id'],p['package_id'])
         self.assertEqual((other.root/'assets'/asset['id']).read_bytes(),data)
 
-    def test_unknown_skills_and_extra_slot_overflow_rejected(self):
+    def test_unknown_skills_rejected_but_additional_overflow_preserved(self):
         p=copy.deepcopy(self.store.project);p['innate_skills']=[9999]
         with self.assertRaises(ValueError):app.normalize_project(p)
         p['innate_skills']=[];p['additional_skills']=[int(k) for k in app.CATALOG['PARAMETER_BY_SKILL'] if '预留' not in app.CATALOG['SKILL_LABELS'].get(str(k),'')][:11]
-        with self.assertRaises(ValueError):app.normalize_project(p)
+        self.assertEqual(app.normalize_project(p)['additional_skills'],p['additional_skills'])
 
     def test_ten_additional_skills_save_and_reopen(self):
         p=copy.deepcopy(self.store.project);p['innate_skills']=[]
@@ -127,8 +127,10 @@ class StudioTests(unittest.TestCase):
         restored=app.Store(self.store.root).project
         self.assertEqual(restored['innate_skills'],skills[:20])
         self.assertEqual(restored['additional_skills'],skills[20:30])
-        p['innate_skills']=skills[:21]
-        with self.assertRaisesRegex(ValueError,'20'):app.normalize_project(p)
+        p['innate_skills']=skills[:21];p['additional_skills']=skills[21:32]
+        normalized=app.normalize_project(p)
+        self.assertEqual(normalized['innate_skills'],skills[:21])
+        self.assertEqual(normalized['additional_skills'],skills[21:32])
 
     def test_second_booster_slot_does_not_shift(self):
         p=copy.deepcopy(self.store.project);p['booster_ids']=[0,201]

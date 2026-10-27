@@ -46,14 +46,23 @@ class AdditionalDesignSyncTests(unittest.TestCase):
         self.assertEqual(out['additional_skill_id'],[4,5,3])
         self.assertEqual(sync_additional_design(out,self.incoming([]))['additional_skill_id'],[3])
 
-    def test_full_selection_retains_displaced_learned_values_for_later_free_slots(self):
+    def test_old_ten_slot_limit_no_longer_displaces_independently_learned_skills(self):
         current={'additional_skill_id':[33,34]}
         out=sync_additional_design(current,self.incoming(list(range(10))))
-        self.assertEqual(out['additional_skill_id'],list(range(10)))
-        self.assertEqual(out['_studio_additional_retained'],[33,34])
+        self.assertEqual(out['additional_skill_id'],list(range(10))+[33,34])
+        self.assertEqual(out['_studio_additional_retained'],[])
         out=sync_additional_design(out,self.incoming([15]))
         self.assertEqual(out['additional_skill_id'],[15,33,34])
         self.assertEqual(out['_studio_additional_retained'],[])
+
+    def test_every_available_additional_skill_survives_design_sync(self):
+        selected=[i for i in range(79) if i!=74]
+        incoming=self.incoming(selected);incoming['_studio_innate_design']=[]
+        current={'additional_skill_id':[], 'level_info':{'level':35}, 'games':99}
+        out=sync_additional_design(current,incoming)
+        self.assertEqual(out['additional_skill_id'],selected)
+        self.assertEqual(out['level_info'],current['level_info'])
+        self.assertEqual(out['games'],99)
 
     def test_old_export_without_tracking_metadata_is_supported(self):
         out=sync_additional_design({'additional_skill_id':[]},{'additional_skill_id':[2,75,78]})

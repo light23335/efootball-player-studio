@@ -292,10 +292,10 @@ def sync_additional_design(current,incoming):
     learned=[v for v in learned if v not in older and v not in innate and v not in selected]
     merged=[*selected,*learned]
     out=copy.deepcopy(current)
-    out['additional_skill_id']=merged[:10]
+    out['additional_skill_id']=merged[:100]
     out['_studio_additional_design']=selected
-    # Preserve displaced learned values privately, never send >10 live slots.
-    out['_studio_additional_retained']=merged[10:]
+    # Preserve any overflow privately; the V17 native sidecar handles 100 slots.
+    out['_studio_additional_retained']=merged[100:]
     return out
 
 

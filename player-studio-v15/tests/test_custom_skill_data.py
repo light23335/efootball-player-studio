@@ -95,6 +95,17 @@ class CustomSkillDataTests(unittest.TestCase):
         for skill in range(20):self.assertTrue((value>>self.skills[str(skill)]['bit'])&1,skill)
         for skill in range(20,30):self.assertFalse((value>>self.skills[str(skill)]['bit'])&1,skill)
 
+    def test_v17_more_than_twenty_and_ten_keep_complete_separate_lists(self):
+        p=self.project(False)
+        p['innate_skills']=list(range(31));p['additional_skills']=list(range(31,61))
+        definition,record=self.compile(p)
+        self.assertEqual(definition['owned']['additional_skill_id'],list(range(31,61)))
+        self.assertEqual(definition['owned']['_studio_innate_design'],list(range(31)))
+        self.assertEqual(len(definition['owned']['parameters']),147)
+        value=int.from_bytes(record,'little')
+        for skill in range(31):self.assertTrue((value>>self.skills[str(skill)]['bit'])&1,skill)
+        for skill in range(31,61):self.assertFalse((value>>self.skills[str(skill)]['bit'])&1,skill)
+
     def test_client_row_decode_and_clear_never_grow_or_overwrite_owned_parameters(self):
         p=self.project();definition,record=self.compile(p)
         decoded=[0]*147

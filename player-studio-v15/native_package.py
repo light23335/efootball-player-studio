@@ -35,7 +35,7 @@ from custom_boosters import issues as booster_issues,validate_projects as valida
 
 PREFIX='assets/gateway-release/'
 NATIVE='custom-resources/legends-v10/'
-COMPILER_REVISION='v17-additional-design-sync-and-zidane-text-1.9.15.4'
+COMPILER_REVISION='v17-skills-100-100-and-project-compat-1.9.15.5'
 
 
 def compact(value):return json.dumps(value,ensure_ascii=False,separators=(',',':')).encode('utf8')
@@ -289,7 +289,7 @@ class NativePackage:
                         if not team:raise ValueError(p['identity']['name']+'：请选择原版球队后再实装')
                         source_id=(p.get('source_player') or {}).get('id') or (p.get('native_card') or {}).get('source_id')
                         source_record=records.get(int(source_id)) if source_id else None
-                        definitions.append(compile_player(p,catalog,costs,identity,template,int(nation),int(team),source_record))
+                        definitions.append(compile_player(p,catalog,costs,identity,template,int(nation),int(team),source_record,game_version=self.library.profile.get('game_version','V14')))
                 from pack_covers import compile_covers
                 cover_files,cover_bindings,cover_routes=compile_covers(body['packs'],self.store)
                 all_definitions={d['identity']['package_id']:d for d in inherited.get('players',[])}
@@ -420,7 +420,7 @@ class NativePackage:
                         if document['game_version']=='V17':
                             from native_skill_capacity import hooks as capacity_hooks,REVISION as SKILL_CAPACITY_REVISION
                             profile['native_hooks']+=capacity_hooks(engine)
-                            document['skill_capacity']={'innate':20,'additional':10,'display':'native-lists',
+                            document['skill_capacity']={'innate':100,'additional':100,'display':'native-lists',
                                                         'revision':SKILL_CAPACITY_REVISION}
                     with source.open('lib/arm64-v8a/libUE4.so') as engine:
                         for name in ('position_hook','acquisition_hook','overall_hook','thumbnail_hook'):

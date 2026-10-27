@@ -45,7 +45,7 @@ import packs
 from window_sessions import WindowSessions
 from booster_library import BoosterLibrary
 
-APP_VERSION = "1.9.15.4"
+APP_VERSION = "1.9.15.5"
 GAME_PLATFORM = "android"
 MAX_PERSONAL_PLAYERS = 10000
 BUNDLE = Path(getattr(sys, "_MEIPASS", Path(__file__).absolute().parent))
@@ -141,10 +141,8 @@ def normalize_project(value):
             if type(v) is not int or str(v) not in CATALOG["PARAMETER_BY_SKILL"] or "预留" in CATALOG["SKILL_LABELS"].get(str(v), ""):
                 raise ValueError("工程包含未适配的技能编号，已保留原文件；请先核对技能目录")
         p[key] = list(dict.fromkeys(values))
-    if len(p["innate_skills"]) > 20:
-        raise ValueError("天生技能最多 20 项")
-    if len(p["additional_skills"]) > 10:
-        raise ValueError("额外习得技能最多 10 项")
+    # Project storage must preserve valid designs beyond the game's display
+    # capacity. Native APK compilation checks its own supported capacities.
     p["additional_skills"] = [v for v in p["additional_skills"] if v not in p["innate_skills"]]
     p["initial_level"] = int(number(p.get("initial_level"), 1, 100, 1))
     p["max_level"] = int(number(p.get("max_level"), 1, 100, 35))

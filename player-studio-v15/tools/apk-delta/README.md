@@ -1,0 +1,69 @@
+# Xdelta
+
+[![CI](https://github.com/jmacd/xdelta/actions/workflows/ci.yml/badge.svg)](https://github.com/jmacd/xdelta/actions/workflows/ci.yml)
+
+Xdelta version 3 is a C library and command-line tool for delta
+compression using VCDIFF/RFC 3284 streams.
+
+The current release series is **3.2.x**.
+
+# Building
+
+The sources live in the [`xdelta3`](xdelta3) directory.  To build with
+CMake:
+
+```sh
+cd xdelta3
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+ctest --test-dir build
+```
+
+See [`xdelta3/README.md`](xdelta3/README.md) for static and shared library
+build/install instructions, liblzma options, and regression testing.
+
+# Historical Xdelta 1
+
+The modernized historical Xdelta 1 release lives in
+[`xdelta1/`](xdelta1). It is currently **1.2.1** and uses CMake; follow
+its [build and install instructions](xdelta1/README).
+
+# Releases
+
+Xdelta 3 releases include prebuilt binaries for Linux, macOS, and Windows
+(x86, x86-64, and ARM64). Xdelta 1 releases include Windows x86 and x86-64
+binaries. Source tarballs are also attached to each
+[GitHub Release](https://github.com/jmacd/xdelta/releases). Xdelta 3 binaries
+statically link liblzma (xz) and BLAKE3; Xdelta 1 Windows packages bundle their
+required runtime libraries. Releases are cut by pushing a
+`vMAJOR.MINOR.PATCH` tag, which drives the corresponding workflow in
+[`.github/workflows`](.github/workflows). See
+[`RELEASING.md`](RELEASING.md) for the full procedure and the release-branch
+conventions (`releaseMAJOR_MINOR_apl`).
+
+# License
+
+This repository contains branches of Xdelta 3.x that were
+re-licensed by the original author under the [Apache Public
+License version 2.0](http://www.apache.org/licenses/LICENSE-2.0),
+namely:
+
+- __release3_0_apl__ Change to APL based on 3.0.11 sources
+- __release3_1_apl__ Merges release3_0_apl with 3.1.0 sources
+
+The `main` branch and the 3.2.x series (`release3_2_apl`) continue under the
+same Apache 2.0 license.
+
+The original GPL licensed Xdelta lives at http://github.com/jmacd/xdelta-gpl.
+
+# Documentation
+
+Full documentation is published at **<https://jmacd.github.io/xdelta/>**,
+including the [command-line syntax](https://jmacd.github.io/xdelta/commandline/),
+[armor mode](https://jmacd.github.io/xdelta/armor/), and the
+[programming guide](https://jmacd.github.io/xdelta/programming-guide/).
+
+The site sources live in [`site/`](site) (MkDocs + Material) and are built and
+deployed by [`.github/workflows/site.yml`](.github/workflows/site.yml).  These
+pages were migrated and updated from the project's legacy
+[`wiki` branch](https://github.com/jmacd/xdelta/tree/wiki).

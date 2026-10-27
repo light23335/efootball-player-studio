@@ -1,14 +1,14 @@
-"""Version-checked V17 20 innate / 10 additional native display support."""
+"""Version-checked V17 100 innate / 100 additional native display support."""
 import copy
 import json
 from studio_resources import bundled_resources
-REVISION='v17-owned-skills-20-10-v2-widgets'
+REVISION='v17-owned-skills-100-100-v3-widgets'
 
 
 def hooks(engine):
     data=json.loads((bundled_resources()/'native-skill-capacity.json').read_text(encoding='utf8'))
     if not data.get('production_ready') or data.get('revision')!=REVISION:
-        raise ValueError('20 项天生 / 10 项追加技能接口尚未完成验证')
+        raise ValueError('100 项天生 / 100 项追加技能接口尚未完成验证')
     result=copy.deepcopy(data['bundles'])
     for bundle in result:
         for entry in [bundle]+bundle.get('extra_entries',[]):

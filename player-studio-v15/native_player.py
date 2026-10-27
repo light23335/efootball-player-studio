@@ -87,9 +87,10 @@ def reserve_identity(project, occupied, registry):
             'bound_person_ids':list(row.get('bound_person_ids',[]))}
 
 
-def compile_player(project,catalog,costs,identity,template,nation_id,team_id,source_record=None):
-    if len(project.get('innate_skills',[]))>20:raise ValueError('天生技能最多 20 项')
-    if len(project.get('additional_skills',[]))>10:raise ValueError('额外习得技能最多 10 项')
+def compile_player(project,catalog,costs,identity,template,nation_id,team_id,source_record=None,game_version='V17'):
+    innate_limit,additional_limit=(100,100) if game_version=='V17' else (20,10)
+    if len(project.get('innate_skills',[]))>innate_limit:raise ValueError(f'工程已完整保留；当前游戏实装支持天生技能最多 {innate_limit} 项，请调整后生成 APK')
+    if len(project.get('additional_skills',[]))>additional_limit:raise ValueError(f'工程已完整保留；当前游戏实装支持额外习得技能最多 {additional_limit} 项，请调整后生成 APK')
     p=copy.deepcopy(template)
     base=list(p.get('parameters') or [])
     if len(base)!=147:raise ValueError('实装模板不是已核对的 147 项参数布局')
