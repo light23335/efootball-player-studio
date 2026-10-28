@@ -1,4 +1,6 @@
 import {renderLinkups,updateLinkup,linkupText} from './coach-links.js';
+import {CoachHeads} from './coach-heads.js';
+import {CoachModelEditor} from './coach-model.js';
 import {coachIdentity,identityField,identityLabel,identityMatches} from './coach-identities.js';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $=s=>document.querySelector(s);
@@ -6,12 +8,16 @@ export const tactics=[['possession','控球游戏'],['short_counter','快速反�
 
 export class CoachUI {
   constructor(context){
+    this.heads=new CoachHeads(context);
+    this.modelEditor=new CoachModelEditor({...context,row:()=>this.editing});
     Object.assign(this,context);this.query='';this.editing=null;this.custom=this.custom||[];this.previewOpen=false;this.previewQuery='';this.page=0;this.pageSize=24;this.originalPortraits=new Map();this.pendingPortraits=new Set();this.identityOpen=null;this.identityQueries={nation:'',team:''};
     document.addEventListener('input',e=>{
       const el=e.target;
       if(el.dataset.coachIdentityQuery&&this.editing){const kind=el.dataset.coachIdentityQuery;this.identityQueries[kind]=el.value;this.renderIdentityResults(kind);}
       if(this.editing&&updateLinkup(this.editing,el,this.catalog.COACH_LINK_TYPES||[])==='render')$('#coach-link-editor').innerHTML=renderLinkups(this.editing,this.catalog);
       if(el.id==='coach-query'){this.query=el.value;this.page=0;this.renderResults();}
+      if(el.id==='coach-custom-only'){this.customOnly=el.checked;this.page=0;this.renderResults();}
+      if(el.id==='coach-model-only'){this.modelOnly=el.checked;this.page=0;this.renderResults();}
       if(el.id==='preview-coach-query'){this.previewQuery=el.value;this.renderPreviewResults();}
       if(el.dataset.coachPortrait&&this.editing?.portrait){this.editing.portrait[el.dataset.coachPortrait]=Number(el.value);this.portraitPreview();}
       if(el.dataset.coachField&&this.editing){
@@ -31,6 +37,9 @@ export class CoachUI {
       if(e.target.closest('[data-new-coach]'))this.edit();
       if(e.target.closest('[data-cancel-coach]')){this.editing=null;this.rerender();}
       if(e.target.closest('[data-save-coach]'))this.save().catch(e=>this.toast(e.message,true));
+      const remove=e.target.closest('[data-delete-coach]');if(remove){this.deletePending=remove.dataset.deleteCoach;this.renderResults();}
+      if(e.target.closest('[data-cancel-delete-coach]')){this.deletePending=null;this.renderResults();}
+      if(e.target.closest('[data-confirm-delete-coach]'))this.remove(this.deletePending).catch(e=>this.toast(e.message,true));
       if(e.target.closest('[data-upload-coach-portrait]'))this.uploadPortrait().catch(e=>this.toast(e.message,true));
       if(e.target.closest('[data-clear-coach-portrait]')&&this.editing){this.editing.portrait=null;this.rerender();}
       const use=e.target.closest('[data-use-coach]');if(use)this.choose(use.dataset.useCoach);
@@ -56,7 +65,7 @@ export class CoachUI {
     finally{ids.forEach(id=>this.pendingPortraits.delete(id));}
   }
   updatePortraitElements(){for(const el of document.querySelectorAll('[data-native-coach-portrait]')){const row=this.rows().find(r=>String(r.id)===el.dataset.nativeCoachPortrait);if(row)el.innerHTML=this.portraitImage(row);}}
-  resultPage(){const query=this.query.trim().toLocaleLowerCase(),rows=this.rows().filter(r=>[r.name,r.name_en,r.pack_title,r.id].join(' ').toLocaleLowerCase().includes(query)),pages=Math.max(1,Math.ceil(rows.length/this.pageSize));this.page=Math.max(0,Math.min(this.page,pages-1));return {total:rows.length,pages,rows:rows.slice(this.page*this.pageSize,(this.page+1)*this.pageSize)};}
+  resultPage(){const query=this.query.trim().toLocaleLowerCase(),rows=this.rows().filter(r=>(!this.customOnly||r.type==='custom')&&(!this.modelOnly||this.hasHead(r))&&[r.name,r.name_en,r.pack_title,r.id].join(' ').toLocaleLowerCase().includes(query)),pages=Math.max(1,Math.ceil(rows.length/this.pageSize));this.page=Math.max(0,Math.min(this.page,pages-1));return {total:rows.length,pages,rows:rows.slice(this.page*this.pageSize,(this.page+1)*this.pageSize)};}
   pagination(result){return `<div class="coach-pagination"><p class="note">共 ${result.total} 名教练 · 第 ${this.page+1} / ${result.pages} 页 · 每页 ${this.pageSize} 名</p><div class="welcome-actions"><button class="button secondary" data-coach-page="-1" ${this.page?'':'disabled'}>上一页</button><button class="button secondary" data-coach-page="1" ${this.page+1<result.pages?'':'disabled'}>下一页</button></div></div>`;}
   portraitControls(row){return `<div class="coach-portrait-editor"><h3>教练头像</h3><div class="portrait-actions"><button class="button secondary" data-upload-coach-portrait>${row.portrait?'更换头像':'上传头像'}</button>${row.portrait?'<button class="button subtle" data-clear-coach-portrait>移除头像</button>':''}</div>${this.portraitImage(row,true)}${row.portrait?`<div class="field-grid three">${[['zoom','缩放',1,4,.01],['x','水平取景',-100,100,1],['y','垂直取景',-100,100,1]].map(([k,label,min,max,step])=>`<label class="field"><span>${label}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${row.portrait[k]}" data-coach-portrait="${k}"></label>`).join('')}</div>`:''}<p class="note">支持 PNG、JPG 和 WebP。头像与教练一起保存、随工程分享；生成 APK 时勾选此教练即可写入游戏。</p></div>`;}
   portraitPreview(){const c=this.editing?.portrait,img=$('#coach-portrait-image');if(!c||!img)return;img.style.objectPosition=`${50+c.x/2}% ${50+c.y/2}%`;img.style.transformOrigin=img.style.objectPosition;img.style.transform=`scale(${c.zoom})`;}
@@ -90,6 +99,7 @@ export class CoachUI {
     },'preview-coach');this.rerender();
   }
   edit(id){
+    this.modelEditor.reset();
     const row=id&&this.rows().find(c=>c.id===id),uuid=row?.type==='custom'?row.uuid:crypto.randomUUID();
     this.editing={...(row?structuredClone(row):{}),id:'custom:'+uuid,uuid,type:'custom',name:row?(row.type==='custom'?row.name:row.name+' · 自建'):'',name_en:row?.name_en||'',tactics:structuredClone(row?.tactics||Object.fromEntries(tactics.map(([k])=>[k,70]))),effects:structuredClone(row?.effects||{})};
     Object.assign(this.editing,coachIdentity(row));this.identityOpen=null;this.identityQueries={nation:'',team:''};
@@ -97,16 +107,18 @@ export class CoachUI {
     delete this.editing.raw_payload;delete this.editing.unmapped_abilities;delete this.editing.ability_ids;
     this.navigate('coaches');
   }
-  render(){
-    if(this.editing){const row=this.editing;return `<section class="panel"><div class="panel-title"><h2>${this.custom.some(c=>c.id===row.id)?'编辑自建教练':'新建教练'}</h2><span class="tag">永久身份 ${esc(row.uuid.slice(0,8))}</span></div><div class="panel-body"><div class="field-grid"><label class="field"><span>教练姓名</span><input class="input" data-coach-field="name" value="${esc(row.name)}" maxlength="80" placeholder="输入教练姓名"></label><label class="field"><span>英文名（可选）</span><input class="input" data-coach-field="name_en" value="${esc(row.name_en)}" maxlength="80"></label></div>${this.identityControls(row)}${this.portraitControls(row)}<div id="coach-link-editor">${renderLinkups(row,this.catalog)}</div><h3 style="margin-top:22px">战术熟练度</h3><div class="field-grid three">${tactics.map(([key,label])=>`<label class="field"><span>${label}</span><input class="input" type="number" min="0" max="100" data-coach-field="tactics.${key}" value="${row.tactics[key]||0}"></label>`).join('')}</div><h3 style="margin-top:22px">能力加成</h3><p class="note" style="margin:0 0 14px">每项可填 -20 到 +20；选择这名教练后即时应用到能力与总评预览。战术熟练度采用原包公式，能力加成另外叠加。</p><div class="field-grid three">${Object.entries(this.catalog.ABILITIES).map(([index,label])=>`<label class="field"><span>${esc(label)}</span><input class="input" type="number" min="-20" max="20" data-coach-field="effects.${index}" value="${row.effects[index]||0}"></label>`).join('')}</div><div class="personal-actions"><button class="button primary" data-save-coach>保存并用于预览</button><button class="button secondary" data-cancel-coach>取消</button></div><p class="note">自建教练保存于本机，也随使用它的球员工程携带。保存后可在“APK 球员实装”勾选写入游戏。实装支持全部 26 项能力中最多 2 项原生增能，每项 +1 至 +20，另有 2 项心有灵犀；负数仅用于软件预览。</p></div></section>`;}
-    return `<section class="panel"><div class="panel-title"><h2>教练资料与自建教练</h2><button class="button primary" data-new-coach>＋ 新建教练</button></div><div class="panel-body"><p class="panel-description">当前数据库提供 ${this.catalog.coaches.length.toLocaleString()} 条原版教练资料。按所选战术熟练度计算能力变化，再叠加已映射的能力加成。可以复制原版资料建立自己的教练。头像从已准备的游戏资源按需读取；没有独立头像的教练会标明。</p><div class="search-box">⌕<input id="coach-query" value="${esc(this.query)}" placeholder="搜索教练中文名、英文名、卡包或编号"></div><div id="coach-results"></div></div></section>`;
+  render(){return this.heads.render()+this.renderCoach();}
+  renderCoach(){
+    if(this.editing){const row=this.editing;return `<section class="panel"><div class="panel-title"><h2>${this.custom.some(c=>c.id===row.id)?'编辑自建教练':'新建教练'}</h2><span class="tag">永久身份 ${esc(row.uuid.slice(0,8))}</span></div><div class="panel-body"><div class="field-grid"><label class="field"><span>教练姓名</span><input class="input" data-coach-field="name" value="${esc(row.name)}" maxlength="80" placeholder="输入教练姓名"></label><label class="field"><span>英文名（可选）</span><input class="input" data-coach-field="name_en" value="${esc(row.name_en)}" maxlength="80"></label></div>${this.identityControls(row)}${this.portraitControls(row)}${this.modelEditor.render()}<div id="coach-link-editor">${renderLinkups(row,this.catalog)}</div><h3 style="margin-top:22px">战术熟练度</h3><div class="field-grid three">${tactics.map(([key,label])=>`<label class="field"><span>${label}</span><input class="input" type="number" min="0" max="100" data-coach-field="tactics.${key}" value="${row.tactics[key]||0}"></label>`).join('')}</div><h3 style="margin-top:22px">能力加成</h3><p class="note" style="margin:0 0 14px">每项可填 -20 到 +20；选择这名教练后即时应用到能力与总评预览。战术熟练度采用原包公式，能力加成另外叠加。</p><div class="field-grid three">${Object.entries(this.catalog.ABILITIES).map(([index,label])=>`<label class="field"><span>${esc(label)}</span><input class="input" type="number" min="-20" max="20" data-coach-field="effects.${index}" value="${row.effects[index]||0}"></label>`).join('')}</div><div class="personal-actions"><button class="button primary" data-save-coach>保存并用于预览</button><button class="button secondary" data-cancel-coach>取消</button></div><p class="note">自建教练保存于本机，也随使用它的球员工程携带。保存后可在“APK 球员实装”勾选写入游戏。实装支持全部 26 项能力中最多 2 项原生增能，每项 +1 至 +20，另有 2 项心有灵犀；负数仅用于软件预览。</p></div></section>`;}
+    return `<section class="panel"><div class="panel-title"><h2>教练资料与自建教练</h2><button class="button primary" data-new-coach>＋ 新建教练</button></div><div class="panel-body"><p class="panel-description">当前数据库提供 ${this.catalog.coaches.length.toLocaleString()} 条原版教练资料。按所选战术熟练度计算能力变化，再叠加已映射的能力加成。可以复制原版资料建立自己的教练。头像从已准备的游戏资源按需读取；没有独立头像的教练会标明。</p><div class="search-box">⌕<input id="coach-query" value="${esc(this.query)}" placeholder="搜索教练中文名、英文名、卡包或编号"></div><label class="switch-label"><input type="checkbox" id="coach-custom-only" ${this.customOnly?'checked':''}>只看自建教练（${this.rows().filter(c=>c.type==='custom').length}）</label><label class="switch-label"><input type="checkbox" id="coach-model-only" ${this.modelOnly?'checked':''}>只看有三维头模的教练</label><div id="coach-results"></div></div></section>`;
   }
-  activate(page){if(page==='coaches'&&!this.editing)this.renderResults();}
+  activate(page){if(page==='coaches'&&!this.editing)this.renderResults();this.heads.activate(page).then(()=>{if(page==='coaches'&&!this.editing)this.renderResults();});this.modelEditor.activate(page);}
+  hasHead(row){return !!row.head_model||this.heads.rows.some(r=>r.coach_ids.includes(String(row.type==='custom'?row.native_source_id:row.id)));}
   renderResults(){
     const el=$('#coach-results');if(!el)return;
     this.syncPortraitScope();
     const result=this.resultPage(),rows=result.rows;
-    el.innerHTML=`${this.pagination(result)}<div class="coach-grid">${rows.map(row=>`<article class="coach-card"><div data-native-coach-portrait="${esc(row.id)}">${this.portraitImage(row)}</div><div class="row-between"><h3>${esc(row.name)}</h3><span class="inline-badge">${row.type==='custom'?'自建':'原版'}</span></div><small>${esc(row.name_en||'')}${row.pack_title?' · '+esc(row.pack_title):''}</small><p class="note">${esc(this.identityText(row))}</p><div class="coach-tactics">${tactics.map(([key,label])=>`<span>${label}<strong>${row.tactics[key]}</strong></span>`).join('')}</div><p>${esc(this.effectText(row))}</p><p class="note">${esc(linkupText(row,this.catalog))}</p>${row.unmapped_abilities?.length?'<small>未映射的原版特征未计入</small>':''}<div class="personal-actions"><button class="button secondary" data-use-coach="${esc(row.id)}">${this.project().preview?.coach_id===row.id?'当前预览教练':'用于预览'}</button><button class="button subtle" data-edit-coach="${esc(row.id)}">${row.type==='custom'?'编辑教练':'复制为自建'}</button></div></article>`).join('')||'<p class="no-matches">没有匹配的教练，请更换关键词。</p>'}</div>${result.pages>1?this.pagination(result):''}`;
+    el.innerHTML=`${this.pagination(result)}<div class="coach-grid">${rows.map(row=>`<article class="coach-card"><div data-native-coach-portrait="${esc(row.id)}">${this.portraitImage(row)}</div><div class="row-between"><h3>${esc(row.name)}</h3><span class="inline-badge">${row.type==='custom'?'自建':'原版'}${this.hasHead(row)?' · 三维头模':''}</span></div><small>${esc(row.name_en||'')}${row.pack_title?' · '+esc(row.pack_title):''}</small><p class="note">${esc(this.identityText(row))}</p><div class="coach-tactics">${tactics.map(([key,label])=>`<span>${label}<strong>${row.tactics[key]}</strong></span>`).join('')}</div><p>${esc(this.effectText(row))}</p><p class="note">${esc(linkupText(row,this.catalog))}</p>${row.unmapped_abilities?.length?'<small>未映射的原版特征未计入</small>':''}<div class="personal-actions"><button class="button secondary" data-use-coach="${esc(row.id)}">${this.project().preview?.coach_id===row.id?'当前预览教练':'用于预览'}</button><button class="button subtle" data-coach-head-view="${esc(row.type==='custom'?row.native_source_id||'custom':row.id)}">查看三维头模</button><button class="button subtle" data-edit-coach="${esc(row.id)}">${row.type==='custom'?'编辑教练':'复制为自建'}</button>${this.deleteControls(row)}</div></article>`).join('')||'<p class="no-matches">没有匹配的教练，请更换关键词。</p>'}</div>${result.pages>1?this.pagination(result):''}`;
     this.loadPortraits(rows);
   }
   async save(){
@@ -115,5 +127,23 @@ export class CoachUI {
       this.commit(()=>{const p=this.project();p.custom_coaches??=[];p.custom_coaches=p.custom_coaches.filter(c=>c.id!==coach.id);p.custom_coaches.push(coach);p.preview??={};p.preview.coach_id=coach.id;if(!p.preview.team_style)p.preview.team_style=Object.entries(coach.tactics).sort((a,b)=>b[1]-a[1])[0][0];},'save-coach');
       this.editing=null;await this.flushSave(true);this.rerender();this.toast('教练已保存，并已用于当前球员预览');
     }finally{this.saving=false;}
+  }
+  deleteControls(row){
+    if(row.type!=='custom')return '';
+    if(this.deletePending!==row.id)return `<button class="button subtle" data-delete-coach="${esc(row.id)}">删除教练</button>`;
+    return `<div class="coach-delete-confirm"><p>删除“${esc(row.name)}”及本机球员工程中的对应引用？将先备份。已导出的 APK 和游戏内教练保持原状。</p><button class="button danger" data-confirm-delete-coach ${this.deleting?'disabled':''}>确认删除</button><button class="button secondary" data-cancel-delete-coach ${this.deleting?'disabled':''}>取消</button></div>`;
+  }
+  async remove(id){
+    const row=this.rows().find(c=>c.id===id&&c.type==='custom');if(!row||this.deleting)return;
+    this.deleting=true;this.renderResults();
+    try{
+      await this.flushSave(true);
+      const result=await this.api('coaches/delete',{uuid:row.uuid,confirmed:true});
+      this.custom=this.custom.filter(c=>c.id!==id);this.editing=null;this.deletePending=null;
+      this.onCoachDeleted?.(row.uuid);
+      this.replaceProject(result.project);
+      this.rerender();this.toast(`已删除教练，并清理 ${result.affected_projects} 份已保存球员工程中的引用。原资料已备份。`);
+      if(result.unreadable_projects.length)this.toast(`另有 ${result.unreadable_projects.length} 份无法读取的工程未处理，可在“我的球员”查看。`,true);
+    }finally{this.deleting=false;this.renderResults();}
   }
 }

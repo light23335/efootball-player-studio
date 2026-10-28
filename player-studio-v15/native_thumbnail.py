@@ -7,7 +7,7 @@ def card_portrait(project,assets,include_underlay=True):
     """Keep the existing large-card portrait composition byte-for-byte."""
     card=project.get('native_card') or {};a=project['appearance'];canvas=Image.new('RGBA',(1200,1720))
     under=next((r for r in card.get('layers',[]) if r['slot']=='f04' and r['kind']=='image'),None)
-    if include_underlay and under and card.get('preset_id'):
+    if include_underlay and under and card.get('preset_id') and not card.get('custom_motion'):
         with Image.open(assets/under['asset_id']) as im:canvas.alpha_composite(im.convert('RGBA').resize(canvas.size,Image.Resampling.LANCZOS))
     if not a.get('portrait'):raise ValueError('请先选择球员人物图')
     with Image.open(assets/a['portrait']) as im:image=im.convert('RGBA')
@@ -46,7 +46,7 @@ class ThumbnailPreview:
             assets=self.library.store.root/'assets';fallback=card_portrait(project,assets,include_underlay=False) if fields.get('thumbnail_mode','card')=='card' else None
             backdrop=background(project,self.library);foreground=render(project,assets,fallback)
             image=render(project,assets,fallback,background=backdrop);motion=plan(project,self.library)
-            layers=[{**layer,**self.library.thumbnail_movie(layer['path'])} for layer in motion['layers']]
+            layers=[layer if layer.get('source')=='custom' else {**layer,**self.library.thumbnail_movie(layer['path'])} for layer in motion['layers']]
             def png(im):
                 stream=io.BytesIO();im.save(stream,format='PNG');return 'data:image/png;base64,'+base64.b64encode(stream.getvalue()).decode('ascii')
             value={'revision':motion['revision'],'image':png(image),'background':png(backdrop),'foreground':png(foreground),

@@ -38,6 +38,8 @@ def normalize_coach(value, abilities):
     row['portrait'] = normalize(row.get('portrait'))
     from native_coach_links import normalize_slots
     row['linkups'] = normalize_slots(row.get('linkups'))
+    from coach_models import normalize as normalize_model
+    row['head_model'] = normalize_model(row.get('head_model'))
     return row
 
 
@@ -65,6 +67,11 @@ class CoachStore:
 
     def save(self, value):
         data = normalize_coach(value, self.abilities)
+        if (data.get('head_model') or {}).get('asset_id'):
+            from native_glb import Glb
+            asset=self.root.parent/'assets'/data['head_model']['asset_id']
+            if not asset.is_file():raise ValueError('教练 GLB 文件缺失，请重新导入')
+            Glb(asset.read_bytes())
         if data.get('portrait'):
             from coach_portraits import pixels
             from types import SimpleNamespace

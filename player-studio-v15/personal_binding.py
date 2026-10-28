@@ -310,6 +310,8 @@ def _thumbnail_hook(payload,blob,routes,profile):
     call runs with its original arguments and exact return address.
     """
     rows=bytearray();date_offset=profile.get('front_date_offset')
+    private_front=any(r.get('front_names') is not None for r in routes)
+    row_size=416 if private_front else 160
     if date_offset is not None and (type(date_offset) is not int or not 8<=date_offset<profile['mini_offset'] or date_offset%24!=8):raise ValueError('大卡日期图层位置无效')
     for route in sorted(routes,key=lambda r:r['cardId']):
         values=route.get('thumbnail_names')
@@ -324,6 +326,13 @@ def _thumbnail_hook(payload,blob,routes,profile):
                 raise ValueError('小头像原生图层名称无效')
             raw=value.encode('ascii');rows.extend(bytes([len(raw)*2])+raw.ljust(23,b'\0'))
         rows.extend(struct.pack('<Q',int(has_mini)))
+        if private_front:
+            front=route.get('front_names')
+            if front is not None and (not isinstance(front,list) or len(front)!=10):raise ValueError('独立大卡需要10个图层槽位')
+            for value in front or ['']*10:
+                if not isinstance(value,str) or len(value)>22 or any(c not in '0123456789abcdefghijklmnopqrstuvwxyz_' for c in value):raise ValueError('独立大卡图层名称无效')
+                raw=value.encode('ascii');rows.extend(bytes([len(raw)*2])+raw.ljust(23,b'\0'))
+            rows.extend(struct.pack('<QQ',int(front is not None),0))
     stock=bytearray()
     for route in sorted(profile.get('stock_routes',[]),key=lambda r:r['key']):
         if type(route['key']) is not int or not 0<=route['key']<2**35 or len(route['names'])!=2:raise ValueError('原版小卡动画索引无效')
@@ -333,7 +342,7 @@ def _thumbnail_hook(payload,blob,routes,profile):
             raw=value.encode('ascii');stock.extend(bytes([len(raw)*2])+raw.ljust(23,b'\0'))
     if not rows and not stock:return
     stock.extend(bytes(56))
-    rows.extend(bytes(160));blob.extend(bytes(-len(blob)%8));start=len(blob);words=[];labels={};branches=[];calls=[]
+    rows.extend(bytes(row_size));blob.extend(bytes(-len(blob)%8));start=len(blob);words=[];labels={};branches=[];calls=[]
     def emit(w):words.append(w)
     def pair(op,a,b,off,scale):return op|((off//scale)<<15)|(b<<10)|(31<<5)|a
     def branch(kind,label,reg=0):branches.append((len(words),kind,label,reg));emit(0)
@@ -343,7 +352,7 @@ def _thumbnail_hook(payload,blob,routes,profile):
     for reg in range(0,8,2):emit(pair(0xad000000,reg,reg+1,176+reg*16,16))
     table_ref=len(words);emit(0)
     labels['loop']=len(words);emit(0xf9400128);branch('cbz','stock',8)
-    emit(0xeb0802ff);branch('eq','match');emit(0x91028129);branch('b','loop') # cmp x23,x8; add x9,x9,#160
+    emit(0xeb0802ff);branch('eq','match');emit(0x91000129|(row_size<<10));branch('b','loop')
     labels['match']=len(words);emit(0xf900a3e9) # resident source record at sp+320
     emit(0xf9404d22);branch('cbz','date',2) # ldr x2,[x9,#152]; legacy routes retain native mini layers
     for slot in range(6):
@@ -359,6 +368,14 @@ def _thumbnail_hook(payload,blob,routes,profile):
         # Use std::string::assign so previously allocated storage is released.
         emit(0xf940a3e1);emit(0x91002421);emit(0x2a1f03e2)
         emit(0x91000260|(date_offset<<10));calls.append(len(words));emit(0);emit(0xd63f0200)
+    if private_front:
+        if date_offset!=200 or profile['mini_offset']!=440:raise ValueError('独立大卡原生结构尚未适配')
+        emit(0xf940a3e1);emit(0xf940c822);branch('cbz','done',2) # front-present at record+400
+        for slot in range(10):
+            offset=160+slot*24
+            emit(0xf940a3e1);emit(0x39400022|(offset<<10));emit(0x53017c42)
+            emit(0x91000021|((offset+1)<<10));emit(0x91000260|((8+slot*24)<<10))
+            calls.append(len(words));emit(0);emit(0xd63f0200)
     branch('b','done')
     labels['stock']=len(words);stock_ref=len(words);emit(0);emit(0xd35cfeea);emit(0x9100054a)
     labels['stock_loop']=len(words);emit(0xf9400128);branch('cbz','done',8)

@@ -108,7 +108,7 @@ def prepare(library,bindings,inherited_routes,records,enabled,resources=None):
         mini=MiniTextures(assets,lambda name:library._alias(db,name))
         for row in [*bindings,*routes]:
             values=row.get('thumbnail_names')
-            if values is not None:
+            if values is not None and not row.get('private_movie_textures'):
                 if len(values)!=6:raise ValueError('小头像原生图层数量无效')
                 row['thumbnail_names']=mini.values(values,(1,5))
         for row in stock:row['names']=mini.values(row['names'],(0,1))

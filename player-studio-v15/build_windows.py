@@ -9,7 +9,7 @@ root = Path(__file__).absolute().parent
 workspace = root.parent
 parser=argparse.ArgumentParser()
 parser.add_argument('--dist-dir',default=str(workspace/'球员工坊-V15'))
-dist=Path(parser.parse_args().dist_dir).absolute()
+dist=Path(parser.parse_args().dist_dir).resolve()
 deps = workspace / ".work" / "studio-build-deps"
 if deps.exists():
     sys.path.insert(0, str(deps))
@@ -29,6 +29,7 @@ PyInstaller.__main__.run([
     "--specpath", str(workspace / ".work" / "studio-spec-v15"),
     "--paths", str(root),
     "--paths", str(native_deps),
+    "--collect-submodules", "wannacri",
     "--add-data", str(root / "web") + ":web",
     "--add-data", str(root / "resources") + ":resources",
     "--add-data", str(root / "personal_runtime.py") + ":.",
@@ -36,4 +37,5 @@ PyInstaller.__main__.run([
     "--exclude-module", "tkinter",
 ])
 if (root / 'tools').is_dir():
-    shutil.copytree(root / 'tools', dist / 'tools', dirs_exist_ok=True)
+    shutil.copytree(root / 'tools', dist / 'tools', dirs_exist_ok=True,
+                    ignore=shutil.ignore_patterns('system-commandline-sentinel-files'))

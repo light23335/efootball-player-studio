@@ -11,7 +11,8 @@ export function formatCardDate(value){
   return `${Number(m[3])} ${MONTHS[Number(m[2])-1]} '${m[1].slice(-2)}`;
 }
 export function applyCardPreset(project,card){
-  project.native_card=structuredClone(card);project.native_card_disabled=false;
+  const custom=project.native_card?.custom_motion;
+  project.native_card=structuredClone(card);if(custom)project.native_card.custom_motion=custom;project.native_card_disabled=false;
   project.card_type=card.card_type;project.card_series=card.native_style==='0601'?'ShowTime':card.card_type;
   project.native_art??={};for(const key of ['background','foreground','full'])project.native_art[key]=null;
   project.appearance.background_image=null;project.appearance.native_overlay_text=true;

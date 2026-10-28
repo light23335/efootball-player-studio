@@ -31,7 +31,8 @@ def import_selected(store,archive,manifest):
     rows=app.migration.read_json(files['projects.json'])
     if not isinstance(rows,list) or not 1<=len(rows)<=100:raise ValueError('工程合集人数无效')
     from project_transfer import prepare as transfer_project
-    projects=[app.normalize_project(transfer_project(p,app.GAME_PLATFORM,manifest.get('game_platform'))) for p in rows]
+    from custom_motion_import import upgrade_legacy
+    projects=[app.normalize_project(upgrade_legacy(transfer_project(p,app.GAME_PLATFORM,manifest.get('game_platform')),files)) for p in rows]
     if len({p['package_id'] for p in projects})!=len(projects):raise ValueError('工程合集包含重复身份')
     for p in projects:
         if not p['identity']['name'].strip():raise ValueError('工程合集包含未命名球员')
