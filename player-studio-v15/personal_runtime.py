@@ -537,6 +537,33 @@ def apply_packs(conn,packs):
     conn.execute("insert into meta values('league_position_agent_ids',?) on conflict(key) do update set value=excluded.value",(compact(active),))
 
 
+def install_save_import_sync(document):
+    """Reconcile a successfully restored DB before the gateway builds its lists.
+
+    The stock import calls restore_snapshot then _open_logic directly, bypassing
+    initialize/legend activation. Do not wait for a later activation to grant
+    newly installed designs. Failed reconciliation propagates to stock recovery.
+    """
+    import save_transfer
+    previous=save_transfer.restore_snapshot
+    if getattr(previous,'_studio_save_import_sync',False):
+        previous._studio_document=document
+        return
+    def restore_snapshot(*args,**kwargs):
+        result=previous(*args,**kwargs)
+        target=args[1] if len(args)>1 else kwargs['destination']
+        import sqlite3
+        from contextlib import closing
+        current=restore_snapshot._studio_document()
+        with closing(sqlite3.connect(str(target))) as conn:
+            apply_definitions(conn,current)
+            apply_coaches(conn,current.get('coaches',[]))
+        return result
+    restore_snapshot._studio_save_import_sync=True
+    restore_snapshot._studio_document=document
+    save_transfer.restore_snapshot=restore_snapshot
+
+
 def install(namespace):
     """Install through the original gateway stub, without changing its loader."""
     original=namespace['initialize']
@@ -575,6 +602,7 @@ def install(namespace):
             legends_v10._active_fingerprint=None
             configured['revision']=revision
             configured['document']=document
+        install_save_import_sync(lambda:configured['document'])
         if not configured['wrapped']:
             previous=legends_v10.activate
             def activate(resource_root,conn):

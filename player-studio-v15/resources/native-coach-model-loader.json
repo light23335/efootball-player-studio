@@ -1,0 +1,30 @@
+{
+  "format": "native-coach-model-loader-v1",
+  "source": "provided V17 ARM64 libUE4.so",
+  "resolver_address": "0x3a84b08",
+  "regions": [
+    {
+      "address": "0x3a84b08",
+      "file_offset": 61344520,
+      "bytes": 380,
+      "sha256": "3334b61391f680a839113c060bc975880e66ada089bd803d2a75d30e52b6380d"
+    },
+    {
+      "address": "0x3a856b8",
+      "file_offset": 61347512,
+      "bytes": 172,
+      "sha256": "a5895243a172deb553d6a44a4bda3abbc24490b317048885a5a1d68df5fd476d"
+    }
+  ],
+  "manager_folder": "/Game/Assets/character/DemoFace/Manager/",
+  "filename": "SK_<native manager key>_Face",
+  "personal_ids": [
+    600000,
+    999999
+  ],
+  "native_key_person_mask": "0xffff0000003fffff",
+  "type_bit": 44,
+  "subtype_bit": 40,
+  "variant_bit": 28,
+  "proof": "Actual ARM64 resolver executed with bounded string/allocation stubs and a package-existence oracle. Private IDs resolve to their own model when present and to empty when missing. No engine patch is applied. In-game acceptance pending."
+}

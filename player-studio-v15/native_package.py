@@ -35,7 +35,7 @@ from custom_boosters import issues as booster_issues,validate_projects as valida
 
 PREFIX='assets/gateway-release/'
 NATIVE='custom-resources/legends-v10/'
-COMPILER_REVISION='v17-skills-100-100-and-project-compat-1.9.15.5'
+COMPILER_REVISION='v17-skills-100-100-and-project-compat-1.9.15.5-coach-lod-and-save-import-sync-v3'
 
 
 def compact(value):return json.dumps(value,ensure_ascii=False,separators=(',',':')).encode('utf8')
@@ -137,7 +137,10 @@ class NativePackage:
                          'current':uid==current['package_id'],'model_error':error,'model_warning':warning,
                          'booster_error':'；'.join(booster_issues(p,catalog['ABILITIES'])),
                          'maximum_overall':maximum_development(p,catalog)['overall'],'max_level':p['max_level']})
-        return {'rows':rows,'errors':saved['errors'],'coaches':[{'uuid':c['uuid'],'name':c['name']} for c in self.coach_candidates(current)],
+        from coach_heads import CoachHeadStore
+        from coach_models import prepare as prepare_coach_model
+        coach_rows=[prepare_coach_model(c,self.library) for c in self.coach_candidates(current)]
+        return {'rows':rows,'errors':saved['errors'],'coach_heads':CoachHeadStore(self.store.root).list(),'coaches':[{'uuid':c['uuid'],'name':c['name'],'has_model':bool(c.get('head_model'))} for c in coach_rows],
                 'packs':[{'uuid':p['uuid'],'name':p['name'],'enabled':p['enabled'],'member_count':len(p['members'])} for p in load_packs(self.store)]}
 
     def coach_candidates(self,current):
@@ -154,6 +157,9 @@ class NativePackage:
                 self.state={'phase':'working','message':'为离线资源 APK 生成同一本机签名'}
                 threading.Thread(target=self._companion,args=(body['companion'],body.get('installation_mode','update')),daemon=True).start()
                 return copy.deepcopy(self.state)
+            from coach_heads import CoachHeadStore
+            if type(body.get('include_coach_heads',True)) is not bool:raise ValueError('教练头模开关无效')
+            head_rows=CoachHeadStore(self.store.root).list() if body.get('include_coach_heads',True) else []
             current=body['project'];ids=body.get('selected_ids',[current['package_id']])
             if type(body.get('force_fps160',False)) is not bool:raise ValueError('160 帧开关无效')
             if not isinstance(ids,list) or len(ids)!=len(set(ids)) or len(ids)>10000:raise ValueError('球员选择无效')
@@ -174,10 +180,10 @@ class NativePackage:
             if 'frame_rate' in body:option_settings['frame_rate']=body['frame_rate']
             option_settings=normalize_game_settings(option_settings)
             body=dict(body,export_settings=option_settings)
-            if not projects and not packs and not coaches and not game_options(self.store).get('enabled') and not body.get('force_fps160') and not any(v['enabled'] for v in option_settings.values()):raise ValueError('请选择球员、教练或卡包，或启用游戏设置')
+            if not projects and not packs and not coaches and not head_rows and not game_options(self.store).get('enabled') and not body.get('force_fps160') and not any(v['enabled'] for v in option_settings.values()):raise ValueError('请选择球员、教练、头模或卡包，或启用游戏设置')
             validate_boosters(projects,self._booster_labels())
             self.state={'phase':'working','message':'核对当前游戏原包与所选球员','players':len(projects)}
-        threading.Thread(target=self._worker,args=(dict(body,projects=projects,packs=packs,coaches=coaches),),daemon=True).start()
+        threading.Thread(target=self._worker,args=(dict(body,projects=projects,packs=packs,coaches=coaches,coach_heads=head_rows),),daemon=True).start()
         return self.status()
 
     def _companion(self,path,installation_mode='update'):
@@ -299,12 +305,16 @@ class NativePackage:
                 self.update(message='编译个人卡图、脸模网格与原生材质')
                 reference=self.reference_model() if any(not (p.get('model',{}).get('native_source') or {}).get('path') for p in projects) else None
                 metadata=json.loads((self.resources/'native-face-template.json').read_text(encoding='utf8'))
-                art=[];bindings=[];art_reports=[]
+                art=[];bindings=[];art_reports=[];private_movie_files={}
                 for p,identity,rig in zip(projects,identities,rigs):
                     self.update(message='编译卡图与脸模：'+p['identity']['name'])
                     own=owners.get(p['package_id'],{}).get('aliases',set())
                     asset_key=reserve_asset_key(p['package_id'],{v&0xfffffff for v in records}-own,asset_registry)
                     packages,binding,report=compile_art(p,identity,self.library,rig,reference,metadata,asset_key)
+                    from private_card_motion import prepare as private_motion
+                    private_art,private_files,private_report=private_motion(p,binding,self.library)
+                    packages.extend(private_art);private_movie_files.update(private_files)
+                    if private_report:report['custom_motion']=private_report
                     art.extend(packages);bindings.append(binding);art_reports.append(report)
                 self.update(message='写入原生球员表、卡面索引及增能效果')
                 coach_catalog=json.loads((self.resources/'coaches.json').read_text(encoding='utf8'))['coaches']
@@ -320,9 +330,19 @@ class NativePackage:
                 coach_resources,coaches=compile_coaches(Cpk(original),selected_coaches,coach_catalog,coach_registry,
                     {c['id'] for c in old_coaches},{b for c in old_coaches for b in c['payload'].get('ability_id',[])[:2] if b})
                 coach_resources.update(link_resources)
+                from coach_models import compile_models as compile_coach_models,verify_loader as verify_coach_model_loader
+                coach_model_art,coach_model_report=compile_coach_models(self.library,selected_coaches,coaches,{c['id'] for c in old_coaches})
+                coach_model_loader=None
+                if coach_model_art:
+                    with source.open('lib/arm64-v8a/libUE4.so') as engine:coach_model_loader=verify_coach_model_loader(engine,self.profile_resources)
+                art.extend(coach_model_art)
                 from coach_portraits import compile_portraits,owned_paths
                 coach_art,coach_portrait_report=compile_portraits(body.get('coaches',[]),coaches,self.library)
                 art.extend(coach_art)
+                from coach_heads import compile_heads,replacement_indices as head_replacements
+                self.update(message='编译教练三维头模')
+                head_art,coach_head_report=compile_heads(self.library,body.get('coach_heads',[]))
+                art.extend(head_art)
                 from card_presentation import repair_routes
                 prior_card_routes=repair_routes(copy.deepcopy(inherited.get('native_binding',{}).get('routes',[])),inherited.get('players',[]),records)
                 from card_motion import prepare as prepare_card_motion,replacement_indices as motion_replacements
@@ -335,9 +355,29 @@ class NativePackage:
                 out=work/'pc3700_mobile_and.utoc'
                 from native_body import container_parts
                 additions,paths,packages=container_parts(art)
-                resource_build=append_container(src,out,additions,paths,packages,personal_source.owned_art_paths(src,selected_owners)|owned_paths(src,[c['id'] for c in old_coaches])|motion_replacements(src,motion['packages']))
+                resource_build=append_container(src,out,additions,paths,packages,personal_source.owned_art_paths(src,selected_owners)|owned_paths(src,[c['id'] for c in old_coaches])|motion_replacements(src,motion['packages'])|head_replacements(src,head_art+coach_model_art))
                 replacements={PREFIX+NATIVE+'dt870_mobile_and.cpk':cpk,
                               PREFIX+'livedata/dt870_mobile_and.cpk':cpk}
+                from coach_heads import patch_stock_containers
+                self.update(message='替换原始教练模型容器并核对加载路径')
+                stock_head_replacements,stock_head_report=patch_stock_containers(source,self.library,head_art,coach_head_report,work)
+                replacements.update(stock_head_replacements)
+                if private_movie_files:
+                    from private_card_motion import write_movie_pak,read_movie_pak
+                    private_pak=work/'cardstudio_100_P.pak'
+                    member='assets/pc0000_mobile_and.pak';target_zip=work/'pc0000-movies.zip'
+                    with (io.BytesIO(replacements[member]) if member in replacements else source.open(member)) as stream,zipfile.ZipFile(stream) as nested,zipfile.ZipFile(target_zip,'w') as dst:
+                        old_name='PesMobile/Content/Paks/cardstudio_100_P.pak'
+                        prior=read_movie_pak(nested.read(old_name)) if old_name in nested.namelist() else {}
+                        for name,raw in private_movie_files.items():
+                            if name in prior and prior[name]!=raw:raise ValueError('独立动画资源名冲突')
+                            prior[name]=raw
+                        write_movie_pak(private_pak,prior)
+                        for entry in nested.infolist():
+                            if entry.filename==old_name:continue
+                            with nested.open(entry) as inp,dst.open(copy.copy(entry),'w') as output:shutil.copyfileobj(inp,output,4*1024*1024)
+                        dst.write(private_pak,'PesMobile/Content/Paks/cardstudio_100_P.pak',compress_type=zipfile.ZIP_STORED)
+                    replacements[member]=target_zip.read_bytes()
                 for suffix in ('.utoc','.ucas'):replacements[PREFIX+NATIVE+'pc3700_mobile_and'+suffix]=out.with_suffix(suffix).read_bytes()
                 # Original activation verifies all four files, including its empty PAK.
                 resource_files={};original_resource_files={}
@@ -364,6 +404,10 @@ class NativePackage:
                           'card_series_by_id':card_series(cpk),
                           'preview_boosters':{str(b['id']):{'effects':b['effects'],'conditional':bool(b.get('conditional'))} for b in catalog['boosters']}}
                 document['players']=list(all_definitions.values())
+                document['coach_heads']=coach_head_report
+                document['coach_head_containers']=stock_head_report
+                document['coach_models']=personal_source.merge(inherited.get('coach_models',[]),coach_model_report,'uuid')
+                document['coach_model_loader']=coach_model_loader
                 document['pack_policy']={'allow_china_edition':True}
                 from workspace_tools import game_options
                 document['game_options']=game_options(self.store)
@@ -446,6 +490,7 @@ class NativePackage:
                             routes.append({'cardId':cid,'suiteDonorId':identity['card_id'],
                                            'portraitKey':binding['asset_key'],'modelFaceKey':binding['asset_key'],
                                            'thumbnail_names':binding['thumbnail_names'],
+                                           **({'front_names':binding['front_names'],'private_movie_textures':True} if binding.get('front_names') else {}),
                                            'club_id':definition['owned']['initial_base_team_id'],
                                            'position':definition['base_parameters'][0],
                                            'maximum_overall':definition['maximum_development']['overall'],
@@ -499,7 +544,7 @@ class NativePackage:
                     'native_tables':table_report,'signature':verified,'live_data':live_report,
                     'apk_compaction':apk_build['compaction'],'resource_compaction':resource_build.compaction_report,
                     'native_binding_routes':len(document.get('native_binding',{}).get('routes',[])),'frame_rate':document['frame_rate'],'game_settings':export_settings,'render_preflight':document.get('render_preflight'),'card_motion_preflight':card_motion_report,'installation':installation,
-                    'coaches':[{'uuid':c['uuid'],'id':c['id'],'name':c['payload']['name']} for c in coaches],'coach_portraits':coach_portrait_report,
+                    'coaches':[{'uuid':c['uuid'],'id':c['id'],'name':c['payload']['name']} for c in coaches],'coach_portraits':coach_portrait_report,'coach_heads':coach_head_report,'coach_head_containers':stock_head_report,'coach_models':coach_model_report,'coach_model_loader':coach_model_loader,
                     'source_apk':str(apk),'output':str(output),'engine_profile':release['base_release_id'],'resource_release':release['release_id'],
                     'in_game_tested':False,'progress_policy':'first grant only; existing instance retains live XP, training and statistics'}
             report_path=output.with_suffix('.report.json');report_path.write_bytes(compact(report))
