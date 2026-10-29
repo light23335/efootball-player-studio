@@ -99,7 +99,7 @@ str s2,[sp,#88]
 fmul s0,s0,s0
 fmul s2,s2,s2
 fadd s0,s0,s2
-fmov s1,#2.25
+ldr s1,shield_distance_squared
 fcmp s0,s1
 b.vs no
 b.gt no
@@ -132,11 +132,11 @@ ret
 ''',{'team':0x697d0f8,'root':0x698f7e0,'game_info':0x6a64350,
      'data':0x72c40b0,'parameters':0x7301ef8,'flag':0x72b39c4,
      'interaction':0x6ae8604,'yaw':0x6910428,'angle_difference':0x6ad3e50},
-     {'rear_angle':120.},evidence=[
+     {'rear_angle':120.,'shield_distance_squared':3.24},evidence=[
         '0x6ed9cd8: body heading +0x4ec, actual counterpart, native rear relation 2',
         '0x6ed9ea0: rear-contact variants 11/12/14/15; 0x72d5dd0..0x72d5e3c: local resistance',
         'requires an already committed native contact variant, current holder and same contact opponent',
-        'both in-field, opposing teams, ground distance <=1.5 m and body rear cone +/-60 degrees',
+        'both in-field, opposing teams, ground distance <=1.8 m and body rear cone +/-60 degrees',
         'no panel writes, no persistent rate state and no random draws'])
 
     code=save_all()+f'''
@@ -179,7 +179,7 @@ ldr w8,[sp,#0x1c]
 '''
     builder.add('studio_shield_local_contest_resistance',0x72d5e40,code,
                 {'live_contact_return':0x6ddaca4,'resume':0x72d5e44},
-                {'resistance_factor':1.2},evidence=[
+                {'resistance_factor':1.5},evidence=[
                     'live 0x6ddab4c -> 0x72d5864 settlement only; prediction calls are unchanged',
                     'multiply only the qualified holder local S8/S9 resistance before the original ratio',
                     'the original collision matrix, ball-holder priority and displacement calculation remain native'])

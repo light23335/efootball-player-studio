@@ -98,6 +98,6 @@ def compile_coaches(cpk,coaches,catalogue,registry,replace_ids=(),replace_booste
                        ability_id=abilities,initial_base_team_id=identity['team_id'],**tactics,_personal_coach_uuid=uid)
         payload['is_coach_texture_use']='YES' if c.get('portrait') else origin['raw_payload'].get('is_coach_texture_use','NO')
         payload['_personal_coach_revision']=hashlib.sha256(json.dumps(c,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
-        owned.append({'uuid':uid,'id':cid,'payload':payload,**identity})
+        owned.append({'uuid':uid,'id':cid,'payload':payload,'effects':dict(c['effects']),**identity})
     return {COACH:wrap(b''.join(records[k] for k in sorted(records)),original),
             BOOSTER:wrap(b''.join(bonus[k] for k in sorted(bonus)),booster_wrapper)},owned

@@ -51,7 +51,7 @@ class Properties:
             elif kind=='FloatProperty':value=struct.unpack_from('<f',self.raw,start)[0]
             elif kind=='BoolProperty':value=extra['bool']
             elif kind=='StructProperty':
-                if extra['struct'] not in ('Guid','LinearColor','Color','Vector','Vector2D'):
+                if extra['struct'] not in ('Guid','LinearColor','Color','Vector','Vector2D','PerPlatformFloat','PerPlatformInt','PerPlatformBool'):
                     value,_=self.read(start,depth+1)
             elif kind=='ArrayProperty':
                 count=struct.unpack_from('<I',self.raw,start)[0];pos=start+4
@@ -61,6 +61,9 @@ class Properties:
                     _,_,pos,_,_=self.tag(pos);value=[]
                     for _ in range(count):item,pos=self.read(pos,depth+1);value.append(item)
                 elif extra['inner']=='ObjectProperty':value=[self.object(pos+i*4) for i in range(count)]
+                elif extra['inner']=='IntProperty':
+                    if pos+count*4!=end:raise ValueError('原版整数数组长度无效')
+                    value=list(struct.unpack_from('<'+'i'*count,self.raw,pos))
             if value is not None:result[name]=value
             at=end
         raise ValueError('原版属性数量异常')
@@ -76,6 +79,42 @@ def material_json(assets,path,depth=0):
         inherited.update({p.get('ParameterInfo',{}).get('Name'):p for p in props.get('TextureParameterValues',[])})
         props['TextureParameterValues']=list(inherited.values())
     return [{'Name':path.rsplit('/',1)[-1].removesuffix('.uasset'),'Properties':props}]
+
+
+def skeletal_json(assets,path):
+    """Read the coach compiler's exact bounds and per-LOD material remapping."""
+    from native_skeletal import skeleton
+    raw=assets.raw(path);names=package_names(raw);start,_,_=skeleton(raw,names)
+    materials_at=None
+    imports=object_imports(raw,names)
+    for count in range(1,33):
+        at=start-4-count*40
+        if at<28 or struct.unpack_from('<I',raw,at)[0]!=count:continue
+        refs=[struct.unpack_from('<i',raw,at+4+i*40)[0]for i in range(count)]
+        if all(v<0 and -v-1<len(imports)and imports[-v-1]for v in refs):materials_at=at;break
+    if materials_at is None:raise ValueError('教练头模材质表尚未适配')
+    bounds=struct.unpack_from('<7f',raw,materials_at-28)
+    if not all(np.isfinite(bounds))or any(v<0 for v in bounds[3:]):raise ValueError('教练头模边界无效')
+    parser=Properties(raw)
+    if 'LODInfo'not in names:raise ValueError('教练头模没有精度档位资料')
+    marker=struct.pack('<II',names.index('LODInfo'),0);at=raw.find(marker,struct.unpack_from('<16I',raw)[13])
+    found=[]
+    while at>=0 and at<materials_at:
+        try:
+            name,kind,pos,end,extra=parser.tag(at)
+            if name=='LODInfo'and kind=='ArrayProperty'and extra.get('inner')=='StructProperty':found.append((pos,end))
+        except (ValueError,struct.error):pass
+        at=raw.find(marker,at+1,materials_at)
+    if len(found)!=1:raise ValueError('无法唯一识别教练精度档位属性')
+    pos,end=found[0];count=struct.unpack_from('<I',raw,pos)[0]
+    if not 1<=count<=16:raise ValueError('教练精度档位数量无效')
+    _,kind,pos,_,extra=parser.tag(pos+4)
+    if kind!='StructProperty':raise ValueError('教练精度档位结构无效')
+    rows=[]
+    for _ in range(count):row,pos=parser.read(pos);rows.append(row)
+    if pos!=end:raise ValueError('教练精度档位数据范围不同')
+    return [{'Type':'SkeletalMesh','Name':Path(path).stem,'ImportedBounds':{
+        'Origin':dict(zip(('X','Y','Z'),bounds[:3])),'BoxExtent':dict(zip(('X','Y','Z'),bounds[3:6])),'SphereRadius':bounds[6]},'Properties':{'LODInfo':rows}}]
 
 def block_image(data,width,height,fmt):
     if fmt=='PF_B8G8R8A8':return Image.frombytes('RGBA',(width,height),data,'raw','BGRA')
@@ -140,7 +179,7 @@ def convert(assets,path,output,mode='auto'):
     if relative.is_absolute() or '..' in relative.parts:raise ValueError('原版资源输出路径越界')
     destination=Path(output)/relative;destination.parent.mkdir(parents=True,exist_ok=True)
     if mode=='raw':destination.write_bytes(assets.raw(path));return
-    if mode=='json':destination.with_suffix('.json').write_text(json.dumps(material_json(assets,path),ensure_ascii=False),encoding='utf8');return
+    if mode=='json':destination.with_suffix('.json').write_text(json.dumps(skeletal_json(assets,path)if relative.stem.startswith('SK_')else material_json(assets,path),ensure_ascii=False),encoding='utf8');return
     name=relative.stem
     if name.startswith('SK_'):destination.with_suffix('.glb').write_bytes(mesh_glb(assets,path))
     else:texture_image(assets,path).save(destination.with_suffix('.png'))

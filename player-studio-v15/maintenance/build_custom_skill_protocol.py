@@ -32,6 +32,9 @@ mov w8,#0
 cbnz w21,tag
 ldrb w8,[x20,#{SOURCE_BIT // 8}]
 ubfx w8,w8,#{SOURCE_BIT % 8},#{COUNT}
+ldrb w10,[x20,#85]
+and w10,w10,#0x80
+orr w8,w8,w10
 tag:
 mov w9,#{COMPACT_TAG & 65535}
 movk w9,#{COMPACT_TAG >> 16},lsl #16
@@ -47,11 +50,26 @@ original:
 
     address = 0x82a84d4
     builder.add('studio_custom_skill_get_parameter', address, f'''
+cmp w1,#151
+b.ne custom_skill
+ldr w9,[x0,#{COMPACT_OFFSET}]
+and w10,w9,#0xfffffff0
+bic w10,w10,#0x80
+mov w11,#{COMPACT_TAG & 65535}
+movk w11,#{COMPACT_TAG >> 16},lsl #16
+cmp w10,w11
+ubfx w9,w9,#7,#1
+csel w9,w9,wzr,eq
+str w9,[x2]
+mov w0,#1
+ret
+custom_skill:
 sub w8,w1,#{FIRST_PARAMETER}
 cmp w8,#{COUNT-1}
 b.hi original
 ldr w9,[x0,#{COMPACT_OFFSET}]
 and w10,w9,#0xfffffff0
+bic w10,w10,#0x80
 mov w11,#{COMPACT_TAG & 65535}
 movk w11,#{COMPACT_TAG >> 16},lsl #16
 cmp w10,w11
@@ -68,11 +86,27 @@ original:
 
     address = 0x82a907c
     builder.add('studio_custom_skill_set_parameter', address, f'''
+cmp w1,#151
+b.ne custom_skill
+ldr w9,[x0,#{COMPACT_OFFSET}]
+and w10,w9,#0xfffffff0
+bic w10,w10,#0x80
+mov w11,#{COMPACT_TAG & 65535}
+movk w11,#{COMPACT_TAG >> 16},lsl #16
+cmp w10,w11
+csel w9,w9,w11,eq
+bic w9,w9,#0x80
+and w10,w2,#1
+orr w9,w9,w10,lsl #7
+str w9,[x0,#{COMPACT_OFFSET}]
+ret
+custom_skill:
 sub w8,w1,#{FIRST_PARAMETER}
 cmp w8,#{COUNT-1}
 b.hi original
 ldr w9,[x0,#{COMPACT_OFFSET}]
 and w10,w9,#0xfffffff0
+bic w10,w10,#0x80
 mov w11,#{COMPACT_TAG & 65535}
 movk w11,#{COMPACT_TAG >> 16},lsl #16
 cmp w10,w11
@@ -106,6 +140,12 @@ original:
     values = ','.join(str(row['name_msg']) for row in messages())
     builder.add('studio_custom_skill_name_message', address, f'''
 ldr w8,[x0]
+cmp w8,#151
+b.ne custom_skill
+mov w0,#60010
+movk w0,#352,lsl #16
+ret
+custom_skill:
 sub w9,w8,#{FIRST_PARAMETER}
 cmp w9,#{COUNT-1}
 b.hi original
@@ -118,6 +158,39 @@ original:
 .align 2
 names: .word {values}
 ''', {'resume': address + 4})
+
+    # Independent AI-style flag, outside all seven native style bits and the
+    # four custom skills. Tagged compact padding survives owned overrides.
+    address=0x6a74f08
+    builder.add('studio_lone_wolf_match_flag',address,f'''
+ldr w8,[x20,#{COMPACT_OFFSET}]
+and w9,w8,#0xfffffff0
+bic w9,w9,#0x80
+mov w10,#{COMPACT_TAG & 65535}
+movk w10,#{COMPACT_TAG >> 16},lsl #16
+cmp w9,w10
+and w8,w8,#0x80
+csel w8,w8,wzr,eq
+ldr w9,[x19,#0xd4]
+bic w9,w9,#0x80
+orr w9,w9,w8
+str w9,[x19,#0xd4]
+add x0,sp,#8
+{jump('resume')}
+''',{'resume':address+4},evidence=['Player.bin bit 687 -> tagged compact +34 bit 7 -> match AI flag 7',
+    'preserves all seven original AI flags; never uses a skill ID'])
+    address=0x82a2208
+    builder.add('studio_lone_wolf_ai_parameter',address,f'''
+cmp w0,#7
+b.ne original
+mov w0,#151
+ret
+original:
+.word {original_word(builder,address)}
+{jump('resume')}
+''',{'resume':address+4})
+    instruction(builder,'studio_lone_wolf_owned_ai_list',0x7379c7c,'cmp w21,#8')
+    instruction(builder,'studio_lone_wolf_library_ai_list',0x2f3e66c,'cmp w21,#8')
 
     # Do not enlarge the owned player's 147-parameter override loop. Its source
     # has no extension data; copying virtual zeros would erase the native card's

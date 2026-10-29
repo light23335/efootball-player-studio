@@ -13,6 +13,12 @@ class UpdateTests(unittest.TestCase):
    with self.assertRaises(ValueError):repository(value)
  def test_versions_compare_numerically_and_channels_are_separate(self):
   self.assertLess(version('v1.9.3.2'),version('V16-v1.9.4'));self.assertGreater(version('v1.10.0'),version('v1.9.99'));self.assertIsNone(version('V15-v9.9.9'))
+ def test_two_point_zero_display_matches_three_component_legacy_compatible_tag(self):
+  self.assertEqual(version('2.0'),version('v2.0.0'))
+  self.assertGreater(version('v2.0.0'),version('1.9.15.18'))
+  data=self.release();data.update(tag_name='v2.0.0',html_url='https://github.com/light23335/efootball-player-studio/releases/tag/v2.0.0')
+  self.assertEqual(release_result(data,'1.9.15.18','light23335/efootball-player-studio','pc')['phase'],'available')
+  self.assertEqual(release_result(data,'2.0','light23335/efootball-player-studio','pc')['phase'],'current')
  def test_new_version_is_optional_and_download_matches_platform(self):
   for platform,suffix in [('pc','windows.zip'),('android','android.apk')]:
    result=release_result(self.release(),'1.9.4','light23335/efootball-player-studio',platform);self.assertEqual(result['phase'],'available');self.assertFalse(result['mandatory']);self.assertTrue(result['download_url'].endswith(suffix))

@@ -19,3 +19,5 @@ key is distributed with this software.
 Copies of the Android-specific license texts are in licenses/ and the packaged
 studio-bundle.zip/licenses/. The codec bridge and portable readers are source
 files in this project. They do not invoke a Windows executable or remote PC.
+
+Custom movie muxing: WannaCRI 0.3.3 (MIT), ffmpeg-python 0.2.0 (Apache-2.0), python-json-logger 2.0.7 (BSD-2-Clause), tqdm 4.70.1 (MIT/MPL-2.0), future 1.0.0 (MIT), colorama 0.4.6 (BSD-3-Clause). License texts are packaged in resources/third-party-licenses/. Android video encoding uses platform MediaCodec.

@@ -1,0 +1,115 @@
+{
+  "revision": "personal-mini-left-mask-v5-private-portrait-uv",
+  "script_header": 281,
+  "export_sha256": "5d32b91986c6b2651b0737199404d3e62d640e2c58f5eb27460165cb393d5a92",
+  "front_object_hex": "2089ffffff",
+  "front_object_memory_offset": 29,
+  "f03_expression_hex": "4201000000db0000000000000057ffffff0101000000da010000000000001a000000",
+  "equal_object_script_index": "0x7f5a71d2f6336c15",
+  "assets_sha256": {
+    "/Game/Assets/effect/PlayerCard/Materials/M_UI_MobileIconFront": "378b84e95088c3225d08cd4ddde55c0f0d6dfa3b0fcacb5f77f561f1e8224705",
+    "/Game/Assets/effect/PlayerCard/Materials/MI_UI_MobileIconFront": "2e0f5c0208c714038df3ace857a52de2f76c1ef425cf8059a2ae03973d2802ac",
+    "/Game/Assets/effect/PlayerCard/Textures/T_MobileIconPlayerImageMask": "d0daea57978660e277286b6e22328691a956d406edf58eaca4e6e27b76daca9f"
+  },
+  "source": "V17 native material/MI references, inner player alpha versus outer alpha, exact object marker in F03, native F03 property switch (root and Variation2022); original back selection untouched",
+  "alpha_size": [
+    128,
+    128
+  ],
+  "personal_alpha_zlib_base64": "eNrt2zGuAVEUxvF7mWjtYBZAYQOWQWgJLaUKjURDq7INhYItEDUFES3VqDiveZcZxpA895xJ3vffwK89xfmUQihQIt+fHS701S6HWT+f+ERPt3ZkqV0r/U53Gkey2LHhRPKZBVlukYngK2ey3rnyStcDYmmgQ/nkmJgaJ8P8EbE1CuG7xFj3iS9cOf1r4YF3T8TayQ36U2JuGuBLxF7Jx6fW/P46dfdrJFDt7q8k/NWNz5FIOeO3Zfy28Scy/sT4Wxl/a3xPxveMT0LBhw8fPnz48OHDhw8fPnz48OHDhw8fPnz48OHDhw8fPnz48OHDhw8fPnz4f/Gl/++k/w+l/y87Mn4nLv+30v/Hqi7h133/5xt+fuP7P1dlfr8cmN7w7w90rPYXqsi7Pyk+DWB6nH4vfvsj8f2V0kMefqhfLeCqHPu7asQAMLu0zS+z0fvLpt39ZdOJ9/70d38733/5JvT28w/3t+hf9QPIOEMT",
+  "outer_alpha_zlib_base64": "eNrt20GGw1Acx/FHCKGrEMqjq5yhlyg5QBhKyQG6CjlDCblH6Sr0AF09coBuS1ZDeYSh/Gc6pmOmzXQMk/fr4ve5wHfRPtn8f0pd8WdlbTr5d52pq5mv7gvTtZUB2XUa/lwPiqMM7pgH/XVv0YoT7cLrycdGnDHxTT6x4pBNrvLZSZw6Zd/yqTiXfslPO/f9bvqZ1wcBOOjLw9sJxO7jGeYCkr/nxxbVt+NzfyUwq/Mnx+L69u1jtBSgpVIG2TcqFKhJiu2nJbZf1th+vcf29xbbB+eJiIiIiIiIiIiIiIiIiIiIiIiIiP7sBXwA+Yy+P0Xf36Lvj8H3108Rtj9B39/D9wcRcn8R4fcnSuP2N/oR9kfKBz0Bc1mj6haRb/Wj7O/g+0P4/hK+P1Uqbtzlm7hvf5y52h9nXv8CelQ4+BFsMbqzP59vBn2K3WYe/jKBD5JqO8hfodlWye30/BVO5tHu",
+  "patched_script_sha256": "65739ec6f8f8acefdc26381e674448379f4d09a5cddd8652feddb13f15e6462a",
+  "unsafe_v1_script_sha256": "2a66f9de41865b3aa96a0c12c5c8c26144d21ed58b696c8f5767a9a6480e45d5",
+  "migrated_v1_script_sha256": "56e11ce1d7d5aaa0d8a02320467d0ce0df8d965e11fdf615a921a113d94e8fed",
+  "load_asset_script_index": "0x5394b05d9c7773ad",
+  "soft_script_sha256": [
+    "355df0853e0c05a470aa4f5a0653414e362efa21f46305713f13576d7a07afba",
+    "4534cbcca92230b9a5921f966be9bfa7e3e0014b664bc63d8c231d12b914eedc",
+    "301786b52f9f64b77692a0d2fe8da628cdc5b489a02654a6c7e680262fe1a19c",
+    "4675793dff4792ea2b9f84d2e61ce9f95b84b45265034c46da978a25abbd8d8a"
+  ],
+  "runtime_evidence": {
+    "prior_function_memory_size": 310,
+    "new_hard_object_constants_resolved_to_null": true,
+    "private_material_was_loaded": false,
+    "fix": "native LoadAsset_Blocking with soft paths, original F03 property index and typed catch-all",
+    "v3_private_materials_active": 23,
+    "v3_original_and_private_shader_map_pointer_equal": true,
+    "v4_user_test": "same left strip despite active private material and distinct ShaderMap",
+    "v5_root_cause": "all 6 pixel shaders offset portrait UV by 29/128 then divide by 120/128, clamping left region to image edge"
+  },
+  "cooked_shader_map_id_hash": "458706436647ed5323bed097f0bb5c4603f816bb",
+  "inline_shader_uv": {
+    "material": "/Game/Assets/effect/PlayerCard/Materials/M_UI_MobileIconFront",
+    "code_offset": 16410,
+    "resource_hash": "4c40e5862aa4478ae909fa8637f5b470b95a4179",
+    "shader_hashes": [
+      "0cfe7527c5eaf65caf3be1a6853cc5a5fa066959",
+      "21de0e00575ebc5e4d1094688bb32e4bf6ab7fe8",
+      "316d88823bcd4727d770a2b114901bdb170d0f7f",
+      "67d4f7ce5205403a4b34a4ce669955d4cb03fe1a",
+      "82c0a020a65b2a0587b9ae0cb278798ef690d9e5",
+      "aa7353cc7a90d0d7a5f11e5721c4f3d1c118629e",
+      "b5155a87abdd10c14670f6bde0e861636e2dffe7",
+      "ea9c5c7abecdae7fa603850b5a0f0d8da010c681"
+    ],
+    "uncompressed_sha256": [
+      "18b3cf71b26328ddba3adcd544c2654553d4ce5cbd36fb6c57eb94f12e51921a",
+      "806a8faac53d1f14a76bc6f80f8186ac03d3c307d297847f9d3742849b2ff6f8",
+      "1849b0fd75e25f1ff6f968b5ccc8263a5c2bffd49ddb38b37dd0ded682f540e4",
+      "0b50200112e160a52d2ce9753026fc11072e85ac83bd802f5f89b90ad2ef2472",
+      "42638d000eda7e043d973af2d128398573a41efe069b5e459965724b8832d2fb",
+      "57e84ca23a1036a3e38017bba626618406d40efcfee77c754a16943797f9ed6c",
+      "0655fc7a6fb69f506b414b70bfa80988984e106c1aaa57241307b4d2b23ea948",
+      "50280f940b4ea00063a9059caba3d79db4fc7a2bf8e55710275a2c452373d1aa"
+    ],
+    "pixel_indices": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "frozen_resource_indices": [
+      [
+        11588,
+        0
+      ],
+      [
+        11868,
+        7
+      ],
+      [
+        12164,
+        1
+      ],
+      [
+        12444,
+        6
+      ],
+      [
+        12724,
+        3
+      ],
+      [
+        13004,
+        0
+      ],
+      [
+        13276,
+        4
+      ],
+      [
+        13764,
+        5
+      ],
+      [
+        14108,
+        2
+      ]
+    ],
+    "shader_content_hash": "548bd6746d14ea937740232c85af709a724f5536",
+    "proxy_num_bytes_offset": 10596
+  }
+}

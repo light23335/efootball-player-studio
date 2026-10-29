@@ -37,5 +37,10 @@ class WorkspaceTests(unittest.TestCase):
   for n in (-1,512,65535,True):
    p['celebration']=n
    with self.assertRaises(ValueError):app.normalize_project(p)
+ def test_style_rotation_change_does_not_reset_saved_division_progress(self):
+  first=game_options(self.store,{'enabled':True,'division':2,'points':1900})
+  second=game_options(self.store,{**first,'style_mode':'independent'})
+  self.assertEqual(first['revision'],second['revision'])
+  with self.assertRaises(ValueError):game_options(self.store,{**second,'style_mode':'unknown'})
 
 if __name__=='__main__':unittest.main()

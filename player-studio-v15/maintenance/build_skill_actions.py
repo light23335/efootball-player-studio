@@ -166,17 +166,24 @@ tbz w0,#0,check_air
 mov w8,#2
 str w8,[x22,#40]
 ldr s9,fast_factor
-b speed
 check_air:
 cmp w23,#3
-b.ne done
+b.ne maybe_speed
 air_pass:
 mov x0,x19
 mov w1,#72
 {call('flag')}
-tbz w0,#0,done
-ldr s9,air_factor
-b speed
+tbz w0,#0,maybe_speed
+ldr w8,[x22,#40]
+orr w8,w8,#8
+str w8,[x22,#40]
+ldr s0,air_factor
+fmin s9,s9,s0
+maybe_speed:
+fmov s0,#1.0
+fcmp s9,s0
+b.ne speed
+b done
 shot:
 mov x0,x19
 mov w1,#74
@@ -216,7 +223,7 @@ ldp x21,x22,[sp,#16]
 ldp x19,x20,[sp],#80
 ret
 ''', {'flag': 0x6dcd87c, 'category': 0x6d3fb94},
-        {'close_distance_squared': 2.25, 'fast_factor': .8, 'air_factor': .88},
+        {'close_distance_squared': 4., 'fast_factor': .6, 'air_factor': .6},
         ['0x6d3ef68: original base R is also used by contact-time conversion',
          'short-pass pressure qualification is locked at motion start',
          'through and air-pass bonuses take the strongest duration factor',
@@ -278,6 +285,8 @@ cmp w9,#10
 b.eq shot
 b done
 pass_state:
+cmp w8,#4
+b.eq air_state
 cmp w9,#9
 b.ne done
 cmp w8,#1
@@ -287,8 +296,24 @@ b.eq through
 cmp w8,#3
 b.ne done
 through:
-tbz w21,#1,done
+tbz w21,#1,through_air
 ldr s8,pass_factor
+through_air:
+cmp w8,#3
+b.ne done
+tbz w21,#3,done
+b air_error
+air_state:
+cmp w9,#8
+b.eq air_error
+cmp w9,#9
+b.ne done
+air_error:
+tbz w21,#3,done
+ldr s0,air_error_factor
+fmin s8,s8,s0
+fmov s9,s0
+fmov s10,s0
 b done
 short_pass:
 tbz w21,#0,done
@@ -328,11 +353,12 @@ ldp x21,x30,[sp,#16]
 ldp x19,x20,[sp],#80
 ret
 ''', {'flag': 0x6dcd87c},
-        {'pass_factor': .8, 'heavy_factor': .8, 'cold_factor': .85,
-         'shoot_distance_squared': 4.}, evidence=[
+        {'pass_factor': .6, 'heavy_factor': .5, 'cold_factor': .5,
+         'air_error_factor': .6, 'shoot_distance_squared': 6.25}, evidence=[
             'committed action identity, never a prediction-time temporary skill flag',
             'short-pass qualification remains locked from its start',
             'cold finisher evaluates opposing box and nearest opponent at release',
+            'air passes and lofted through passes use committed Long Pass qualification',
             'returns yaw/pitch/speed random-error factors, strongest per component'])
 
     stage = save_all() + f'''

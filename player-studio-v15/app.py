@@ -40,20 +40,22 @@ from card_types import CARD_TYPES
 from overall import calculate as calculate_overall
 from coaches import CoachStore, normalize_coach, TACTICS
 from native_appearance import validate as validate_appearance
-from ai_playing_styles import FIELDS as AI_PLAYING_STYLES,project_value as ai_styles,validate as validate_ai_styles
+from ai_playing_styles import OPTIONS as AI_PLAYING_STYLES,project_value as ai_styles,validate as validate_ai_styles
 import packs
 from window_sessions import WindowSessions
 from booster_library import BoosterLibrary
 
-APP_VERSION = "1.9.15.5"
+APP_VERSION = "2.0"
 GAME_PLATFORM = "android"
 MAX_PERSONAL_PLAYERS = 10000
 BUNDLE = Path(getattr(sys, "_MEIPASS", Path(__file__).absolute().parent))
 RESOURCE = BUNDLE / "resources"
 WEB = BUNDLE / "web"
-ASSET_ID = re.compile(r"^[a-f0-9]{64}\.(png|jpg|jpeg|webp|glb|obj|webm|otf|ttf)$")
+ASSET_ID = re.compile(r"^[a-f0-9]{64}\.(png|jpg|jpeg|webp|glb|obj|webm|usm|otf|ttf)$")
 MAX_ASSET = 128 * 1024 * 1024
 CATALOG = json.loads((RESOURCE / "catalog.json").read_text(encoding="utf-8"))
+from playing_styles import apply_catalogue as apply_playing_styles
+apply_playing_styles(CATALOG)
 from skill_localization import apply_labels as apply_skill_labels
 apply_skill_labels(CATALOG,RESOURCE)
 from native_coach_links import schema as coach_link_schema,repair_legacy as repair_coach_options
@@ -257,6 +259,10 @@ def normalize_project(value):
                 raise ValueError('原版资料层位置无效')
         if any(not isinstance(row,dict) or not row.get('asset_id') or row.get('blend','source-over') not in ('source-over','screen','multiply','lighter') for row in card['layers']):
             raise ValueError('原版卡面图层无效')
+        custom=card.get('custom_motion')
+        if custom is not None:
+            if not isinstance(custom,dict) or any(not isinstance(custom.get(k),dict) or not re.fullmatch(r'[a-f0-9]{64}\.usm',str(custom[k].get('asset_id',''))) or not isinstance(custom[k].get('preview'),dict) or not re.fullmatch(r'[a-f0-9]{64}\.webm',str(custom[k]['preview'].get('asset_id',''))) for k in ('large','mini')):
+                raise ValueError('自制动态背景素材无效，请重新导入视频')
     referenced_assets(p)
     if p.get('status')=='new-player-slot' and p['identity']['name'].strip() and (p.get('native_card') or p['model'].get('asset') or p['appearance'].get('portrait')):
         # Older versions kept the empty-slot marker after a custom model or
@@ -277,6 +283,7 @@ def referenced_assets(p):
             for child in value:collect(child)
     collect(p.get('native_card'))
     collect([c.get('portrait') for c in p.get('custom_coaches',[])])
+    collect([c.get('head_model') for c in p.get('custom_coaches',[])])
     if any(not isinstance(v,str) or not ASSET_ID.fullmatch(v) for v in result):
         raise ValueError('原版资源引用无效')
     return result
@@ -287,6 +294,7 @@ def dialog(kind="open", category="project", initial=""):
         raise ValueError("文件选择器目前支持 Windows，也可以在输入框中粘贴路径")
     filters = {"project": "球员工程\0*.efproject;*.json\0所有文件\0*.*\0",
                "image": "图片\0*.png;*.jpg;*.jpeg;*.webp\0所有文件\0*.*\0",
+               "motion-video": "视频\0*.mp4;*.mov;*.webm\0所有文件\0*.*\0",
                "model": "三维模型\0*.glb;*.obj\0所有文件\0*.*\0",
                "save": "游戏存档\0*.efsave;*.sqlite3\0所有文件\0*.*\0",
                "package": "独立球员包\0*.efplayer\0所有文件\0*.*\0",
@@ -534,7 +542,8 @@ class Store:
                         raise ValueError("资源内容与永久文件名不一致")
                     files[name] = data
                 from project_transfer import prepare as transfer_project
-                p = normalize_project(transfer_project(migration.read_json(files["project.json"]),GAME_PLATFORM,m.get("game_platform")))
+                from custom_motion_import import upgrade_legacy
+                p = normalize_project(upgrade_legacy(transfer_project(migration.read_json(files["project.json"]),GAME_PLATFORM,m.get("game_platform")),files))
                 for name in referenced_assets(p):
                     if "assets/" + name not in files:
                         raise ValueError("工程包缺少引用的资源")
@@ -597,6 +606,7 @@ class StudioServer(ThreadingHTTPServer):
         library=NativeLibrary(resources,self.home,self.store)
         package=NativePackage(library,resources,(BUNDLE/'personal_runtime.py').read_text(encoding='utf8'),profile_resources=RESOURCE)
         self.catalog=json.loads((Path(resources)/'catalog.json').read_text(encoding='utf8'))
+        apply_playing_styles(self.catalog)
         apply_skill_labels(self.catalog,RESOURCE)
         coach_options=repair_coach_options(json.loads((Path(resources)/'coaches.json').read_text(encoding='utf8')),coach_link_schema(RESOURCE),resources)
         from coach_identity import repair_catalogue as repair_coach_identity
@@ -750,9 +760,38 @@ class Handler(BaseHTTPRequestHandler):
             elif path == '/api/players/export':
                 result = store.export_project(store.saved_player(body['package_id'])['project'])
             elif path == '/api/coaches/save':
-                result = store.coaches.save(body['coach'])
+                from coach_models import prepare as prepare_coach_model,preview_coach
+                coach=prepare_coach_model(body['coach'],self.server.library)
+                if (coach.get('head_model') or {}).get('asset_id'):preview_coach(self.server.library,coach['head_model'])
+                result = store.coaches.save(coach)
+            elif path == '/api/coaches/model/template':
+                from coach_models import template
+                result = template(self.server.library,body.get('source_id'))
+            elif path == '/api/coaches/model/preview':
+                from coach_models import preview_coach
+                result = preview_coach(self.server.library,body.get('head_model'))
             elif path == '/api/coaches/list':
                 result = store.coaches.list()
+            elif path == '/api/coaches/delete':
+                from coach_deletion import delete_coach
+                result = delete_coach(store,body.get('uuid'),body.get('confirmed',False))
+            elif path == '/api/coaches/heads/list':
+                from coach_heads import catalogue
+                result = catalogue(self.server.library,self.server.catalog['coaches'])
+            elif path == '/api/coaches/heads/original':
+                from coach_heads import original
+                result = original(self.server.library,body.get('path'))
+            elif path == '/api/coaches/heads/preview':
+                from coach_heads import preview
+                result = preview(self.server.library,body.get('head'))
+            elif path == '/api/coaches/heads/save':
+                from coach_heads import preview,CoachHeadStore
+                result = preview(self.server.library,body.get('head'))
+                result['head'] = CoachHeadStore(store.root).save(body['head'])
+            elif path == '/api/coaches/heads/delete':
+                from coach_heads import CoachHeadStore
+                CoachHeadStore(store.root).delete(body.get('target'))
+                result = {'deleted':True}
             elif path=='/api/motion/source':
                 from native_motion import from_player
                 result=from_player(self.server.library.player(str(body.get('id',''))))
@@ -833,6 +872,11 @@ class Handler(BaseHTTPRequestHandler):
                 result = self.server.head_preview.prepare(normalize_project(body['project']))
             elif path == '/api/thumbnail/preview':
                 result = self.server.thumbnail_preview.prepare(normalize_project(body['project']))
+            elif path == '/api/card-motion/import':
+                from custom_motion_import import convert
+                role=body.get('role','both')
+                if role not in ('both','mini'):raise ValueError('动画转换目标无效')
+                result=convert(store,self.server.library.ffmpeg,body['path'],['large','mini'] if role=='both' else ['mini'],body.get('crop_x',0),body.get('crop_y',0))
             elif path == '/api/native-apk/status':
                 result = self.server.native_package.status()
             elif path == "/api/project/new":

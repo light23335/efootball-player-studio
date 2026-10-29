@@ -147,7 +147,7 @@ function renderTraining(){
 function renderSkills(){
   return `<div class="skill-toolbar"><div class="segmented"><button data-skill-mode="innate" class="${skillMode==='innate'?'active':''}">天生技能</button><button data-skill-mode="additional" class="${skillMode==='additional'?'active':''}">额外习得</button></div><div class="skill-counts"><span>天生 <strong id="innate-count">${project.innate_skills.length}/100</strong></span><span>追加 <strong id="additional-count">${project.additional_skills.length}/100</strong></span></div></div><div class="search-box">${icon('search')}<input id="skill-search" placeholder="搜索中文名称、英文技能或编号" value="${esc(skillQuery)}"><label class="switch-label"><input type="checkbox" id="selected-skills-only" ${skillSelectedOnly?'checked':''}>已选</label></div><div class="skill-legend"><span><i></i>天生</span><span><i class="blue"></i>追加</span><span>点击添加，再次点击取消</span></div><p id="skill-capacity-note" class="note" role="status" ${skillCapacityNotice(project)?'':'hidden'}>${esc(skillCapacityNotice(project))}</p><div class="skill-grid" id="skill-grid"></div><div style="height:20px"></div>`+
   panel('比赛风格与适用位置',renderStyleHelp(project,catalog,bindInput))+
-  panel('AI 比赛风格',`<p class="panel-description">影响电脑控制球员时的倾向。可多选，也可全部取消；载入原版资料时自动读取该球员的设置。</p><div class="ai-style-grid">${Object.entries(catalog.AI_PLAYING_STYLES).map(([key,f])=>`<label class="ai-style-option"><input type="checkbox" data-ai-style="${key}" ${(project.ai_playing_styles||[]).includes(key)?'checked':''}><span>${esc(f.label)}<small>${esc(f.english)}</small></span></label>`).join('')}</div>`)+
+  panel('AI 比赛风格',`<p class="panel-description">影响电脑控制球员时的倾向。可多选，也可全部取消；载入原版资料时自动读取该球员的设置。</p><div class="ai-style-grid">${Object.entries(catalog.AI_PLAYING_STYLES).map(([key,f])=>`<label class="ai-style-option"><input type="checkbox" data-ai-style="${key}" ${(project.ai_playing_styles||[]).includes(key)?'checked':''}><span>${esc(f.label)}<small>${esc(f.english)}</small></span></label>`).join('')}</div><p class="panel-description ai-style-help">独狼：${esc(catalog.AI_PLAYING_STYLES.lone_wolf.description)}</p>`)+
   panel('位置适应度',`<div class="field-grid three">${catalog.POSITIONS.map(pos=>bindInput('position_aptitudes.'+pos,`${pos} · ${positionNames[pos]}`,'text',{numeric:true,choices:[[0,'不适应'],[1,'部分适应'],[2,'完全适应']]})).join('')}</div>`);
 }
 function updateSkillGrid(){
@@ -166,6 +166,7 @@ function renderCard(){
   const art=project.native_art||{},native=project.native_card,bt=(native?.card_type||project.card_type)==='BigTime';
   const photo=project.appearance.portrait,date=project.appearance.card_date??originalCardDate(native);
   return panel('你的人物与卡面资料',`<div class="card-person"><div class="card-person-image">${photo?`<img src="/assets/${esc(photo)}" alt="当前人物图">`:'<span>导入透明 PNG 人物图</span>'}</div><div><p class="panel-description">先导入人物，再从下方选择空白底板。换预设会保留你的人物、能力、技能和培养方案。</p><div class="portrait-actions"><button class="button primary" data-action="upload-portrait">导入 / 替换自己的人物</button><button class="button secondary" data-action="native-portrait-library">选择游戏人物</button></div><label class="switch-label"><input type="checkbox" data-bind="appearance.hide_portrait" ${project.appearance.hide_portrait?'checked':''}>仅预览空白底板（暂时隐藏人物）</label></div></div><div class="field-grid" style="margin-top:18px">${bt?`<label class="field"><span>BT 日期</span><input class="input" type="date" id="card-date" data-bind="appearance.card_date" value="${esc(date)}"><small>可直接修改日期；留空则不显示。</small></label>`:''}<label class="field"><span>卡面星级</span><select data-bind="appearance.card_rarity" data-number="1">${[1,2,3,4,5].map(n=>`<option value="${n}" ${n===(project.appearance.card_rarity||native?.info?.rarity||5)?'selected':''}>${n} 星</option>`).join('')}</select></label></div>${bt?`<label class="switch-label" style="margin-top:13px"><input type="checkbox" data-bind="appearance.card_date_visible" ${project.appearance.card_date_visible!==false?'checked':''}>显示 BT 日期</label>`:''}<p class="note">当前设计：${native?esc(cardTypeName(native.card_type)+' · '+(native.preset?.title||native.source_label||'原版卡面')):'尚未选择；请在下方点击“使用此预设”。'}</p>`)+
+  panel('自制动态背景',`<p class="panel-description">导入 MP4、MOV 或 WebM，自动转换成大卡与小卡动画；建议使用透明 PNG 人物图。原卡面美术装饰图层会隐藏，游戏资料控件本身的边框可能仍会显示。</p><div class="field-grid"><label class="field"><span>小卡裁切水平位置（-100 左，100 右）</span><input id="motion-crop-x" class="input" type="number" min="-100" max="100" value="${esc(native?.custom_motion?.mini?.crop_x??0)}"></label><label class="field"><span>小卡裁切垂直位置（-100 上，100 下）</span><input id="motion-crop-y" class="input" type="number" min="-100" max="100" value="${esc(native?.custom_motion?.mini?.crop_y??0)}"></label></div><p class="note">先填写裁切位置再导入；想调整时可重新选择视频。短视频自动循环补齐，大卡 10 秒，小卡 5 秒，建议视频本身首尾衔接。</p><div class="portrait-actions"><button class="button primary" data-action="motion-import" ${native?'':'disabled'}>导入视频并生成大小卡</button><button class="button secondary" data-action="motion-mini" ${native?.custom_motion?'':'disabled'}>单独导入小卡视频</button><button class="button subtle" data-action="motion-remove" ${native?.custom_motion?'':'disabled'}>移除自制动态背景</button></div><p class="note">${native?.custom_motion?'已启用独立动态背景，仅绑定此工程卡。':native?'先选择素材并导入视频。':'请先选择原版卡面预设，用于卡片类型与资料布局。'}</p>`)+
   panel('原版空白卡面预设',presetsUI.render())+
   renderThumbnailPanel(project,range)+
   panel('构图与导出',`${range('appearance.photo_zoom','人物缩放',.5,2.8,.02,'×')}${range('appearance.photo_x','水平位置',-180,180,1)}${range('appearance.photo_y','垂直位置',-180,180,1)}<label class="switch-label"><input type="checkbox" data-bind="appearance.native_overlay_text" ${project.appearance.native_overlay_text!==false?'checked':''}>显示姓名、位置、星级与计算总评</label><div class="portrait-actions"><button class="button secondary" data-action="photo-reset">重置构图</button><button class="button primary" data-action="export-card">导出当前帧 PNG</button></div>`)+
@@ -248,7 +249,7 @@ function updateLive(){
     const trainingTarget=project.preview?.training_position||project.identity.position;$('#training-target-note').textContent=`目标 ${trainingTarget} · 该位置参考总评 ${simulation.positionOvrs[trainingTarget]} · 方案可撤销`;
     $('#training-comparison').innerHTML=Object.entries(catalog.ABILITIES).map(([i,label])=>{const delta=simulation.final[i]-simulation.base[i];return `<tr data-training-detail="${i}"><th>${esc(label)}</th><td>${simulation.base[i]}</td><td>${simulation.trained[i]}</td><td>${simulation.boosted[i]}</td><td style="color:${ratingColor(simulation.final[i])}">${simulation.final[i]}</td><td>${delta>0?'+':''}${delta}</td></tr>`;}).join('');
   }
-  updateRadar();drawCard();drawThumbnail(project,api);viewer?.update(project);
+  updateRadar();drawCard();drawThumbnail(project,api,simulation);viewer?.update(project);
 }
 function updateRadar(){
   const values=sixStats(simulation.final),base=sixStats(simulation.base),labels=['速度','射门','传球','盘带','防守','身体'];
@@ -286,6 +287,18 @@ function download(data,filename,mime='application/octet-stream'){
 async function exportCard(){await drawCard();if(!$('#card-empty').hidden)throw Error('请先选择游戏原版图像或导入自己的照片');const canvas=document.createElement('canvas');canvas.width=1200;canvas.height=1720;canvas.getContext('2d').drawImage($('#player-card'),0,0,1200,1720);canvas.toBlob(blob=>{download(blob,(project.display_name||project.identity.name||'我的球员')+'-卡面.png','image/png');toast('已导出 1200 × 1720 卡面 PNG');},'image/png');}
 async function choose(category){const result=await api('dialog',{category});return result.path;}
 async function importAsset(category,target){const path=await choose(category);if(!path)return;const asset=await api('assets/import',{path,category});commit(()=>{set(target,asset.id);if(target==='appearance.thumbnail_image')Object.assign(project.appearance,{thumbnail_mode:'image',thumbnail_zoom:1,thumbnail_x:0,thumbnail_y:0});if(target==='appearance.background_image'){project.native_card=null;project.native_card_disabled=true;}if(target==='model.asset')project.model.native_source=null;if(target==='appearance.portrait'){project.native_art??={};project.native_art.portrait={asset_id:asset.id,path:asset.name,kind:'personal-photo'};project.native_art.full=null;project.appearance.portrait_fit='contain';project.appearance.hide_portrait=false;}if(target==='appearance.background_image'&&project.native_art){project.native_art.background=null;project.native_art.full=null;}},target);if(currentPage==='card'||currentPage==='model')renderPage();toast('已导入 '+asset.name);}
+async function importMotion(role){
+  if(!project.native_card)throw Error('请先选择卡面预设');
+  const uuid=project.package_id,card=project.native_card;
+  const x=Number($('#motion-crop-x').value),y=Number($('#motion-crop-y').value);
+  if(!Number.isFinite(x)||!Number.isFinite(y)||Math.abs(x)>100||Math.abs(y)>100)throw Error('裁切位置应在 -100 至 100 之间');
+  const path=await choose('motion-video');if(!path)return;
+  toast('正在转换视频，请稍候…');
+  const result=await api('card-motion/import',{path,role,crop_x:x,crop_y:y});
+  if(project.package_id!==uuid||project.native_card!==card)throw Error('工程或卡面已切换，视频未应用');
+  commit(()=>{if(role==='both')project.native_card.custom_motion=result;else project.native_card.custom_motion.mini=result.mini;},'card-motion');
+  renderPage();toast('动态背景已导入，可预览并生成 APK');
+}
 async function busy(button,fn){if(button?.classList.contains('busy'))return;button?.classList.add('busy');try{return await fn();}catch(error){toast(error.message,true);}finally{button?.classList.remove('busy');}}
 
 function updateModelControls(){
@@ -310,6 +323,9 @@ const actions={
   'auto-train':()=>{commit(()=>project.training=autoAllocate(project,catalog),'auto-train');renderPage();toast('已按 '+(project.preview?.training_position||project.identity.position)+' 生成参考加点方案');},
   'reset-training':()=>{commit(()=>{for(const g of catalog.training_groups)project.training[g.id]=0;},'reset-training');renderPage();},
   'upload-portrait':()=>importAsset('image','appearance.portrait'),
+  'motion-import':()=>importMotion('both'),
+  'motion-mini':()=>importMotion('mini'),
+  'motion-remove':()=>{commit(()=>delete project.native_card.custom_motion,'card-motion');renderPage();toast('已恢复原版卡面图层');},
   'browse-thumbnail':()=>libraryUI.open('thumbnail',project.source_player?.id||''),
   'upload-thumbnail':async()=>{await importAsset('image','appearance.thumbnail_image');},
   'thumbnail-from-portrait':()=>{commit(()=>Object.assign(project.appearance,{thumbnail_mode:'portrait',thumbnail_zoom:1,thumbnail_x:0,thumbnail_y:0}),'thumbnail-source');renderPage();},
@@ -429,7 +445,7 @@ function renderNavigation(){
 async function boot(){
   hydrateIcons();
   taskCenter=new TaskCenter({api,navigate,toast,page:()=>currentPage});
-  const data=await api('bootstrap');new AndroidSidebarResize(data.platform);const setup=await api('setup/status',{}).catch(()=>({preferences:{navigation:'simple'},recommended_mode:'coexist',resources_needed:{update:true,coexist:true}}));navigationMode=setup.preferences.navigation;renderNavigation();project=data.project;catalog=data.catalog;identityOptions=data.identities||identityOptions;migrationState.apk=data.default_apk;
+  const data=await api('bootstrap');project=data.project;if(data.platform==='pc')await new WindowSession(api,()=>project,token).start();new AndroidSidebarResize(data.platform);const setup=await api('setup/status',{}).catch(()=>({preferences:{navigation:'simple'},recommended_mode:'coexist',resources_needed:{update:true,coexist:true}}));navigationMode=setup.preferences.navigation;renderNavigation();project=data.project;catalog=data.catalog;identityOptions=data.identities||identityOptions;migrationState.apk=data.default_apk;
   libraryUI=new LibraryUI({api,commit,project:()=>project,catalog,toast,navigate,rerender:renderPage,beforeLoadPlayer:preparePlayerLoad,status:data.library,apk:data.default_apk,companion:data.default_companion});
   updateUI=new GameImportUI({api,toast,apk:data.default_apk,companion:data.default_companion,rerender:renderPage});
   nativePackageUI=new NativePackageUI({api,toast,platform:data.platform,project:()=>project,apk:data.default_apk,companion:data.default_companion,installationMode:setup.recommended_mode,resourcesNeeded:setup.resources_needed,rigged:data.default_rigged||''});
@@ -440,7 +456,7 @@ async function boot(){
   packUI=new PackUI({api,toast,rerender:renderPage});
   motionUI=new MotionUI({api,toast,project:()=>project,commit,rerender:renderPage});
   personalUI=new PersonalUI({api,toast,beforeOpenPlayer:async()=>{if(await choosePlayerAction('读取已保存球员','将切换当前编辑内容。当前工程会先备份；切换到其他球员时会保存当前球员。若要创建另一名球员，请使用新建独立槽位。',[{id:'open',label:'备份并读取球员',primary:true}])!=='open')return false;await api('project/checkpoint',{project});return true;},project:()=>project,flushSave,navigate,rerender:renderPage,onPlayerDeleted:id=>{if(packUI.editing)packUI.editing.members=packUI.editing.members.filter(m=>m.kind!=='custom'||m.id!==id);},replaceProject:p=>{past=[];future=[];project=p;version++;savedVersion=version;}});
-  coachUI=new CoachUI({api,toast,catalog,identities:()=>identityOptions,project:()=>project,commit,flushSave,navigate,rerender:renderPage,resourceKey:()=>libraryUI.status.cache_directory+':'+libraryUI.status.phase,custom:data.custom_coaches?.rows||[]});
+  coachUI=new CoachUI({api,toast,catalog,onCoachDeleted:uuid=>nativePackageUI?.coachIds.delete(uuid),replaceProject:p=>{past=[];future=[];project=p;version++;savedVersion=version;lastChangeKey='';},identities:()=>identityOptions,project:()=>project,commit,flushSave,navigate,rerender:renderPage,resourceKey:()=>libraryUI.status.cache_directory+':'+libraryUI.status.phase,custom:data.custom_coaches?.rows||[]});
   presetsUI=new CardPresetsUI({api,toast,project:()=>project,commit,rerender:renderPage});
   nativeCard=new NativeCardRenderer($('#player-card'),state=>{$('#native-card-status').textContent=`原版图层 ${state.layers} · 动画 ${state.videos} · 资料素材 ${state.ui||0}${state.missing?' · '+state.missing+' 项未读取':''}`;$('#card-motion-toggle').hidden=!state.videos;},catalog);
   viewer=new ModelViewer(meta=>{if(meta.error){toast(meta.error,true);return;}modelMetadata=meta;updateModelControls();});
@@ -449,12 +465,11 @@ async function boot(){
   viewer.onHeadSelection=key=>{const el=document.querySelector('[data-head-option="selected"]');if(el)el.value=key;};
   const badge=document.querySelector('.workspace-badge>span:last-child');if(badge)badge.textContent=(data.library.game_version||'V15')+' · '+data.version;document.querySelector('#help-dialog h2').textContent='球员工坊 '+(data.library.game_version||'V15')+' · '+data.version;
   viewer.attach($('#mini-model-stage'));renderPage();
-  if(data.platform==='pc')await new WindowSession(api,()=>project,token).start();
   releaseUpdatesUI.poll();
   for(const path of ['native-apk/status','game-import/status','library/status'])api(path,{}).catch(()=>{});
   libraryUI.refreshLoaded();
   setInterval(()=>api('ping').catch(()=>{}),12000);
-  window.__studio={get project(){return project;},get simulation(){return simulation;},get catalog(){return catalog;},get viewer(){return viewer;},get library(){return libraryUI;},get presets(){return presetsUI;},get nativeCard(){return nativeCard;},flushSave,navigate};
+  window.__studio={get project(){return project;},get simulation(){return simulation;},get catalog(){return catalog;},get viewer(){return viewer;},get coachHeads(){return coachUI?.heads;},get coachModel(){return coachUI?.modelEditor;},get library(){return libraryUI;},get presets(){return presetsUI;},get nativeCard(){return nativeCard;},flushSave,navigate};
 }
 boot().catch(error=>{$('#editor-content').innerHTML=`<div class="empty-state">软件未能打开工程<br>${esc(error.message)}<br>请关闭窗口后重新启动球员工坊。</div>`;toast(error.message,true);});
 

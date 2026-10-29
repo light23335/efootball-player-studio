@@ -56,7 +56,7 @@ class AIStyleTests(unittest.TestCase):
   code=module_reader(apk)('export_ai_playing_styles');fields=literal_assignments(code,{'FIELDS'})['FIELDS']
   read=types.FunctionType(next(c for c in code.co_consts if isinstance(c,types.CodeType) and c.co_name=='bin_vector'),{'FIELDS':fields})
   for record in (bytes.fromhex(self.source['_studio_client_record']),bytes([255])*400,bytes(400)):
-   self.assertEqual(set(from_record(record)),{k for k,v in read(record).items() if v})
+   self.assertEqual(set(from_record(record))&set(FIELDS),{k for k,v in read(record).items() if v})
   self.assertEqual({k:f['bit'] for k,f in FIELDS.items()},{name:byte*8+bit for name,_,byte,bit in fields})
 
 if __name__=='__main__':unittest.main()

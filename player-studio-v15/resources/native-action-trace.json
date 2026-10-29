@@ -1,0 +1,214 @@
+{
+  "revision": "v17-player-actions-v1",
+  "production_ready": true,
+  "engine_sha256": "efd257d9e41b622d6ecb8f51f7b0a8ee8820113fd427c5572025df1c8eecc7b8",
+  "bundles": [
+    {
+      "name": "studio_player_action_observer",
+      "body_hex": "ff830cd1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f24f09a9f4570aa9f65f0ba9f8670ca9fa6f0da9fc770ea9fe7b00f9e00708ade20f09ade4170aade61f0bade8270cadea2f0dadec370eadee3f0fadf04710adf24f11adf45712adf65f13adf86714adfa6f15adfc7716adfe7f17ad11423bd5f18301f92100805202406b39e303022ae4031faae5031eaa84000094f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c9100402b91f02d005800021fd61f2003d5f353bda9f57b01a9f30302aaf403002af5031eaa52000094ff830cd1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f24f09a9f4570aa9f65f0ba9f8670ca9fa6f0da9fc770ea9fe7b00f9e00708ade20f09ade4170aade61f0bade8270cadea2f0dadec370eadee3f0fadf04710adf24f11adf45712adf65f13adf86714adfa6f15adfc7716adfe7f17ad11423bd5f18301f9130100b4609e40f981008052e203142ae30340b9e40313aae50315aa2c000094f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c91f57b41a9f353c3a8c0035fd6ef3bb66dd022005800021fd6bf3b03d5c0035fd6ffc304d1f35300a9f55b01a9f76302a9f96b03a9fb7304a9fe2b00f9f30300aaf403012af503022af603032af70304aaf80305aaf9230058280740b9c81d0034b31d00b4084785527a6a68385f5b0071221d00547b1263f9fb1c00b4e0031baae1031a2a701f005800023fd61f0013eb211c0054e0031baa101f005800023fd6a01b00b4fc0300aad01e005800023fd61f400071081b0054e06f00b9e0031caa501e005800023fd6e06b00b9e8030291090180521f7d81a829050071c1ffff54fb4700f9f34b00f9e8274d29e8271329faa300b968426b39e8a700b9e0031a2a901c005800023fd6800100b4080440b9090840b9e82715291f650071e1000054080c40b9091040b90a1440b9e8c300b9e9c700b9eacb00b968f644b969fa44b96afe44b9e8b700b9e9bb00b9eabf00b908f8af52e8cf00b9e8d300b99f12007181000054770000b4e80e40b9e8d300b9f4d700b9f5db00b9f6df00b9f87b00f968018052410bc81ae0031baa3019005800023fd6800200b4fc0300aaf018005800023fd61f2c0071e30100541fa00071a8010054e0031caa68018052490bc81a21e9081bf017005800023fd6c00000b4d017005800023fd6e17700f9e003002ae07f00f9e0031baae1031a2a7015005800023fd6400300b45015005800023fd6e00200b4fc0300aa61068052f014005800023fd608000012e8b300b9e0031caa410780523014005800023fd6e8b340b9090000120805092ae8b300b9e0031caa410980523013005800023fd6e8b340b9090000120809092ae8b300b92823009109fd5f88090c00352a0080520a7d0988a90b00353c0301919c1f1a8b882740a91f011beb610000543f0113eb400100549f7f00a99f7f01a99f7f02a99f7f03a99f7f04a99f7f05a99f7f06a99f7f07a99b4f00a9882744a9ea7740f9eb7f40f91f010aeb610000543f010beb800000548a2f04a99f2300b99f3b00b99f120071c0020054882340b988010034882741a9ea434af8ebc34af81f010aebe10000543f010beba1000054e86b40b9892740b91f01096b22060054e8434af8e9c34af8882701a928008052882300b9e86b40b9882700b918000014883b40b9e8010034e86b40b9892b40b91f01096b61010054882f40b91f01156b01010054883340b91f01166ba1000054883740b9e9d340b91f01096b20030054e86b40b9882b00b995db0529e8d340b9883700b928008052883b00b9280b40f908050091092d40922a0740914a1d098b5f0100f9eb2302914c210091ed0180526e8540f88e8500f8ad050071a1ffff54bf3b03d5480100f9bf3b03d5280b00f9282300911ffd9f880d0000145f3f03d5286300918c00805209fd5fc829050091097d0ac8ca0000348c05007161ffff545f3f03d529008052292300b9fe2b40f9fb7344a9f96b43a9f76342a9f55b41a9f35340a9ffc30491c0035fd61f2003d5324d4f494455545300000000000000004001000000000000a802000000000000b002000000000000e0d9d30600000000f4f2d506000000008c402c0700000000803e2c07000000000cb697060000000008bda40600000000c87d2d0700000000b0402c0700000000f81e300700000000c4392b07000000004c402c0700000000fcb58f0600000000042d2f0700000000e0292f07000000000000000000ee5453",
+      "absolute_fixups": [
+        [
+          1776,
+          114547168
+        ],
+        [
+          1784,
+          114684660
+        ],
+        [
+          1792,
+          120340620
+        ],
+        [
+          1800,
+          120340096
+        ],
+        [
+          1808,
+          110605836
+        ],
+        [
+          1816,
+          111459592
+        ],
+        [
+          1824,
+          120421832
+        ],
+        [
+          1832,
+          120340656
+        ],
+        [
+          1840,
+          120594168
+        ],
+        [
+          1848,
+          120273348
+        ],
+        [
+          1856,
+          120340556
+        ],
+        [
+          1864,
+          110081532
+        ],
+        [
+          1872,
+          120532228
+        ],
+        [
+          1880,
+          120531424
+        ]
+      ],
+      "assembly": "entry_studio_player_action_state:\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nmov w1,#1\nldrb w2,[x0,#0xad0]\nmov w3,w2\nmov x4,xzr\nmov x5,x30\nbl shared_studio_trace_actor\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\n\nadd x0,x0,#0xad0\nldr x16,native_6d3d9e0\nbr x16\n.align 3\n\nentry_studio_player_motion_selection:\n\nstp x19,x20,[sp,#-48]!\nstp x21,x30,[sp,#16]\nmov x19,x2\nmov w20,w0\nmov x21,x30\nbl local_1_original\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\ncbz x19,local_1_restore\nldr x0,[x19,#0x138]\nmov w1,#4\nmov w2,w20\nldr w3,[sp]\nmov x4,x19\nmov x5,x21\nbl shared_studio_trace_actor\nlocal_1_restore:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\n\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#48\nret\nlocal_1_original:\nstp d15,d14,[sp,#-0xa0]!\nldr x16,native_6d5f2f4\nbr x16\n.align 3\n\nshared_studio_action_trace_fence:\ndmb ish\nret\n\n.align 3\n\nshared_studio_trace_actor:\n\nsub sp,sp,#304\nstp x19,x20,[sp]\nstp x21,x22,[sp,#16]\nstp x23,x24,[sp,#32]\nstp x25,x26,[sp,#48]\nstp x27,x28,[sp,#64]\nstr x30,[sp,#80]\nmov x19,x0\nmov w20,w1\nmov w21,w2\nmov w22,w3\nmov x23,x4\nmov x24,x5\nldr x25,data_3_trace_ring\nldr w8,[x25,#4]\ncbz w8,local_3_done\ncbz x19,local_3_done\nmov w8,#0x2a38\nldrb w26,[x19,x8]\ncmp w26,#22\nb.hs local_3_done\nldr x27,[x19,#0x4620]\ncbz x27,local_3_done\nmov x0,x27\nmov w1,w26\nldr x16,native_72c408c\nblr x16\ncmp x0,x19\nb.ne local_3_done\nmov x0,x27\nldr x16,native_72c3e80\nblr x16\ncbz x0,local_3_done\nmov x28,x0\nldr x16,native_697b60c\nblr x16\ncmp w0,#16\nb.hi local_3_done\nstr w0,[sp,#108]\nmov x0,x28\nldr x16,native_6a4bd08\nblr x16\nstr w0,[sp,#104]\nadd x8,sp,#128\nmov w9,#8\nlocal_3_clear_event:\nstp xzr,xzr,[x8],#16\nsubs w9,w9,#1\nb.ne local_3_clear_event\nstr x27,[sp,#136]\nstr x19,[sp,#144]\nldp w8,w9,[sp,#104]\nstp w8,w9,[sp,#152]\nstr w26,[sp,#160]\nldrb w8,[x19,#0xad0]\nstr w8,[sp,#164]\nmov w0,w26\nldr x16,native_72d7dc8\nblr x16\ncbz x0,local_3_no_request\nldr w8,[x0,#4]\nldr w9,[x0,#8]\nstp w8,w9,[sp,#168]\ncmp w8,#25\nb.ne local_3_no_request\nldr w8,[x0,#0xc]\nldr w9,[x0,#0x10]\nldr w10,[x0,#0x14]\nstr w8,[sp,#192]\nstr w9,[sp,#196]\nstr w10,[sp,#200]\nlocal_3_no_request:\nldr w8,[x19,#0x4f4]\nldr w9,[x19,#0x4f8]\nldr w10,[x19,#0x4fc]\nstr w8,[sp,#180]\nstr w9,[sp,#184]\nstr w10,[sp,#188]\nmov w8,#0x7fc00000\nstr w8,[sp,#204]\nstr w8,[sp,#208]\ncmp w20,#4\nb.ne local_3_state_power\ncbz x23,local_3_state_power\nldr w8,[x23,#0xc]\nstr w8,[sp,#208]\nlocal_3_state_power:\nstr w20,[sp,#212]\nstr w21,[sp,#216]\nstr w22,[sp,#220]\nstr x24,[sp,#240]\n// First eleven native roster entries are current on-field slots, as in the\n// independently audited coaching observer. Preserve the native serial32 ABI.\nmov w8,#11\nudiv w1,w26,w8\nmov x0,x27\nldr x16,native_72c404c\nblr x16\ncbz x0,local_3_identity_done\nmov x28,x0\nldr x16,native_68fb5fc\nblr x16\ncmp w0,#11\nb.lo local_3_identity_done\ncmp w0,#40\nb.hi local_3_identity_done\nmov x0,x28\nmov w8,#11\nudiv w9,w26,w8\nmsub w1,w9,w8,w26\nldr x16,native_72f2d04\nblr x16\ncbz x0,local_3_identity_done\nldr x16,native_72f29e0\nblr x16\nstr x1,[sp,#232]\nmov w0,w0\nstr x0,[sp,#248]\nlocal_3_identity_done:\nmov x0,x27\nmov w1,w26\nldr x16,native_72c40b0\nblr x16\ncbz x0,local_3_lock_ring\nldr x16,native_7301ef8\nblr x16\ncbz x0,local_3_lock_ring\nmov x28,x0\nmov w1,#51\nldr x16,native_72b39c4\nblr x16\nand w8,w0,#1\nstr w8,[sp,#176]\nmov x0,x28\nmov w1,#58\nldr x16,native_72b39c4\nblr x16\nldr w8,[sp,#176]\nand w9,w0,#1\norr w8,w8,w9,lsl #1\nstr w8,[sp,#176]\nmov x0,x28\nmov w1,#74\nldr x16,native_72b39c4\nblr x16\nldr w8,[sp,#176]\nand w9,w0,#1\norr w8,w8,w9,lsl #2\nstr w8,[sp,#176]\nlocal_3_lock_ring:\nadd x8,x25,#8\nldaxr w9,[x8]\ncbnz w9,local_3_busy\nmov w10,#1\nstxr w9,w10,[x8]\ncbnz w9,local_3_busy\n// Every retained address is compared as a value, never dereferenced.\nadd x28,x25,#64\nadd x28,x28,x26,lsl #7\nldp x8,x9,[x28]\ncmp x8,x27\nb.ne local_3_new_actor\ncmp x9,x19\nb.eq local_3_cached_actor\nlocal_3_new_actor:\nstp xzr,xzr,[x28]\nstp xzr,xzr,[x28,#16]\nstp xzr,xzr,[x28,#32]\nstp xzr,xzr,[x28,#48]\nstp xzr,xzr,[x28,#64]\nstp xzr,xzr,[x28,#80]\nstp xzr,xzr,[x28,#96]\nstp xzr,xzr,[x28,#112]\nstp x27,x19,[x28]\nlocal_3_cached_actor:\nldp x8,x9,[x28,#64]\nldr x10,[sp,#232]\nldr x11,[sp,#248]\ncmp x8,x10\nb.ne local_3_changed_identity\ncmp x9,x11\nb.eq local_3_identity_cached\nlocal_3_changed_identity:\nstp x10,x11,[x28,#64]\nstr wzr,[x28,#32]\nstr wzr,[x28,#56]\nlocal_3_identity_cached:\ncmp w20,#4\nb.eq local_3_motion_cache\nldr w8,[x28,#32]\ncbz w8,local_3_save_state\nldp x8,x9,[x28,#16]\nldur x10,[sp,#164]\nldur x11,[sp,#172]\ncmp x8,x10\nb.ne local_3_save_state\ncmp x9,x11\nb.ne local_3_save_state\nldr w8,[sp,#104]\nldr w9,[x28,#36]\ncmp w8,w9\nb.hs local_3_unlock\nlocal_3_save_state:\nldur x8,[sp,#164]\nldur x9,[sp,#172]\nstp x8,x9,[x28,#16]\nmov w8,#1\nstr w8,[x28,#32]\nldr w8,[sp,#104]\nstr w8,[x28,#36]\nb local_3_publish\nlocal_3_motion_cache:\nldr w8,[x28,#56]\ncbz w8,local_3_save_motion\nldr w8,[sp,#104]\nldr w9,[x28,#40]\ncmp w8,w9\nb.ne local_3_save_motion\nldr w8,[x28,#44]\ncmp w8,w21\nb.ne local_3_save_motion\nldr w8,[x28,#48]\ncmp w8,w22\nb.ne local_3_save_motion\nldr w8,[x28,#52]\nldr w9,[sp,#208]\ncmp w8,w9\nb.eq local_3_unlock\nlocal_3_save_motion:\nldr w8,[sp,#104]\nstr w8,[x28,#40]\nstp w21,w22,[x28,#44]\nldr w8,[sp,#208]\nstr w8,[x28,#52]\nmov w8,#1\nstr w8,[x28,#56]\nlocal_3_publish:\nldr x8,[x25,#16]\nadd x8,x8,#1\nand x9,x8,#0xfff\nadd x10,x25,#1,lsl #12\nadd x10,x10,x9,lsl #7\nstr xzr,[x10]\nadd x11,sp,#136\nadd x12,x10,#8\nmov w13,#15\nlocal_3_copy_event:\nldr x14,[x11],#8\nstr x14,[x12],#8\nsubs w13,w13,#1\nb.ne local_3_copy_event\ndmb ish\nstr x8,[x10]\ndmb ish\nstr x8,[x25,#16]\nlocal_3_unlock:\nadd x8,x25,#8\nstlr wzr,[x8]\nb local_3_done\nlocal_3_busy:\nclrex\nadd x8,x25,#24\nmov w12,#4\nlocal_3_drop_retry:\nldaxr x9,[x8]\nadd x9,x9,#1\nstxr w10,x9,[x8]\ncbz w10,local_3_done\nsubs w12,w12,#1\nb.ne local_3_drop_retry\nclrex\nmov w9,#1\nstr w9,[x25,#32]\nlocal_3_done:\nldr x30,[sp,#80]\nldp x27,x28,[sp,#64]\nldp x25,x26,[sp,#48]\nldp x23,x24,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp]\nadd sp,sp,#304\nret\n\n.align 3\n\n.quad 6004517954967784754\n.quad entry_studio_player_action_state\n.quad entry_studio_player_motion_selection\n.quad shared_studio_action_trace_fence\n.quad shared_studio_trace_actor\n\n.align 3\nnative_6d3d9e0: .quad 114547168\nnative_6d5f2f4: .quad 114684660\nnative_72c408c: .quad 120340620\nnative_72c3e80: .quad 120340096\nnative_697b60c: .quad 110605836\nnative_6a4bd08: .quad 111459592\nnative_72d7dc8: .quad 120421832\nnative_72c40b0: .quad 120340656\nnative_7301ef8: .quad 120594168\nnative_72b39c4: .quad 120273348\nnative_72c404c: .quad 120340556\nnative_68fb5fc: .quad 110081532\nnative_72f2d04: .quad 120532228\nnative_72f29e0: .quad 120531424\n\n.align 3\ndata_3_trace_ring: .quad 6004685886959124480",
+      "code": "entry_studio_player_action_state:\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nmov w1,#1\nldrb w2,[x0,#0xad0]\nmov w3,w2\nmov x4,xzr\nmov x5,x30\nbl shared_studio_trace_actor\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\n\nadd x0,x0,#0xad0\nldr x16,native_6d3d9e0\nbr x16\n.align 3\n\nentry_studio_player_motion_selection:\n\nstp x19,x20,[sp,#-48]!\nstp x21,x30,[sp,#16]\nmov x19,x2\nmov w20,w0\nmov x21,x30\nbl local_1_original\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\ncbz x19,local_1_restore\nldr x0,[x19,#0x138]\nmov w1,#4\nmov w2,w20\nldr w3,[sp]\nmov x4,x19\nmov x5,x21\nbl shared_studio_trace_actor\nlocal_1_restore:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\n\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#48\nret\nlocal_1_original:\nstp d15,d14,[sp,#-0xa0]!\nldr x16,native_6d5f2f4\nbr x16\n.align 3\n\nshared_studio_action_trace_fence:\ndmb ish\nret\n\n.align 3\n\nshared_studio_trace_actor:\n\nsub sp,sp,#304\nstp x19,x20,[sp]\nstp x21,x22,[sp,#16]\nstp x23,x24,[sp,#32]\nstp x25,x26,[sp,#48]\nstp x27,x28,[sp,#64]\nstr x30,[sp,#80]\nmov x19,x0\nmov w20,w1\nmov w21,w2\nmov w22,w3\nmov x23,x4\nmov x24,x5\nldr x25,data_3_trace_ring\nldr w8,[x25,#4]\ncbz w8,local_3_done\ncbz x19,local_3_done\nmov w8,#0x2a38\nldrb w26,[x19,x8]\ncmp w26,#22\nb.hs local_3_done\nldr x27,[x19,#0x4620]\ncbz x27,local_3_done\nmov x0,x27\nmov w1,w26\nldr x16,native_72c408c\nblr x16\ncmp x0,x19\nb.ne local_3_done\nmov x0,x27\nldr x16,native_72c3e80\nblr x16\ncbz x0,local_3_done\nmov x28,x0\nldr x16,native_697b60c\nblr x16\ncmp w0,#16\nb.hi local_3_done\nstr w0,[sp,#108]\nmov x0,x28\nldr x16,native_6a4bd08\nblr x16\nstr w0,[sp,#104]\nadd x8,sp,#128\nmov w9,#8\nlocal_3_clear_event:\nstp xzr,xzr,[x8],#16\nsubs w9,w9,#1\nb.ne local_3_clear_event\nstr x27,[sp,#136]\nstr x19,[sp,#144]\nldp w8,w9,[sp,#104]\nstp w8,w9,[sp,#152]\nstr w26,[sp,#160]\nldrb w8,[x19,#0xad0]\nstr w8,[sp,#164]\nmov w0,w26\nldr x16,native_72d7dc8\nblr x16\ncbz x0,local_3_no_request\nldr w8,[x0,#4]\nldr w9,[x0,#8]\nstp w8,w9,[sp,#168]\ncmp w8,#25\nb.ne local_3_no_request\nldr w8,[x0,#0xc]\nldr w9,[x0,#0x10]\nldr w10,[x0,#0x14]\nstr w8,[sp,#192]\nstr w9,[sp,#196]\nstr w10,[sp,#200]\nlocal_3_no_request:\nldr w8,[x19,#0x4f4]\nldr w9,[x19,#0x4f8]\nldr w10,[x19,#0x4fc]\nstr w8,[sp,#180]\nstr w9,[sp,#184]\nstr w10,[sp,#188]\nmov w8,#0x7fc00000\nstr w8,[sp,#204]\nstr w8,[sp,#208]\ncmp w20,#4\nb.ne local_3_state_power\ncbz x23,local_3_state_power\nldr w8,[x23,#0xc]\nstr w8,[sp,#208]\nlocal_3_state_power:\nstr w20,[sp,#212]\nstr w21,[sp,#216]\nstr w22,[sp,#220]\nstr x24,[sp,#240]\n// First eleven native roster entries are current on-field slots, as in the\n// independently audited coaching observer. Preserve the native serial32 ABI.\nmov w8,#11\nudiv w1,w26,w8\nmov x0,x27\nldr x16,native_72c404c\nblr x16\ncbz x0,local_3_identity_done\nmov x28,x0\nldr x16,native_68fb5fc\nblr x16\ncmp w0,#11\nb.lo local_3_identity_done\ncmp w0,#40\nb.hi local_3_identity_done\nmov x0,x28\nmov w8,#11\nudiv w9,w26,w8\nmsub w1,w9,w8,w26\nldr x16,native_72f2d04\nblr x16\ncbz x0,local_3_identity_done\nldr x16,native_72f29e0\nblr x16\nstr x1,[sp,#232]\nmov w0,w0\nstr x0,[sp,#248]\nlocal_3_identity_done:\nmov x0,x27\nmov w1,w26\nldr x16,native_72c40b0\nblr x16\ncbz x0,local_3_lock_ring\nldr x16,native_7301ef8\nblr x16\ncbz x0,local_3_lock_ring\nmov x28,x0\nmov w1,#51\nldr x16,native_72b39c4\nblr x16\nand w8,w0,#1\nstr w8,[sp,#176]\nmov x0,x28\nmov w1,#58\nldr x16,native_72b39c4\nblr x16\nldr w8,[sp,#176]\nand w9,w0,#1\norr w8,w8,w9,lsl #1\nstr w8,[sp,#176]\nmov x0,x28\nmov w1,#74\nldr x16,native_72b39c4\nblr x16\nldr w8,[sp,#176]\nand w9,w0,#1\norr w8,w8,w9,lsl #2\nstr w8,[sp,#176]\nlocal_3_lock_ring:\nadd x8,x25,#8\nldaxr w9,[x8]\ncbnz w9,local_3_busy\nmov w10,#1\nstxr w9,w10,[x8]\ncbnz w9,local_3_busy\n// Every retained address is compared as a value, never dereferenced.\nadd x28,x25,#64\nadd x28,x28,x26,lsl #7\nldp x8,x9,[x28]\ncmp x8,x27\nb.ne local_3_new_actor\ncmp x9,x19\nb.eq local_3_cached_actor\nlocal_3_new_actor:\nstp xzr,xzr,[x28]\nstp xzr,xzr,[x28,#16]\nstp xzr,xzr,[x28,#32]\nstp xzr,xzr,[x28,#48]\nstp xzr,xzr,[x28,#64]\nstp xzr,xzr,[x28,#80]\nstp xzr,xzr,[x28,#96]\nstp xzr,xzr,[x28,#112]\nstp x27,x19,[x28]\nlocal_3_cached_actor:\nldp x8,x9,[x28,#64]\nldr x10,[sp,#232]\nldr x11,[sp,#248]\ncmp x8,x10\nb.ne local_3_changed_identity\ncmp x9,x11\nb.eq local_3_identity_cached\nlocal_3_changed_identity:\nstp x10,x11,[x28,#64]\nstr wzr,[x28,#32]\nstr wzr,[x28,#56]\nlocal_3_identity_cached:\ncmp w20,#4\nb.eq local_3_motion_cache\nldr w8,[x28,#32]\ncbz w8,local_3_save_state\nldp x8,x9,[x28,#16]\nldur x10,[sp,#164]\nldur x11,[sp,#172]\ncmp x8,x10\nb.ne local_3_save_state\ncmp x9,x11\nb.ne local_3_save_state\nldr w8,[sp,#104]\nldr w9,[x28,#36]\ncmp w8,w9\nb.hs local_3_unlock\nlocal_3_save_state:\nldur x8,[sp,#164]\nldur x9,[sp,#172]\nstp x8,x9,[x28,#16]\nmov w8,#1\nstr w8,[x28,#32]\nldr w8,[sp,#104]\nstr w8,[x28,#36]\nb local_3_publish\nlocal_3_motion_cache:\nldr w8,[x28,#56]\ncbz w8,local_3_save_motion\nldr w8,[sp,#104]\nldr w9,[x28,#40]\ncmp w8,w9\nb.ne local_3_save_motion\nldr w8,[x28,#44]\ncmp w8,w21\nb.ne local_3_save_motion\nldr w8,[x28,#48]\ncmp w8,w22\nb.ne local_3_save_motion\nldr w8,[x28,#52]\nldr w9,[sp,#208]\ncmp w8,w9\nb.eq local_3_unlock\nlocal_3_save_motion:\nldr w8,[sp,#104]\nstr w8,[x28,#40]\nstp w21,w22,[x28,#44]\nldr w8,[sp,#208]\nstr w8,[x28,#52]\nmov w8,#1\nstr w8,[x28,#56]\nlocal_3_publish:\nldr x8,[x25,#16]\nadd x8,x8,#1\nand x9,x8,#0xfff\nadd x10,x25,#1,lsl #12\nadd x10,x10,x9,lsl #7\nstr xzr,[x10]\nadd x11,sp,#136\nadd x12,x10,#8\nmov w13,#15\nlocal_3_copy_event:\nldr x14,[x11],#8\nstr x14,[x12],#8\nsubs w13,w13,#1\nb.ne local_3_copy_event\ndmb ish\nstr x8,[x10]\ndmb ish\nstr x8,[x25,#16]\nlocal_3_unlock:\nadd x8,x25,#8\nstlr wzr,[x8]\nb local_3_done\nlocal_3_busy:\nclrex\nadd x8,x25,#24\nmov w12,#4\nlocal_3_drop_retry:\nldaxr x9,[x8]\nadd x9,x9,#1\nstxr w10,x9,[x8]\ncbz w10,local_3_done\nsubs w12,w12,#1\nb.ne local_3_drop_retry\nclrex\nmov w9,#1\nstr w9,[x25,#32]\nlocal_3_done:\nldr x30,[sp,#80]\nldp x27,x28,[sp,#64]\nldp x25,x26,[sp,#48]\nldp x23,x24,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp]\nadd sp,sp,#304\nret\n\n.align 3\n\n.quad 6004517954967784754\n.quad entry_studio_player_action_state\n.quad entry_studio_player_motion_selection\n.quad shared_studio_action_trace_fence\n.quad shared_studio_trace_actor",
+      "functions": {
+        "native_6d3d9e0": 114547168,
+        "native_6d5f2f4": 114684660,
+        "native_72c408c": 120340620,
+        "native_72c3e80": 120340096,
+        "native_697b60c": 110605836,
+        "native_6a4bd08": 111459592,
+        "native_72d7dc8": 120421832,
+        "native_72c40b0": 120340656,
+        "native_7301ef8": 120594168,
+        "native_72b39c4": 120273348,
+        "native_72c404c": 120340556,
+        "native_68fb5fc": 110081532,
+        "native_72f2d04": 120532228,
+        "native_72f29e0": 120531424
+      },
+      "constants": {},
+      "deferred_shared_refs": [],
+      "writable": {
+        "data_3_trace_ring": 528384
+      },
+      "writable_fixups": [
+        [
+          1888,
+          528384
+        ]
+      ],
+      "evidence": [
+        "original selector consumes request+138 actor and request+c shot power",
+        "execute original selector unchanged, preserve its returned outcome and entire post-call register state",
+        "native callbacks only, actor supplied by the original getter/selector",
+        "private RW ring only; no game object writes, allocation, file IO or Python calls",
+        "state changes and one unique motion attempt per actor/frame/family/result/power",
+        "failed try-lock increments dropped events; never spin waiting on a game thread"
+      ],
+      "address": 114547164,
+      "file_offset": 114530780,
+      "expected_hex": "00402b91f23ef617884785520000088bc0035fd6e80f1dfcfd7b01a9f44f02a9fd430091f30300aae00308aaf40308aadffeff97688e40f96a920491692241b9",
+      "entry_offset": 0,
+      "extra_entries": [
+        {
+          "name": "studio_player_motion_selection",
+          "address": 114684656,
+          "file_offset": 114668272,
+          "expected_hex": "ef3bb66ded33016deb2b026de923036dfd7b04a9fc6f05a9fa6706a9f85f07a9f65708a9f44f09a9fd030191ff830bd15cd03bd5f703052a881740f9f903042a",
+          "entry_offset": 320
+        }
+      ],
+      "helper_entries": {
+        "shared_studio_action_trace_fence": 680,
+        "shared_studio_trace_actor": 688
+      },
+      "action_trace_schema": {
+        "version": 1,
+        "magic": 1414677297,
+        "bytes": 528384,
+        "header_bytes": 4096,
+        "event_bytes": 128,
+        "capacity": 4096,
+        "enabled_offset": 4,
+        "sequence_offset": 16,
+        "dropped_offset": 24
+      }
+    }
+  ],
+  "hooks": [
+    {
+      "name": "studio_player_action_state",
+      "body_hex": "ff830cd1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f24f09a9f4570aa9f65f0ba9f8670ca9fa6f0da9fc770ea9fe7b00f9e00708ade20f09ade4170aade61f0bade8270cadea2f0dadec370eadee3f0fadf04710adf24f11adf45712adf65f13adf86714adfa6f15adfc7716adfe7f17ad11423bd5f18301f92100805202406b39e303022ae4031faae5031eaa27000094f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c9100402b917000005800021fd6e0ff21d4e0d9d30600000000",
+      "absolute_fixups": [
+        [
+          320,
+          114547168
+        ]
+      ],
+      "assembly": "sub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nmov w1,#1\nldrb w2,[x0,#0xad0]\nmov w3,w2\nmov x4,xzr\nmov x5,x30\nbl shared_studio_trace_actor\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\n\nadd x0,x0,#0xad0\nldr x16,resume\nbr x16\nshared_studio_trace_actor: brk #4095\n.align 3\nresume: .quad 114547168\n\n.align 3\n",
+      "code": "sub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nmov w1,#1\nldrb w2,[x0,#0xad0]\nmov w3,w2\nmov x4,xzr\nmov x5,x30\nbl shared_studio_trace_actor\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\n\nadd x0,x0,#0xad0\nldr x16,resume\nbr x16",
+      "functions": {
+        "resume": 114547168
+      },
+      "constants": {},
+      "deferred_shared_refs": [
+        "shared_studio_trace_actor"
+      ],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [],
+      "address": 114547164,
+      "file_offset": 114530780,
+      "expected_hex": "00402b91f23ef617884785520000088bc0035fd6e80f1dfcfd7b01a9f44f02a9fd430091f30300aae00308aaf40308aadffeff97688e40f96a920491692241b9"
+    },
+    {
+      "name": "studio_player_motion_selection",
+      "body_hex": "f353bda9f57b01a9f30302aaf403002af5031eaa52000094ff830cd1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f24f09a9f4570aa9f65f0ba9f8670ca9fa6f0da9fc770ea9fe7b00f9e00708ade20f09ade4170aade61f0bade8270cadea2f0dadec370eadee3f0fadf04710adf24f11adf45712adf65f13adf86714adfa6f15adfc7716adfe7f17ad11423bd5f18301f9130100b4609e40f981008052e203142ae30340b9e40313aae50315aa2a000094f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c91f57b41a9f353c3a8c0035fd6ef3bb66d9000005800021fd6e0ff21d41f2003d5f4f2d50600000000",
+      "absolute_fixups": [
+        [
+          368,
+          114684660
+        ]
+      ],
+      "assembly": "\nstp x19,x20,[sp,#-48]!\nstp x21,x30,[sp,#16]\nmov x19,x2\nmov w20,w0\nmov x21,x30\nbl original\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\ncbz x19,restore\nldr x0,[x19,#0x138]\nmov w1,#4\nmov w2,w20\nldr w3,[sp]\nmov x4,x19\nmov x5,x21\nbl shared_studio_trace_actor\nrestore:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\n\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#48\nret\noriginal:\nstp d15,d14,[sp,#-0xa0]!\nldr x16,resume\nbr x16\nshared_studio_trace_actor: brk #4095\n.align 3\nresume: .quad 114684660\n\n.align 3\n",
+      "code": "\nstp x19,x20,[sp,#-48]!\nstp x21,x30,[sp,#16]\nmov x19,x2\nmov w20,w0\nmov x21,x30\nbl original\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\ncbz x19,restore\nldr x0,[x19,#0x138]\nmov w1,#4\nmov w2,w20\nldr w3,[sp]\nmov x4,x19\nmov x5,x21\nbl shared_studio_trace_actor\nrestore:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\n\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#48\nret\noriginal:\nstp d15,d14,[sp,#-0xa0]!\nldr x16,resume\nbr x16",
+      "functions": {
+        "resume": 114684660
+      },
+      "constants": {},
+      "deferred_shared_refs": [
+        "shared_studio_trace_actor"
+      ],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [
+        "original selector consumes request+138 actor and request+c shot power",
+        "execute original selector unchanged, preserve its returned outcome and entire post-call register state"
+      ],
+      "address": 114684656,
+      "file_offset": 114668272,
+      "expected_hex": "ef3bb66ded33016deb2b026de923036dfd7b04a9fc6f05a9fa6706a9f85f07a9f65708a9f44f09a9fd030191ff830bd15cd03bd5f703052a881740f9f903042a"
+    }
+  ],
+  "schema": {
+    "version": 1,
+    "magic": 1414677297,
+    "bytes": 528384,
+    "header_bytes": 4096,
+    "event_bytes": 128,
+    "capacity": 4096,
+    "enabled_offset": 4,
+    "sequence_offset": 16,
+    "dropped_offset": 24
+  },
+  "coverage": [
+    "both teams",
+    "native actor-state transitions",
+    "native motion selection attempts and outcomes",
+    "current AI request type and subtype",
+    "effective Blitz/Low/Heavy flags",
+    "native motion shot power"
+  ],
+  "limits": [
+    "unknown action IDs remain raw",
+    "duplicate identical motion attempts within one frame suppressed",
+    "bounded ring overruns and contention are reported",
+    "motion selection success is not a proof the clip was finally played"
+  ]
+}

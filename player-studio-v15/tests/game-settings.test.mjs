@@ -1,6 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {pressedButtons,bindingText,STANDARD_BUTTONS,updateControllerBinding} from '../web/game-settings.js';
+import {pressedButtons,bindingText,STANDARD_BUTTONS,updateControllerBinding,GameSettingsUI} from '../web/game-settings.js';
+
+test('opponent system has an independent switch and keeps other AI preferences',()=>{
+ const previous=globalThis.document,root={innerHTML:'',insertAdjacentHTML(_position,text){this.innerHTML=text+this.innerHTML;},append(node){this.innerHTML+=node.innerHTML;}};
+ globalThis.document={querySelector:()=>root,createElement:()=>({innerHTML:'',querySelector:()=>({})})};
+ try{
+  const ui=new GameSettingsUI({});ui.drawBindings=()=>{};ui.schema={scopes:[]};
+  ui.value={frame_rate:{enabled:false,target:160},display:{enabled:false,height:1080},controller:{preset:'default'},ai_cut_in_shots:{enabled:true}};
+  ui.draw();assert.match(root.innerHTML,/data-game-enabled="ai_division_squads"/);
+  root.onchange({target:{dataset:{gameEnabled:'ai_division_squads'},checked:false}});
+  assert.equal(ui.value.ai_division_squads.enabled,false);assert.equal(ui.value.ai_cut_in_shots.enabled,true);
+  root.onchange({target:{dataset:{gameEnabled:'action_trace'},checked:false}});
+  assert.equal(ui.value.action_trace.enabled,false);assert.equal(ui.value.ai_cut_in_shots.enabled,true);
+  ui.draw();assert.doesNotMatch(root.innerHTML,/data-game-enabled="ai_division_squads" checked/);
+ }finally{globalThis.document=previous;}
+});
 test('physical button capture uses the standard controller layout and analog triggers',()=>{
  const buttons=Array.from({length:16},()=>({pressed:false,value:0}));buttons[5].pressed=true;buttons[1].value=1;
  assert.deepEqual(pressedButtons({buttons}),['B','RB']);assert.equal(bindingText(['RB','B']),'RB + B');

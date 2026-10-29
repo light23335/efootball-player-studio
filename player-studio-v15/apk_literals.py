@@ -87,6 +87,8 @@ def update_options(apk,catalog):
         if ident in old and old[ident]['effects']==effects:label=old[ident]['label']
         boosters.append({'id':ident,'category':kind,'label':label,'conditional':kind!=0,'effects':effects})
     catalog.update(options);catalog.update(skill);catalog['boosters']=boosters
+    from playing_styles import apply_catalogue as apply_playing_styles
+    apply_playing_styles(catalog)
     from skill_localization import apply_labels
     apply_labels(catalog)
     costs=literal_assignments(reader('pes_tables'),{'EXPERIENCE_LIST'})['EXPERIENCE_LIST']

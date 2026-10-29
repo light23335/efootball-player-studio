@@ -54,6 +54,8 @@ def player_record(template,project,definition,fields,ability_bits,skill_bits):
         value=set_bits(value,**field,new=int(new))
     for index,field in ability_bits.items():value=set_bits(value,field['bit'],6,base[int(index)]-40)
     for field in AI_FIELDS.values():value=set_bits(value,field['bit'],1,base[field['parameter']])
+    from ai_playing_styles import CUSTOM_SOURCE_BIT
+    value=set_bits(value,CUSTOM_SOURCE_BIT,1,int('lone_wolf' in definition.get('ai_playing_styles',definition['owned'].get('ai_playing_styles',[]))))
     from native_skill_effects import compiled_skills
     selected=set(compiled_skills(project['innate_skills'],identity['height_cm']))
     # Extended match markers carry custom ownership from either editor list.

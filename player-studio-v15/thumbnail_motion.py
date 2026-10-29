@@ -7,6 +7,10 @@ REVISION='linked-mini-background-v4'
 
 def plan(project,library):
     card=project.get('native_card') or {};enabled=project['appearance'].get('thumbnail_animation',True)
+    if card.get('custom_motion'):
+        preview=(card['custom_motion']['mini'].get('preview') or {}).get('asset_id')
+        layers=[{'role':'background','source':'custom','asset_id':preview,'url':'/assets/'+preview,'blend':'source-over'}] if enabled and preview else []
+        return {'enabled':enabled,'animated':bool(layers),'layers':layers,'revision':'private-m02-background-v2'}
     paths=set(getattr(library,'card_media',{}).get('movies',[]));layers=[]
     if enabled:
         style=card.get('native_style','');agent=card.get('native_agent',0)
@@ -42,5 +46,5 @@ def plan(project,library):
 def names(asset_key,motion):
     # Native mini strings are M01..M06. The loader resolves the optional
     # M02/M06 ManaTexture by appending _v. M04 is the transparent player image.
-    roles={layer['role']:layer['name'] for layer in motion['layers']}
+    roles={layer['role']:layer['name'] for layer in motion['layers'] if 'name' in layer}
     return [asset_key+'_b',roles.get('background',''),'',asset_key+'_m','',roles.get('effect','')]

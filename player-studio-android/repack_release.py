@@ -7,8 +7,8 @@ Signing uses the operator's existing private release key.
 from pathlib import Path
 import argparse,hashlib,io,json,re,struct,sys,zipfile
 ROOT=Path(__file__).resolve().parent
-VERSION='1.9.15.5-android.1'
-VERSION_CODE=199155
+VERSION='2.0-android.1'
+VERSION_CODE=200000
 RETIRED_CORE_MODULES={'team_workshop.py','team_cpk.py','team_workshop.pyc','team_cpk.pyc'}
 
 def compact_editor_apk(source,output,changes,removed=()):
@@ -93,6 +93,13 @@ def main():
         with zipfile.ZipFile(io.BytesIO(source.read('assets/chaquopy/app.imy'))) as old,zipfile.ZipFile(app,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
             replacements={p.name:p.read_bytes() for p in core.glob('*.py') if not p.name.startswith(('build_','prepare_','annotate_','package_release','enrich_'))}
             replacements.update({p.name:p.read_bytes() for p in (ROOT/'app/src/main/python').glob('*.py')})
+            # Pure Python movie muxer dependencies; native VP9 encoding uses
+            # Android MediaCodec, never a Windows ffmpeg executable.
+            deps=ROOT.parent/'.work/studio-build-deps'
+            for package in ('wannacri','ffmpeg','pythonjsonlogger','tqdm','future','past','libfuturize','libpasteurize','colorama'):
+                folder=deps/package
+                if not folder.is_dir():raise ValueError('Missing bundled movie dependency: '+package)
+                for item in folder.rglob('*.py'):replacements[item.relative_to(deps).as_posix()]=item.read_bytes()
             for entry in old.infolist():
                 if entry.filename not in replacements and entry.filename not in RETIRED_CORE_MODULES:z.writestr(entry,old.read(entry))
             for name,raw in replacements.items():compile(raw,name,'exec');z.writestr(name,raw)
@@ -104,7 +111,9 @@ def main():
                     raw=item.read_bytes()
                     if item.name=='index.html':raw=raw.replace(b'</head>',b'<link rel="stylesheet" href="/android.css"><script defer src="/android-ui.js"></script></head>')
                     z.writestr(item.relative_to(core).as_posix(),raw)
-            for name in ('personal_runtime.py','personal_binding.py'):z.write(core/name,name)
+            for name in ('personal_runtime.py','personal_binding.py','division_squads.py','native_overall.py',
+                         'ai_tactical_profiles.py','ai_division_sessions.py','ai_match_manager.py',
+                         'ai_match_channel.py','ai_match_runtime.py','ai_match_state.py','action_trace.py'):z.write(core/name,name)
             for item in (ROOT/'licenses').glob('*'):
                 if item.is_file():z.write(item,'licenses/'+item.name)
             z.write(ROOT/'THIRD_PARTY_NOTICES.md','licenses/THIRD_PARTY_NOTICES.md')

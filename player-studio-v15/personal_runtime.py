@@ -537,6 +537,33 @@ def apply_packs(conn,packs):
     conn.execute("insert into meta values('league_position_agent_ids',?) on conflict(key) do update set value=excluded.value",(compact(active),))
 
 
+def install_save_import_sync(document):
+    """Reconcile a successfully restored DB before the gateway builds its lists.
+
+    The stock import calls restore_snapshot then _open_logic directly, bypassing
+    initialize/legend activation. Do not wait for a later activation to grant
+    newly installed designs. Failed reconciliation propagates to stock recovery.
+    """
+    import save_transfer
+    previous=save_transfer.restore_snapshot
+    if getattr(previous,'_studio_save_import_sync',False):
+        previous._studio_document=document
+        return
+    def restore_snapshot(*args,**kwargs):
+        result=previous(*args,**kwargs)
+        target=args[1] if len(args)>1 else kwargs['destination']
+        import sqlite3
+        from contextlib import closing
+        current=restore_snapshot._studio_document()
+        with closing(sqlite3.connect(str(target))) as conn:
+            apply_definitions(conn,current)
+            apply_coaches(conn,current.get('coaches',[]))
+        return result
+    restore_snapshot._studio_save_import_sync=True
+    restore_snapshot._studio_document=document
+    save_transfer.restore_snapshot=restore_snapshot
+
+
 def install(namespace):
     """Install through the original gateway stub, without changing its loader."""
     original=namespace['initialize']
@@ -549,9 +576,23 @@ def install(namespace):
         install_pack_images(namespace,document,root)
         import _protected_runtime
         _protected_runtime.install_root(root)
+        # Camera validation and frame-rate startup share this original reader.
+        # /proc/maps validation cannot prevent an unmap between its check and
+        # ctypes.string_at. Preserve every existing range/signature check and
+        # change only the final read to a kernel-checked copy.
+        import sys,importlib
+        if sys.platform.startswith('linux'):
+            from personal_binding import guard_module_reads
+            for module_name in ('fps120_runtime','diy_native_reader'):
+                try:module=importlib.import_module(module_name)
+                except ImportError:continue  # Older base APKs may lack a reader.
+                guard_module_reads(module)
         install_package_identity(document)
         install_fps_options(document,root)
         install_render_options(document,root)
+        if document.get('game_version')=='V17':
+            import action_trace
+            action_trace.configure(root,document)
         import legends_v10
         if document.get('native_binding'):
             import personal_binding
@@ -575,6 +616,7 @@ def install(namespace):
             legends_v10._active_fingerprint=None
             configured['revision']=revision
             configured['document']=document
+        install_save_import_sync(lambda:configured['document'])
         if not configured['wrapped']:
             previous=legends_v10.activate
             def activate(resource_root,conn):
@@ -593,6 +635,9 @@ def install(namespace):
         result=original(root,*args,**kwargs)
         if not configured['display']:
             install_display_previews(lambda:configured['document'],namespace.get('_logic'),root)
+            if document.get('game_version')=='V17' and 'division_squads' in document:
+                import division_squads
+                division_squads.install(lambda:configured['document'],root,namespace.get('_logic'))
             configured['display']=True
         return result
     namespace['initialize']=initialize

@@ -1,10 +1,31 @@
 from pathlib import Path
 import io,json,struct,sys,tempfile,unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from game_settings import DEFAULTS,BUTTONS,normalize,preset,legacy_preset,controller_hooks,settings,schema
+from game_settings import DEFAULTS,BUTTONS,normalize,preset,legacy_preset,controller_hooks,settings,schema,ai_decision_options
 import copy
 
 class GameSettingsTests(unittest.TestCase):
+ def test_ai_master_off_also_disables_lone_wolf_without_erasing_player_style(self):
+  player={'ai_playing_styles':['lone_wolf','cut_in']};before=copy.deepcopy(player)
+  for selected in ([],[player]):
+   for enabled in (False,True):
+    result=ai_decision_options({'ai_cut_in_shots':{'enabled':enabled}},selected)
+    self.assertEqual(result['ordinary_enabled'],enabled)
+    self.assertEqual(result['lone_wolf_enabled'],enabled and bool(selected))
+    self.assertEqual(result['lone_wolf_configured'],bool(selected))
+  self.assertEqual(player,before)
+ def test_division_opponents_can_be_disabled_independently_without_losing_preferences(self):
+  old=normalize({'frame_rate':{'enabled':True,'target':240}})
+  self.assertTrue(old['ai_division_squads']['enabled'])
+  old['ai_division_squads']['enabled']=False
+  saved=normalize(old)
+  self.assertFalse(saved['ai_division_squads']['enabled']);self.assertTrue(saved['ai_cut_in_shots']['enabled'])
+  self.assertEqual(saved['frame_rate'],{'enabled':True,'target':240})
+  with tempfile.TemporaryDirectory() as folder:
+   store=type('Store',(),{'root':Path(folder)})()
+   self.assertEqual(settings(store,saved),settings(store))
+  for bad in (0,1,'false',None):
+   with self.assertRaises(ValueError):normalize({'ai_division_squads':{'enabled':bad}})
  def test_default_and_fc_are_valid_and_conflicts_are_per_context(self):
   for name in ('default','fc'):
    value=copy.deepcopy(DEFAULTS);value['controller'].update(preset=name,bindings=preset(name));self.assertEqual(normalize(value),value)

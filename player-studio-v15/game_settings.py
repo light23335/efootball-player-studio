@@ -77,7 +77,23 @@ def migrate_controller(c):
     c['bindings']=rows
 
 DEFAULTS={'frame_rate':{'enabled':False,'target':160},'display':{'enabled':False,'height':1080},'card_motion':{'enabled':True},
+          'ai_cut_in_shots':{'enabled':True},
+          'ai_division_squads':{'enabled':True},
+          'action_trace':{'enabled':False},
           'controller':{'enabled':False,'preset':'default','mapping_revision':3,'bindings':preset(),'manual_shortcuts':[],'swap_sticks':False,'invert_right_y':False}}
+
+
+def ai_decision_options(value,players):
+    """The export master switch also disables explicit custom AI effects.
+
+    Keep the per-player styles in the project; changing an export preference
+    must not erase the user's lone-wolf configuration.
+    """
+    enabled=value.get('ai_cut_in_shots',{'enabled':True})['enabled']
+    if type(enabled) is not bool:raise ValueError('AI 决策修改开关无效')
+    selected=any('lone_wolf' in player.get('ai_playing_styles',[]) for player in players)
+    return {'enabled':enabled,'ordinary_enabled':enabled,'lone_wolf_enabled':enabled and selected,
+            'lone_wolf_configured':selected}
 
 def normalize(body):
     if not isinstance(body,dict):raise ValueError('游戏设置格式无效')

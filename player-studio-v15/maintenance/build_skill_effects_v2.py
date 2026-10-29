@@ -160,27 +160,43 @@ mov x0,x19
 mov w1,#73
 {call('flag')}
 tbz w0,#0,done
-ldr s0,[x19,#0x344]
-ldr s1,speed_threshold
-fcmp s0,s1
-b.vs done
-b.ge strong
-b mild
+mov w20,#3
+b curve
 explosive:
-ldr s0,[x19,#0x344]
-ldr s1,speed_threshold
-fcmp s0,s1
-b.vs done
-b.lt strong
-b mild
+mov w20,#1
+b curve
 controlled:
 ldr s0,controlled_bonus
 b apply
-strong:
+curve:
+ldr w8,[x19,#0x344]
+ubfx w9,w8,#23,#8
+cmp w9,#255
+b.eq done
+fmov s0,w8
+ldr s1,curve_start
+fsub s0,s0,s1
+ldr s1,curve_span
+fdiv s0,s0,s1
+fmov s2,wzr
+fmax s0,s0,s2
+fmov s2,#1.0
+fmin s0,s0,s2
+fmul s2,s0,s0
+fadd s3,s0,s0
+fmov s4,#3.0
+fsub s3,s4,s3
+fmul s2,s2,s3
+ldr s1,bonus_span
+fmul s2,s2,s1
+cmp w20,#1
+b.ne lengthy_curve
 ldr s0,strong_bonus
+fsub s0,s0,s2
 b apply
-mild:
+lengthy_curve:
 ldr s0,mild_bonus
+fadd s0,s0,s2
 apply:
 ldr s1,[sp,#{SIMD}]
 fcmp s1,#0.0
@@ -199,11 +215,13 @@ done:
 '''
         builder.add('studio_' + name + '_acceleration_input', address, code,
                     {'flag': FLAG, 'resume': address + 4},
-                    {'speed_threshold': 20., 'controlled_bonus': .06,
-                     'strong_bonus': .12, 'mild_bonus': .03, 'ceiling': 1.1},
+                    {'curve_start':12.,'curve_span':16.,'bonus_span':.14,
+                     'controlled_bonus': .12, 'strong_bonus': .20,
+                     'mild_bonus': .06, 'ceiling': 1.2},
                     ['0x6f4d714 -> ability 44; mode 1 includes dribbling 24',
                      'running solver config +0x38 / dribbling config +0x208',
-                     '0x6f11ef4 occurs AFTER fcvtzs/scvtf; fraction survives'])
+                     '0x6f11ef4 occurs AFTER fcvtzs/scvtf; fraction survives',
+                     'continuous smoothstep across measured native speed 12..28; no frame timers'])
 
 
 def postprocessing_hook(builder):
@@ -243,11 +261,18 @@ def build(engine, release=False):
     add_trajectory(builder)
     add_shield(builder)
     bundle = builder.bundle('studio_skill_runtime_v2', builder.rows + builder.helpers)
-    return {'revision': 'skill-effects-v2-1.9.14' if release else 'skill-effects-v2-candidate-3',
+    return {'revision': 'skill-effects-v2-1.9.15.10-lone-wolf' if release else 'skill-effects-v2-lone-wolf-candidate',
             'production_ready': bool(release),
             'custom_skill_protocol':CUSTOM_PROTOCOL,
             'engine_sha256': ENGINE_SHA, 'hooks': builder.rows, 'helpers': builder.helpers,
             'bundles': [bundle],
+            'balance':{'shot_error_factor':.5,'cold_distance_m':2.5,
+                       'pass_error_factor':.6,'windup_duration_factor':.6,
+                       'short_pass_distance_m':2.,'shield_distance_m':1.8,'shield_resistance_factor':1.5,
+                       'air_pass_error_components':['yaw','pitch','speed'],
+                       'acceleration':{'curve':'smoothstep','speed_start':12.,'speed_end':28.,
+                                       'strong_bonus':.20,'mild_bonus':.06,'controlled_bonus':.12,'ceiling':1.2},
+                       'stacking':'strongest per component','low_screamer':'unchanged'},
             'validation': {'native_behavior_enum': '0xc91308; getter 0x72e2eec',
                            'short_pass_behaviors': [22,23], 'through_pass_behavior': 24,
                            'ground_and_lofted_through_native_kinds': [1,2,3,4],

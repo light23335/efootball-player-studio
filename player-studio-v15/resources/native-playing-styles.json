@@ -1,0 +1,458 @@
+{
+  "revision": "native-playing-style-options-v1",
+  "source": "V17 native name table, verified parameter-to-runtime mapping, Playstyle.bin and complete + delta language rows",
+  "engine_sha256": "efd257d9e41b622d6ecb8f51f7b0a8ee8820113fd427c5572025df1c8eecc7b8",
+  "name_table_address": 13484824,
+  "native_table_sha256": "04718073b4a4db38958b26707d4d6daedbe2235cc8c44d98aa5811b4ef154000",
+  "phase_field": "Playstyle.bin bit 6: out of possession",
+  "rows": [
+    {
+      "id": 1,
+      "runtime_id": 1,
+      "phase": "attack",
+      "label": "偷猎者",
+      "english": "Goal Poacher",
+      "message": 23068693,
+      "positions": [
+        "CF"
+      ]
+    },
+    {
+      "id": 2,
+      "runtime_id": 2,
+      "phase": "attack",
+      "label": "虚假跑位",
+      "english": "Dummy Runner",
+      "message": 23068694,
+      "positions": [
+        "CF",
+        "SS",
+        "AMF"
+      ]
+    },
+    {
+      "id": 3,
+      "runtime_id": 3,
+      "phase": "attack",
+      "label": "禁区之狐",
+      "english": "Fox in the Box",
+      "message": 23068699,
+      "positions": [
+        "CF"
+      ]
+    },
+    {
+      "id": 4,
+      "runtime_id": 7,
+      "phase": "attack",
+      "label": "高产翼锋",
+      "english": "Prolific Winger",
+      "message": 2424927,
+      "positions": [
+        "RWF",
+        "LWF"
+      ]
+    },
+    {
+      "id": 5,
+      "runtime_id": 10,
+      "phase": "attack",
+      "label": "传统十号位置",
+      "english": "Classic No. 10",
+      "message": 23068681,
+      "positions": [
+        "SS",
+        "AMF"
+      ]
+    },
+    {
+      "id": 6,
+      "runtime_id": 11,
+      "phase": "attack",
+      "label": "影子前锋",
+      "english": "Hole Player",
+      "message": 2424928,
+      "positions": [
+        "SS",
+        "AMF",
+        "RMF",
+        "LMF",
+        "CMF"
+      ]
+    },
+    {
+      "id": 7,
+      "runtime_id": 12,
+      "phase": "attack",
+      "label": "全能中场",
+      "english": "Box-to-Box",
+      "message": 2424929,
+      "positions": [
+        "RMF",
+        "LMF",
+        "CMF",
+        "DMF"
+      ]
+    },
+    {
+      "id": 8,
+      "runtime_id": 13,
+      "phase": "attack",
+      "label": "靠山",
+      "english": "Anchor Man",
+      "message": 23068731,
+      "positions": [
+        "DMF"
+      ]
+    },
+    {
+      "id": 9,
+      "runtime_id": 14,
+      "phase": "defense",
+      "label": "破坏型中场",
+      "english": "The Destroyer",
+      "message": 2424930,
+      "positions": [
+        "CMF",
+        "DMF",
+        "RB",
+        "LB",
+        "CB"
+      ]
+    },
+    {
+      "id": 10,
+      "runtime_id": 17,
+      "phase": "attack",
+      "label": "额外前锋",
+      "english": "Extra Frontman",
+      "message": 23068734,
+      "positions": [
+        "CB"
+      ]
+    },
+    {
+      "id": 11,
+      "runtime_id": 18,
+      "phase": "attack",
+      "label": "进攻型后卫",
+      "english": "Attacking Full-back",
+      "message": 2424932,
+      "positions": [
+        "RB",
+        "LB"
+      ]
+    },
+    {
+      "id": 12,
+      "runtime_id": 19,
+      "phase": "attack",
+      "label": "防守型后卫",
+      "english": "Defensive Full-back",
+      "message": 2424934,
+      "positions": [
+        "RB",
+        "LB"
+      ]
+    },
+    {
+      "id": 13,
+      "runtime_id": 5,
+      "phase": "attack",
+      "label": "组织型前锋",
+      "english": "Deep-lying Forward",
+      "message": 23068680,
+      "positions": [
+        "CF",
+        "SS"
+      ]
+    },
+    {
+      "id": 14,
+      "runtime_id": 6,
+      "phase": "attack",
+      "label": "有创意的中场指挥官",
+      "english": "Creative Playmaker",
+      "message": 2424926,
+      "positions": [
+        "SS",
+        "RWF",
+        "LWF",
+        "AMF",
+        "RMF",
+        "LMF"
+      ]
+    },
+    {
+      "id": 15,
+      "runtime_id": 16,
+      "phase": "attack",
+      "label": "组织大师",
+      "english": "Build Up",
+      "message": 2424933,
+      "positions": [
+        "CB"
+      ]
+    },
+    {
+      "id": 16,
+      "runtime_id": 21,
+      "phase": "defense",
+      "label": "进攻型守门员",
+      "english": "Attacking GK",
+      "message": 2424935,
+      "positions": [
+        "GK"
+      ]
+    },
+    {
+      "id": 17,
+      "runtime_id": 22,
+      "phase": "defense",
+      "label": "防守型守门员",
+      "english": "Defensive GK",
+      "message": 2424936,
+      "positions": [
+        "GK"
+      ]
+    },
+    {
+      "id": 18,
+      "runtime_id": 8,
+      "phase": "attack",
+      "label": "自由侧翼",
+      "english": "Roaming Flank",
+      "message": 2424937,
+      "positions": [
+        "RWF",
+        "LWF",
+        "RMF",
+        "LMF"
+      ]
+    },
+    {
+      "id": 19,
+      "runtime_id": 9,
+      "phase": "attack",
+      "label": "传中专家",
+      "english": "Cross Specialist",
+      "message": 2424938,
+      "positions": [
+        "RWF",
+        "LWF",
+        "RMF",
+        "LMF"
+      ]
+    },
+    {
+      "id": 20,
+      "runtime_id": 15,
+      "phase": "attack",
+      "label": "指挥官",
+      "english": "Orchestrator",
+      "message": 2424939,
+      "positions": [
+        "CMF",
+        "DMF"
+      ]
+    },
+    {
+      "id": 21,
+      "runtime_id": 20,
+      "phase": "attack",
+      "label": "迭瓦式终结者",
+      "english": "Full-back Finisher",
+      "message": 2424940,
+      "positions": [
+        "RB",
+        "LB"
+      ]
+    },
+    {
+      "id": 22,
+      "runtime_id": 4,
+      "phase": "attack",
+      "label": "站桩式中锋",
+      "english": "Target Man",
+      "message": 23068679,
+      "positions": [
+        "CF"
+      ]
+    },
+    {
+      "id": 23,
+      "runtime_id": 23,
+      "phase": "defense",
+      "label": "后撤压迫",
+      "english": "Press Back",
+      "message": 23068823,
+      "positions": [
+        "CF",
+        "SS",
+        "RWF",
+        "LWF"
+      ]
+    },
+    {
+      "id": 24,
+      "runtime_id": 24,
+      "phase": "defense",
+      "label": "锋线施压",
+      "english": "Front Line Pressure",
+      "message": 23068824,
+      "positions": [
+        "CF",
+        "SS",
+        "RWF",
+        "LWF"
+      ]
+    },
+    {
+      "id": 25,
+      "runtime_id": 25,
+      "phase": "defense",
+      "label": "前场埋伏者",
+      "english": "Front Line Poacher",
+      "message": 23068825,
+      "positions": [
+        "CF",
+        "SS",
+        "RWF",
+        "LWF"
+      ]
+    },
+    {
+      "id": 26,
+      "runtime_id": 26,
+      "phase": "defense",
+      "label": "突前球员",
+      "english": "Attack Outlet",
+      "message": 23068826,
+      "positions": [
+        "CF",
+        "SS",
+        "RWF",
+        "LWF",
+        "AMF"
+      ]
+    },
+    {
+      "id": 27,
+      "runtime_id": 27,
+      "phase": "defense",
+      "label": "全能后卫",
+      "english": "All-action Defender",
+      "message": 23068827,
+      "positions": [
+        "AMF",
+        "RMF",
+        "LMF",
+        "CMF",
+        "DMF"
+      ]
+    },
+    {
+      "id": 28,
+      "runtime_id": 28,
+      "phase": "defense",
+      "label": "传球拦截者",
+      "english": "Pass Disruptor",
+      "message": 23068828,
+      "positions": [
+        "AMF",
+        "RMF",
+        "LMF",
+        "CMF",
+        "DMF"
+      ]
+    },
+    {
+      "id": 29,
+      "runtime_id": 29,
+      "phase": "defense",
+      "label": "补位型球员",
+      "english": "Covering Role",
+      "message": 23068829,
+      "positions": [
+        "CMF",
+        "DMF",
+        "RB",
+        "LB",
+        "CB"
+      ]
+    },
+    {
+      "id": 30,
+      "runtime_id": 30,
+      "phase": "defense",
+      "label": "高位防线大师",
+      "english": "High Line Master",
+      "message": 23068830,
+      "positions": [
+        "RB",
+        "LB",
+        "CB"
+      ]
+    },
+    {
+      "id": 31,
+      "runtime_id": 31,
+      "phase": "defense",
+      "label": "紧密盯防者",
+      "english": "Tough Marker",
+      "message": 23068831,
+      "positions": [
+        "DMF",
+        "RB",
+        "LB",
+        "CB"
+      ]
+    },
+    {
+      "id": 32,
+      "runtime_id": 32,
+      "phase": "defense",
+      "label": "纵深防守者",
+      "english": "Deep Defender",
+      "message": 23068832,
+      "positions": [
+        "RB",
+        "LB",
+        "CB"
+      ]
+    },
+    {
+      "id": 33,
+      "runtime_id": 33,
+      "phase": "defense",
+      "label": "清道夫门将",
+      "english": "Sweeper GK",
+      "message": 23068833,
+      "positions": [
+        "GK"
+      ]
+    },
+    {
+      "id": 34,
+      "runtime_id": 34,
+      "phase": "attack",
+      "label": "组织型门将",
+      "english": "Build-up GK",
+      "message": 23068834,
+      "positions": [
+        "GK"
+      ]
+    },
+    {
+      "id": 35,
+      "runtime_id": 35,
+      "phase": "attack",
+      "label": "高位防线门将",
+      "english": "High Line GK",
+      "message": 23068835,
+      "positions": [
+        "GK"
+      ]
+    }
+  ]
+}

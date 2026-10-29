@@ -21,7 +21,7 @@ def apply_project_delta(project,operations):
     return result
 
 class WindowSessions:
-    def __init__(self, shutdown, grace=2):
+    def __init__(self, shutdown, grace=10):
         self.shutdown=shutdown;self.grace=grace;self.sessions=set();self.lock=threading.RLock();self.timer=None
     def open(self, session):
         session=str(uuid.UUID(session))

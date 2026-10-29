@@ -52,6 +52,14 @@
 .coach-identity-results small {color:var(--muted);}
 .coach-identity-results .note {padding:6px 12px;}
 
+.coach-delete-confirm{flex-basis:100%;padding:12px;border:1px solid var(--border);border-radius:8px;}
+.coach-delete-confirm p{font-size:12px;margin:0 0 10px;}
+.coach-head-layout{display:grid;grid-template-columns:minmax(260px,1fr) minmax(240px,1fr);gap:22px;margin:18px 0;}
+.coach-head-stage{height:450px;min-height:320px;}
+.coach-head-path{overflow-wrap:anywhere;}
+.coach-head-panel .portrait-actions{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0;}
+.coach-head-panel select{max-width:100%;}
+@media(max-width:1050px){.coach-head-layout{grid-template-columns:1fr;}.coach-head-stage{height:380px;}}
 .coach-identity-picker>span {font-size:11px;color:var(--muted);}
 .coach-identity-picker [type="search"] {margin-top:8px;}
 

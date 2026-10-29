@@ -103,12 +103,16 @@ def prepare(library,bindings,inherited_routes,records,enabled,resources=None):
     assets=library.face_assets();art,reports=packages(assets,resources)
     bindings=copy.deepcopy(bindings);routes=copy.deepcopy(inherited_routes)
     stock=stock_routes(library,records) if enabled else []
+    if getattr(library,'profile',{}).get('game_version')=='V17':
+        from thumbnail_mask import prepare as prepare_personal_mask
+        art,mask_reports=prepare_personal_mask(library,art,bindings,routes,resources)
+        reports.extend(mask_reports)
     import contextlib
     with contextlib.closing(library.db()) as db:
         mini=MiniTextures(assets,lambda name:library._alias(db,name))
         for row in [*bindings,*routes]:
             values=row.get('thumbnail_names')
-            if values is not None:
+            if values is not None and not row.get('private_movie_textures'):
                 if len(values)!=6:raise ValueError('小头像原生图层数量无效')
                 row['thumbnail_names']=mini.values(values,(1,5))
         for row in stock:row['names']=mini.values(row['names'],(0,1))

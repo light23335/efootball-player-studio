@@ -2,7 +2,7 @@
 from pathlib import Path
 import json,os,subprocess,uuid
 
-DEFAULTS={'enabled':False,'division':10,'points':0,'matches':0,'wins':0,'draws':0,'losses':0}
+DEFAULTS={'enabled':False,'division':10,'points':0,'matches':0,'wins':0,'draws':0,'losses':0,'style_mode':'shuffle_bag'}
 
 def export_folder(store):
     folder=store.root/'exports'
@@ -11,15 +11,18 @@ def export_folder(store):
 
 def game_options(store,body=None):
     path=store.root/'game-options.json'
-    if body is None:return json.loads(path.read_text(encoding='utf8')) if path.is_file() else dict(DEFAULTS)
+    if body is None:return {**DEFAULTS,**json.loads(path.read_text(encoding='utf8'))} if path.is_file() else dict(DEFAULTS)
     value={**DEFAULTS,**body}
     if type(value['enabled']) is not bool:raise ValueError('进度修改开关无效')
+    if value['style_mode'] not in ('shuffle_bag','independent'):raise ValueError('AI 风格抽取方式无效')
     for k,low,high in [('division',1,10),('points',0,99999),('matches',0,9999),('wins',0,9999),('draws',0,9999),('losses',0,9999)]:
         if type(value[k]) is not int or not low<=value[k]<=high:raise ValueError(k+' 的数值超出范围')
     if value['wins']+value['draws']+value['losses']!=value['matches']:raise ValueError('胜、平、负之和须等于已赛场次')
     if value['division']>=4 and (value['matches']>2 or value['points']>6):raise ValueError('组别 10–4 当前轮最多已赛 2 场、积分 0–6；第 3 场由游戏结算升降级')
     if value['division']>=4 and value['points']!=3*value['wins']+value['draws']:raise ValueError('组别 10–4 积分须为 胜场×3＋平场')
-    value['revision']=str(uuid.uuid4())
+    previous=game_options(store)
+    progress_keys=('enabled','division','points','matches','wins','draws','losses')
+    value['revision']=previous['revision'] if previous.get('revision') and all(previous.get(k)==value[k] for k in progress_keys) else str(uuid.uuid4())
     temp=path.with_suffix('.tmp');temp.write_text(json.dumps(value,ensure_ascii=False,indent=2),encoding='utf8');temp.replace(path)
     return value
 

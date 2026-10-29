@@ -41,10 +41,12 @@ export class NativeCardRenderer {
   async update(project,simulation){
     this.project=project;this.simulation=simulation;
     const card=project.native_card,dateOverride=project.appearance.card_date!==undefined||card?.preset_id||project.appearance.card_date_visible===false;
-    const key=JSON.stringify([card?.source_id,card?.preset_id,card?.layers?.map(l=>[l.asset_id,l.blend]),card?.fonts,card?.info,project.appearance.portrait,project.appearance.hide_portrait,Boolean(dateOverride)]);
+    const key=JSON.stringify([card?.source_id,card?.preset_id,card?.custom_motion,card?.layers?.map(l=>[l.asset_id,l.blend]),card?.fonts,card?.info,project.appearance.portrait,project.appearance.hide_portrait,Boolean(dateOverride)]);
     if(this.key===key){this.draw();return;}
     this.clear();this.key=key;const generation=++this.generation;
-    const frontLayers=card.layers.filter(layer=>!layer.slot.startsWith('b')&&!layer.slot.startsWith('m')&&layer.slot!=='portrait'&&!(dateOverride&&layer.slot==='f09'));
+    const frontLayers=card.custom_motion?.large?.preview?.asset_id
+      ? [{slot:'f02',kind:'video',asset_id:card.custom_motion.large.preview.asset_id,blend:'source-over'}]
+      : card.layers.filter(layer=>!layer.slot.startsWith('b')&&!layer.slot.startsWith('m')&&layer.slot!=='portrait'&&!(dateOverride&&layer.slot==='f09'));
     if(project.appearance.portrait&&!project.appearance.hide_portrait)frontLayers.push({slot:'portrait',kind:'image',asset_id:project.appearance.portrait,blend:'source-over'});
     const order=cardLayerOrder(card);frontLayers.sort((a,b)=>(order[a.slot]??7)-(order[b.slot]??7));
     const layers=await Promise.all(frontLayers.map(async layer=>({...layer,element:await this.asset(layer)})));

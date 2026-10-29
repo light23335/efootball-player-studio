@@ -57,6 +57,17 @@ class LinkedThumbnailTests(unittest.TestCase):
         raw=base64.b64decode(value['image'].split(',')[1]);preview=Image.open(io.BytesIO(raw))
         exported=render(p,self.root/'assets',card_portrait(p,self.root/'assets'),background=background(p,self.library))
         self.assertEqual(preview.tobytes(),exported.tobytes());self.assertEqual(before,p)
+
+    def test_v17_personal_preview_opens_left_side_and_keeps_native_round_outline(self):
+        p=self.project();p['appearance']['thumbnail_image']=self.image((250,20,20,255))
+        self.library.profile={'game_version':'V17'}
+        value=ThumbnailPreview(self.library).prepare(p)
+        def decode(key):return Image.open(io.BytesIO(base64.b64decode(value[key].split(',')[1]))).convert('RGBA')
+        foreground=decode('foreground');whole=decode('image');outer=decode('outer_mask')
+        self.assertEqual(foreground.getpixel((32,256)),(250,20,20,255))
+        self.assertEqual(foreground.getpixel((0,256))[3],0)
+        self.assertEqual(whole.getpixel((0,0))[3],0)
+        self.assertEqual(outer.getpixel((256,256))[3],255)
     def test_missing_background_is_reported_instead_of_silently_exporting_black(self):
         p=self.project();p['native_card']['layers'][0]['asset_id']='a'*64+'.png'
         with self.assertRaisesRegex(ValueError,'背景资源缺失'):background(p,self.library)

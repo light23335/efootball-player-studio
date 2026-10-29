@@ -42,7 +42,10 @@ def background(project,library,size=512):
     # Match the large-card renderer's layers below its replacement portrait.
     order=({'f01':0,'f02':1,'f04':2,'f03':3,'f05':4,'f07':5,'portrait':6}
            if card.get('preset_id') else {'f01':0,'f02':1,'portrait':2})
-    layers=[l for l in card.get('layers',[]) if l.get('slot') in order and order[l['slot']]<order['portrait']]
+    custom=card.get('custom_motion') or {}
+    mini_preview=(custom.get('mini',{}).get('preview') or {}).get('asset_id')
+    layers=([{'slot':'f02','kind':'video','asset_id':mini_preview}] if mini_preview else
+            [l for l in card.get('layers',[]) if l.get('slot') in order and order[l['slot']]<order['portrait']])
     if not layers:
         asset=appearance.get('background_image') or (project.get('native_art',{}).get('background') or {}).get('asset_id')
         if asset:layers=[{'asset_id':asset,'kind':'image','slot':'f01'}]

@@ -1,8 +1,8 @@
 from pathlib import Path
-import io,json,struct,sys,unittest,zipfile
+import io,json,os,struct,sys,unittest,zipfile
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from native_skill_effects import compiled_skills,visible_skills,hooks,text_groups
-APK=Path('C:/Users/1/Downloads/73efootball-V17.apk')
+APK=Path(os.environ.get('STUDIO_TEST_APK',str(Path(__file__).resolve().parents[2].parent/'73efootball安装包及资源/73efootball-V17.apk')))
 
 class SkillDataTests(unittest.TestCase):
  def test_old_imported_skill_aliases_use_independent_verified_flags(self):
@@ -22,7 +22,13 @@ class SkillDataTests(unittest.TestCase):
   groups=text_groups();self.assertTrue(groups)
   texts={text for g in groups for text in g['items'].values()}
   self.assertTrue({'重炮攻门','长传好手','健步如飞'}<=texts)
-  self.assertIn('凌空抽射或蓄力达到 50% 的射门，射门偏差降低 20%。',texts)
+  self.assertIn('凌空抽射或蓄力达到 50% 的射门，水平和仰角随机瞄准偏差降低 50%。',texts)
+  from custom_skills import ROWS
+  for row in ROWS:self.assertIn(row['description'],texts)
+  english={text for g in text_groups(locale='eng') for text in g['items'].values()}
+  self.assertTrue(any('within 2.5 m' in text and '50%' in text for text in english))
+  self.assertTrue(any('within 1.8 m' in text and '50%' in text for text in english))
+  self.assertTrue(any('lofted passes, crosses and lofted through passes' in text and '40%' in text for text in english))
 
 @unittest.skipUnless(APK.is_file(),'requires original V17 APK')
 class MatchInstructionTests(unittest.TestCase):

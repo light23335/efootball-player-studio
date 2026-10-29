@@ -104,7 +104,8 @@ def compose(payload,routes,profile,capacity=4194304):
             row+=struct.pack('<II',maximum,rarity)
         rows.extend(row)
     rows.extend(bytes(stride))
-    out=copy.deepcopy(payload);blob=bytearray.fromhex(out['blob_hex']);prefix=bytes(blob);pending=[];delegates=[];back_refs=[]
+    out=copy.deepcopy(payload);out.pop('ai_match_channel',None);out.pop('action_trace_channel',None)
+    blob=bytearray.fromhex(out['blob_hex']);prefix=bytes(blob);pending=[];delegates=[];back_refs=[]
     def word(at):return struct.unpack_from('<I',blob,at)[0]
     for name,address in profile['sites'].items():
         matches=[h for h in out['hooks'] if h['address']==address]
@@ -156,6 +157,7 @@ def compose(payload,routes,profile,capacity=4194304):
             if any(h['address']==entry['address'] for h in out['hooks']):raise ValueError('原生扩展接口重复')
             out['hooks'].append({'name':entry['name'],'address':entry['address'],'offset':at+offset,'expected_hex':entry['expected_hex']})
         out.setdefault('absolute_fixups',[]).extend([[at+offset,target] for offset,target in hook['absolute_fixups']])
+        writable_locations=[]
         for offset,size in hook.get('writable_fixups',[]):
             if type(offset) is not int or offset%8 or not 0<=offset<=len(body)-8 or type(size) is not int or not 0<size<=8*1024*1024:
                 raise ValueError('原生技能状态内存描述无效')
@@ -163,6 +165,26 @@ def compose(payload,routes,profile,capacity=4194304):
             out['writable_data_bytes']=data_at+size
             if out['writable_data_bytes']>8*1024*1024:raise ValueError('原生技能状态内存总容量无效')
             out.setdefault('writable_pointer_fixups',[]).append([at+offset,data_at])
+            writable_locations.append((data_at,size))
+        if hook.get('channel_schema'):
+            if out.get('ai_match_channel') or len(writable_locations)!=1 or writable_locations[0][1]!=32768:
+                raise ValueError('AI 临场通道描述重复或容量无效')
+            fence=hook.get('helper_entries',{}).get('studio_fence')
+            if type(fence) is not int or fence%4 or not 0<=fence<=len(body)-8:
+                raise ValueError('AI 临场内存屏障入口无效')
+            out['ai_match_channel']={'version':1,'data_offset':writable_locations[0][0],
+                    'layout':copy.deepcopy(hook['channel_schema']),'code_region':'root','fence_offset':at+fence,
+                    'proof':copy.deepcopy(hook.get('execution_proof',{}))}
+        if hook.get('action_trace_schema'):
+            from action_trace import SCHEMA
+            schema=hook['action_trace_schema']
+            if schema!=SCHEMA or out.get('action_trace_channel') or len(writable_locations)!=1 or writable_locations[0][1]!=SCHEMA['bytes']:
+                raise ValueError('动作观察通道描述或容量无效')
+            fence=hook.get('helper_entries',{}).get('shared_studio_action_trace_fence')
+            if type(fence)is not int or fence%4 or not 0<=fence<=len(body)-8:
+                raise ValueError('动作观察屏障入口无效')
+            out['action_trace_channel']={'version':1,'data_offset':writable_locations[0][0],
+                    'schema':copy.deepcopy(schema),'code_region':'root','fence_offset':at+fence}
         blob.extend(body)
     if len(blob)>capacity:raise ValueError('个人美术绑定超出已分配容量')
     if bytes(blob[:len(prefix)])!=prefix:raise ValueError('原版传奇美术绑定被改变')
@@ -243,6 +265,10 @@ def _split_code(payload,prefix_bytes,delegates,back_refs,source=None):
     branch entry stubs must be nearby; extension code can reside anywhere.
     """
     original=bytes.fromhex(payload['blob_hex']);root=bytearray(original[:prefix_bytes]);extension=bytearray(original[prefix_bytes:])
+    for key in ('ai_match_channel','action_trace_channel'):
+        channel=payload.get(key)
+        if channel and channel['fence_offset']>=prefix_bytes:
+            channel['code_region']='extension';channel['fence_offset']-=prefix_bytes
     payload['extension_native_fixups']=[];root_fixups=[]
     for at,value in payload.get('absolute_fixups',[]):
         if at<prefix_bytes:root_fixups.append([at,value])
@@ -310,6 +336,8 @@ def _thumbnail_hook(payload,blob,routes,profile):
     call runs with its original arguments and exact return address.
     """
     rows=bytearray();date_offset=profile.get('front_date_offset')
+    private_front=any(r.get('front_names') is not None for r in routes)
+    row_size=416 if private_front else 160
     if date_offset is not None and (type(date_offset) is not int or not 8<=date_offset<profile['mini_offset'] or date_offset%24!=8):raise ValueError('大卡日期图层位置无效')
     for route in sorted(routes,key=lambda r:r['cardId']):
         values=route.get('thumbnail_names')
@@ -324,6 +352,13 @@ def _thumbnail_hook(payload,blob,routes,profile):
                 raise ValueError('小头像原生图层名称无效')
             raw=value.encode('ascii');rows.extend(bytes([len(raw)*2])+raw.ljust(23,b'\0'))
         rows.extend(struct.pack('<Q',int(has_mini)))
+        if private_front:
+            front=route.get('front_names')
+            if front is not None and (not isinstance(front,list) or len(front)!=10):raise ValueError('独立大卡需要10个图层槽位')
+            for value in front or ['']*10:
+                if not isinstance(value,str) or len(value)>22 or any(c not in '0123456789abcdefghijklmnopqrstuvwxyz_' for c in value):raise ValueError('独立大卡图层名称无效')
+                raw=value.encode('ascii');rows.extend(bytes([len(raw)*2])+raw.ljust(23,b'\0'))
+            rows.extend(struct.pack('<QQ',int(front is not None),0))
     stock=bytearray()
     for route in sorted(profile.get('stock_routes',[]),key=lambda r:r['key']):
         if type(route['key']) is not int or not 0<=route['key']<2**35 or len(route['names'])!=2:raise ValueError('原版小卡动画索引无效')
@@ -333,7 +368,7 @@ def _thumbnail_hook(payload,blob,routes,profile):
             raw=value.encode('ascii');stock.extend(bytes([len(raw)*2])+raw.ljust(23,b'\0'))
     if not rows and not stock:return
     stock.extend(bytes(56))
-    rows.extend(bytes(160));blob.extend(bytes(-len(blob)%8));start=len(blob);words=[];labels={};branches=[];calls=[]
+    rows.extend(bytes(row_size));blob.extend(bytes(-len(blob)%8));start=len(blob);words=[];labels={};branches=[];calls=[]
     def emit(w):words.append(w)
     def pair(op,a,b,off,scale):return op|((off//scale)<<15)|(b<<10)|(31<<5)|a
     def branch(kind,label,reg=0):branches.append((len(words),kind,label,reg));emit(0)
@@ -343,7 +378,7 @@ def _thumbnail_hook(payload,blob,routes,profile):
     for reg in range(0,8,2):emit(pair(0xad000000,reg,reg+1,176+reg*16,16))
     table_ref=len(words);emit(0)
     labels['loop']=len(words);emit(0xf9400128);branch('cbz','stock',8)
-    emit(0xeb0802ff);branch('eq','match');emit(0x91028129);branch('b','loop') # cmp x23,x8; add x9,x9,#160
+    emit(0xeb0802ff);branch('eq','match');emit(0x91000129|(row_size<<10));branch('b','loop')
     labels['match']=len(words);emit(0xf900a3e9) # resident source record at sp+320
     emit(0xf9404d22);branch('cbz','date',2) # ldr x2,[x9,#152]; legacy routes retain native mini layers
     for slot in range(6):
@@ -359,6 +394,14 @@ def _thumbnail_hook(payload,blob,routes,profile):
         # Use std::string::assign so previously allocated storage is released.
         emit(0xf940a3e1);emit(0x91002421);emit(0x2a1f03e2)
         emit(0x91000260|(date_offset<<10));calls.append(len(words));emit(0);emit(0xd63f0200)
+    if private_front:
+        if date_offset!=200 or profile['mini_offset']!=440:raise ValueError('独立大卡原生结构尚未适配')
+        emit(0xf940a3e1);emit(0xf940c822);branch('cbz','done',2) # front-present at record+400
+        for slot in range(10):
+            offset=160+slot*24
+            emit(0xf940a3e1);emit(0x39400022|(offset<<10));emit(0x53017c42)
+            emit(0x91000021|((offset+1)<<10));emit(0x91000260|((8+slot*24)<<10))
+            calls.append(len(words));emit(0);emit(0xd63f0200)
     branch('b','done')
     labels['stock']=len(words);stock_ref=len(words);emit(0);emit(0xd35cfeea);emit(0x9100054a)
     labels['stock_loop']=len(words);emit(0xf9400128);branch('cbz','done',8)
@@ -660,9 +703,54 @@ class _PageOS:
         return actual
 
 
+def checked_process_reader(original):
+    """Linux self-memory reads which fail as OSError when an engine unmaps."""
+    if not sys.platform.startswith('linux') or getattr(original,'__name__',None)!='ctypes':return None
+    import os
+    class IOVec(original.Structure):
+        _fields_=[('base',original.c_void_p),('length',original.c_size_t)]
+    function=original.CDLL(None,use_errno=True).process_vm_readv
+    function.argtypes=(original.c_int,original.POINTER(IOVec),original.c_ulong,
+                       original.POINTER(IOVec),original.c_ulong,original.c_ulong)
+    function.restype=original.c_ssize_t
+    def read(address,size):
+        if type(address)is not int or address<=0 or type(size)is not int or not 0<=size<=8*1024*1024:
+            raise ValueError('Invalid native diagnostic memory range')
+        if not size:return b''
+        buffer=original.create_string_buffer(size)
+        local=IOVec(original.addressof(buffer),size);remote=IOVec(address,size)
+        copied=function(os.getpid(),original.byref(local),1,original.byref(remote),1,0)
+        if copied!=size:raise OSError(original.get_errno() or 5,'Native diagnostic region is no longer readable')
+        return buffer.raw
+    return read
+
+
+def guard_module_reads(module,reader=None):
+    """Retain the module's own range/signature checks and guard its raw reads."""
+    original=module.ctypes
+    if getattr(original,'_studio_checked_reads',False):return False
+    reader=reader or checked_process_reader(original)
+    if reader is None:return False
+    class CheckedCtypes:
+        _studio_checked_reads=True
+        def __getattr__(self,name):return getattr(original,name)
+        def string_at(self,address,size):return reader(address,size)
+    module.ctypes=CheckedCtypes()
+    return True
+
+
 class _BindingCtypes:
     def __init__(self,original,payload):
-        self.original=original;self.payload=payload;self.table=None
+        self.original=original;self.payload=payload;self.table=None;self.channel=None
+        self._safe_read=None
+        # The original worker polls a diagnostic ring after installation.
+        # Its four uint64 reads and string_at are raw pointer dereferences;
+        # an engine exit/unmap can race those reads and kill Python itself.
+        # Use the same kernel-checked read primitive as its ProcessMemory
+        # reader. An unmapped region then raises OSError in the worker's
+        # existing handler instead of causing SIGSEGV. No game ABI changes.
+        checked_read=checked_process_reader(original)
+        if checked_read:self._guard_reads(checked_read)
         size=payload.get('writable_data_bytes',0)
         if type(size) is not int or not 0<=size<=8*1024*1024:raise ValueError('原生技能状态内存容量无效')
         self.writable=original.create_string_buffer(size) if size else None
@@ -676,6 +764,18 @@ class _BindingCtypes:
             _PREVIEW_TABLES.append(preview)
             struct.pack_into('<Q',self.table,40,original.addressof(preview))
     def __getattr__(self,name):return getattr(self.original,name)
+    def _guard_reads(self,reader):
+        self._safe_read=reader
+        class ReadOnlyScalar:
+            def __init__(self,address):self.address=address
+            @property
+            def value(self):return int.from_bytes(reader(self.address,8),'little')
+        class UInt64(self.original.c_uint64):
+            @classmethod
+            def from_address(cls,address):return ReadOnlyScalar(address)
+        self.c_uint64=UInt64
+    def string_at(self,address,size):
+        return self._safe_read(address,size) if self._safe_read else self.original.string_at(address,size)
     def memmove(self,dest,source,size):
         if isinstance(source,bytes) and size==len(bytes.fromhex(self.payload['blob_hex'])):
             extension_address=0;libc=None;length=0
@@ -704,8 +804,50 @@ class _BindingCtypes:
                 clear=self.original.CFUNCTYPE(None,self.original.c_void_p,self.original.c_void_p)(address+self.payload['offsets']['clear_cache'])
                 clear(extension_address,extension_address+len(extension))
                 _EXTENSION_PAGES.append((libc,extension_address,length))
+            if self.payload.get('ai_match_channel') or self.payload.get('action_trace_channel'):
+                try:
+                    if not extension:
+                        libc=self.original.CDLL('libc.so',use_errno=True)
+                        libc.mprotect.restype=self.original.c_int
+                        libc.mprotect.argtypes=(self.original.c_void_p,self.original.c_size_t,self.original.c_int)
+                        root_size=(size+4095)//4096*4096
+                        if libc.mprotect(address,root_size,5):raise OSError(self.original.get_errno(),'AI entry page protection failed')
+                    if self.payload.get('ai_match_channel'):self._register_channel(address,extension_address)
+                    if self.payload.get('action_trace_channel'):self._register_action_channel(address,extension_address)
+                except Exception:
+                    # Optional observation must never break original startup.
+                    # The zero-initialized native auto_execute gate stays off.
+                    import logging
+                    logging.getLogger(__name__).exception('AI coaching channel unavailable; native CPU retained')
             return result
         return self.original.memmove(dest,source,size)
+
+    def _register_channel(self,prefix_address,extension_address):
+        descriptor=self.payload['ai_match_channel'];region=descriptor['code_region']
+        if descriptor.get('version')!=1 or region not in ('root','extension'):
+            raise ValueError('AI channel relocation descriptor invalid')
+        raw=bytes.fromhex(self.payload['extension_blob_hex'] if region=='extension' else self.payload['blob_hex'])
+        offset=descriptor['fence_offset'];base=extension_address if region=='extension' else prefix_address
+        if not base or type(offset) is not int or offset%4 or not 0<=offset<=len(raw)-8:
+            raise ValueError('AI fence is outside executable code')
+        if raw[offset:offset+8]!=bytes.fromhex('bf3b03d5c0035fd6'):
+            raise ValueError('AI fence instructions differ')
+        fence=self.original.CFUNCTYPE(None)(base+offset)
+        from ai_match_runtime import register_channel
+        self.channel=register_channel(self.writable,descriptor['data_offset'],descriptor['layout'],fence,descriptor['proof'])
+
+    def _register_action_channel(self,prefix_address,extension_address):
+        descriptor=self.payload['action_trace_channel'];region=descriptor['code_region']
+        if descriptor.get('version')!=1 or region not in ('root','extension'):
+            raise ValueError('Action observer relocation descriptor invalid')
+        raw=bytes.fromhex(self.payload['extension_blob_hex']if region=='extension'else self.payload['blob_hex'])
+        offset=descriptor['fence_offset'];base=extension_address if region=='extension'else prefix_address
+        if not base or type(offset)is not int or offset%4 or not 0<=offset<=len(raw)-8:
+            raise ValueError('Action observer fence is outside executable code')
+        if raw[offset:offset+8]!=bytes.fromhex('bf3b03d5c0035fd6'):raise ValueError('Action observer fence instructions differ')
+        fence=self.original.CFUNCTYPE(None)(base+offset)
+        from action_trace import register_channel
+        self.action_channel=register_channel(self.writable,descriptor['data_offset'],descriptor['schema'],fence)
 
 
 def _outer(root):

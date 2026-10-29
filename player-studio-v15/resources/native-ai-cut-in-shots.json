@@ -1,0 +1,1009 @@
+{
+  "revision": "v17-ai-cut-in-opportunity-v4-equal-shot-styles",
+  "production_ready": true,
+  "experimental": true,
+  "probes": [
+    {
+      "name": "match_skill_table",
+      "file_offset": 13106880,
+      "expected_hex": "00000000000000002800000001000000010000000200000002000000030000000300000004000000290000000500000004000000060000000500000007000000200000000a000000060000000f00000007000000110000001f000000130000000800000014000000210000001500000022000000160000002a00000017000000090000001b0000000a0000001c0000000b0000001d0000000c000000200000002b000000210000000d000000220000000e000000230000000f0000002500000010000000260000001c00000027000000110000002c000000120000002d000000230000002e000000130000002f00000014000000300000001d000000310000001e00000032000000150000003700000016000000380000001700000039000000240000003a000000250000003b000000260000003c000000270000003d000000180000004100000019000000450000001a000000470000001b000000480000002c0000001e0000002e000000400000002f0000000b0000003000000028000000310000002900000032000000240000003300000012000000340000002a00000035000000100000003600000042000000370000000c000000380000003e00000039000000350000003a000000180000003b0000001f0000003c000000360000003d0000000d0000003e000000460000003f000000430000004000000049000000410000001a00000042000000080000004300000009000000440000003f00000045000000330000004600000034000000470000000e000000480000002b00000049000000440000004a00000019000000"
+    },
+    {
+      "name": "incisive_style_decoder",
+      "file_offset": 111611500,
+      "expected_hex": "e2130091e00314aa41088052ff0700b996cd609400010036e80740b91f050071a1000054e00313aa810080522200805231fb2094"
+    },
+    {
+      "name": "native_blitz_branch",
+      "file_offset": 114705992,
+      "expected_hex": "00102c1e0021201ee8b79f1ae802080a1f05007181010054607e40bddf0e00710140211e200c201e0190361e0020211ee8439a1a1f050071610000540014805220000014d7000036684240398804003400102c1e0021201e2a040054e00315aae100805274940194"
+    },
+    {
+      "name": "native_shot_dispatch",
+      "file_offset": 118362964,
+      "expected_hex": "280040b91f3500716801005449ddfcd029951a918a0000102b6968384a090b8b40011fd628700091e10302aae20308aa530800141f0400b9c0035fd628200091e10302aae20308aa2508001428b00091e10302aae20308aacf09001428f00091e10302aae20308aa5d0a001422200191c10a0014e80a8052080400b9c0035fd622300191cd0a00142800805208080339c0035fd6880a805229008052080400b9090c0339c0035fd62800805208040339c0035fd6"
+    },
+    {
+      "name": "selector_caller_layout",
+      "file_offset": 118361084,
+      "expected_hex": "a8a301d1a08301d1b7573ba9b3233aa9e5020094"
+    }
+  ],
+  "ordinary_switch_offset": 5320,
+  "engine_sha256": "efd257d9e41b622d6ecb8f51f7b0a8ee8820113fd427c5572025df1c8eecc7b8",
+  "hooks": [
+    {
+      "name": "studio_ai_cut_in_candidate_choice",
+      "body_hex": "f353bea9fe0b00f9f30300aa07000094e103002ae00313aa07000094fe0b40f9f353c2a8c0035fd6fd7bbba97000005800021fd6e0ff21d4a4570e0700000000",
+      "absolute_fixups": [
+        [
+          56,
+          118380452
+        ]
+      ],
+      "assembly": "\nstp x19,x20,[sp,#-32]!\nstr x30,[sp,#16]\nmov x19,x0\nbl original\nmov w1,w0\nmov x0,x19\nbl shared_studio_ai_select_cut_in_candidate\nldr x30,[sp,#16]\nldp x19,x20,[sp],#32\nret\noriginal:\n.word 2847636477\nldr x16,resume\nbr x16\n\nshared_studio_ai_select_cut_in_candidate: brk #4095\n.align 3\nresume: .quad 118380452\n\n.align 3\n",
+      "code": "\nstp x19,x20,[sp,#-32]!\nstr x30,[sp,#16]\nmov x19,x0\nbl original\nmov w1,w0\nmov x0,x19\nbl shared_studio_ai_select_cut_in_candidate\nldr x30,[sp,#16]\nldp x19,x20,[sp],#32\nret\noriginal:\n.word 2847636477\nldr x16,resume\nbr x16\n",
+      "functions": {
+        "resume": 118380452
+      },
+      "constants": {},
+      "deferred_shared_refs": [
+        "shared_studio_ai_select_cut_in_candidate"
+      ],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [],
+      "address": 118380448,
+      "file_offset": 118364064,
+      "expected_hex": "fd7bbba9fa6701a9f85f02a9f65703a9f44f04a9fd030091140040f908158952f50300aa9302088be00313aa00030094f60300aae00313aafe020094df0200eb"
+    },
+    {
+      "name": "studio_ai_shot_style_power",
+      "body_hex": "f353bba9f57b01a9f30301aaf40302aa0b000094e01300f9e00f803de00313aae10314aa09000094e01340f9e00fc03df57b41a9f353c5a8c0035fd6ff4304d19000005800021fd6e0ff21d41f2003d5f4271a0700000000",
+      "absolute_fixups": [
+        [
+          80,
+          119154676
+        ]
+      ],
+      "assembly": "\nstp x19,x20,[sp,#-80]!\nstp x21,x30,[sp,#16]\nmov x19,x1\nmov x20,x2\nbl original\nstr x0,[sp,#32]\nstr q0,[sp,#48]\nmov x0,x19\nmov x1,x20\nbl shared_studio_ai_bound_shot_power\nldr x0,[sp,#32]\nldr q0,[sp,#48]\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#80\nret\noriginal:\nsub sp,sp,#0x110\nldr x16,resume\nbr x16\nshared_studio_ai_bound_shot_power: brk #4095\n.align 3\nresume: .quad 119154676\n\n.align 3\n",
+      "code": "\nstp x19,x20,[sp,#-80]!\nstp x21,x30,[sp,#16]\nmov x19,x1\nmov x20,x2\nbl original\nstr x0,[sp,#32]\nstr q0,[sp,#48]\nmov x0,x19\nmov x1,x20\nbl shared_studio_ai_bound_shot_power\nldr x0,[sp,#32]\nldr q0,[sp,#48]\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#80\nret\noriginal:\nsub sp,sp,#0x110\nldr x16,resume\nbr x16",
+      "functions": {
+        "resume": 119154676
+      },
+      "constants": {},
+      "deferred_shared_refs": [
+        "shared_studio_ai_bound_shot_power"
+      ],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [],
+      "address": 119154672,
+      "file_offset": 119138288,
+      "expected_hex": "ff4304d1ec4300fdeb2b096de9230a6dfd7b0ba9fc6f0ca9fa670da9f85f0ea9f6570fa9f44f10a9fdc3029148d03bd5f30302aae80b00f9f40301aa081540f9"
+    },
+    {
+      "name": "studio_ai_low_and_blitz_coexist",
+      "body_hex": "ff830cd1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f24f09a9f4570aa9f65f0ba9f8670ca9fa6f0da9fc770ea9fe7b00f9e00708ade20f09ade4170aade61f0bade8270cadea2f0dadec370eadee3f0fadf04710adf24f11adf45712adf65f13adf86714adfa6f15adfc7716adfe7f17ad11423bd5f18301f9a0835ef82b00009440000034ff0300f9f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c9160000036b000005800021fd6b000005800021fd6e0ff21d4e028d606000000007428d60600000000",
+      "absolute_fixups": [
+        [
+          320,
+          114698464
+        ],
+        [
+          328,
+          114698356
+        ]
+      ],
+      "assembly": "sub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nldr x0,[x29,#-0x18]\nbl shared_studio_ai_allow_low_with_blitz\ncbz w0,restore\nstr xzr,[sp]\nrestore:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\n\ntbz w0,#0,continue_low\nldr x16,skip_low\nbr x16\ncontinue_low:\nldr x16,resume\nbr x16\nshared_studio_ai_allow_low_with_blitz: brk #4095\n.align 3\nskip_low: .quad 114698464\nresume: .quad 114698356\n\n.align 3\n",
+      "code": "sub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nldr x0,[x29,#-0x18]\nbl shared_studio_ai_allow_low_with_blitz\ncbz w0,restore\nstr xzr,[sp]\nrestore:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\n\ntbz w0,#0,continue_low\nldr x16,skip_low\nbr x16\ncontinue_low:\nldr x16,resume\nbr x16",
+      "functions": {
+        "skip_low": 114698464,
+        "resume": 114698356
+      },
+      "constants": {},
+      "deferred_shared_refs": [
+        "shared_studio_ai_allow_low_with_blitz"
+      ],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [
+        "preserve the original Blitz exclusion except a current CPU low-shot permission",
+        "all original Low Screamer skill/power/foot/geometry checks remain"
+      ],
+      "address": 114698352,
+      "file_offset": 114681968,
+      "expected_hex": "800300376842403948030035600e40bd01102c1e0020211ec5020054f8031f2a8dffff17d7010036e11f40b980148052e20313aae30314aae4031f2a25008052"
+    },
+    {
+      "name": "studio_ai_cut_in_shot_request",
+      "body_hex": "f353bea9fe0b00f9f30300aaf40301aa07000094e00313aae10314aa07000094fe0b40f9f353c2a8c0035fd6fd7bbda99000005800021fd6e0ff21d41f2003d534740e0700000000",
+      "absolute_fixups": [
+        [
+          64,
+          118387764
+        ]
+      ],
+      "assembly": "\nstp x19,x20,[sp,#-32]!\nstr x30,[sp,#16]\nmov x19,x0\nmov x20,x1\nbl original\nmov x0,x19\nmov x1,x20\nbl shared_studio_ai_prefer_curled_shot\nldr x30,[sp,#16]\nldp x19,x20,[sp],#32\nret\noriginal:\n.word 2847767549\nldr x16,resume\nbr x16\n\nshared_studio_ai_prefer_curled_shot: brk #4095\n.align 3\nresume: .quad 118387764\n\n.align 3\n",
+      "code": "\nstp x19,x20,[sp,#-32]!\nstr x30,[sp,#16]\nmov x19,x0\nmov x20,x1\nbl original\nmov x0,x19\nmov x1,x20\nbl shared_studio_ai_prefer_curled_shot\nldr x30,[sp,#16]\nldp x19,x20,[sp],#32\nret\noriginal:\n.word 2847767549\nldr x16,resume\nbr x16\n",
+      "functions": {
+        "resume": 118387764
+      },
+      "constants": {},
+      "deferred_shared_refs": [
+        "shared_studio_ai_prefer_curled_shot"
+      ],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [],
+      "address": 118387760,
+      "file_offset": 118371376,
+      "expected_hex": "fd7bbda9f65701a9f44f02a9fd030091f30300aa200c40f9f40302aa8d72079475220091f60300aae00315aa1a000094e00316aa6a50e2971f0c007141010054"
+    }
+  ],
+  "helpers": [
+    {
+      "name": "studio_ai_opportunity_snapshot",
+      "body_hex": "f353baa9f55b01a9f76302a9f97b03a9e827046dea2b00fdf30300aaf40301aa19008052931000b4680240f9750e40f9281000b4151000b4160140b9df5a0071a20f0054960200b9df2e0071f7379f1a970600b9e00315aa1010005800023fd6f80300aa980e00b4e00318aab00f005800023fd61f040071e10d0054e00315aa500f005800023fd6600d00b4080040bd090840bd6010001c0021201ec60c0054ab0c00540010001c0021201e4c0c00540090261e2021201ee60b0054cb0b0054400f001c2021201e6c0b005488a6012de00315aae103172ad00c005800023fd6a00a00b40830ca391f050071600000541f050031010a00540a01221e8a0a00bd9f4201f89f1e00b91600805297820091f752368bff0e00b9e00318aae103162ad00a005800023fd620040034e00318aae103162a700a005800023fd680030035e00315aae103162a100a005800023fd6200700b400f444bd01fc44bd02c0201e23c0201e4020281e660600544c0600546020291e06060054ec050054e00200bd08ec44b9e80600b9e10a00bd28008052e80e00b9df2e0071e8379f1a884a288b091540b929050011091500b9d6060011df5a0071c3faff5488a642291f1d0071a30300543f1d007163030054880240b9898200912951288b390d40b9d9020034e00315aae103082a5005005800023fd6000200b43005005800023fd6a00100b408d440b909110453295d1853081d07532925082a08d440391f050071680000542929082a29011532891e00b90200001419008052e003192aea2b40fde827446df97b43a9f76342a9f55b41a9f353c6a8c0035fd61f2003d5803e2c07000000000cb69706000000006c3e2c070000000028402c0700000000f842a606000000005843a606000000008c402c0700000000b0402c0700000000f81e3007000000000000004200008c42000034421f2003d5",
+      "absolute_fixups": [
+        [
+          600,
+          120340096
+        ],
+        [
+          608,
+          110605836
+        ],
+        [
+          616,
+          120340076
+        ],
+        [
+          624,
+          120340520
+        ],
+        [
+          632,
+          111559416
+        ],
+        [
+          640,
+          111559512
+        ],
+        [
+          648,
+          120340620
+        ],
+        [
+          656,
+          120340656
+        ],
+        [
+          664,
+          120594168
+        ]
+      ],
+      "assembly": "\nstp x19,x20,[sp,#-96]!\nstp x21,x22,[sp,#16]\nstp x23,x24,[sp,#32]\nstp x25,x30,[sp,#48]\nstp d8,d9,[sp,#64]\nstr d10,[sp,#80]\nmov x19,x0\nmov x20,x1\nmov w25,#0\ncbz x19,snapshot_done\nldr x8,[x19]\nldr x21,[x19,#0x18]\ncbz x8,snapshot_done\ncbz x21,snapshot_done\nldr w22,[x8]\ncmp w22,#22\nb.hs snapshot_done\nstr w22,[x20]\ncmp w22,#11\ncset w23,hs\nstr w23,[x20,#4]\nmov x0,x21\nldr x16,game_info\nblr x16\nmov x24,x0\ncbz x24,snapshot_done\nmov x0,x24\nldr x16,phase\nblr x16\ncmp w0,#1\nb.ne snapshot_done\nmov x0,x21\nldr x16,pitch\nblr x16\ncbz x0,snapshot_done\nldr s8,[x0]\nldr s9,[x0,#8]\nldr s0,min_half_length\nfcmp s8,s0\nb.vs snapshot_done\nb.lt snapshot_done\nldr s0,max_half_length\nfcmp s8,s0\nb.gt snapshot_done\nfmov s0,#20.0\nfcmp s9,s0\nb.vs snapshot_done\nb.lt snapshot_done\nldr s0,max_half_width\nfcmp s9,s0\nb.gt snapshot_done\nstp s8,s9,[x20,#12]\nmov x0,x21\nmov w1,w23\nldr x16,team_data\nblr x16\ncbz x0,snapshot_done\nldrsb w8,[x0,#0x28c]\ncmp w8,#1\nb.eq snapshot_side\ncmn w8,#1\nb.ne snapshot_done\nsnapshot_side:\nscvtf s10,w8\nstr s10,[x20,#8]\nstr xzr,[x20,#20]\nstr wzr,[x20,#28]\nmov w22,#0\nsnapshot_loop:\nadd x23,x20,#32\nadd x23,x23,w22,uxtw #4\nstr wzr,[x23,#12]\nmov x0,x24\nmov w1,w22\nldr x16,active\nblr x16\ncbz w0,snapshot_next\nmov x0,x24\nmov w1,w22\nldr x16,unavailable\nblr x16\ncbnz w0,snapshot_next\nmov x0,x21\nmov w1,w22\nldr x16,player_info\nblr x16\ncbz x0,snapshot_done\nldr s0,[x0,#0x4f4]\nldr s1,[x0,#0x4fc]\nfabs s2,s0\nfabs s3,s1\nfcmp s2,s8\nb.vs snapshot_done\nb.gt snapshot_done\nfcmp s3,s9\nb.vs snapshot_done\nb.gt snapshot_done\nstr s0,[x23]\nldr w8,[x0,#0x4ec]\nstr w8,[x23,#4]\nstr s1,[x23,#8]\nmov w8,#1\nstr w8,[x23,#12]\ncmp w22,#11\ncset w8,hs\nadd x8,x20,w8,uxtw #2\nldr w9,[x8,#20]\nadd w9,w9,#1\nstr w9,[x8,#20]\nsnapshot_next:\nadd w22,w22,#1\ncmp w22,#22\nb.lo snapshot_loop\nldp w8,w9,[x20,#20]\ncmp w8,#7\nb.lo snapshot_done\ncmp w9,#7\nb.lo snapshot_done\nldr w8,[x20]\nadd x9,x20,#32\nadd x9,x9,w8,uxtw #4\nldr w25,[x9,#12]\ncbz w25,snapshot_done\nmov x0,x21\nmov w1,w8\nldr x16,player_state\nblr x16\ncbz x0,snapshot_invalid\nldr x16,abilities\nblr x16\ncbz x0,snapshot_invalid\nldr w8,[x0,#0xd4]\nubfx w9,w8,#4,#1\nlsl w9,w9,#8\nubfx w8,w8,#7,#1\norr w9,w9,w8,lsl #9\nldrb w8,[x0,#0x35]\ncmp w8,#1\nb.hi snapshot_flags\norr w9,w9,w8,lsl #10\norr w9,w9,#0x800\nsnapshot_flags:\nstr w9,[x20,#28]\nb snapshot_done\nsnapshot_invalid:\nmov w25,#0\nsnapshot_done:\nmov w0,w25\nldr d10,[sp,#80]\nldp d8,d9,[sp,#64]\nldp x25,x30,[sp,#48]\nldp x23,x24,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#96\nret\n\n\n.align 3\ngame_info: .quad 120340096\nphase: .quad 110605836\npitch: .quad 120340076\nteam_data: .quad 120340520\nactive: .quad 111559416\nunavailable: .quad 111559512\nplayer_info: .quad 120340620\nplayer_state: .quad 120340656\nabilities: .quad 120594168\nmin_half_length: .word 1107296256\nmax_half_length: .word 1116471296\nmax_half_width: .word 1110704128\n.align 3\n",
+      "code": "\nstp x19,x20,[sp,#-96]!\nstp x21,x22,[sp,#16]\nstp x23,x24,[sp,#32]\nstp x25,x30,[sp,#48]\nstp d8,d9,[sp,#64]\nstr d10,[sp,#80]\nmov x19,x0\nmov x20,x1\nmov w25,#0\ncbz x19,snapshot_done\nldr x8,[x19]\nldr x21,[x19,#0x18]\ncbz x8,snapshot_done\ncbz x21,snapshot_done\nldr w22,[x8]\ncmp w22,#22\nb.hs snapshot_done\nstr w22,[x20]\ncmp w22,#11\ncset w23,hs\nstr w23,[x20,#4]\nmov x0,x21\nldr x16,game_info\nblr x16\nmov x24,x0\ncbz x24,snapshot_done\nmov x0,x24\nldr x16,phase\nblr x16\ncmp w0,#1\nb.ne snapshot_done\nmov x0,x21\nldr x16,pitch\nblr x16\ncbz x0,snapshot_done\nldr s8,[x0]\nldr s9,[x0,#8]\nldr s0,min_half_length\nfcmp s8,s0\nb.vs snapshot_done\nb.lt snapshot_done\nldr s0,max_half_length\nfcmp s8,s0\nb.gt snapshot_done\nfmov s0,#20.0\nfcmp s9,s0\nb.vs snapshot_done\nb.lt snapshot_done\nldr s0,max_half_width\nfcmp s9,s0\nb.gt snapshot_done\nstp s8,s9,[x20,#12]\nmov x0,x21\nmov w1,w23\nldr x16,team_data\nblr x16\ncbz x0,snapshot_done\nldrsb w8,[x0,#0x28c]\ncmp w8,#1\nb.eq snapshot_side\ncmn w8,#1\nb.ne snapshot_done\nsnapshot_side:\nscvtf s10,w8\nstr s10,[x20,#8]\nstr xzr,[x20,#20]\nstr wzr,[x20,#28]\nmov w22,#0\nsnapshot_loop:\nadd x23,x20,#32\nadd x23,x23,w22,uxtw #4\nstr wzr,[x23,#12]\nmov x0,x24\nmov w1,w22\nldr x16,active\nblr x16\ncbz w0,snapshot_next\nmov x0,x24\nmov w1,w22\nldr x16,unavailable\nblr x16\ncbnz w0,snapshot_next\nmov x0,x21\nmov w1,w22\nldr x16,player_info\nblr x16\ncbz x0,snapshot_done\nldr s0,[x0,#0x4f4]\nldr s1,[x0,#0x4fc]\nfabs s2,s0\nfabs s3,s1\nfcmp s2,s8\nb.vs snapshot_done\nb.gt snapshot_done\nfcmp s3,s9\nb.vs snapshot_done\nb.gt snapshot_done\nstr s0,[x23]\nldr w8,[x0,#0x4ec]\nstr w8,[x23,#4]\nstr s1,[x23,#8]\nmov w8,#1\nstr w8,[x23,#12]\ncmp w22,#11\ncset w8,hs\nadd x8,x20,w8,uxtw #2\nldr w9,[x8,#20]\nadd w9,w9,#1\nstr w9,[x8,#20]\nsnapshot_next:\nadd w22,w22,#1\ncmp w22,#22\nb.lo snapshot_loop\nldp w8,w9,[x20,#20]\ncmp w8,#7\nb.lo snapshot_done\ncmp w9,#7\nb.lo snapshot_done\nldr w8,[x20]\nadd x9,x20,#32\nadd x9,x9,w8,uxtw #4\nldr w25,[x9,#12]\ncbz w25,snapshot_done\nmov x0,x21\nmov w1,w8\nldr x16,player_state\nblr x16\ncbz x0,snapshot_invalid\nldr x16,abilities\nblr x16\ncbz x0,snapshot_invalid\nldr w8,[x0,#0xd4]\nubfx w9,w8,#4,#1\nlsl w9,w9,#8\nubfx w8,w8,#7,#1\norr w9,w9,w8,lsl #9\nldrb w8,[x0,#0x35]\ncmp w8,#1\nb.hi snapshot_flags\norr w9,w9,w8,lsl #10\norr w9,w9,#0x800\nsnapshot_flags:\nstr w9,[x20,#28]\nb snapshot_done\nsnapshot_invalid:\nmov w25,#0\nsnapshot_done:\nmov w0,w25\nldr d10,[sp,#80]\nldp d8,d9,[sp,#64]\nldp x25,x30,[sp,#48]\nldp x23,x24,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#96\nret\n",
+      "functions": {
+        "game_info": 120340096,
+        "phase": 110605836,
+        "pitch": 120340076,
+        "team_data": 120340520,
+        "active": 111559416,
+        "unavailable": 111559512,
+        "player_info": 120340620,
+        "player_state": 120340656,
+        "abilities": 120594168
+      },
+      "constants": {
+        "min_half_length": 32.0,
+        "max_half_length": 70.0,
+        "max_half_width": 45.0
+      },
+      "deferred_shared_refs": [],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [
+        "72c408c native live PlayerInfo; position +4f4/+4fc",
+        "70ed20c..70ed248 checks native active/unavailable before reading positions",
+        "snapshot once per decision; no action evaluator, RNG or global cache"
+      ]
+    },
+    {
+      "name": "studio_ai_opportunity_position",
+      "body_hex": "020840bd030c40bd0008221e6038201e0008201e2000011f00c0211e6201001c0008221e21c0201e2201001c2000021f0101001c2038201ee103271e0048211ec0035fd61f2003d5cdcccc3fcdcc4c3f0000c8421f2003d5",
+      "absolute_fixups": [],
+      "assembly": "\nldr s2,[x0,#8]\nldr s3,[x0,#12]\nfmul s0,s0,s2\nfsub s0,s3,s0\nfmul s0,s0,s0\nfmadd s0,s1,s1,s0\nfsqrt s0,s0\nldr s2,distance_weight\nfmul s0,s0,s2\nfabs s1,s1\nldr s2,lateral_weight\nfmadd s0,s1,s2,s0\nldr s1,hundred\nfsub s0,s1,s0\nfmov s1,wzr\nfmax s0,s0,s1\nret\n\n\n.align 3\n\ndistance_weight: .word 1070386381\nlateral_weight: .word 1061997773\nhundred: .word 1120403456\n.align 3\n",
+      "code": "\nldr s2,[x0,#8]\nldr s3,[x0,#12]\nfmul s0,s0,s2\nfsub s0,s3,s0\nfmul s0,s0,s0\nfmadd s0,s1,s1,s0\nfsqrt s0,s0\nldr s2,distance_weight\nfmul s0,s0,s2\nfabs s1,s1\nldr s2,lateral_weight\nfmadd s0,s1,s2,s0\nldr s1,hundred\nfsub s0,s1,s0\nfmov s1,wzr\nfmax s0,s0,s1\nret\n",
+      "functions": {},
+      "constants": {
+        "distance_weight": 1.6,
+        "lateral_weight": 0.8,
+        "hundred": 100.0
+      },
+      "deferred_shared_refs": [],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": []
+    },
+    {
+      "name": "studio_ai_opportunity_clearance",
+      "body_hex": "1040201e3140201e5240201e7340201e5438201e7538211e960a341eb65a151fd705001cf842201ef942201e080440b90801005269018052087d091b098000912951288b6a0180521a102e1efb03271e280d40b928030034200140bd210940bd0238301e2338311e4408221e6410031f395b241e0438321e2538331e8408241ea410051f185b241ec0223b1e0d0100544408341e6410151f8418361e84483b1e84583a1e8288141f838c151f4408221e6410031ff75a241e294100914a05007181fcff54e042201e0143201e2243201ec0035fd61f2003d5000080471f2003d5",
+      "absolute_fixups": [],
+      "assembly": "\nfmov s16,s0\nfmov s17,s1\nfmov s18,s2\nfmov s19,s3\nfsub s20,s2,s0\nfsub s21,s3,s1\nfmul s22,s20,s20\nfmadd s22,s21,s21,s22\nldr s23,far_distance_sq\nfmov s24,s23\nfmov s25,s23\nldr w8,[x0,#4]\neor w8,w8,#1\nmov w9,#11\nmul w8,w8,w9\nadd x9,x0,#32\nadd x9,x9,w8,uxtw #4\nmov w10,#11\nfmov s26,#1.0\nfmov s27,wzr\nclearance_loop:\nldr w8,[x9,#12]\ncbz w8,clearance_next\nldr s0,[x9]\nldr s1,[x9,#8]\nfsub s2,s0,s16\nfsub s3,s1,s17\nfmul s4,s2,s2\nfmadd s4,s3,s3,s4\nfmin s25,s25,s4\nfsub s4,s0,s18\nfsub s5,s1,s19\nfmul s4,s4,s4\nfmadd s4,s5,s5,s4\nfmin s24,s24,s4\nfcmp s22,s27\nb.le clearance_point\nfmul s4,s2,s20\nfmadd s4,s3,s21,s4\nfdiv s4,s4,s22\nfmax s4,s4,s27\nfmin s4,s4,s26\nfmsub s2,s4,s20,s2\nfmsub s3,s4,s21,s3\nclearance_point:\nfmul s4,s2,s2\nfmadd s4,s3,s3,s4\nfmin s23,s23,s4\nclearance_next:\nadd x9,x9,#16\nsubs w10,w10,#1\nb.ne clearance_loop\nfmov s0,s23\nfmov s1,s24\nfmov s2,s25\nret\n\n\n.align 3\n\nfar_distance_sq: .word 1199570944\n.align 3\n",
+      "code": "\nfmov s16,s0\nfmov s17,s1\nfmov s18,s2\nfmov s19,s3\nfsub s20,s2,s0\nfsub s21,s3,s1\nfmul s22,s20,s20\nfmadd s22,s21,s21,s22\nldr s23,far_distance_sq\nfmov s24,s23\nfmov s25,s23\nldr w8,[x0,#4]\neor w8,w8,#1\nmov w9,#11\nmul w8,w8,w9\nadd x9,x0,#32\nadd x9,x9,w8,uxtw #4\nmov w10,#11\nfmov s26,#1.0\nfmov s27,wzr\nclearance_loop:\nldr w8,[x9,#12]\ncbz w8,clearance_next\nldr s0,[x9]\nldr s1,[x9,#8]\nfsub s2,s0,s16\nfsub s3,s1,s17\nfmul s4,s2,s2\nfmadd s4,s3,s3,s4\nfmin s25,s25,s4\nfsub s4,s0,s18\nfsub s5,s1,s19\nfmul s4,s4,s4\nfmadd s4,s5,s5,s4\nfmin s24,s24,s4\nfcmp s22,s27\nb.le clearance_point\nfmul s4,s2,s20\nfmadd s4,s3,s21,s4\nfdiv s4,s4,s22\nfmax s4,s4,s27\nfmin s4,s4,s26\nfmsub s2,s4,s20,s2\nfmsub s3,s4,s21,s3\nclearance_point:\nfmul s4,s2,s2\nfmadd s4,s3,s3,s4\nfmin s23,s23,s4\nclearance_next:\nadd x9,x9,#16\nsubs w10,w10,#1\nb.ne clearance_loop\nfmov s0,s23\nfmov s1,s24\nfmov s2,s25\nret\n",
+      "functions": {},
+      "constants": {
+        "far_distance_sq": 65536.0
+      },
+      "deferred_shared_refs": [],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": []
+    },
+    {
+      "name": "studio_ai_equal_action_draw",
+      "body_hex": "080040b91f590071e20b00545f080071a80b0054c90280524920091bea0b00584a15098babb893528b23b0726b01014a0c1c40b96b010c4a0c800091cd02805204102c1e6f3280520f20a0728e0d40b96b010e4a6e010034800140bd810940bd0008241e2108241e0e00381e6b010e4a6b7d0f1b2e00381e6b010e4a6b7d0f1b8c410091ad05007121feff540c8000918c51288b800540bdc107001c0008211e0e00381e6b010e4a4c3540a99f0103eb41010054bf010bebc1000054401540b92c0080528c21c01a9f01016aa10500544c1140b90f0000146c01034a8c01094a2d378f52edc6b3728c010d4a6d4d99526dbdb0728c414c4a8c7d0d1badc695524d56b8728c354c4a8c7d0d1b8c414c4a4c0000352c0080528c350c4a8c454c4a8c150c4a0d008052ee03012acf010012ad010f0bce7d0153aeffff354d0200348e7dad9bcefd60d3200080522d008052ad21c01a3f000d6a60000054ce000034ce050051000400111f10007103ffff5405000014432d00a94c1100b9401500b9c0035fd600008052c0035fd61f2003d5cdcc4c3d1f2003d50000000000ee5453",
+      "absolute_fixups": [],
+      "assembly": "\nldr w8,[x0]\ncmp w8,#22\nb.hs draw_empty\ncmp w2,#2\nb.hi draw_empty\nmov w9,#22\nmadd w9,w2,w9,w8\nldr x10,draw_state\nadd x10,x10,x9,lsl #5\nmov w11,#0x9dc5\nmovk w11,#0x811c,lsl #16\neor w11,w11,w1\nldr w12,[x0,#28]\neor w11,w11,w12\nadd x12,x0,#32\nmov w13,#22\nfmov s4,#0.5\nmov w15,#0x193\nmovk w15,#0x100,lsl #16\ndraw_hash:\nldr w14,[x12,#12]\neor w11,w11,w14\ncbz w14,draw_hash_next\nldr s0,[x12]\nldr s1,[x12,#8]\nfmul s0,s0,s4\nfmul s1,s1,s4\nfcvtzs w14,s0\neor w11,w11,w14\nmul w11,w11,w15\nfcvtzs w14,s1\neor w11,w11,w14\nmul w11,w11,w15\ndraw_hash_next:\nadd x12,x12,#16\nsubs w13,w13,#1\nb.ne draw_hash\nadd x12,x0,#32\nadd x12,x12,w8,uxtw #4\nldr s0,[x12,#4]\nldr s1,heading_quantum\nfmul s0,s0,s1\nfcvtzs w14,s0\neor w11,w11,w14\nldp x12,x13,[x10]\ncmp x12,x3\nb.ne draw_seed\ncmp x13,x11\nb.ne draw_next\nldr w0,[x10,#20]\nmov w12,#1\nlsl w12,w12,w0\ntst w12,w1\nb.ne draw_return\ndraw_next:\nldr w12,[x10,#16]\nb draw_random\ndraw_seed:\neor w12,w11,w3\neor w12,w12,w9\nmov w13,#0x79b9\nmovk w13,#0x9e37,lsl #16\neor w12,w12,w13\n// Avalanche nearby actor/session keys before the independent xorshift.\nmov w13,#0xca6b\nmovk w13,#0x85eb,lsl #16\neor w12,w12,w12,lsr #16\nmul w12,w12,w13\nmov w13,#0xae35\nmovk w13,#0xc2b2,lsl #16\neor w12,w12,w12,lsr #13\nmul w12,w12,w13\neor w12,w12,w12,lsr #16\ndraw_random:\ncbnz w12,draw_nonzero\nmov w12,#1\ndraw_nonzero:\neor w12,w12,w12,lsl #13\neor w12,w12,w12,lsr #17\neor w12,w12,w12,lsl #5\nmov w13,#0\nmov w14,w1\ndraw_count:\nand w15,w14,#1\nadd w13,w13,w15\nlsr w14,w14,#1\ncbnz w14,draw_count\ncbz w13,draw_empty\numull x14,w12,w13\nlsr x14,x14,#32\nmov w0,#1\ndraw_pick:\nmov w13,#1\nlsl w13,w13,w0\ntst w1,w13\nb.eq draw_pick_next\ncbz w14,draw_save\nsub w14,w14,#1\ndraw_pick_next:\nadd w0,w0,#1\ncmp w0,#4\nb.lo draw_pick\nb draw_empty\ndraw_save:\nstp x3,x11,[x10]\nstr w12,[x10,#16]\nstr w0,[x10,#20]\ndraw_return:\nret\ndraw_empty:\nmov w0,#0\nret\n\n\n.align 3\n\nheading_quantum: .word 1028443341\n.align 3\ndraw_state: .quad 6004685886959124480",
+      "code": "\nldr w8,[x0]\ncmp w8,#22\nb.hs draw_empty\ncmp w2,#2\nb.hi draw_empty\nmov w9,#22\nmadd w9,w2,w9,w8\nldr x10,draw_state\nadd x10,x10,x9,lsl #5\nmov w11,#0x9dc5\nmovk w11,#0x811c,lsl #16\neor w11,w11,w1\nldr w12,[x0,#28]\neor w11,w11,w12\nadd x12,x0,#32\nmov w13,#22\nfmov s4,#0.5\nmov w15,#0x193\nmovk w15,#0x100,lsl #16\ndraw_hash:\nldr w14,[x12,#12]\neor w11,w11,w14\ncbz w14,draw_hash_next\nldr s0,[x12]\nldr s1,[x12,#8]\nfmul s0,s0,s4\nfmul s1,s1,s4\nfcvtzs w14,s0\neor w11,w11,w14\nmul w11,w11,w15\nfcvtzs w14,s1\neor w11,w11,w14\nmul w11,w11,w15\ndraw_hash_next:\nadd x12,x12,#16\nsubs w13,w13,#1\nb.ne draw_hash\nadd x12,x0,#32\nadd x12,x12,w8,uxtw #4\nldr s0,[x12,#4]\nldr s1,heading_quantum\nfmul s0,s0,s1\nfcvtzs w14,s0\neor w11,w11,w14\nldp x12,x13,[x10]\ncmp x12,x3\nb.ne draw_seed\ncmp x13,x11\nb.ne draw_next\nldr w0,[x10,#20]\nmov w12,#1\nlsl w12,w12,w0\ntst w12,w1\nb.ne draw_return\ndraw_next:\nldr w12,[x10,#16]\nb draw_random\ndraw_seed:\neor w12,w11,w3\neor w12,w12,w9\nmov w13,#0x79b9\nmovk w13,#0x9e37,lsl #16\neor w12,w12,w13\n// Avalanche nearby actor/session keys before the independent xorshift.\nmov w13,#0xca6b\nmovk w13,#0x85eb,lsl #16\neor w12,w12,w12,lsr #16\nmul w12,w12,w13\nmov w13,#0xae35\nmovk w13,#0xc2b2,lsl #16\neor w12,w12,w12,lsr #13\nmul w12,w12,w13\neor w12,w12,w12,lsr #16\ndraw_random:\ncbnz w12,draw_nonzero\nmov w12,#1\ndraw_nonzero:\neor w12,w12,w12,lsl #13\neor w12,w12,w12,lsr #17\neor w12,w12,w12,lsl #5\nmov w13,#0\nmov w14,w1\ndraw_count:\nand w15,w14,#1\nadd w13,w13,w15\nlsr w14,w14,#1\ncbnz w14,draw_count\ncbz w13,draw_empty\numull x14,w12,w13\nlsr x14,x14,#32\nmov w0,#1\ndraw_pick:\nmov w13,#1\nlsl w13,w13,w0\ntst w1,w13\nb.eq draw_pick_next\ncbz w14,draw_save\nsub w14,w14,#1\ndraw_pick_next:\nadd w0,w0,#1\ncmp w0,#4\nb.lo draw_pick\nb draw_empty\ndraw_save:\nstp x3,x11,[x10]\nstr w12,[x10,#16]\nstr w0,[x10,#20]\ndraw_return:\nret\ndraw_empty:\nmov w0,#0\nret\n",
+      "functions": {},
+      "constants": {
+        "heading_quantum": 0.05
+      },
+      "deferred_shared_refs": [],
+      "writable": {
+        "draw_state": 2112
+      },
+      "writable_fixups": [
+        [
+          408,
+          2112
+        ]
+      ],
+      "evidence": [
+        "actor/domain-separated xorshift stream, multiply-high bounded class draw",
+        "stable when quantized situation and candidate classes are unchanged; no native RNG"
+      ]
+    },
+    {
+      "name": "studio_ai_blitz_posture",
+      "body_hex": "f353b9a9f57b01a9e827026dea2f036df30300aa150080520840201e2940201e4a40201e681e40b96807583640212a1e2607005440c1201ec108001c0020211eac060054600a40bd610e40bd0008211e0038281ee04300bdff4700b92041211ee04b00bde00301919006005800023fd60b40201e681e40b90130271e680050370038211e020000140028211e0820201e6a000054e105001c0028211ea105001c0020211e4b0000540038211eea5300bde05700bde0430191e15301913004005800023fd60a40201ee84300bdff4700b9e94b00bd681e40b9e103001c480050362140211e6029211ee00301916103001cd002005800023fd64140201e0240201e2340201ee00313aa0a0000940140201e350080524041201ee003152aea2f436de827426df57b41a9f353c7a8c0035fd6e0ff21d41f2003d52804910600000000503ead060000000084a7d306000000000000b4430000b442cdcc4c3f1f2003d5",
+      "absolute_fixups": [
+        [
+          312,
+          110167080
+        ],
+        [
+          320,
+          112016976
+        ],
+        [
+          328,
+          114534276
+        ]
+      ],
+      "assembly": "\nstp x19,x20,[sp,#-112]!\nstp x21,x30,[sp,#16]\nstp d8,d9,[sp,#32]\nstp d10,d11,[sp,#48]\nmov x19,x0\nmov w21,#0\nfmov s8,s0\nfmov s9,s1\nfmov s10,s2\nldr w8,[x19,#28]\ntbz w8,#11,posture_done\nfcmp s10,s10\nb.vs posture_done\nfabs s0,s10\nldr s1,full_turn\nfcmp s0,s1\nb.gt posture_done\nldr s0,[x19,#8]\nldr s1,[x19,#12]\nfmul s0,s0,s1\nfsub s0,s0,s8\nstr s0,[sp,#64]\nstr wzr,[sp,#68]\nfneg s0,s9\nstr s0,[sp,#72]\nadd x0,sp,#64\nldr x16,yaw\nblr x16\nfmov s11,s0\nldr w8,[x19,#28]\nfmov s1,#25.0\ntbnz w8,#10,posture_left\nfsub s0,s0,s1\nb posture_ideal\nposture_left:\nfadd s0,s0,s1\nposture_ideal:\nfcmp s0,#0.0\nb.ge posture_upper\nldr s1,full_turn\nfadd s0,s0,s1\nposture_upper:\nldr s1,full_turn\nfcmp s0,s1\nb.lt posture_angle\nfsub s0,s0,s1\nposture_angle:\nstr s10,[sp,#80]\nstr s0,[sp,#84]\nadd x0,sp,#80\nadd x1,sp,#84\nldr x16,difference\nblr x16\nfmov s10,s0\nstr s8,[sp,#64]\nstr wzr,[sp,#68]\nstr s9,[sp,#72]\nldr w8,[x19,#28]\nldr s1,right_turn\ntbz w8,#10,posture_foot\nfneg s1,s1\nposture_foot:\nfadd s0,s11,s1\nadd x0,sp,#64\nldr s1,foot_offset\nldr x16,advance\nblr x16\nfmov s1,s2\nfmov s2,s0\nfmov s3,s1\nmov x0,x19\nbl shared_studio_ai_opportunity_clearance\nfmov s1,s0\nmov w21,#1\nposture_done:\nfmov s0,s10\nmov w0,w21\nldp d10,d11,[sp,#48]\nldp d8,d9,[sp,#32]\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#112\nret\n\nshared_studio_ai_opportunity_clearance: brk #4095\n.align 3\nyaw: .quad 110167080\ndifference: .quad 112016976\nadvance: .quad 114534276\nfull_turn: .word 1135869952\nright_turn: .word 1119092736\nfoot_offset: .word 1061997773\n.align 3\n",
+      "code": "\nstp x19,x20,[sp,#-112]!\nstp x21,x30,[sp,#16]\nstp d8,d9,[sp,#32]\nstp d10,d11,[sp,#48]\nmov x19,x0\nmov w21,#0\nfmov s8,s0\nfmov s9,s1\nfmov s10,s2\nldr w8,[x19,#28]\ntbz w8,#11,posture_done\nfcmp s10,s10\nb.vs posture_done\nfabs s0,s10\nldr s1,full_turn\nfcmp s0,s1\nb.gt posture_done\nldr s0,[x19,#8]\nldr s1,[x19,#12]\nfmul s0,s0,s1\nfsub s0,s0,s8\nstr s0,[sp,#64]\nstr wzr,[sp,#68]\nfneg s0,s9\nstr s0,[sp,#72]\nadd x0,sp,#64\nldr x16,yaw\nblr x16\nfmov s11,s0\nldr w8,[x19,#28]\nfmov s1,#25.0\ntbnz w8,#10,posture_left\nfsub s0,s0,s1\nb posture_ideal\nposture_left:\nfadd s0,s0,s1\nposture_ideal:\nfcmp s0,#0.0\nb.ge posture_upper\nldr s1,full_turn\nfadd s0,s0,s1\nposture_upper:\nldr s1,full_turn\nfcmp s0,s1\nb.lt posture_angle\nfsub s0,s0,s1\nposture_angle:\nstr s10,[sp,#80]\nstr s0,[sp,#84]\nadd x0,sp,#80\nadd x1,sp,#84\nldr x16,difference\nblr x16\nfmov s10,s0\nstr s8,[sp,#64]\nstr wzr,[sp,#68]\nstr s9,[sp,#72]\nldr w8,[x19,#28]\nldr s1,right_turn\ntbz w8,#10,posture_foot\nfneg s1,s1\nposture_foot:\nfadd s0,s11,s1\nadd x0,sp,#64\nldr s1,foot_offset\nldr x16,advance\nblr x16\nfmov s1,s2\nfmov s2,s0\nfmov s3,s1\nmov x0,x19\nbl shared_studio_ai_opportunity_clearance\nfmov s1,s0\nmov w21,#1\nposture_done:\nfmov s0,s10\nmov w0,w21\nldp d10,d11,[sp,#48]\nldp d8,d9,[sp,#32]\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#112\nret\n",
+      "functions": {
+        "yaw": 110167080,
+        "difference": 112016976,
+        "advance": 114534276
+      },
+      "constants": {
+        "full_turn": 360.0,
+        "right_turn": 90.0,
+        "foot_offset": 0.8
+      },
+      "deferred_shared_refs": [
+        "shared_studio_ai_opportunity_clearance"
+      ],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [
+        "body heading PlayerInfo +4ec; native yaw and absolute angle difference",
+        "compact foot parameter 43 -> 6a745e0 -> native ability byte 53",
+        "25-degree open-body target and strong-foot clearance are workshop estimates"
+      ]
+    },
+    {
+      "name": "studio_ai_opportunity_evaluate",
+      "body_hex": "f353b6a9f55b01a9f77b02a9e827036dea2f046dec37056dee3f066df30300aaf40301aaf50302aabf0200f9bf0600f9960240b9680240b9698200912951288b280140bd290940bd37008052df0a0071c0000054df0e0071e0050054df060071a00a005451010014881e40b91f590071c2290054690240b91f01096b602900541f2d0071e9379f1a6a0640b93f010a6bc1280054892240b989280035899a40398a9e403929010a2a8aa2403929010a2a8aa6403929010a2a8aaa403929010a2a8aae403929010a2a09270035698200912951288b280d40b9882600342a0140bd2b0940bd4039281e6139291e0008201e2000011f0110221e0020211e6b2500540127001c0020211e0c2500540dc0211e72000014882e40b9080900511f05007148240054803240bd0020201ee623005401c0201e8225001c2020221e6c230054680240b9608200910050288b0110221e5024005800023fd60a40201e4b40201e0d10221e20c1201e0190251e0020211e4b0b005460c1201e21c1201e02102c1e2138221e0020211e8c0a00544039281e610a40bd0008211e0020221eeb090054f7021d32681e40b988094036f7021e324a000014880a40b91f050071681f0054800e40bd610a40bd620e40bd2108221e0038211e00c0201e0110211e0020211e461e00542c1e0054801240bd0820201ec61d0054ab1d00540190211e0020211e4c1d0054801640bd00c0201e0110221e0020211ea61c00548c1c0054600a40bd610e40bd0009201e2038201e21c1201ec21d001c681e40b9091d00123f0d007160000054480048370200001402102e1e0208221e2020221e8c1a00540008201e2001091f411c001c3f0d0071600000544800483702000014e11b001c0020211e4b190054611b001c3f0d0071600000544800483702000014011b001c0020211e4c1800540dc0211e8a0e40bd8b1640bd4039281e6139291e0208201e2208011f42c0211e0390241e6318221e0a20031f2b24031ff7021e32df0e0071a1020054681e40b9680248364039281e610a40bd0008211e02102c1e0020221eab010054620e40bd4009211e4038201e0008201e60010b1f0109211e4138211e2108211e2105091f0020211e4a000054f7021e3240c1201e610e40bd0020211e661300544c13005460c1201e611240bd0020211ec6120054ac120054e00313aa0041201e2141201e4241201e6341201e980000940ec0211e2fc0211e4cc0211edf06007160080054df0a00716001005400902f1ec021201eab1000540090201ee021201e4b10005400102f1e8021201eeb0f00543d00001400102f1ec021201e6b0f00540090201ee021201e0b0f0054600a40bd610e40bd4009201e2038201e0111001c0020211e8c01005460c1201ea110001c0020211e0c0100540010211ee021201eab00005400902f1ec021201e4b000054f7021f324039281e610a40bd0008211e0210221e0020221eeb030054680640b90801005269018052087d091b698200912951288b6a0180520b0080524209211e280d40b9e8000034200140bd0008211e0020221e4c000054020000146b050011294100914a050071c1feff547f05007128010054f7021f320700001400d0201e8021201eab08005400102f1ec021201e4b080054e00313aadf060071800000544041201e6141201e030000140041201e2141201e430000940c40201e0010221e8c39201edf0a0071810000544009001ca0b1001f0c40201e0010211e01382e1ee203271e2148221e0310221e2108231e00382f1e0048221e0004031f8c39201e8c49221e681e40b9081d00121f0d007181030054df060071e0000054df0e0071010300544041201e6141201e823240bd070000140041201e2141201e680240b9698200912951288b220540bde00313aa1a000094a0010034a00a00bda10e00bdc204001c0020221e4c0100548204001c2020221eeb000054f7021c3205000014f7021c3203000014c003001ca00a00bdac0200bdb70600b9ee3f466dec37456dea2f446de827436df77b42a9f55b41a9f353caa8c0035fd6e0ff21d4e0ff21d4e0ff21d41f2003d584a7d30600000000000061440000b4439a99593f0000a24300008044000010430020994400008441ae47a1419a99193e00000c4200004440000034431f2003d5",
+      "absolute_fixups": [
+        [
+          1496,
+          114534276
+        ]
+      ],
+      "assembly": "\nstp x19,x20,[sp,#-160]!\nstp x21,x22,[sp,#16]\nstp x23,x30,[sp,#32]\nstp d8,d9,[sp,#48]\nstp d10,d11,[sp,#64]\nstp d12,d13,[sp,#80]\nstp d14,d15,[sp,#96]\nmov x19,x0\nmov x20,x1\nmov x21,x2\nstr xzr,[x21]\nstr xzr,[x21,#8]\nldr w22,[x20]\nldr w8,[x19]\nadd x9,x19,#32\nadd x9,x9,w8,uxtw #4\nldr s8,[x9]\nldr s9,[x9,#8]\nmov w23,#1\ncmp w22,#2\nb.eq evaluate_pass\ncmp w22,#3\nb.eq evaluate_dribble\ncmp w22,#1\nb.eq evaluate_shot\nb evaluate_done\nevaluate_pass:\nldr w8,[x20,#0x1c]\ncmp w8,#22\nb.hs evaluate_done\nldr w9,[x19]\ncmp w8,w9\nb.eq evaluate_done\ncmp w8,#11\ncset w9,hs\nldr w10,[x19,#4]\ncmp w9,w10\nb.ne evaluate_done\n// Through/lob/special pass endpoints are not fully represented here.\n// Preserve native choices instead of pretending their current position is\n// the native predicted reception point.\nldr w9,[x20,#0x20]\ncbnz w9,evaluate_done\nldrb w9,[x20,#0x26]\nldrb w10,[x20,#0x27]\norr w9,w9,w10\nldrb w10,[x20,#0x28]\norr w9,w9,w10\nldrb w10,[x20,#0x29]\norr w9,w9,w10\nldrb w10,[x20,#0x2a]\norr w9,w9,w10\nldrb w10,[x20,#0x2b]\norr w9,w9,w10\ncbnz w9,evaluate_done\nadd x9,x19,#32\nadd x9,x9,w8,uxtw #4\nldr w8,[x9,#12]\ncbz w8,evaluate_done\nldr s10,[x9]\nldr s11,[x9,#8]\nfsub s0,s10,s8\nfsub s1,s11,s9\nfmul s0,s0,s0\nfmadd s0,s1,s1,s0\nfmov s1,#4.0\nfcmp s0,s1\nb.lt evaluate_done\nldr s1,max_ground_pass_sq\nfcmp s0,s1\nb.gt evaluate_done\nfsqrt s13,s0\nb evaluate_metrics\nevaluate_dribble:\nldr w8,[x20,#0x2c]\nsub w8,w8,#2\ncmp w8,#1\nb.hi evaluate_done\nldr s0,[x20,#0x30]\nfcmp s0,s0\nb.vs evaluate_done\nfabs s1,s0\nldr s2,heading_bound\nfcmp s1,s2\nb.gt evaluate_done\nldr w8,[x19]\nadd x0,x19,#32\nadd x0,x0,w8,uxtw #4\nfmov s1,#4.0\nldr x16,advance\nblr x16\nfmov s10,s0\nfmov s11,s2\nfmov s13,#4.0\n// Every native moving dribble can be a baseline; only a forward inward\n// route receives a preference flag.\nfabs s0,s9\nfmov s1,#14.0\nfcmp s0,s1\nb.lt evaluate_metrics\nfabs s0,s11\nfabs s1,s9\nfmov s2,#0.5\nfsub s1,s1,s2\nfcmp s0,s1\nb.gt evaluate_metrics\nfsub s0,s10,s8\nldr s1,[x19,#8]\nfmul s0,s0,s1\nfcmp s0,s2\nb.lt evaluate_metrics\norr w23,w23,#8\nldr w8,[x19,#28]\ntbz w8,#8,evaluate_metrics\norr w23,w23,#4\nb evaluate_metrics\nevaluate_shot:\nldr w8,[x20,#8]\ncmp w8,#1\nb.hi evaluate_done\nldr s0,[x20,#0xc]\nldr s1,[x19,#8]\nldr s2,[x19,#12]\nfmul s1,s1,s2\nfsub s0,s0,s1\nfabs s0,s0\nfmov s1,#3.0\nfcmp s0,s1\nb.vs evaluate_done\nb.gt evaluate_done\nldr s0,[x20,#0x10]\nfcmp s0,#0.0\nb.vs evaluate_done\nb.lt evaluate_done\nfmov s1,#3.5\nfcmp s0,s1\nb.gt evaluate_done\nldr s0,[x20,#0x14]\nfabs s0,s0\nfmov s1,#4.0\nfcmp s0,s1\nb.vs evaluate_done\nb.gt evaluate_done\n// Decode the precomputed target, but only compare long shots from a\n// sensible angle. Other original shots retain their native request type.\nldr s0,[x19,#8]\nldr s1,[x19,#12]\nfmul s0,s8,s0\nfsub s0,s1,s0\nfabs s1,s9\nldr s2,shot_angle_ratio\nldr w8,[x19,#28]\nand w9,w8,#0xff\ncmp w9,#3\nb.eq shot_wide_angle\ntbnz w8,#9,shot_wide_angle\nb shot_angle_test\nshot_wide_angle:\nfmov s2,#1.0\nshot_angle_test:\nfmul s2,s0,s2\nfcmp s1,s2\nb.gt evaluate_done\nfmul s0,s0,s0\nfmadd s0,s9,s9,s0\nldr s1,shot_min_sq\ncmp w9,#3\nb.eq shot_wide_min\ntbnz w8,#9,shot_wide_min\nb shot_min_test\nshot_wide_min:\nldr s1,blitz_min_sq\nshot_min_test:\nfcmp s0,s1\nb.lt evaluate_done\nldr s1,shot_max_sq\ncmp w9,#3\nb.eq shot_wide_max\ntbnz w8,#9,shot_wide_max\nb shot_max_test\nshot_wide_max:\nldr s1,blitz_max_sq\nshot_max_test:\nfcmp s0,s1\nb.gt evaluate_done\nfsqrt s13,s0\nldr s10,[x20,#0xc]\nldr s11,[x20,#0x14]\nfsub s0,s10,s8\nfsub s1,s11,s9\nfmul s2,s0,s0\nfmadd s2,s1,s1,s2\nfsqrt s2,s2\nfmov s3,#10.0\nfdiv s3,s3,s2\nfmadd s10,s0,s3,s8\nfmadd s11,s1,s3,s9\norr w23,w23,#4\nevaluate_metrics:\ncmp w22,#3\nb.ne metrics_bounds\nldr w8,[x19,#28]\ntbz w8,#9,metrics_bounds\n// Lone Wolf may progress without Incisive Run. Retain the inward marker\n// separately so the combination can favour inward shooting setups.\nfsub s0,s10,s8\nldr s1,[x19,#8]\nfmul s0,s0,s1\nfmov s2,#0.5\nfcmp s0,s2\nb.lt metrics_bounds\nldr s2,[x19,#12]\nfmul s0,s10,s1\nfsub s0,s2,s0\nfmul s0,s0,s0\nfmadd s0,s11,s11,s0\nfmul s1,s8,s1\nfsub s1,s2,s1\nfmul s1,s1,s1\nfmadd s1,s9,s9,s1\nfcmp s0,s1\nb.ge metrics_bounds\norr w23,w23,#4\nmetrics_bounds:\n// Snapshot validated the source positions; also validate native predicted\n// dribble endpoints, including NaNs and pitch bounds.\nfabs s0,s10\nldr s1,[x19,#12]\nfcmp s0,s1\nb.vs evaluate_done\nb.gt evaluate_done\nfabs s0,s11\nldr s1,[x19,#16]\nfcmp s0,s1\nb.vs evaluate_done\nb.gt evaluate_done\nmov x0,x19\nfmov s0,s8\nfmov s1,s9\nfmov s2,s10\nfmov s3,s11\nbl shared_studio_ai_opportunity_clearance\nfsqrt s14,s0\nfsqrt s15,s1\nfsqrt s12,s2\ncmp w22,#1\nb.eq metrics_shot\ncmp w22,#2\nb.eq metrics_pass\nfmov s0,#1.75\nfcmp s14,s0\nb.lt evaluate_done\nfmov s0,#2.5\nfcmp s15,s0\nb.lt evaluate_done\nfmov s0,#1.5\nfcmp s12,s0\nb.lt evaluate_done\nb metrics_position\nmetrics_pass:\nfmov s0,#1.5\nfcmp s14,s0\nb.lt evaluate_done\nfmov s0,#2.5\nfcmp s15,s0\nb.lt evaluate_done\n// Clear, free reception inside the box is never sacrificed to a skill\n// preference. Through/lob passes already fail closed above.\nldr s0,[x19,#8]\nldr s1,[x19,#12]\nfmul s0,s10,s0\nfsub s0,s1,s0\nldr s1,penalty_depth\nfcmp s0,s1\nb.gt pass_penetration\nfabs s0,s11\nldr s1,penalty_half_width\nfcmp s0,s1\nb.gt pass_penetration\nfmov s0,#3.0\nfcmp s15,s0\nb.lt pass_penetration\nfmov s0,#1.75\nfcmp s14,s0\nb.lt pass_penetration\norr w23,w23,#2\npass_penetration:\n// Protect a clear forward receiver beyond the second-last opponent.\n// This is a conservative protection, not an offside/through-ball solver.\nfsub s0,s10,s8\nldr s1,[x19,#8]\nfmul s0,s0,s1\nfmov s2,#4.0\nfcmp s0,s2\nb.lt metrics_position\nldr w8,[x19,#4]\neor w8,w8,#1\nmov w9,#11\nmul w8,w8,w9\nadd x9,x19,#32\nadd x9,x9,w8,uxtw #4\nmov w10,#11\nmov w11,#0\nfmul s2,s10,s1\npenetration_loop:\nldr w8,[x9,#12]\ncbz w8,penetration_next\nldr s0,[x9]\nfmul s0,s0,s1\nfcmp s0,s2\nb.gt penetration_behind\nb penetration_next\npenetration_behind:\nadd w11,w11,#1\npenetration_next:\nadd x9,x9,#16\nsubs w10,w10,#1\nb.ne penetration_loop\ncmp w11,#1\nb.hi metrics_position\norr w23,w23,#2\nb metrics_position\nmetrics_shot:\nfmov s0,#2.75\nfcmp s12,s0\nb.lt evaluate_done\nfmov s0,#1.5\nfcmp s14,s0\nb.lt evaluate_done\nmetrics_position:\nmov x0,x19\ncmp w22,#1\nb.eq position_shot\nfmov s0,s10\nfmov s1,s11\nb position_call\nposition_shot:\nfmov s0,s8\nfmov s1,s9\nposition_call:\nbl shared_studio_ai_opportunity_position\nfmov s12,s0\nfmov s0,#4.0\nfsub s12,s12,s0\ncmp w22,#2\nb.ne position_risk\nldr s0,pass_distance_cost\nfmsub s0,s13,s0,s12\nfmov s12,s0\nposition_risk:\n// Remaining pressure and corridor uncertainty use the same bounded cost\n// scale for each action, after the hard safety gates above.\nfmov s0,#3.0\nfsub s1,s0,s14\nfmov s2,wzr\nfmax s1,s1,s2\nfmov s3,#4.0\nfmul s1,s1,s3\nfsub s0,s0,s15\nfmax s0,s0,s2\nfmadd s0,s0,s3,s1\nfsub s12,s12,s0\nfmax s12,s12,s2\n// Posture is stored separately; it does not secretly bias ordinary action\n// opportunity estimates. Only Lone Wolf uses it to rank repositioning.\nldr w8,[x19,#28]\nand w8,w8,#0xff\ncmp w8,#3\nb.ne posture_not_blitz\ncmp w22,#1\nb.eq posture_current\ncmp w22,#3\nb.ne posture_not_blitz\nfmov s0,s10\nfmov s1,s11\nldr s2,[x20,#0x30]\nb posture_compute\nposture_current:\nfmov s0,s8\nfmov s1,s9\nldr w8,[x19]\nadd x9,x19,#32\nadd x9,x9,w8,uxtw #4\nldr s2,[x9,#4]\nposture_compute:\nmov x0,x19\nbl shared_studio_ai_blitz_posture\ncbz w0,posture_unknown\nstr s0,[x21,#8]\nstr s1,[x21,#12]\nldr s2,posture_ready_angle\nfcmp s0,s2\nb.gt posture_store\nldr s2,foot_space_sq\nfcmp s1,s2\nb.lt posture_store\norr w23,w23,#16\nb posture_store\nposture_not_blitz:\norr w23,w23,#16\nb posture_store\nposture_unknown:\nldr s0,unknown_posture\nstr s0,[x21,#8]\nposture_store:\nstr s12,[x21]\nstr w23,[x21,#4]\nevaluate_done:\nldp d14,d15,[sp,#96]\nldp d12,d13,[sp,#80]\nldp d10,d11,[sp,#64]\nldp d8,d9,[sp,#48]\nldp x23,x30,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#160\nret\n\nshared_studio_ai_blitz_posture: brk #4095\nshared_studio_ai_opportunity_clearance: brk #4095\nshared_studio_ai_opportunity_position: brk #4095\n.align 3\nadvance: .quad 114534276\nmax_ground_pass_sq: .word 1147207680\nheading_bound: .word 1135869952\nshot_angle_ratio: .word 1062836634\nshot_min_sq: .word 1134690304\nshot_max_sq: .word 1149239296\nblitz_min_sq: .word 1125122048\nblitz_max_sq: .word 1150885888\npenalty_depth: .word 1099169792\npenalty_half_width: .word 1101088686\npass_distance_cost: .word 1041865114\nposture_ready_angle: .word 1108082688\nfoot_space_sq: .word 1078198272\nunknown_posture: .word 1127481344\n.align 3\n",
+      "code": "\nstp x19,x20,[sp,#-160]!\nstp x21,x22,[sp,#16]\nstp x23,x30,[sp,#32]\nstp d8,d9,[sp,#48]\nstp d10,d11,[sp,#64]\nstp d12,d13,[sp,#80]\nstp d14,d15,[sp,#96]\nmov x19,x0\nmov x20,x1\nmov x21,x2\nstr xzr,[x21]\nstr xzr,[x21,#8]\nldr w22,[x20]\nldr w8,[x19]\nadd x9,x19,#32\nadd x9,x9,w8,uxtw #4\nldr s8,[x9]\nldr s9,[x9,#8]\nmov w23,#1\ncmp w22,#2\nb.eq evaluate_pass\ncmp w22,#3\nb.eq evaluate_dribble\ncmp w22,#1\nb.eq evaluate_shot\nb evaluate_done\nevaluate_pass:\nldr w8,[x20,#0x1c]\ncmp w8,#22\nb.hs evaluate_done\nldr w9,[x19]\ncmp w8,w9\nb.eq evaluate_done\ncmp w8,#11\ncset w9,hs\nldr w10,[x19,#4]\ncmp w9,w10\nb.ne evaluate_done\n// Through/lob/special pass endpoints are not fully represented here.\n// Preserve native choices instead of pretending their current position is\n// the native predicted reception point.\nldr w9,[x20,#0x20]\ncbnz w9,evaluate_done\nldrb w9,[x20,#0x26]\nldrb w10,[x20,#0x27]\norr w9,w9,w10\nldrb w10,[x20,#0x28]\norr w9,w9,w10\nldrb w10,[x20,#0x29]\norr w9,w9,w10\nldrb w10,[x20,#0x2a]\norr w9,w9,w10\nldrb w10,[x20,#0x2b]\norr w9,w9,w10\ncbnz w9,evaluate_done\nadd x9,x19,#32\nadd x9,x9,w8,uxtw #4\nldr w8,[x9,#12]\ncbz w8,evaluate_done\nldr s10,[x9]\nldr s11,[x9,#8]\nfsub s0,s10,s8\nfsub s1,s11,s9\nfmul s0,s0,s0\nfmadd s0,s1,s1,s0\nfmov s1,#4.0\nfcmp s0,s1\nb.lt evaluate_done\nldr s1,max_ground_pass_sq\nfcmp s0,s1\nb.gt evaluate_done\nfsqrt s13,s0\nb evaluate_metrics\nevaluate_dribble:\nldr w8,[x20,#0x2c]\nsub w8,w8,#2\ncmp w8,#1\nb.hi evaluate_done\nldr s0,[x20,#0x30]\nfcmp s0,s0\nb.vs evaluate_done\nfabs s1,s0\nldr s2,heading_bound\nfcmp s1,s2\nb.gt evaluate_done\nldr w8,[x19]\nadd x0,x19,#32\nadd x0,x0,w8,uxtw #4\nfmov s1,#4.0\nldr x16,advance\nblr x16\nfmov s10,s0\nfmov s11,s2\nfmov s13,#4.0\n// Every native moving dribble can be a baseline; only a forward inward\n// route receives a preference flag.\nfabs s0,s9\nfmov s1,#14.0\nfcmp s0,s1\nb.lt evaluate_metrics\nfabs s0,s11\nfabs s1,s9\nfmov s2,#0.5\nfsub s1,s1,s2\nfcmp s0,s1\nb.gt evaluate_metrics\nfsub s0,s10,s8\nldr s1,[x19,#8]\nfmul s0,s0,s1\nfcmp s0,s2\nb.lt evaluate_metrics\norr w23,w23,#8\nldr w8,[x19,#28]\ntbz w8,#8,evaluate_metrics\norr w23,w23,#4\nb evaluate_metrics\nevaluate_shot:\nldr w8,[x20,#8]\ncmp w8,#1\nb.hi evaluate_done\nldr s0,[x20,#0xc]\nldr s1,[x19,#8]\nldr s2,[x19,#12]\nfmul s1,s1,s2\nfsub s0,s0,s1\nfabs s0,s0\nfmov s1,#3.0\nfcmp s0,s1\nb.vs evaluate_done\nb.gt evaluate_done\nldr s0,[x20,#0x10]\nfcmp s0,#0.0\nb.vs evaluate_done\nb.lt evaluate_done\nfmov s1,#3.5\nfcmp s0,s1\nb.gt evaluate_done\nldr s0,[x20,#0x14]\nfabs s0,s0\nfmov s1,#4.0\nfcmp s0,s1\nb.vs evaluate_done\nb.gt evaluate_done\n// Decode the precomputed target, but only compare long shots from a\n// sensible angle. Other original shots retain their native request type.\nldr s0,[x19,#8]\nldr s1,[x19,#12]\nfmul s0,s8,s0\nfsub s0,s1,s0\nfabs s1,s9\nldr s2,shot_angle_ratio\nldr w8,[x19,#28]\nand w9,w8,#0xff\ncmp w9,#3\nb.eq shot_wide_angle\ntbnz w8,#9,shot_wide_angle\nb shot_angle_test\nshot_wide_angle:\nfmov s2,#1.0\nshot_angle_test:\nfmul s2,s0,s2\nfcmp s1,s2\nb.gt evaluate_done\nfmul s0,s0,s0\nfmadd s0,s9,s9,s0\nldr s1,shot_min_sq\ncmp w9,#3\nb.eq shot_wide_min\ntbnz w8,#9,shot_wide_min\nb shot_min_test\nshot_wide_min:\nldr s1,blitz_min_sq\nshot_min_test:\nfcmp s0,s1\nb.lt evaluate_done\nldr s1,shot_max_sq\ncmp w9,#3\nb.eq shot_wide_max\ntbnz w8,#9,shot_wide_max\nb shot_max_test\nshot_wide_max:\nldr s1,blitz_max_sq\nshot_max_test:\nfcmp s0,s1\nb.gt evaluate_done\nfsqrt s13,s0\nldr s10,[x20,#0xc]\nldr s11,[x20,#0x14]\nfsub s0,s10,s8\nfsub s1,s11,s9\nfmul s2,s0,s0\nfmadd s2,s1,s1,s2\nfsqrt s2,s2\nfmov s3,#10.0\nfdiv s3,s3,s2\nfmadd s10,s0,s3,s8\nfmadd s11,s1,s3,s9\norr w23,w23,#4\nevaluate_metrics:\ncmp w22,#3\nb.ne metrics_bounds\nldr w8,[x19,#28]\ntbz w8,#9,metrics_bounds\n// Lone Wolf may progress without Incisive Run. Retain the inward marker\n// separately so the combination can favour inward shooting setups.\nfsub s0,s10,s8\nldr s1,[x19,#8]\nfmul s0,s0,s1\nfmov s2,#0.5\nfcmp s0,s2\nb.lt metrics_bounds\nldr s2,[x19,#12]\nfmul s0,s10,s1\nfsub s0,s2,s0\nfmul s0,s0,s0\nfmadd s0,s11,s11,s0\nfmul s1,s8,s1\nfsub s1,s2,s1\nfmul s1,s1,s1\nfmadd s1,s9,s9,s1\nfcmp s0,s1\nb.ge metrics_bounds\norr w23,w23,#4\nmetrics_bounds:\n// Snapshot validated the source positions; also validate native predicted\n// dribble endpoints, including NaNs and pitch bounds.\nfabs s0,s10\nldr s1,[x19,#12]\nfcmp s0,s1\nb.vs evaluate_done\nb.gt evaluate_done\nfabs s0,s11\nldr s1,[x19,#16]\nfcmp s0,s1\nb.vs evaluate_done\nb.gt evaluate_done\nmov x0,x19\nfmov s0,s8\nfmov s1,s9\nfmov s2,s10\nfmov s3,s11\nbl shared_studio_ai_opportunity_clearance\nfsqrt s14,s0\nfsqrt s15,s1\nfsqrt s12,s2\ncmp w22,#1\nb.eq metrics_shot\ncmp w22,#2\nb.eq metrics_pass\nfmov s0,#1.75\nfcmp s14,s0\nb.lt evaluate_done\nfmov s0,#2.5\nfcmp s15,s0\nb.lt evaluate_done\nfmov s0,#1.5\nfcmp s12,s0\nb.lt evaluate_done\nb metrics_position\nmetrics_pass:\nfmov s0,#1.5\nfcmp s14,s0\nb.lt evaluate_done\nfmov s0,#2.5\nfcmp s15,s0\nb.lt evaluate_done\n// Clear, free reception inside the box is never sacrificed to a skill\n// preference. Through/lob passes already fail closed above.\nldr s0,[x19,#8]\nldr s1,[x19,#12]\nfmul s0,s10,s0\nfsub s0,s1,s0\nldr s1,penalty_depth\nfcmp s0,s1\nb.gt pass_penetration\nfabs s0,s11\nldr s1,penalty_half_width\nfcmp s0,s1\nb.gt pass_penetration\nfmov s0,#3.0\nfcmp s15,s0\nb.lt pass_penetration\nfmov s0,#1.75\nfcmp s14,s0\nb.lt pass_penetration\norr w23,w23,#2\npass_penetration:\n// Protect a clear forward receiver beyond the second-last opponent.\n// This is a conservative protection, not an offside/through-ball solver.\nfsub s0,s10,s8\nldr s1,[x19,#8]\nfmul s0,s0,s1\nfmov s2,#4.0\nfcmp s0,s2\nb.lt metrics_position\nldr w8,[x19,#4]\neor w8,w8,#1\nmov w9,#11\nmul w8,w8,w9\nadd x9,x19,#32\nadd x9,x9,w8,uxtw #4\nmov w10,#11\nmov w11,#0\nfmul s2,s10,s1\npenetration_loop:\nldr w8,[x9,#12]\ncbz w8,penetration_next\nldr s0,[x9]\nfmul s0,s0,s1\nfcmp s0,s2\nb.gt penetration_behind\nb penetration_next\npenetration_behind:\nadd w11,w11,#1\npenetration_next:\nadd x9,x9,#16\nsubs w10,w10,#1\nb.ne penetration_loop\ncmp w11,#1\nb.hi metrics_position\norr w23,w23,#2\nb metrics_position\nmetrics_shot:\nfmov s0,#2.75\nfcmp s12,s0\nb.lt evaluate_done\nfmov s0,#1.5\nfcmp s14,s0\nb.lt evaluate_done\nmetrics_position:\nmov x0,x19\ncmp w22,#1\nb.eq position_shot\nfmov s0,s10\nfmov s1,s11\nb position_call\nposition_shot:\nfmov s0,s8\nfmov s1,s9\nposition_call:\nbl shared_studio_ai_opportunity_position\nfmov s12,s0\nfmov s0,#4.0\nfsub s12,s12,s0\ncmp w22,#2\nb.ne position_risk\nldr s0,pass_distance_cost\nfmsub s0,s13,s0,s12\nfmov s12,s0\nposition_risk:\n// Remaining pressure and corridor uncertainty use the same bounded cost\n// scale for each action, after the hard safety gates above.\nfmov s0,#3.0\nfsub s1,s0,s14\nfmov s2,wzr\nfmax s1,s1,s2\nfmov s3,#4.0\nfmul s1,s1,s3\nfsub s0,s0,s15\nfmax s0,s0,s2\nfmadd s0,s0,s3,s1\nfsub s12,s12,s0\nfmax s12,s12,s2\n// Posture is stored separately; it does not secretly bias ordinary action\n// opportunity estimates. Only Lone Wolf uses it to rank repositioning.\nldr w8,[x19,#28]\nand w8,w8,#0xff\ncmp w8,#3\nb.ne posture_not_blitz\ncmp w22,#1\nb.eq posture_current\ncmp w22,#3\nb.ne posture_not_blitz\nfmov s0,s10\nfmov s1,s11\nldr s2,[x20,#0x30]\nb posture_compute\nposture_current:\nfmov s0,s8\nfmov s1,s9\nldr w8,[x19]\nadd x9,x19,#32\nadd x9,x9,w8,uxtw #4\nldr s2,[x9,#4]\nposture_compute:\nmov x0,x19\nbl shared_studio_ai_blitz_posture\ncbz w0,posture_unknown\nstr s0,[x21,#8]\nstr s1,[x21,#12]\nldr s2,posture_ready_angle\nfcmp s0,s2\nb.gt posture_store\nldr s2,foot_space_sq\nfcmp s1,s2\nb.lt posture_store\norr w23,w23,#16\nb posture_store\nposture_not_blitz:\norr w23,w23,#16\nb posture_store\nposture_unknown:\nldr s0,unknown_posture\nstr s0,[x21,#8]\nposture_store:\nstr s12,[x21]\nstr w23,[x21,#4]\nevaluate_done:\nldp d14,d15,[sp,#96]\nldp d12,d13,[sp,#80]\nldp d10,d11,[sp,#64]\nldp d8,d9,[sp,#48]\nldp x23,x30,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#160\nret\n",
+      "functions": {
+        "advance": 114534276
+      },
+      "constants": {
+        "max_ground_pass_sq": 900.0,
+        "heading_bound": 360.0,
+        "shot_angle_ratio": 0.85,
+        "shot_min_sq": 324.0,
+        "shot_max_sq": 1024.0,
+        "blitz_min_sq": 144.0,
+        "blitz_max_sq": 1225.0,
+        "penalty_depth": 16.5,
+        "penalty_half_width": 20.16,
+        "pass_distance_cost": 0.15,
+        "posture_ready_angle": 35.0,
+        "foot_space_sq": 3.0625,
+        "unknown_posture": 180.0
+      },
+      "deferred_shared_refs": [
+        "shared_studio_ai_blitz_posture",
+        "shared_studio_ai_opportunity_clearance",
+        "shared_studio_ai_opportunity_position"
+      ],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [
+        "70e5354 passes native result +1c to 70e74d0; recipient +0, mode +4",
+        "70e7ae8 uses native heading at result +30; original advance is pure geometry",
+        "workshop-only opportunity scale; static geometry plus conservative buffers",
+        "unknown predictions or modes stay native; never calls original action evaluators"
+      ]
+    },
+    {
+      "name": "studio_ai_cut_in_profile",
+      "body_hex": "f353b9a9f55b01a9f76302a9f96b03a9fe2300f9e827056df30300aa18008052130e00b4750240f9740e40f9b50d00b4940d00b4b60240b9df5a0071220d0054e00314aa300e005800023fd6a00c00b4100e005800023fd61f040071210c0054e00314aae103162a900d005800023fd6800b00b4700d005800023fd6f70300aa170b00b4e8d640b9680038375d000094800a0034e00317aa61068052700c005800023fd640020037e8d640b94800383788092036e00317aae1008052700b005800023fd680010037e00317aa41058052d00a005800023fd660000037e8d640b9080838363800805204000014780080520200001458008052e003162ab009005800023fd6e103002ae00314aa7009005800023fd6400600b41730ca39ff06007160000054ff060031a1050054e00314aa9008005800023fd6fa0300aa1a0500b4e00314aae103162a1008005800023fd6f90300aa590400b428f744bd29ff44bd400340bd6107001c0020211e860300546b0300540107001c0020211e0c030054e102221e0809211e0838281e0821201e660200544b02005420c1201e0020201ee60100540008201e0001081f8105001c0020211e4b0100544105001c0020211eec000054e10319aae2031aaae303172a0041201e2141201e0200001418008052e003182ae827456dfe2340f9f96b43a9f76342a9f55b41a9f353c7a8c0035fd6e0ff21d41f2003d5803e2c07000000000cb6970600000000b0402c0700000000f81e300700000000c4392b0700000000f8d097060000000028402c07000000006c3e2c07000000008c402c07000000000000004200008c4200001042000080420000f2441f2003d5",
+      "absolute_fixups": [
+        [
+          520,
+          120340096
+        ],
+        [
+          528,
+          110605836
+        ],
+        [
+          536,
+          120340656
+        ],
+        [
+          544,
+          120594168
+        ],
+        [
+          552,
+          120273348
+        ],
+        [
+          560,
+          110612728
+        ],
+        [
+          568,
+          120340520
+        ],
+        [
+          576,
+          120340076
+        ],
+        [
+          584,
+          120340620
+        ]
+      ],
+      "assembly": "\nstp x19,x20,[sp,#-112]!\nstp x21,x22,[sp,#16]\nstp x23,x24,[sp,#32]\nstp x25,x26,[sp,#48]\nstr x30,[sp,#64]\nstp d8,d9,[sp,#80]\nmov x19,x0\nmov w24,#0\ncbz x19,done\nldr x21,[x19]\nldr x20,[x19,#0x18]\ncbz x21,done\ncbz x20,done\nldr w22,[x21]\ncmp w22,#22\nb.hs done\nmov x0,x20\nldr x16,game_info\nblr x16\ncbz x0,done\nldr x16,phase\nblr x16\ncmp w0,#1\nb.ne done\nmov x0,x20\nmov w1,w22\nldr x16,player_state\nblr x16\ncbz x0,done\nldr x16,abilities\nblr x16\nmov x23,x0\ncbz x23,done\nldr w8,[x23,#0xd4]\ntbnz w8,#7,check_skills\nbl shared_studio_ai_preference_enabled\ncbz w0,done\ncheck_skills:\nmov x0,x23\nmov w1,#51\nldr x16,skill\nblr x16\ntbnz w0,#0,blitz\nldr w8,[x23,#0xd4]\ntbnz w8,#7,other_skills\ntbz w8,#4,done\nother_skills:\nmov x0,x23\nmov w1,#7\nldr x16,skill\nblr x16\ntbnz w0,#0,curler\nmov x0,x23\nmov w1,#42\nldr x16,skill\nblr x16\ntbnz w0,#0,normal_shooter\nldr w8,[x23,#0xd4]\ntbz w8,#7,done\nnormal_shooter:\nmov w24,#1\nb position\nblitz:\nmov w24,#3\nb position\ncurler:\nmov w24,#2\nposition:\nmov w0,w22\nldr x16,team\nblr x16\nmov w1,w0\nmov x0,x20\nldr x16,team_data\nblr x16\ncbz x0,no\nldrsb w23,[x0,#0x28c]\ncmp w23,#1\nb.eq side_ok\ncmn w23,#1\nb.ne no\nside_ok:\nmov x0,x20\nldr x16,pitch\nblr x16\nmov x26,x0\ncbz x26,no\nmov x0,x20\nmov w1,w22\nldr x16,player_info\nblr x16\nmov x25,x0\ncbz x25,no\nldr s8,[x25,#0x4f4]\nldr s9,[x25,#0x4fc]\nldr s0,[x26]\nldr s1,min_half_length\nfcmp s0,s1\nb.vs no\nb.lt no\nldr s1,max_half_length\nfcmp s0,s1\nb.gt no\nscvtf s1,w23\nfmul s8,s8,s1\nfsub s8,s0,s8\nfcmp s8,#0.0\nb.vs no\nb.lt no\nfabs s0,s9\nfcmp s0,s0\nb.vs no\nfmul s0,s0,s0\nfmadd s0,s8,s8,s0\nldr s1,min_distance_sq\nfcmp s0,s1\nb.lt no\nldr s1,max_distance_sq\nfcmp s0,s1\nb.gt no\nmov x1,x25\nmov x2,x26\nmov w3,w23\nfmov s0,s8\nfmov s1,s9\nb done\nno:\nmov w24,#0\ndone:\nmov w0,w24\nldp d8,d9,[sp,#80]\nldr x30,[sp,#64]\nldp x25,x26,[sp,#48]\nldp x23,x24,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#112\nret\n\nshared_studio_ai_preference_enabled: brk #4095\n.align 3\ngame_info: .quad 120340096\nphase: .quad 110605836\nplayer_state: .quad 120340656\nabilities: .quad 120594168\nskill: .quad 120273348\nteam: .quad 110612728\nteam_data: .quad 120340520\npitch: .quad 120340076\nplayer_info: .quad 120340620\nmin_half_length: .word 1107296256\nmax_half_length: .word 1116471296\nmax_forward: .word 1108344832\nmin_distance_sq: .word 1115684864\nmax_distance_sq: .word 1156710400\n.align 3\n",
+      "code": "\nstp x19,x20,[sp,#-112]!\nstp x21,x22,[sp,#16]\nstp x23,x24,[sp,#32]\nstp x25,x26,[sp,#48]\nstr x30,[sp,#64]\nstp d8,d9,[sp,#80]\nmov x19,x0\nmov w24,#0\ncbz x19,done\nldr x21,[x19]\nldr x20,[x19,#0x18]\ncbz x21,done\ncbz x20,done\nldr w22,[x21]\ncmp w22,#22\nb.hs done\nmov x0,x20\nldr x16,game_info\nblr x16\ncbz x0,done\nldr x16,phase\nblr x16\ncmp w0,#1\nb.ne done\nmov x0,x20\nmov w1,w22\nldr x16,player_state\nblr x16\ncbz x0,done\nldr x16,abilities\nblr x16\nmov x23,x0\ncbz x23,done\nldr w8,[x23,#0xd4]\ntbnz w8,#7,check_skills\nbl shared_studio_ai_preference_enabled\ncbz w0,done\ncheck_skills:\nmov x0,x23\nmov w1,#51\nldr x16,skill\nblr x16\ntbnz w0,#0,blitz\nldr w8,[x23,#0xd4]\ntbnz w8,#7,other_skills\ntbz w8,#4,done\nother_skills:\nmov x0,x23\nmov w1,#7\nldr x16,skill\nblr x16\ntbnz w0,#0,curler\nmov x0,x23\nmov w1,#42\nldr x16,skill\nblr x16\ntbnz w0,#0,normal_shooter\nldr w8,[x23,#0xd4]\ntbz w8,#7,done\nnormal_shooter:\nmov w24,#1\nb position\nblitz:\nmov w24,#3\nb position\ncurler:\nmov w24,#2\nposition:\nmov w0,w22\nldr x16,team\nblr x16\nmov w1,w0\nmov x0,x20\nldr x16,team_data\nblr x16\ncbz x0,no\nldrsb w23,[x0,#0x28c]\ncmp w23,#1\nb.eq side_ok\ncmn w23,#1\nb.ne no\nside_ok:\nmov x0,x20\nldr x16,pitch\nblr x16\nmov x26,x0\ncbz x26,no\nmov x0,x20\nmov w1,w22\nldr x16,player_info\nblr x16\nmov x25,x0\ncbz x25,no\nldr s8,[x25,#0x4f4]\nldr s9,[x25,#0x4fc]\nldr s0,[x26]\nldr s1,min_half_length\nfcmp s0,s1\nb.vs no\nb.lt no\nldr s1,max_half_length\nfcmp s0,s1\nb.gt no\nscvtf s1,w23\nfmul s8,s8,s1\nfsub s8,s0,s8\nfcmp s8,#0.0\nb.vs no\nb.lt no\nfabs s0,s9\nfcmp s0,s0\nb.vs no\nfmul s0,s0,s0\nfmadd s0,s8,s8,s0\nldr s1,min_distance_sq\nfcmp s0,s1\nb.lt no\nldr s1,max_distance_sq\nfcmp s0,s1\nb.gt no\nmov x1,x25\nmov x2,x26\nmov w3,w23\nfmov s0,s8\nfmov s1,s9\nb done\nno:\nmov w24,#0\ndone:\nmov w0,w24\nldp d8,d9,[sp,#80]\nldr x30,[sp,#64]\nldp x25,x26,[sp,#48]\nldp x23,x24,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#112\nret\n",
+      "functions": {
+        "game_info": 120340096,
+        "phase": 110605836,
+        "player_state": 120340656,
+        "abilities": 120594168,
+        "skill": 120273348,
+        "team": 110612728,
+        "team_data": 120340520,
+        "pitch": 120340076,
+        "player_info": 120340620
+      },
+      "constants": {
+        "min_half_length": 32.0,
+        "max_half_length": 70.0,
+        "max_forward": 36.0,
+        "min_distance_sq": 64.0,
+        "max_distance_sq": 1936.0
+      },
+      "deferred_shared_refs": [
+        "shared_studio_ai_preference_enabled"
+      ],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [
+        "6a74e74 parameter 66 -> AI bit 4; 6a74e94 sets bit 4",
+        "original match table c7fec0: skill 18 -> 51, 17 -> 7, 23 -> 42",
+        "72b39c4 effective match flags include innate and learned skills",
+        "AI candidate path only; normal match phase 1; current half side follows team +28c"
+      ]
+    },
+    {
+      "name": "studio_ai_select_cut_in_candidate",
+      "body_hex": "ff0311d1f35300a9f55b01a9f76302a9f96b03a9fb7304a9fd7b05a9e827066dea2f076df403012afb03012a9f7a0071e21a0054130040f9150840f9931a00b4751a00b4083989527602088b080a8052885aa89b090140b9290500513f09007168190054090140b93f05007181000054090940b93f050071a8180054e00315aace00009440180034e00b04b9f7030291e00315aae10317aacb00009480170034e80b44b9e8720039e81e40b9e80304b9f8030891081589527d02088be0031daa5018005800023fd6f90300aaf9f701f9e0031daaf017005800023fd6fa0300aa5f0319eb43150054480319cb1fe101f1e81400541f0540f2a11400541c0080523f031aeb820200543d4740b8bf7b007182ffff54280080520821dd1a9f03086a01ffff549c03082a080a8052a15ba89b02533d8be00317aaa2000094e80344b908fe4f3708533d8b080540b908120837ecffff17280080520821d41a9f03086a60110054e80344b9680848370853348b090540b9c9100036080140bdc8038052e8f303b9e8f703b9e8fb03b9080a8052885aa89b090140b9e8b30f91145929b83c0080529c23c91af9f741f93f031aeb020500543d4740b8bf7b007182ffff54bf03146b40ffff5408533d8b090540b9e9fe07360a0140bd4039281e00c0201e0110001c0020211e26feff540cfeff54080a8052a85ba89b0a0140b95f0d00714100005449fd1736280080520821ca1a9f03086ac1fcff54ea0704b9e00313aae10315aae2031d2a900d005800023fd6e0fb0737ea0744b9280080520821ca1a9c03082ae8b30f911d592ab8d8ffff17e00317aae1031c2a02008052a30e40f95700009440090034e8b30f911b5960b847000014c8038052e8f303b9e8f703b9280b001c0941201ef9f741f93f031aeb020700543d4740b8bf7b007182ffff5408533d8b090540b929ff07360a0140bd0b0940bd080a8052a85ba89b0a0140b95f050071400200545f0d007101feff54e9fd1736e80344b988004036690018360010231e4a29201e690020360090261e4a29201ea007001c6aa9001f4021291e6dfcff547c0080520a000014e80b44b91f0d007141000054a9fb27368006001c6aa9001f4021281e2dfbff543c008052bf03146be0000054e00313aae10315aae2031d2ab004005800023fd600fa07379f070071810000544841201efdf303b9cbffff174941201efdf703b9c8ffff17e8f343b91f79007183000054e8f743b91f79007142000054fb03082ae0031b2aea2f476de827466dfd7b45a9fb7344a9f96b43a9f76342a9f55b41a9f35340a9ff031191c0035fd6e0ff21d4e0ff21d4e0ff21d4e0ff21d4cc630e0700000000d0630e0700000000a0720e07000000000000004100007ac4cdcc4c3e0ad7a33d",
+      "absolute_fixups": [
+        [
+          968,
+          118383564
+        ],
+        [
+          976,
+          118383568
+        ],
+        [
+          984,
+          118387360
+        ]
+      ],
+      "assembly": "\nsub sp,sp,#1088\nstp x19,x20,[sp]\nstp x21,x22,[sp,#16]\nstp x23,x24,[sp,#32]\nstp x25,x26,[sp,#48]\nstp x27,x28,[sp,#64]\nstp x29,x30,[sp,#80]\nstp d8,d9,[sp,#96]\nstp d10,d11,[sp,#112]\nmov w20,w1\nmov w27,w1\ncmp w20,#30\nb.hs choice_done\nldr x19,[x0]\nldr x21,[x0,#0x10]\ncbz x19,choice_done\ncbz x21,choice_done\nmov w8,#0x49c8\nadd x22,x19,x8\nmov w8,#80\numaddl x8,w20,w8,x22\nldr w9,[x8]\nsub w9,w9,#1\ncmp w9,#2\nb.hi choice_done\nldr w9,[x8]\ncmp w9,#1\nb.ne choice_profile\nldr w9,[x8,#8]\ncmp w9,#1\nb.hi choice_done\nchoice_profile:\nmov x0,x21\nbl shared_studio_ai_cut_in_profile\ncbz w0,choice_done\nstr w0,[sp,#1032]\nadd x23,sp,#128\nmov x0,x21\nmov x1,x23\nbl shared_studio_ai_opportunity_snapshot\ncbz w0,choice_done\nldr w8,[sp,#1032]\nstrb w8,[x23,#28]\nldr w8,[x23,#28]\nstr w8,[sp,#1024]\nadd x24,sp,#512\nmov w8,#0x48a8\nadd x29,x19,x8\nmov x0,x29\nldr x16,begin\nblr x16\nmov x25,x0\nstr x25,[sp,#1000]\nmov x0,x29\nldr x16,end\nblr x16\nmov x26,x0\ncmp x26,x25\nb.lo choice_done\nsub x8,x26,x25\ncmp x8,#120\nb.hi choice_done\ntst x8,#3\nb.ne choice_done\nmov w28,#0\nevaluate_loop:\ncmp x25,x26\nb.hs evaluate_finished\nldr w29,[x25],#4\ncmp w29,#30\nb.hs evaluate_loop\nmov w8,#1\nlsl w8,w8,w29\ntst w28,w8\nb.ne evaluate_loop\norr w28,w28,w8\nmov w8,#80\numaddl x1,w29,w8,x22\nadd x2,x24,w29,uxtw #4\nmov x0,x23\nbl shared_studio_ai_opportunity_evaluate\nldr w8,[sp,#1024]\ntbnz w8,#9,evaluate_loop\nadd x8,x24,w29,uxtw #4\nldr w8,[x8,#4]\ntbnz w8,#1,choice_done\nb evaluate_loop\nevaluate_finished:\nmov w8,#1\nlsl w8,w8,w20\ntst w28,w8\nb.eq choice_done\nldr w8,[sp,#1024]\ntbnz w8,#9,lone_start\nadd x8,x24,w20,uxtw #4\nldr w9,[x8,#4]\ntbz w9,#0,choice_done\nldr s8,[x8]\nmov w8,#30\nstr w8,[sp,#1008]\nstr w8,[sp,#1012]\nstr w8,[sp,#1016]\nmov w8,#80\numaddl x8,w20,w8,x22\nldr w9,[x8]\nadd x8,sp,#1004\nstr w20,[x8,w9,uxtw #2]\nmov w28,#1\nlsl w28,w28,w9\nldr x25,[sp,#1000]\nequal_loop:\ncmp x25,x26\nb.hs equal_draw\nldr w29,[x25],#4\ncmp w29,#30\nb.hs equal_loop\ncmp w29,w20\nb.eq equal_loop\nadd x8,x24,w29,uxtw #4\nldr w9,[x8,#4]\ntbz w9,#0,equal_loop\nldr s10,[x8]\nfsub s0,s10,s8\nfabs s0,s0\nldr s1,comparison_window\nfcmp s0,s1\nb.vs equal_loop\nb.gt equal_loop\nmov w8,#80\numaddl x8,w29,w8,x22\nldr w10,[x8]\ncmp w10,#3\nb.ne equal_class\ntbz w9,#2,equal_loop\nequal_class:\nmov w8,#1\nlsl w8,w8,w10\ntst w28,w8\nb.ne equal_loop\nstr w10,[sp,#1028]\nmov x0,x19\nmov x1,x21\nmov w2,w29\nldr x16,veto\nblr x16\ntbnz w0,#0,equal_loop\nldr w10,[sp,#1028]\nmov w8,#1\nlsl w8,w8,w10\norr w28,w28,w8\nadd x8,sp,#1004\nstr w29,[x8,w10,uxtw #2]\nb equal_loop\nequal_draw:\nmov x0,x23\nmov w1,w28\nmov w2,#0\nldr x3,[x21,#0x18]\nbl shared_studio_ai_equal_action_draw\ncbz w0,choice_done\nadd x8,sp,#1004\nldr w27,[x8,w0,uxtw #2]\nb choice_done\nlone_start:\nmov w8,#30\nstr w8,[sp,#1008]\nstr w8,[sp,#1012]\nldr s8,negative_score\nfmov s9,s8\nldr x25,[sp,#1000]\nlone_loop:\ncmp x25,x26\nb.hs lone_finish\nldr w29,[x25],#4\ncmp w29,#30\nb.hs lone_loop\nadd x8,x24,w29,uxtw #4\nldr w9,[x8,#4]\ntbz w9,#0,lone_loop\nldr s10,[x8]\nldr s11,[x8,#8]\nmov w8,#80\numaddl x8,w29,w8,x22\nldr w10,[x8]\ncmp w10,#1\nb.eq lone_shot\ncmp w10,#3\nb.ne lone_loop\ntbz w9,#2,lone_loop\n// Incisive Run adds inward-route preference; Lone Wolf without it may use\n// any safe progress route. Posture quality distinguishes shooting setups.\nldr w8,[sp,#1024]\ntbz w8,#8,lone_route_pose\ntbz w9,#3,lone_route_pose\nfmov s0,#6.0\nfadd s10,s10,s0\nlone_route_pose:\ntbz w9,#4,lone_route_cost\nfmov s0,#20.0\nfadd s10,s10,s0\nlone_route_cost:\nldr s0,route_pose_cost\nfmsub s10,s11,s0,s10\nfcmp s10,s9\nb.le lone_loop\nmov w28,#3\nb lone_veto\nlone_shot:\nldr w8,[sp,#1032]\ncmp w8,#3\nb.ne lone_shot_score\ntbz w9,#4,lone_loop\nlone_shot_score:\nldr s0,shot_pose_cost\nfmsub s10,s11,s0,s10\nfcmp s10,s8\nb.le lone_loop\nmov w28,#1\nlone_veto:\ncmp w29,w20\nb.eq lone_accept\nmov x0,x19\nmov x1,x21\nmov w2,w29\nldr x16,veto\nblr x16\ntbnz w0,#0,lone_loop\nlone_accept:\ncmp w28,#1\nb.ne lone_accept_route\nfmov s8,s10\nstr w29,[sp,#1008]\nb lone_loop\nlone_accept_route:\nfmov s9,s10\nstr w29,[sp,#1012]\nb lone_loop\nlone_finish:\nldr w8,[sp,#1008]\ncmp w8,#30\nb.lo lone_selected\nldr w8,[sp,#1012]\ncmp w8,#30\nb.hs choice_done\nlone_selected:\nmov w27,w8\nchoice_done:\nmov w0,w27\nldp d10,d11,[sp,#112]\nldp d8,d9,[sp,#96]\nldp x29,x30,[sp,#80]\nldp x27,x28,[sp,#64]\nldp x25,x26,[sp,#48]\nldp x23,x24,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp]\nadd sp,sp,#1088\nret\n\nshared_studio_ai_cut_in_profile: brk #4095\nshared_studio_ai_equal_action_draw: brk #4095\nshared_studio_ai_opportunity_evaluate: brk #4095\nshared_studio_ai_opportunity_snapshot: brk #4095\n.align 3\nbegin: .quad 118383564\nend: .quad 118383568\nveto: .quad 118387360\ncomparison_window: .word 1090519040\nnegative_score: .word 3296329728\nroute_pose_cost: .word 1045220557\nshot_pose_cost: .word 1034147594\n.align 3\n",
+      "code": "\nsub sp,sp,#1088\nstp x19,x20,[sp]\nstp x21,x22,[sp,#16]\nstp x23,x24,[sp,#32]\nstp x25,x26,[sp,#48]\nstp x27,x28,[sp,#64]\nstp x29,x30,[sp,#80]\nstp d8,d9,[sp,#96]\nstp d10,d11,[sp,#112]\nmov w20,w1\nmov w27,w1\ncmp w20,#30\nb.hs choice_done\nldr x19,[x0]\nldr x21,[x0,#0x10]\ncbz x19,choice_done\ncbz x21,choice_done\nmov w8,#0x49c8\nadd x22,x19,x8\nmov w8,#80\numaddl x8,w20,w8,x22\nldr w9,[x8]\nsub w9,w9,#1\ncmp w9,#2\nb.hi choice_done\nldr w9,[x8]\ncmp w9,#1\nb.ne choice_profile\nldr w9,[x8,#8]\ncmp w9,#1\nb.hi choice_done\nchoice_profile:\nmov x0,x21\nbl shared_studio_ai_cut_in_profile\ncbz w0,choice_done\nstr w0,[sp,#1032]\nadd x23,sp,#128\nmov x0,x21\nmov x1,x23\nbl shared_studio_ai_opportunity_snapshot\ncbz w0,choice_done\nldr w8,[sp,#1032]\nstrb w8,[x23,#28]\nldr w8,[x23,#28]\nstr w8,[sp,#1024]\nadd x24,sp,#512\nmov w8,#0x48a8\nadd x29,x19,x8\nmov x0,x29\nldr x16,begin\nblr x16\nmov x25,x0\nstr x25,[sp,#1000]\nmov x0,x29\nldr x16,end\nblr x16\nmov x26,x0\ncmp x26,x25\nb.lo choice_done\nsub x8,x26,x25\ncmp x8,#120\nb.hi choice_done\ntst x8,#3\nb.ne choice_done\nmov w28,#0\nevaluate_loop:\ncmp x25,x26\nb.hs evaluate_finished\nldr w29,[x25],#4\ncmp w29,#30\nb.hs evaluate_loop\nmov w8,#1\nlsl w8,w8,w29\ntst w28,w8\nb.ne evaluate_loop\norr w28,w28,w8\nmov w8,#80\numaddl x1,w29,w8,x22\nadd x2,x24,w29,uxtw #4\nmov x0,x23\nbl shared_studio_ai_opportunity_evaluate\nldr w8,[sp,#1024]\ntbnz w8,#9,evaluate_loop\nadd x8,x24,w29,uxtw #4\nldr w8,[x8,#4]\ntbnz w8,#1,choice_done\nb evaluate_loop\nevaluate_finished:\nmov w8,#1\nlsl w8,w8,w20\ntst w28,w8\nb.eq choice_done\nldr w8,[sp,#1024]\ntbnz w8,#9,lone_start\nadd x8,x24,w20,uxtw #4\nldr w9,[x8,#4]\ntbz w9,#0,choice_done\nldr s8,[x8]\nmov w8,#30\nstr w8,[sp,#1008]\nstr w8,[sp,#1012]\nstr w8,[sp,#1016]\nmov w8,#80\numaddl x8,w20,w8,x22\nldr w9,[x8]\nadd x8,sp,#1004\nstr w20,[x8,w9,uxtw #2]\nmov w28,#1\nlsl w28,w28,w9\nldr x25,[sp,#1000]\nequal_loop:\ncmp x25,x26\nb.hs equal_draw\nldr w29,[x25],#4\ncmp w29,#30\nb.hs equal_loop\ncmp w29,w20\nb.eq equal_loop\nadd x8,x24,w29,uxtw #4\nldr w9,[x8,#4]\ntbz w9,#0,equal_loop\nldr s10,[x8]\nfsub s0,s10,s8\nfabs s0,s0\nldr s1,comparison_window\nfcmp s0,s1\nb.vs equal_loop\nb.gt equal_loop\nmov w8,#80\numaddl x8,w29,w8,x22\nldr w10,[x8]\ncmp w10,#3\nb.ne equal_class\ntbz w9,#2,equal_loop\nequal_class:\nmov w8,#1\nlsl w8,w8,w10\ntst w28,w8\nb.ne equal_loop\nstr w10,[sp,#1028]\nmov x0,x19\nmov x1,x21\nmov w2,w29\nldr x16,veto\nblr x16\ntbnz w0,#0,equal_loop\nldr w10,[sp,#1028]\nmov w8,#1\nlsl w8,w8,w10\norr w28,w28,w8\nadd x8,sp,#1004\nstr w29,[x8,w10,uxtw #2]\nb equal_loop\nequal_draw:\nmov x0,x23\nmov w1,w28\nmov w2,#0\nldr x3,[x21,#0x18]\nbl shared_studio_ai_equal_action_draw\ncbz w0,choice_done\nadd x8,sp,#1004\nldr w27,[x8,w0,uxtw #2]\nb choice_done\nlone_start:\nmov w8,#30\nstr w8,[sp,#1008]\nstr w8,[sp,#1012]\nldr s8,negative_score\nfmov s9,s8\nldr x25,[sp,#1000]\nlone_loop:\ncmp x25,x26\nb.hs lone_finish\nldr w29,[x25],#4\ncmp w29,#30\nb.hs lone_loop\nadd x8,x24,w29,uxtw #4\nldr w9,[x8,#4]\ntbz w9,#0,lone_loop\nldr s10,[x8]\nldr s11,[x8,#8]\nmov w8,#80\numaddl x8,w29,w8,x22\nldr w10,[x8]\ncmp w10,#1\nb.eq lone_shot\ncmp w10,#3\nb.ne lone_loop\ntbz w9,#2,lone_loop\n// Incisive Run adds inward-route preference; Lone Wolf without it may use\n// any safe progress route. Posture quality distinguishes shooting setups.\nldr w8,[sp,#1024]\ntbz w8,#8,lone_route_pose\ntbz w9,#3,lone_route_pose\nfmov s0,#6.0\nfadd s10,s10,s0\nlone_route_pose:\ntbz w9,#4,lone_route_cost\nfmov s0,#20.0\nfadd s10,s10,s0\nlone_route_cost:\nldr s0,route_pose_cost\nfmsub s10,s11,s0,s10\nfcmp s10,s9\nb.le lone_loop\nmov w28,#3\nb lone_veto\nlone_shot:\nldr w8,[sp,#1032]\ncmp w8,#3\nb.ne lone_shot_score\ntbz w9,#4,lone_loop\nlone_shot_score:\nldr s0,shot_pose_cost\nfmsub s10,s11,s0,s10\nfcmp s10,s8\nb.le lone_loop\nmov w28,#1\nlone_veto:\ncmp w29,w20\nb.eq lone_accept\nmov x0,x19\nmov x1,x21\nmov w2,w29\nldr x16,veto\nblr x16\ntbnz w0,#0,lone_loop\nlone_accept:\ncmp w28,#1\nb.ne lone_accept_route\nfmov s8,s10\nstr w29,[sp,#1008]\nb lone_loop\nlone_accept_route:\nfmov s9,s10\nstr w29,[sp,#1012]\nb lone_loop\nlone_finish:\nldr w8,[sp,#1008]\ncmp w8,#30\nb.lo lone_selected\nldr w8,[sp,#1012]\ncmp w8,#30\nb.hs choice_done\nlone_selected:\nmov w27,w8\nchoice_done:\nmov w0,w27\nldp d10,d11,[sp,#112]\nldp d8,d9,[sp,#96]\nldp x29,x30,[sp,#80]\nldp x27,x28,[sp,#64]\nldp x25,x26,[sp,#48]\nldp x23,x24,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp]\nadd sp,sp,#1088\nret\n",
+      "functions": {
+        "begin": 118383564,
+        "end": 118383568,
+        "veto": 118387360
+      },
+      "constants": {
+        "comparison_window": 8.0,
+        "negative_score": -1000.0,
+        "route_pose_cost": 0.2,
+        "shot_pose_cost": 0.08
+      },
+      "deferred_shared_refs": [
+        "shared_studio_ai_cut_in_profile",
+        "shared_studio_ai_equal_action_draw",
+        "shared_studio_ai_opportunity_evaluate",
+        "shared_studio_ai_opportunity_snapshot"
+      ],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [
+        "equal tickets per action class inside estimated window; no native RNG",
+        "Lone Wolf: ready safe long shot, otherwise safe route towards shot/stance",
+        "one snapshot and cached unique candidates; current player at selector +10"
+      ]
+    },
+    {
+      "name": "studio_ai_prefer_curled_shot",
+      "body_hex": "ff4308d1f35300a9f57b01a9f30300aaf40301aa680640b91f65007101070054e00314aa3e000094800100341f040071a00000541f080071a00000544800805204000014280080520200001408008052680a00b92a000014680a40b908050035e00314aa2a0000941f08007183040054e02300b9f5c30091e00314aae10315aa26000094c0030034e82340b9a8720039e1c3069128008052280000b93f0800b9680e40b9280c00b9681640b9281000b9681240b9281400b9e2030891e00315aa15000094e80742b9a801003688012036a81e40b908014837e00315aac100805222008052830e40f90a0000941f0800716100005428008052680a00b9f57b41a9f35340a9ff430891c0035fd6e0ff21d4e0ff21d4e0ff21d4e0ff21d4e0ff21d4",
+      "absolute_fixups": [],
+      "assembly": "\nsub sp,sp,#528\nstp x19,x20,[sp]\nstp x21,x30,[sp,#16]\nmov x19,x0\nmov x20,x1\nldr w8,[x19,#4]\ncmp w8,#25\nb.ne request_done\nmov x0,x20\nbl shared_studio_ai_preferred_shot_style\ncbz w0,legacy_request\ncmp w0,#1\nb.eq prefer_controlled\ncmp w0,#2\nb.eq prefer_low\nmov w8,#2\nb store_style\nprefer_controlled:\nmov w8,#1\nb store_style\nprefer_low:\nmov w8,#0\nstore_style:\nstr w8,[x19,#8]\nb request_done\nlegacy_request:\nldr w8,[x19,#8]\ncbnz w8,request_done\nmov x0,x20\nbl shared_studio_ai_cut_in_profile\ncmp w0,#2\nb.lo request_done\nstr w0,[sp,#32]\nadd x21,sp,#48\nmov x0,x20\nmov x1,x21\nbl shared_studio_ai_opportunity_snapshot\ncbz w0,request_done\nldr w8,[sp,#32]\nstrb w8,[x21,#28]\nadd x1,sp,#432\nmov w8,#1\nstr w8,[x1]\nstr wzr,[x1,#8]\nldr w8,[x19,#0xc]\nstr w8,[x1,#0xc]\nldr w8,[x19,#0x14]\nstr w8,[x1,#0x10]\nldr w8,[x19,#0x10]\nstr w8,[x1,#0x14]\nadd x2,sp,#512\nmov x0,x21\nbl shared_studio_ai_opportunity_evaluate\nldr w8,[sp,#516]\ntbz w8,#0,request_done\ntbz w8,#4,request_done\nldr w8,[x21,#28]\ntbnz w8,#9,request_controlled\nmov x0,x21\nmov w1,#6\nmov w2,#1\nldr x3,[x20,#0x18]\nbl shared_studio_ai_equal_action_draw\ncmp w0,#2\nb.ne request_done\nrequest_controlled:\nmov w8,#1\nstr w8,[x19,#8]\nrequest_done:\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp]\nadd sp,sp,#528\nret\n\nshared_studio_ai_cut_in_profile: brk #4095\nshared_studio_ai_equal_action_draw: brk #4095\nshared_studio_ai_opportunity_evaluate: brk #4095\nshared_studio_ai_opportunity_snapshot: brk #4095\nshared_studio_ai_preferred_shot_style: brk #4095\n.align 3\n\n\n.align 3\n",
+      "code": "\nsub sp,sp,#528\nstp x19,x20,[sp]\nstp x21,x30,[sp,#16]\nmov x19,x0\nmov x20,x1\nldr w8,[x19,#4]\ncmp w8,#25\nb.ne request_done\nmov x0,x20\nbl shared_studio_ai_preferred_shot_style\ncbz w0,legacy_request\ncmp w0,#1\nb.eq prefer_controlled\ncmp w0,#2\nb.eq prefer_low\nmov w8,#2\nb store_style\nprefer_controlled:\nmov w8,#1\nb store_style\nprefer_low:\nmov w8,#0\nstore_style:\nstr w8,[x19,#8]\nb request_done\nlegacy_request:\nldr w8,[x19,#8]\ncbnz w8,request_done\nmov x0,x20\nbl shared_studio_ai_cut_in_profile\ncmp w0,#2\nb.lo request_done\nstr w0,[sp,#32]\nadd x21,sp,#48\nmov x0,x20\nmov x1,x21\nbl shared_studio_ai_opportunity_snapshot\ncbz w0,request_done\nldr w8,[sp,#32]\nstrb w8,[x21,#28]\nadd x1,sp,#432\nmov w8,#1\nstr w8,[x1]\nstr wzr,[x1,#8]\nldr w8,[x19,#0xc]\nstr w8,[x1,#0xc]\nldr w8,[x19,#0x14]\nstr w8,[x1,#0x10]\nldr w8,[x19,#0x10]\nstr w8,[x1,#0x14]\nadd x2,sp,#512\nmov x0,x21\nbl shared_studio_ai_opportunity_evaluate\nldr w8,[sp,#516]\ntbz w8,#0,request_done\ntbz w8,#4,request_done\nldr w8,[x21,#28]\ntbnz w8,#9,request_controlled\nmov x0,x21\nmov w1,#6\nmov w2,#1\nldr x3,[x20,#0x18]\nbl shared_studio_ai_equal_action_draw\ncmp w0,#2\nb.ne request_done\nrequest_controlled:\nmov w8,#1\nstr w8,[x19,#8]\nrequest_done:\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp]\nadd sp,sp,#528\nret\n",
+      "functions": {},
+      "constants": {},
+      "deferred_shared_refs": [
+        "shared_studio_ai_cut_in_profile",
+        "shared_studio_ai_equal_action_draw",
+        "shared_studio_ai_opportunity_evaluate",
+        "shared_studio_ai_opportunity_snapshot",
+        "shared_studio_ai_preferred_shot_style"
+      ],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [
+        "owned Blitz/Low/Heavy skill styles use equal tickets after a native shot has already been chosen",
+        "fallback for other players retains previous Lone Wolf / ordinary curler logic; never force an animation"
+      ]
+    },
+    {
+      "name": "studio_ai_preference_enabled",
+      "body_hex": "40000018c0035fd6314941581f2003d5",
+      "absolute_fixups": [],
+      "assembly": "ldr w0,ordinary_switch\nret\n.align 2\nordinary_switch: .word 0x58414931\n\n\n.align 3\n\n\n.align 3\n",
+      "code": "ldr w0,ordinary_switch\nret\n.align 2\nordinary_switch: .word 0x58414931\n",
+      "functions": {},
+      "constants": {},
+      "deferred_shared_refs": [],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": []
+    },
+    {
+      "name": "studio_ai_preferred_shot_style",
+      "body_hex": "ff8307d1f35300a9f55b01a9f77b02a9f30300aa1700805263000094600b0034530b00b4680240f9740e40f9e80a00b4d40a00b4150140b9bf5a0071620a0054e00314aaf00b005800023fd6e00900b4d00b005800023fd61f04007161090054e00314aae103152a100a005800023fd6c00800b4f009005800023fd6600800b4f60300aa610680529009005800023fd61f000072f7079f1af77a1f53e00316aa41078052b008005800023fd640000036f7021e32e00316aa41098052f007005800023fd640000036f7021d32f7050034ff0a0071c0040054ff120071c0040054ff220071c0040054e8030191090380521f7d81a829050071c1ffff54f54300b9f75f00b9e00314aae103152a3006005800023fd6800300b4e88301910851358b00f444bd01fc44bd0020201ec60200542020211e86020054000100bd010900bd09ec44b9090500b929008052090d00b9e0030191e103172a42008052e30314aa10000094f703002a0800001437008052060000145700805204000014770080520200001417008052e003172af77b42a9f55b41a9f35340a9ff830791c0035fd6e0ff21d4e0ff21d4b0402c0700000000f81e300700000000c4392b0700000000803e2c07000000000cb69706000000008c402c0700000000",
+      "absolute_fixups": [
+        [
+          424,
+          120340656
+        ],
+        [
+          432,
+          120594168
+        ],
+        [
+          440,
+          120273348
+        ],
+        [
+          448,
+          120340096
+        ],
+        [
+          456,
+          110605836
+        ],
+        [
+          464,
+          120340620
+        ]
+      ],
+      "assembly": "\nsub sp,sp,#480\nstp x19,x20,[sp]\nstp x21,x22,[sp,#16]\nstp x23,x30,[sp,#32]\nmov x19,x0\nmov w23,#0\nbl shared_studio_ai_preference_enabled\ncbz w0,done\ncbz x19,done\nldr x8,[x19]\nldr x20,[x19,#0x18]\ncbz x8,done\ncbz x20,done\nldr w21,[x8]\ncmp w21,#22\nb.hs done\nmov x0,x20\nldr x16,game_info\nblr x16\ncbz x0,done\nldr x16,phase\nblr x16\ncmp w0,#1\nb.ne done\nmov x0,x20\nmov w1,w21\nldr x16,player_state\nblr x16\ncbz x0,done\nldr x16,abilities\nblr x16\ncbz x0,done\nmov x22,x0\nmov w1,#51\nldr x16,skill\nblr x16\ntst w0,#1\ncset w23,ne\nlsl w23,w23,#1\nmov x0,x22\nmov w1,#58\nldr x16,skill\nblr x16\ntbz w0,#0,heavy\norr w23,w23,#4\nheavy:\nmov x0,x22\nmov w1,#74\nldr x16,skill\nblr x16\ntbz w0,#0,snapshot\norr w23,w23,#8\nsnapshot:\ncbz w23,done\n// Skill-style choice is AFTER native shooting has been selected. Unrelated\n// players crossing a touchline must never veto the current player's style.\ncmp w23,#2\nb.eq only_blitz\ncmp w23,#4\nb.eq only_low\ncmp w23,#8\nb.eq only_heavy\nadd x8,sp,#64\nmov w9,#24\nclear_draw:\nstp xzr,xzr,[x8],#16\nsubs w9,w9,#1\nb.ne clear_draw\nstr w21,[sp,#64]\nstr w23,[sp,#92]\nmov x0,x20\nmov w1,w21\nldr x16,player_info\nblr x16\ncbz x0,none\nadd x8,sp,#96\nadd x8,x8,w21,uxtw #4\nldr s0,[x0,#0x4f4]\nldr s1,[x0,#0x4fc]\nfcmp s0,s0\nb.vs none\nfcmp s1,s1\nb.vs none\nstr s0,[x8]\nstr s1,[x8,#8]\nldr w9,[x0,#0x4ec]\nstr w9,[x8,#4]\nmov w9,#1\nstr w9,[x8,#12]\nadd x0,sp,#64\nmov w1,w23\nmov w2,#2\nmov x3,x20\nbl shared_studio_ai_equal_action_draw\nmov w23,w0\nb done\nonly_blitz:\nmov w23,#1\nb done\nonly_low:\nmov w23,#2\nb done\nonly_heavy:\nmov w23,#3\nb done\nnone:\nmov w23,#0\ndone:\nmov w0,w23\nldp x23,x30,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp]\nadd sp,sp,#480\nret\n\nshared_studio_ai_equal_action_draw: brk #4095\nshared_studio_ai_preference_enabled: brk #4095\n.align 3\nplayer_state: .quad 120340656\nabilities: .quad 120594168\nskill: .quad 120273348\ngame_info: .quad 120340096\nphase: .quad 110605836\nplayer_info: .quad 120340620\n\n.align 3\n",
+      "code": "\nsub sp,sp,#480\nstp x19,x20,[sp]\nstp x21,x22,[sp,#16]\nstp x23,x30,[sp,#32]\nmov x19,x0\nmov w23,#0\nbl shared_studio_ai_preference_enabled\ncbz w0,done\ncbz x19,done\nldr x8,[x19]\nldr x20,[x19,#0x18]\ncbz x8,done\ncbz x20,done\nldr w21,[x8]\ncmp w21,#22\nb.hs done\nmov x0,x20\nldr x16,game_info\nblr x16\ncbz x0,done\nldr x16,phase\nblr x16\ncmp w0,#1\nb.ne done\nmov x0,x20\nmov w1,w21\nldr x16,player_state\nblr x16\ncbz x0,done\nldr x16,abilities\nblr x16\ncbz x0,done\nmov x22,x0\nmov w1,#51\nldr x16,skill\nblr x16\ntst w0,#1\ncset w23,ne\nlsl w23,w23,#1\nmov x0,x22\nmov w1,#58\nldr x16,skill\nblr x16\ntbz w0,#0,heavy\norr w23,w23,#4\nheavy:\nmov x0,x22\nmov w1,#74\nldr x16,skill\nblr x16\ntbz w0,#0,snapshot\norr w23,w23,#8\nsnapshot:\ncbz w23,done\n// Skill-style choice is AFTER native shooting has been selected. Unrelated\n// players crossing a touchline must never veto the current player's style.\ncmp w23,#2\nb.eq only_blitz\ncmp w23,#4\nb.eq only_low\ncmp w23,#8\nb.eq only_heavy\nadd x8,sp,#64\nmov w9,#24\nclear_draw:\nstp xzr,xzr,[x8],#16\nsubs w9,w9,#1\nb.ne clear_draw\nstr w21,[sp,#64]\nstr w23,[sp,#92]\nmov x0,x20\nmov w1,w21\nldr x16,player_info\nblr x16\ncbz x0,none\nadd x8,sp,#96\nadd x8,x8,w21,uxtw #4\nldr s0,[x0,#0x4f4]\nldr s1,[x0,#0x4fc]\nfcmp s0,s0\nb.vs none\nfcmp s1,s1\nb.vs none\nstr s0,[x8]\nstr s1,[x8,#8]\nldr w9,[x0,#0x4ec]\nstr w9,[x8,#4]\nmov w9,#1\nstr w9,[x8,#12]\nadd x0,sp,#64\nmov w1,w23\nmov w2,#2\nmov x3,x20\nbl shared_studio_ai_equal_action_draw\nmov w23,w0\nb done\nonly_blitz:\nmov w23,#1\nb done\nonly_low:\nmov w23,#2\nb done\nonly_heavy:\nmov w23,#3\nb done\nnone:\nmov w23,#0\ndone:\nmov w0,w23\nldp x23,x30,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp]\nadd sp,sp,#480\nret\n",
+      "functions": {
+        "player_state": 120340656,
+        "abilities": 120594168,
+        "skill": 120273348,
+        "game_info": 120340096,
+        "phase": 110605836,
+        "player_info": 120340620
+      },
+      "constants": {},
+      "deferred_shared_refs": [
+        "shared_studio_ai_equal_action_draw",
+        "shared_studio_ai_preference_enabled"
+      ],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [
+        "effective match skills 51 Blitz / 58 Low Screamer / 74 Heavy Shot",
+        "one equal ticket per available skill style, separate RNG domain 2",
+        "single style needs no geometry snapshot; multiple styles hash only the acting player",
+        "only a native shot request is modified; no pass/dribble selection changes"
+      ]
+    },
+    {
+      "name": "studio_ai_low_shot_permission",
+      "body_hex": "f353bda9f57b01a9f30300aaf403012af503022a930300b4630300b49f5a007122030054a8030058090380528822a99bbf060071e1000054130d00a9041100b929008052091500b9200080520f000014092940a93f0113eb610100545f0103eb21010054091540b9e9000034091140b98900094b3f09007168000054200080520200001400008052f57b41a9f353c3a8c0035fd61f2003d50000000000ee5453",
+      "absolute_fixups": [],
+      "assembly": "\nstp x19,x20,[sp,#-48]!\nstp x21,x30,[sp,#16]\nmov x19,x0\nmov w20,w1\nmov w21,w2\ncbz x19,none\ncbz x3,none\ncmp w20,#22\nb.hs none\nldr x8,rows\nmov w9,#24\numaddl x8,w20,w9,x8\ncmp w21,#1\nb.ne check\nstp x19,x3,[x8]\nstr w4,[x8,#16]\nmov w9,#1\nstr w9,[x8,#20]\nmov w0,#1\nb done\ncheck:\nldp x9,x10,[x8]\ncmp x9,x19\nb.ne none\ncmp x10,x3\nb.ne none\nldr w9,[x8,#20]\ncbz w9,none\nldr w9,[x8,#16]\nsub w9,w4,w9\ncmp w9,#2\nb.hi none\nmov w0,#1\nb done\nnone:\nmov w0,#0\ndone:\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#48\nret\n\n\n.align 3\n\n\n.align 3\nrows: .quad 6004685886959124480",
+      "code": "\nstp x19,x20,[sp,#-48]!\nstp x21,x30,[sp,#16]\nmov x19,x0\nmov w20,w1\nmov w21,w2\ncbz x19,none\ncbz x3,none\ncmp w20,#22\nb.hs none\nldr x8,rows\nmov w9,#24\numaddl x8,w20,w9,x8\ncmp w21,#1\nb.ne check\nstp x19,x3,[x8]\nstr w4,[x8,#16]\nmov w9,#1\nstr w9,[x8,#20]\nmov w0,#1\nb done\ncheck:\nldp x9,x10,[x8]\ncmp x9,x19\nb.ne none\ncmp x10,x3\nb.ne none\nldr w9,[x8,#20]\ncbz w9,none\nldr w9,[x8,#16]\nsub w9,w4,w9\ncmp w9,#2\nb.hi none\nmov w0,#1\nb done\nnone:\nmov w0,#0\ndone:\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#48\nret\n",
+      "functions": {},
+      "constants": {},
+      "deferred_shared_refs": [],
+      "writable": {
+        "rows": 528
+      },
+      "writable_fixups": [
+        [
+          152,
+          528
+        ]
+      ],
+      "evidence": [
+        "values only: current root, current actor, native frame counter; never dereference retained pointers",
+        "permission is valid for at most two native simulation ticks"
+      ]
+    },
+    {
+      "name": "studio_ai_bound_shot_power",
+      "body_hex": "f353b9a9f55b01a9f76302a9f96b03a9fe2300f9e827056df30300aaf40301aa64000094600b0034530b00b4340b00b4750640b9bf5a0071c20a0054761a40f9960a00b4e00316aa900b005800023fd6000a00b4f90300aa500b005800023fd61f04007161090054e003152af00a005800023fd6e00800b4080440b91f65007181080054180840b91f0b007128080054e00316aae103152ad009005800023fd6800700b4b009005800023fd6200700b4f70300aa887e4ebd0821201ea60600548d06005400102e1e0021201e2c06005488ea7f391f070071600300541f0b0071600400546805003541078052b007005800023fd6e00400360008001c0859201e887e0ebde00319aa1007005800023fd6fa03002ae00316aae103152ab006005800023fd6600300b4e30300aae00316aae103152a22008052e4031a2a1c000094140000141f09007141020054610680529004005800023fd6c00100360005001c0849201e887e0ebd0a0000141f0d007101010054410980525003005800023fd680000036e003001c0849201e887e0ebde827456dfe2340f9f96b43a9f76342a9f55b41a9f353c7a8c0035fd6e0ff21d4e0ff21d41f2003d5803e2c07000000000cb6970600000000c87d2d0700000000b0402c0700000000f81e300700000000c4392b070000000008bda40600000000141a2c070000000048e1fa3ecdcc0c3f6666263f1f2003d5",
+      "absolute_fixups": [
+        [
+          440,
+          120340096
+        ],
+        [
+          448,
+          110605836
+        ],
+        [
+          456,
+          120421832
+        ],
+        [
+          464,
+          120340656
+        ],
+        [
+          472,
+          120594168
+        ],
+        [
+          480,
+          120273348
+        ],
+        [
+          488,
+          111459592
+        ],
+        [
+          496,
+          120330772
+        ]
+      ],
+      "assembly": "\nstp x19,x20,[sp,#-112]!\nstp x21,x22,[sp,#16]\nstp x23,x24,[sp,#32]\nstp x25,x26,[sp,#48]\nstr x30,[sp,#64]\nstp d8,d9,[sp,#80]\nmov x19,x0\nmov x20,x1\nbl shared_studio_ai_preference_enabled\ncbz w0,done\ncbz x19,done\ncbz x20,done\nldr w21,[x19,#4]\ncmp w21,#22\nb.hs done\nldr x22,[x19,#0x30]\ncbz x22,done\nmov x0,x22\nldr x16,game_info\nblr x16\ncbz x0,done\nmov x25,x0\nldr x16,phase\nblr x16\ncmp w0,#1\nb.ne done\nmov w0,w21\nldr x16,action\nblr x16\ncbz x0,done\nldr w8,[x0,#4]\ncmp w8,#25\nb.ne done\nldr w24,[x0,#8]\ncmp w24,#2\nb.hi done\nmov x0,x22\nmov w1,w21\nldr x16,player_state\nblr x16\ncbz x0,done\nldr x16,abilities\nblr x16\ncbz x0,done\nmov x23,x0\nldr s8,[x20,#0xe7c]\nfcmp s8,#0.0\nb.vs done\nb.le done\nfmov s0,#1.0\nfcmp s8,s0\nb.gt done\nldrb w8,[x20,#0xffa]\ncmp w24,#1\nb.eq controlled\ncmp w24,#2\nb.eq heavy_power\ncbnz w8,done\nmov w1,#58\nldr x16,skill\nblr x16\ntbz w0,#0,done\nldr s0,low_ceiling\nfmin s8,s8,s0\nstr s8,[x20,#0xe7c]\nmov x0,x25\nldr x16,clock\nblr x16\nmov w26,w0\nmov x0,x22\nmov w1,w21\nldr x16,actor\nblr x16\ncbz x0,done\nmov x3,x0\nmov x0,x22\nmov w1,w21\nmov w2,#1\nmov w4,w26\nbl shared_studio_ai_low_shot_permission\nb done\ncontrolled:\ncmp w8,#2\nb.ne done\nmov w1,#51\nldr x16,skill\nblr x16\ntbz w0,#0,done\nldr s0,controlled_floor\nfmax s8,s8,s0\nstr s8,[x20,#0xe7c]\nb done\nheavy_power:\ncmp w8,#3\nb.ne done\nmov w1,#74\nldr x16,skill\nblr x16\ntbz w0,#0,done\nldr s0,heavy_floor\nfmax s8,s8,s0\nstr s8,[x20,#0xe7c]\ndone:\nldp d8,d9,[sp,#80]\nldr x30,[sp,#64]\nldp x25,x26,[sp,#48]\nldp x23,x24,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#112\nret\n\nshared_studio_ai_low_shot_permission: brk #4095\nshared_studio_ai_preference_enabled: brk #4095\n.align 3\ngame_info: .quad 120340096\nphase: .quad 110605836\naction: .quad 120421832\nplayer_state: .quad 120340656\nabilities: .quad 120594168\nskill: .quad 120273348\nclock: .quad 111459592\nactor: .quad 120330772\nlow_ceiling: .word 1056629064\ncontrolled_floor: .word 1057803469\nheavy_floor: .word 1059481190\n.align 3\n",
+      "code": "\nstp x19,x20,[sp,#-112]!\nstp x21,x22,[sp,#16]\nstp x23,x24,[sp,#32]\nstp x25,x26,[sp,#48]\nstr x30,[sp,#64]\nstp d8,d9,[sp,#80]\nmov x19,x0\nmov x20,x1\nbl shared_studio_ai_preference_enabled\ncbz w0,done\ncbz x19,done\ncbz x20,done\nldr w21,[x19,#4]\ncmp w21,#22\nb.hs done\nldr x22,[x19,#0x30]\ncbz x22,done\nmov x0,x22\nldr x16,game_info\nblr x16\ncbz x0,done\nmov x25,x0\nldr x16,phase\nblr x16\ncmp w0,#1\nb.ne done\nmov w0,w21\nldr x16,action\nblr x16\ncbz x0,done\nldr w8,[x0,#4]\ncmp w8,#25\nb.ne done\nldr w24,[x0,#8]\ncmp w24,#2\nb.hi done\nmov x0,x22\nmov w1,w21\nldr x16,player_state\nblr x16\ncbz x0,done\nldr x16,abilities\nblr x16\ncbz x0,done\nmov x23,x0\nldr s8,[x20,#0xe7c]\nfcmp s8,#0.0\nb.vs done\nb.le done\nfmov s0,#1.0\nfcmp s8,s0\nb.gt done\nldrb w8,[x20,#0xffa]\ncmp w24,#1\nb.eq controlled\ncmp w24,#2\nb.eq heavy_power\ncbnz w8,done\nmov w1,#58\nldr x16,skill\nblr x16\ntbz w0,#0,done\nldr s0,low_ceiling\nfmin s8,s8,s0\nstr s8,[x20,#0xe7c]\nmov x0,x25\nldr x16,clock\nblr x16\nmov w26,w0\nmov x0,x22\nmov w1,w21\nldr x16,actor\nblr x16\ncbz x0,done\nmov x3,x0\nmov x0,x22\nmov w1,w21\nmov w2,#1\nmov w4,w26\nbl shared_studio_ai_low_shot_permission\nb done\ncontrolled:\ncmp w8,#2\nb.ne done\nmov w1,#51\nldr x16,skill\nblr x16\ntbz w0,#0,done\nldr s0,controlled_floor\nfmax s8,s8,s0\nstr s8,[x20,#0xe7c]\nb done\nheavy_power:\ncmp w8,#3\nb.ne done\nmov w1,#74\nldr x16,skill\nblr x16\ntbz w0,#0,done\nldr s0,heavy_floor\nfmax s8,s8,s0\nstr s8,[x20,#0xe7c]\ndone:\nldp d8,d9,[sp,#80]\nldr x30,[sp,#64]\nldp x25,x26,[sp,#48]\nldp x23,x24,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#112\nret\n",
+      "functions": {
+        "game_info": 120340096,
+        "phase": 110605836,
+        "action": 120421832,
+        "player_state": 120340656,
+        "abilities": 120594168,
+        "skill": 120273348,
+        "clock": 111459592,
+        "actor": 120330772
+      },
+      "constants": {
+        "low_ceiling": 0.49,
+        "controlled_floor": 0.55,
+        "heavy_floor": 0.65
+      },
+      "deferred_shared_refs": [
+        "shared_studio_ai_low_shot_permission",
+        "shared_studio_ai_preference_enabled"
+      ],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": [
+        "run after the entire original native AI behavior 25 power handler",
+        "native final control mode must match the registered request subtype",
+        "bounded preference only: low <50%, Blitz >=50%, heavy >=65%; native motion gates remain"
+      ]
+    },
+    {
+      "name": "studio_ai_allow_low_with_blitz",
+      "body_hex": "f353bda9f57b01a9f30300aad30200b41a0000948002003408478552746a68389f5a007102020054751263f9d50100b4e00315aa7002005800023fd6400100b45002005800023fd6e403002ae00315aae103142a02008052e30313aa060000940200001400008052f57b41a9f353c3a8c0035fd6e0ff21d4e0ff21d41f2003d5803e2c070000000008bda40600000000",
+      "absolute_fixups": [
+        [
+          128,
+          120340096
+        ],
+        [
+          136,
+          111459592
+        ]
+      ],
+      "assembly": "\nstp x19,x20,[sp,#-48]!\nstp x21,x30,[sp,#16]\nmov x19,x0\ncbz x19,none\nbl shared_studio_ai_preference_enabled\ncbz w0,none\nmov w8,#0x2a38\nldrb w20,[x19,x8]\ncmp w20,#22\nb.hs none\nldr x21,[x19,#0x4620]\ncbz x21,none\nmov x0,x21\nldr x16,game_info\nblr x16\ncbz x0,none\nldr x16,clock\nblr x16\nmov w4,w0\nmov x0,x21\nmov w1,w20\nmov w2,#0\nmov x3,x19\nbl shared_studio_ai_low_shot_permission\nb done\nnone:\nmov w0,#0\ndone:\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#48\nret\n\nshared_studio_ai_low_shot_permission: brk #4095\nshared_studio_ai_preference_enabled: brk #4095\n.align 3\ngame_info: .quad 120340096\nclock: .quad 111459592\n\n.align 3\n",
+      "code": "\nstp x19,x20,[sp,#-48]!\nstp x21,x30,[sp,#16]\nmov x19,x0\ncbz x19,none\nbl shared_studio_ai_preference_enabled\ncbz w0,none\nmov w8,#0x2a38\nldrb w20,[x19,x8]\ncmp w20,#22\nb.hs none\nldr x21,[x19,#0x4620]\ncbz x21,none\nmov x0,x21\nldr x16,game_info\nblr x16\ncbz x0,none\nldr x16,clock\nblr x16\nmov w4,w0\nmov x0,x21\nmov w1,w20\nmov w2,#0\nmov x3,x19\nbl shared_studio_ai_low_shot_permission\nb done\nnone:\nmov w0,#0\ndone:\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#48\nret\n",
+      "functions": {
+        "game_info": 120340096,
+        "clock": 111459592
+      },
+      "constants": {},
+      "deferred_shared_refs": [
+        "shared_studio_ai_low_shot_permission",
+        "shared_studio_ai_preference_enabled"
+      ],
+      "writable": {},
+      "writable_fixups": [],
+      "evidence": []
+    }
+  ],
+  "bundles": [
+    {
+      "name": "studio_ai_cut_in_shots",
+      "body_hex": "f353bea9fe0b00f9f30300aa07000094e103002ae00313aaf8030094fe0b40f9f353c2a8c0035fd6fd7bbba9f0cc005800021fd61f2003d5f353bba9f57b01a9f30301aaf40302aa0b000094e01300f9e00f803de00313aae10314aaab050094e01340f9e00fc03df57b41a9f353c5a8c0035fd6ff4304d1d0ca005800021fd6ff830cd1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f24f09a9f4570aa9f65f0ba9f8670ca9fa6f0da9fc770ea9fe7b00f9e00708ade20f09ade4170aade61f0bade8270cadea2f0dadec370eadee3f0fadf04710adf24f11adf45712adf65f13adf86714adfa6f15adfc7716adfe7f17ad11423bd5f18301f9a0835ef8ea05009440000034ff0300f9f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c916000003670c1005800021fd670c1005800021fd61f2003d5f353bea9fe0b00f9f30300aaf40301aa07000094e00313aae10314aa75040094fe0b40f9f353c2a8c0035fd6fd7bbda9d0bf005800021fd6f353baa9f55b01a9f76302a9f97b03a9e827046dea2b00fdf30300aaf40301aa19008052931000b4680240f9750e40f9281000b4151000b4160140b9df5a0071a20f0054960200b9df2e0071f7379f1a970600b9e00315aa10bd005800023fd6f80300aa980e00b4e00318aab0bc005800023fd61f040071e10d0054e00315aa50bc005800023fd6600d00b4080040bd090840bd20c0001c0021201ec60c0054ab0c0054c0bf001c0021201e4c0c00540090261e2021201ee60b0054cb0b005400bf001c2021201e6c0b005488a6012de00315aae103172ad0b9005800023fd6a00a00b40830ca391f050071600000541f050031010a00540a01221e8a0a00bd9f4201f89f1e00b91600805297820091f752368bff0e00b9e00318aae103162ad0b7005800023fd620040034e00318aae103162a70b7005800023fd680030035e00315aae103162a10b7005800023fd6200700b400f444bd01fc44bd02c0201e23c0201e4020281e660600544c0600546020291e06060054ec050054e00200bd08ec44b9e80600b9e10a00bd28008052e80e00b9df2e0071e8379f1a884a288b091540b929050011091500b9d6060011df5a0071c3faff5488a642291f1d0071a30300543f1d007163030054880240b9898200912951288b390d40b9d9020034e00315aae103082a50b2005800023fd6000200b430b2005800023fd6a00100b408d440b909110453295d1853081d07532925082a08d440391f050071680000542929082a29011532891e00b90200001419008052e003192aea2b40fde827446df97b43a9f76342a9f55b41a9f353c6a8c0035fd61f2003d5020840bd030c40bd0008221e6038201e0008201e2000011f00c0211e82b1001c0008221e21c0201e42b1001c2000021f21b1001c2038201ee103271e0048211ec0035fd61f2003d51040201e3140201e5240201e7340201e5438201e7538211e960a341eb65a151f97af001cf842201ef942201e080440b90801005269018052087d091b098000912951288b6a0180521a102e1efb03271e280d40b928030034200140bd210940bd0238301e2338311e4408221e6410031f395b241e0438321e2538331e8408241ea410051f185b241ec0223b1e0d0100544408341e6410151f8418361e84483b1e84583a1e8288141f838c151f4408221e6410031ff75a241e294100914a05007181fcff54e042201e0143201e2243201ec0035fd61f2003d5080040b91f590071e20b00545f080071a80b0054c90280524920091b2aac00584a15098babb893528b23b0726b01014a0c1c40b96b010c4a0c800091cd02805204102c1e6f3280520f20a0728e0d40b96b010e4a6e010034800140bd810940bd0008241e2108241e0e00381e6b010e4a6b7d0f1b2e00381e6b010e4a6b7d0f1b8c410091ad05007121feff540c8000918c51288b800540bd21a5001c0008211e0e00381e6b010e4a4c3540a99f0103eb41010054bf010bebc1000054401540b92c0080528c21c01a9f01016aa10500544c1140b90f0000146c01034a8c01094a2d378f52edc6b3728c010d4a6d4d99526dbdb0728c414c4a8c7d0d1badc695524d56b8728c354c4a8c7d0d1b8c414c4a4c0000352c0080528c350c4a8c454c4a8c150c4a0d008052ee03012acf010012ad010f0bce7d0153aeffff354d0200348e7dad9bcefd60d3200080522d008052ad21c01a3f000d6a60000054ce000034ce050051000400111f10007103ffff5405000014432d00a94c1100b9401500b9c0035fd600008052c0035fd61f2003d5f353b9a9f57b01a9e827026dea2f036df30300aa150080520840201e2940201e4a40201e681e40b96807583640212a1e2607005440c1201ec19b001c0020211eac060054600a40bd610e40bd0008211e0038281ee04300bdff4700b92041211ee04b00bde00301919096005800023fd60b40201e681e40b90130271e680050370038211e020000140028211e0820201e6a000054e198001c0028211ea198001c0020211e4b0000540038211eea5300bde05700bde0430191e15301913094005800023fd60a40201ee84300bdff4700b9e94b00bd681e40b9e196001c480050362140211e6029211ee0030191a195001cd092005800023fd64140201e0240201e2340201ee00313aa24ffff970140201e350080524041201ee003152aea2f436de827426df57b41a9f353c7a8c0035fd6f353b6a9f55b01a9f77b02a9e827036dea2f046dec37056dee3f066df30300aaf40301aaf50302aabf0200f9bf0600f9960240b9680240b9698200912951288b280140bd290940bd37008052df0a0071c0000054df0e0071e0050054df060071a00a005451010014881e40b91f590071c2290054690240b91f01096b602900541f2d0071e9379f1a6a0640b93f010a6bc1280054892240b989280035899a40398a9e403929010a2a8aa2403929010a2a8aa6403929010a2a8aaa403929010a2a8aae403929010a2a09270035698200912951288b280d40b9882600342a0140bd2b0940bd4039281e6139291e0008201e2000011f0110221e0020211e6b250054418c001c0020211e0c2500540dc0211e72000014882e40b9080900511f05007148240054803240bd0020201ee623005401c0201e628a001c2020221e6c230054680240b9608200910050288b0110221e5086005800023fd60a40201e4b40201e0d10221e20c1201e0190251e0020211e4b0b005460c1201e21c1201e02102c1e2138221e0020211e8c0a00544039281e610a40bd0008211e0020221eeb090054f7021d32681e40b988094036f7021e324a000014880a40b91f050071681f0054800e40bd610a40bd620e40bd2108221e0038211e00c0201e0110211e0020211e461e00542c1e0054801240bd0820201ec61d0054ab1d00540190211e0020211e4c1d0054801640bd00c0201e0110221e0020211ea61c00548c1c0054600a40bd610e40bd0009201e2038201e21c1201ee282001c681e40b9091d00123f0d007160000054480048370200001402102e1e0208221e2020221e8c1a00540008201e2001091f6181001c3f0d00716000005448004837020000140181001c0020211e4b1900548180001c3f0d00716000005448004837020000142180001c0020211e4c1800540dc0211e8a0e40bd8b1640bd4039281e6139291e0208201e2208011f42c0211e0390241e6318221e0a20031f2b24031ff7021e32df0e0071a1020054681e40b9680248364039281e610a40bd0008211e02102c1e0020221eab010054620e40bd4009211e4038201e0008201e60010b1f0109211e4138211e2108211e2105091f0020211e4a000054f7021e3240c1201e610e40bd0020211e661300544c13005460c1201e611240bd0020211ec6120054ac120054e00313aa0041201e2141201e4241201e6341201e3ffeff970ec0211e2fc0211e4cc0211edf06007160080054df0a00716001005400902f1ec021201eab1000540090201ee021201e4b10005400102f1e8021201eeb0f00543d00001400102f1ec021201e6b0f00540090201ee021201e0b0f0054600a40bd610e40bd4009201e2038201e2176001c0020211e8c01005460c1201ec175001c0020211e0c0100540010211ee021201eab00005400902f1ec021201e4b000054f7021f324039281e610a40bd0008211e0210221e0020221eeb030054680640b90801005269018052087d091b698200912951288b6a0180520b0080524209211e280d40b9e8000034200140bd0008211e0020221e4c000054020000146b050011294100914a050071c1feff547f05007128010054f7021f320700001400d0201e8021201eab08005400102f1ec021201e4b080054e00313aadf060071800000544041201e6141201e030000140041201e2141201ed7fdff970c40201e0010221e8c39201edf0a007181000054606e001ca0b1001f0c40201e0010211e01382e1ee203271e2148221e0310221e2108231e00382f1e0048221e0004031f8c39201e8c49221e681e40b9081d00121f0d007181030054df060071e0000054df0e0071010300544041201e6141201e823240bd070000140041201e2141201e680240b9698200912951288b220540bde00313aa5cfeff97a0010034a00a00bda10e00bde269001c0020221e4c010054a269001c2020221eeb000054f7021c3205000014f7021c3203000014e068001ca00a00bdac0200bdb70600b9ee3f466dec37456dea2f446de827436df77b42a9f55b41a9f353caa8c0035fd6f353b9a9f55b01a9f76302a9f96b03a9fe2300f9e827056df30300aa18008052130e00b4750240f9740e40f9b50d00b4940d00b4b60240b9df5a0071220d0054e00314aab05d005800023fd6a00c00b4905d005800023fd61f040071210c0054e00314aae103162a505e005800023fd6800b00b4305e005800023fd6f70300aa170b00b4e8d640b9680038378f010094800a0034e00317aa61068052f05d005800023fd640020037e8d640b94800383788092036e00317aae1008052f05c005800023fd680010037e00317aa41058052505c005800023fd660000037e8d640b9080838363800805204000014780080520200001458008052e003162a305b005800023fd6e103002ae00314aa3058005800023fd6400600b41730ca39ff06007160000054ff060031a1050054e00314aad056005800023fd6fa0300aa1a0500b4e00314aae103162a1057005800023fd6f90300aa590400b428f744bd29ff44bd400340bda159001c0020211e860300546b0300544159001c0020211e0c030054e102221e0809211e0838281e0821201e660200544b02005420c1201e0020201ee60100540008201e0001081f415a001c0020211e4b010054015a001c0020211eec000054e10319aae2031aaae303172a0041201e2141201e0200001418008052e003182ae827456dfe2340f9f96b43a9f76342a9f55b41a9f353c7a8c0035fd6ff0311d1f35300a9f55b01a9f76302a9f96b03a9fb7304a9fd7b05a9e827066dea2f076df403012afb03012a9f7a0071e21a0054130040f9150840f9931a00b4751a00b4083989527602088b080a8052885aa89b090140b9290500513f09007168190054090140b93f05007181000054090940b93f050071a8180054e00315aa60ffff9740180034e00b04b9f7030291e00315aae10317aa5afcff9780170034e80b44b9e8720039e81e40b9e80304b9f8030891081589527d02088be0031daa504d005800023fd6f90300aaf9f701f9e0031daaf04c005800023fd6fa0300aa5f0319eb43150054480319cb1fe101f1e81400541f0540f2a11400541c0080523f031aeb820200543d4740b8bf7b007182ffff54280080520821dd1a9f03086a01ffff549c03082a080a8052a15ba89b02533d8be00317aac0fdff97e80344b908fe4f3708533d8b080540b908120837ecffff17280080520821d41a9f03086a60110054e80344b9680848370853348b090540b9c9100036080140bdc8038052e8f303b9e8f703b9e8fb03b9080a8052885aa89b090140b9e8b30f91145929b83c0080529c23c91af9f741f93f031aeb020500543d4740b8bf7b007182ffff54bf03146b40ffff5408533d8b090540b9e9fe07360a0140bd4039281e00c0201ee148001c0020211e26feff540cfeff54080a8052a85ba89b0a0140b95f0d00714100005449fd1736280080520821ca1a9f03086ac1fcff54ea0704b9e00313aae10315aae2031d2a9042005800023fd6e0fb0737ea0744b9280080520821ca1a9c03082ae8b30f911d592ab8d8ffff17e00317aae1031c2a02008052a30e40f9c6fcff9740090034e8b30f911b5960b847000014c8038052e8f303b9e8f703b90844001c0941201ef9f741f93f031aeb020700543d4740b8bf7b007182ffff5408533d8b090540b929ff07360a0140bd0b0940bd080a8052a85ba89b0a0140b95f050071400200545f0d007101feff54e9fd1736e80344b988004036690018360010231e4a29201e690020360090261e4a29201e8040001c6aa9001f4021291e6dfcff547c0080520a000014e80b44b91f0d007141000054a9fb2736603f001c6aa9001f4021281e2dfbff543c008052bf03146be0000054e00313aae10315aae2031d2ab039005800023fd600fa07379f070071810000544841201efdf303b9cbffff174941201efdf703b9c8ffff17e8f343b91f79007183000054e8f743b91f79007142000054fb03082ae0031b2aea2f476de827466dfd7b45a9fb7344a9f96b43a9f76342a9f55b41a9f35340a9ff031191c0035fd6ff4308d1f35300a9f57b01a9f30300aaf40301aa680640b91f65007101070054e00314aa3f000094800100341f040071a00000541f080071a00000544800805204000014280080520200001408008052680a00b92a000014680a40b908050035e00314aa79feff971f08007183040054e02300b9f5c30091e00314aae10315aa72fbff97c0030034e82340b9a8720039e1c3069128008052280000b93f0800b9680e40b9280c00b9681640b9281000b9681240b9281400b9e2030891e00315aaf0fcff97e80742b9a801003688012036a81e40b908014837e00315aac100805222008052830e40f936fcff971f0800716100005428008052680a00b9f57b41a9f35340a9ff430891c0035fd61f2003d540000018c0035fd6314941581f2003d5ff8307d1f35300a9f55b01a9f77b02a9f30300aa17008052f6ffff97600b0034530b00b4680240f9740e40f9e80a00b4d40a00b4150140b9bf5a0071620a0054e00314aaf026005800023fd6e00900b4d026005800023fd61f04007161090054e00314aae103152a9027005800023fd6c00800b47027005800023fd6600800b4f60300aa61068052d027005800023fd61f000072f7079f1af77a1f53e00316aa41078052f026005800023fd640000036f7021e32e00316aa410980523026005800023fd640000036f7021d32f7050034ff0a0071c0040054ff120071c0040054ff220071c0040054e8030191090380521f7d81a829050071c1ffff54f54300b9f75f00b9e00314aae103152a3022005800023fd6800300b4e88301910851358b00f444bd01fc44bd0020201ec60200542020211e86020054000100bd010900bd09ec44b9090500b929008052090d00b9e0030191e103172a42008052e30314aad0fbff97f703002a0800001437008052060000145700805204000014770080520200001417008052e003172af77b42a9f55b41a9f35340a9ff830791c0035fd6f353bda9f57b01a9f30300aaf403012af503022a930300b4630300b49f5a00712203005428240058090380528822a99bbf060071e1000054130d00a9041100b929008052091500b9200080520f000014092940a93f0113eb610100545f0103eb21010054091540b9e9000034091140b98900094b3f09007168000054200080520200001400008052f57b41a9f353c3a8c0035fd61f2003d5f353b9a9f55b01a9f76302a9f96b03a9fe2300f9e827056df30300aaf40301aa66ffff97600b0034530b00b4340b00b4750640b9bf5a0071c20a0054761a40f9960a00b4e00316aa1015005800023fd6000a00b4f90300aad014005800023fd61f04007161090054e003152a3018005800023fd6e00800b4080440b91f65007181080054180840b91f0b007128080054e00316aae103152a5014005800023fd6800700b43014005800023fd6200700b4f70300aa887e4ebd0821201ea60600548d06005400102e1e0021201e2c06005488ea7f391f070071600300541f0b0071600400546805003541078052f012005800023fd6e00400362018001c0859201e887e0ebde00319aa9013005800023fd6fa03002ae00316aae103152a3013005800023fd6600300b4e30300aae00316aae103152a22008052e4031a2a8bffff97140000141f0900714102005461068052d00f005800023fd6c00100362015001c0849201e887e0ebd0a0000141f0d00710101005441098052900e005800023fd6800000360014001c0849201e887e0ebde827456dfe2340f9f96b43a9f76342a9f55b41a9f353c7a8c0035fd61f2003d5f353bda9f57b01a9f30300aad30200b4fefeff978002003408478552746a68389f5a007102020054751263f9d50100b4e00315aa3008005800023fd6400100b4500c005800023fd6e403002ae00315aae103142a02008052e30313aa57ffff970200001400008052f57b41a9f353c3a8c0035fd61f2003d5324d4f4944555453000000000000000038000000000000008000000000000000c001000000000000f80100000000000050040000000000009804000000000000700500000000000000070000000000003008000000000000f80d000000000000f80f000000000000b013000000000000c014000000000000d01400000000000070160000000000000817000000000000b818000000000000a4570e0700000000f4271a0700000000e028d606000000007428d6060000000034740e0700000000803e2c07000000000cb69706000000006c3e2c070000000028402c0700000000f842a606000000005843a606000000008c402c0700000000b0402c0700000000f81e3007000000002804910600000000503ead060000000084a7d30600000000c4392b0700000000f8d0970600000000cc630e0700000000d0630e0700000000a0720e0700000000c87d2d070000000008bda40600000000141a2c07000000000000004200008c4200003442cdcccc3fcdcc4c3f0000c84200008047cdcc4c3d0000b4430000b442000061449a99593f0000a24300008044000010430020994400008441ae47a1419a99193e00000c42000044400000344300001042000080420000f2440000004100007ac4cdcc4c3e0ad7a33d48e1fa3ecdcc0c3f6666263f0000000000ee54530100000000ee5453",
+      "absolute_fixups": [
+        [
+          6600,
+          118380452
+        ],
+        [
+          6608,
+          119154676
+        ],
+        [
+          6616,
+          114698464
+        ],
+        [
+          6624,
+          114698356
+        ],
+        [
+          6632,
+          118387764
+        ],
+        [
+          6640,
+          120340096
+        ],
+        [
+          6648,
+          110605836
+        ],
+        [
+          6656,
+          120340076
+        ],
+        [
+          6664,
+          120340520
+        ],
+        [
+          6672,
+          111559416
+        ],
+        [
+          6680,
+          111559512
+        ],
+        [
+          6688,
+          120340620
+        ],
+        [
+          6696,
+          120340656
+        ],
+        [
+          6704,
+          120594168
+        ],
+        [
+          6712,
+          110167080
+        ],
+        [
+          6720,
+          112016976
+        ],
+        [
+          6728,
+          114534276
+        ],
+        [
+          6736,
+          120273348
+        ],
+        [
+          6744,
+          110612728
+        ],
+        [
+          6752,
+          118383564
+        ],
+        [
+          6760,
+          118383568
+        ],
+        [
+          6768,
+          118387360
+        ],
+        [
+          6776,
+          120421832
+        ],
+        [
+          6784,
+          111459592
+        ],
+        [
+          6792,
+          120330772
+        ]
+      ],
+      "assembly": "entry_studio_ai_cut_in_candidate_choice:\n\nstp x19,x20,[sp,#-32]!\nstr x30,[sp,#16]\nmov x19,x0\nbl local_0_original\nmov w1,w0\nmov x0,x19\nbl shared_studio_ai_select_cut_in_candidate\nldr x30,[sp,#16]\nldp x19,x20,[sp],#32\nret\nlocal_0_original:\n.word 2847636477\nldr x16,native_70e57a4\nbr x16\n\n.align 3\n\nentry_studio_ai_shot_style_power:\n\nstp x19,x20,[sp,#-80]!\nstp x21,x30,[sp,#16]\nmov x19,x1\nmov x20,x2\nbl local_1_original\nstr x0,[sp,#32]\nstr q0,[sp,#48]\nmov x0,x19\nmov x1,x20\nbl shared_studio_ai_bound_shot_power\nldr x0,[sp,#32]\nldr q0,[sp,#48]\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#80\nret\nlocal_1_original:\nsub sp,sp,#0x110\nldr x16,native_71a27f4\nbr x16\n.align 3\n\nentry_studio_ai_low_and_blitz_coexist:\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nldr x0,[x29,#-0x18]\nbl shared_studio_ai_allow_low_with_blitz\ncbz w0,local_2_restore\nstr xzr,[sp]\nlocal_2_restore:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\n\ntbz w0,#0,local_2_continue_low\nldr x16,native_6d628e0\nbr x16\nlocal_2_continue_low:\nldr x16,native_6d62874\nbr x16\n.align 3\n\nentry_studio_ai_cut_in_shot_request:\n\nstp x19,x20,[sp,#-32]!\nstr x30,[sp,#16]\nmov x19,x0\nmov x20,x1\nbl local_3_original\nmov x0,x19\nmov x1,x20\nbl shared_studio_ai_prefer_curled_shot\nldr x30,[sp,#16]\nldp x19,x20,[sp],#32\nret\nlocal_3_original:\n.word 2847767549\nldr x16,native_70e7434\nbr x16\n\n.align 3\n\nshared_studio_ai_opportunity_snapshot:\n\nstp x19,x20,[sp,#-96]!\nstp x21,x22,[sp,#16]\nstp x23,x24,[sp,#32]\nstp x25,x30,[sp,#48]\nstp d8,d9,[sp,#64]\nstr d10,[sp,#80]\nmov x19,x0\nmov x20,x1\nmov w25,#0\ncbz x19,local_4_snapshot_done\nldr x8,[x19]\nldr x21,[x19,#0x18]\ncbz x8,local_4_snapshot_done\ncbz x21,local_4_snapshot_done\nldr w22,[x8]\ncmp w22,#22\nb.hs local_4_snapshot_done\nstr w22,[x20]\ncmp w22,#11\ncset w23,hs\nstr w23,[x20,#4]\nmov x0,x21\nldr x16,native_72c3e80\nblr x16\nmov x24,x0\ncbz x24,local_4_snapshot_done\nmov x0,x24\nldr x16,native_697b60c\nblr x16\ncmp w0,#1\nb.ne local_4_snapshot_done\nmov x0,x21\nldr x16,native_72c3e6c\nblr x16\ncbz x0,local_4_snapshot_done\nldr s8,[x0]\nldr s9,[x0,#8]\nldr s0,float_42000000\nfcmp s8,s0\nb.vs local_4_snapshot_done\nb.lt local_4_snapshot_done\nldr s0,float_428c0000\nfcmp s8,s0\nb.gt local_4_snapshot_done\nfmov s0,#20.0\nfcmp s9,s0\nb.vs local_4_snapshot_done\nb.lt local_4_snapshot_done\nldr s0,float_42340000\nfcmp s9,s0\nb.gt local_4_snapshot_done\nstp s8,s9,[x20,#12]\nmov x0,x21\nmov w1,w23\nldr x16,native_72c4028\nblr x16\ncbz x0,local_4_snapshot_done\nldrsb w8,[x0,#0x28c]\ncmp w8,#1\nb.eq local_4_snapshot_side\ncmn w8,#1\nb.ne local_4_snapshot_done\nlocal_4_snapshot_side:\nscvtf s10,w8\nstr s10,[x20,#8]\nstr xzr,[x20,#20]\nstr wzr,[x20,#28]\nmov w22,#0\nlocal_4_snapshot_loop:\nadd x23,x20,#32\nadd x23,x23,w22,uxtw #4\nstr wzr,[x23,#12]\nmov x0,x24\nmov w1,w22\nldr x16,native_6a642f8\nblr x16\ncbz w0,local_4_snapshot_next\nmov x0,x24\nmov w1,w22\nldr x16,native_6a64358\nblr x16\ncbnz w0,local_4_snapshot_next\nmov x0,x21\nmov w1,w22\nldr x16,native_72c408c\nblr x16\ncbz x0,local_4_snapshot_done\nldr s0,[x0,#0x4f4]\nldr s1,[x0,#0x4fc]\nfabs s2,s0\nfabs s3,s1\nfcmp s2,s8\nb.vs local_4_snapshot_done\nb.gt local_4_snapshot_done\nfcmp s3,s9\nb.vs local_4_snapshot_done\nb.gt local_4_snapshot_done\nstr s0,[x23]\nldr w8,[x0,#0x4ec]\nstr w8,[x23,#4]\nstr s1,[x23,#8]\nmov w8,#1\nstr w8,[x23,#12]\ncmp w22,#11\ncset w8,hs\nadd x8,x20,w8,uxtw #2\nldr w9,[x8,#20]\nadd w9,w9,#1\nstr w9,[x8,#20]\nlocal_4_snapshot_next:\nadd w22,w22,#1\ncmp w22,#22\nb.lo local_4_snapshot_loop\nldp w8,w9,[x20,#20]\ncmp w8,#7\nb.lo local_4_snapshot_done\ncmp w9,#7\nb.lo local_4_snapshot_done\nldr w8,[x20]\nadd x9,x20,#32\nadd x9,x9,w8,uxtw #4\nldr w25,[x9,#12]\ncbz w25,local_4_snapshot_done\nmov x0,x21\nmov w1,w8\nldr x16,native_72c40b0\nblr x16\ncbz x0,local_4_snapshot_invalid\nldr x16,native_7301ef8\nblr x16\ncbz x0,local_4_snapshot_invalid\nldr w8,[x0,#0xd4]\nubfx w9,w8,#4,#1\nlsl w9,w9,#8\nubfx w8,w8,#7,#1\norr w9,w9,w8,lsl #9\nldrb w8,[x0,#0x35]\ncmp w8,#1\nb.hi local_4_snapshot_flags\norr w9,w9,w8,lsl #10\norr w9,w9,#0x800\nlocal_4_snapshot_flags:\nstr w9,[x20,#28]\nb local_4_snapshot_done\nlocal_4_snapshot_invalid:\nmov w25,#0\nlocal_4_snapshot_done:\nmov w0,w25\nldr d10,[sp,#80]\nldp d8,d9,[sp,#64]\nldp x25,x30,[sp,#48]\nldp x23,x24,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#96\nret\n\n.align 3\n\nshared_studio_ai_opportunity_position:\n\nldr s2,[x0,#8]\nldr s3,[x0,#12]\nfmul s0,s0,s2\nfsub s0,s3,s0\nfmul s0,s0,s0\nfmadd s0,s1,s1,s0\nfsqrt s0,s0\nldr s2,float_3fcccccd\nfmul s0,s0,s2\nfabs s1,s1\nldr s2,float_3f4ccccd\nfmadd s0,s1,s2,s0\nldr s1,float_42c80000\nfsub s0,s1,s0\nfmov s1,wzr\nfmax s0,s0,s1\nret\n\n.align 3\n\nshared_studio_ai_opportunity_clearance:\n\nfmov s16,s0\nfmov s17,s1\nfmov s18,s2\nfmov s19,s3\nfsub s20,s2,s0\nfsub s21,s3,s1\nfmul s22,s20,s20\nfmadd s22,s21,s21,s22\nldr s23,float_47800000\nfmov s24,s23\nfmov s25,s23\nldr w8,[x0,#4]\neor w8,w8,#1\nmov w9,#11\nmul w8,w8,w9\nadd x9,x0,#32\nadd x9,x9,w8,uxtw #4\nmov w10,#11\nfmov s26,#1.0\nfmov s27,wzr\nlocal_6_clearance_loop:\nldr w8,[x9,#12]\ncbz w8,local_6_clearance_next\nldr s0,[x9]\nldr s1,[x9,#8]\nfsub s2,s0,s16\nfsub s3,s1,s17\nfmul s4,s2,s2\nfmadd s4,s3,s3,s4\nfmin s25,s25,s4\nfsub s4,s0,s18\nfsub s5,s1,s19\nfmul s4,s4,s4\nfmadd s4,s5,s5,s4\nfmin s24,s24,s4\nfcmp s22,s27\nb.le local_6_clearance_point\nfmul s4,s2,s20\nfmadd s4,s3,s21,s4\nfdiv s4,s4,s22\nfmax s4,s4,s27\nfmin s4,s4,s26\nfmsub s2,s4,s20,s2\nfmsub s3,s4,s21,s3\nlocal_6_clearance_point:\nfmul s4,s2,s2\nfmadd s4,s3,s3,s4\nfmin s23,s23,s4\nlocal_6_clearance_next:\nadd x9,x9,#16\nsubs w10,w10,#1\nb.ne local_6_clearance_loop\nfmov s0,s23\nfmov s1,s24\nfmov s2,s25\nret\n\n.align 3\n\nshared_studio_ai_equal_action_draw:\n\nldr w8,[x0]\ncmp w8,#22\nb.hs local_7_draw_empty\ncmp w2,#2\nb.hi local_7_draw_empty\nmov w9,#22\nmadd w9,w2,w9,w8\nldr x10,data_7_draw_state\nadd x10,x10,x9,lsl #5\nmov w11,#0x9dc5\nmovk w11,#0x811c,lsl #16\neor w11,w11,w1\nldr w12,[x0,#28]\neor w11,w11,w12\nadd x12,x0,#32\nmov w13,#22\nfmov s4,#0.5\nmov w15,#0x193\nmovk w15,#0x100,lsl #16\nlocal_7_draw_hash:\nldr w14,[x12,#12]\neor w11,w11,w14\ncbz w14,local_7_draw_hash_next\nldr s0,[x12]\nldr s1,[x12,#8]\nfmul s0,s0,s4\nfmul s1,s1,s4\nfcvtzs w14,s0\neor w11,w11,w14\nmul w11,w11,w15\nfcvtzs w14,s1\neor w11,w11,w14\nmul w11,w11,w15\nlocal_7_draw_hash_next:\nadd x12,x12,#16\nsubs w13,w13,#1\nb.ne local_7_draw_hash\nadd x12,x0,#32\nadd x12,x12,w8,uxtw #4\nldr s0,[x12,#4]\nldr s1,float_3d4ccccd\nfmul s0,s0,s1\nfcvtzs w14,s0\neor w11,w11,w14\nldp x12,x13,[x10]\ncmp x12,x3\nb.ne local_7_draw_seed\ncmp x13,x11\nb.ne local_7_draw_next\nldr w0,[x10,#20]\nmov w12,#1\nlsl w12,w12,w0\ntst w12,w1\nb.ne local_7_draw_return\nlocal_7_draw_next:\nldr w12,[x10,#16]\nb local_7_draw_random\nlocal_7_draw_seed:\neor w12,w11,w3\neor w12,w12,w9\nmov w13,#0x79b9\nmovk w13,#0x9e37,lsl #16\neor w12,w12,w13\n// Avalanche nearby actor/session keys before the independent xorshift.\nmov w13,#0xca6b\nmovk w13,#0x85eb,lsl #16\neor w12,w12,w12,lsr #16\nmul w12,w12,w13\nmov w13,#0xae35\nmovk w13,#0xc2b2,lsl #16\neor w12,w12,w12,lsr #13\nmul w12,w12,w13\neor w12,w12,w12,lsr #16\nlocal_7_draw_random:\ncbnz w12,local_7_draw_nonzero\nmov w12,#1\nlocal_7_draw_nonzero:\neor w12,w12,w12,lsl #13\neor w12,w12,w12,lsr #17\neor w12,w12,w12,lsl #5\nmov w13,#0\nmov w14,w1\nlocal_7_draw_count:\nand w15,w14,#1\nadd w13,w13,w15\nlsr w14,w14,#1\ncbnz w14,local_7_draw_count\ncbz w13,local_7_draw_empty\numull x14,w12,w13\nlsr x14,x14,#32\nmov w0,#1\nlocal_7_draw_pick:\nmov w13,#1\nlsl w13,w13,w0\ntst w1,w13\nb.eq local_7_draw_pick_next\ncbz w14,local_7_draw_save\nsub w14,w14,#1\nlocal_7_draw_pick_next:\nadd w0,w0,#1\ncmp w0,#4\nb.lo local_7_draw_pick\nb local_7_draw_empty\nlocal_7_draw_save:\nstp x3,x11,[x10]\nstr w12,[x10,#16]\nstr w0,[x10,#20]\nlocal_7_draw_return:\nret\nlocal_7_draw_empty:\nmov w0,#0\nret\n\n.align 3\n\nshared_studio_ai_blitz_posture:\n\nstp x19,x20,[sp,#-112]!\nstp x21,x30,[sp,#16]\nstp d8,d9,[sp,#32]\nstp d10,d11,[sp,#48]\nmov x19,x0\nmov w21,#0\nfmov s8,s0\nfmov s9,s1\nfmov s10,s2\nldr w8,[x19,#28]\ntbz w8,#11,local_8_posture_done\nfcmp s10,s10\nb.vs local_8_posture_done\nfabs s0,s10\nldr s1,float_43b40000\nfcmp s0,s1\nb.gt local_8_posture_done\nldr s0,[x19,#8]\nldr s1,[x19,#12]\nfmul s0,s0,s1\nfsub s0,s0,s8\nstr s0,[sp,#64]\nstr wzr,[sp,#68]\nfneg s0,s9\nstr s0,[sp,#72]\nadd x0,sp,#64\nldr x16,native_6910428\nblr x16\nfmov s11,s0\nldr w8,[x19,#28]\nfmov s1,#25.0\ntbnz w8,#10,local_8_posture_left\nfsub s0,s0,s1\nb local_8_posture_ideal\nlocal_8_posture_left:\nfadd s0,s0,s1\nlocal_8_posture_ideal:\nfcmp s0,#0.0\nb.ge local_8_posture_upper\nldr s1,float_43b40000\nfadd s0,s0,s1\nlocal_8_posture_upper:\nldr s1,float_43b40000\nfcmp s0,s1\nb.lt local_8_posture_angle\nfsub s0,s0,s1\nlocal_8_posture_angle:\nstr s10,[sp,#80]\nstr s0,[sp,#84]\nadd x0,sp,#80\nadd x1,sp,#84\nldr x16,native_6ad3e50\nblr x16\nfmov s10,s0\nstr s8,[sp,#64]\nstr wzr,[sp,#68]\nstr s9,[sp,#72]\nldr w8,[x19,#28]\nldr s1,float_42b40000\ntbz w8,#10,local_8_posture_foot\nfneg s1,s1\nlocal_8_posture_foot:\nfadd s0,s11,s1\nadd x0,sp,#64\nldr s1,float_3f4ccccd\nldr x16,native_6d3a784\nblr x16\nfmov s1,s2\nfmov s2,s0\nfmov s3,s1\nmov x0,x19\nbl shared_studio_ai_opportunity_clearance\nfmov s1,s0\nmov w21,#1\nlocal_8_posture_done:\nfmov s0,s10\nmov w0,w21\nldp d10,d11,[sp,#48]\nldp d8,d9,[sp,#32]\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#112\nret\n\n.align 3\n\nshared_studio_ai_opportunity_evaluate:\n\nstp x19,x20,[sp,#-160]!\nstp x21,x22,[sp,#16]\nstp x23,x30,[sp,#32]\nstp d8,d9,[sp,#48]\nstp d10,d11,[sp,#64]\nstp d12,d13,[sp,#80]\nstp d14,d15,[sp,#96]\nmov x19,x0\nmov x20,x1\nmov x21,x2\nstr xzr,[x21]\nstr xzr,[x21,#8]\nldr w22,[x20]\nldr w8,[x19]\nadd x9,x19,#32\nadd x9,x9,w8,uxtw #4\nldr s8,[x9]\nldr s9,[x9,#8]\nmov w23,#1\ncmp w22,#2\nb.eq local_9_evaluate_pass\ncmp w22,#3\nb.eq local_9_evaluate_dribble\ncmp w22,#1\nb.eq local_9_evaluate_shot\nb local_9_evaluate_done\nlocal_9_evaluate_pass:\nldr w8,[x20,#0x1c]\ncmp w8,#22\nb.hs local_9_evaluate_done\nldr w9,[x19]\ncmp w8,w9\nb.eq local_9_evaluate_done\ncmp w8,#11\ncset w9,hs\nldr w10,[x19,#4]\ncmp w9,w10\nb.ne local_9_evaluate_done\n// Through/lob/special pass endpoints are not fully represented here.\n// Preserve native choices instead of pretending their current position is\n// the native predicted reception point.\nldr w9,[x20,#0x20]\ncbnz w9,local_9_evaluate_done\nldrb w9,[x20,#0x26]\nldrb w10,[x20,#0x27]\norr w9,w9,w10\nldrb w10,[x20,#0x28]\norr w9,w9,w10\nldrb w10,[x20,#0x29]\norr w9,w9,w10\nldrb w10,[x20,#0x2a]\norr w9,w9,w10\nldrb w10,[x20,#0x2b]\norr w9,w9,w10\ncbnz w9,local_9_evaluate_done\nadd x9,x19,#32\nadd x9,x9,w8,uxtw #4\nldr w8,[x9,#12]\ncbz w8,local_9_evaluate_done\nldr s10,[x9]\nldr s11,[x9,#8]\nfsub s0,s10,s8\nfsub s1,s11,s9\nfmul s0,s0,s0\nfmadd s0,s1,s1,s0\nfmov s1,#4.0\nfcmp s0,s1\nb.lt local_9_evaluate_done\nldr s1,float_44610000\nfcmp s0,s1\nb.gt local_9_evaluate_done\nfsqrt s13,s0\nb local_9_evaluate_metrics\nlocal_9_evaluate_dribble:\nldr w8,[x20,#0x2c]\nsub w8,w8,#2\ncmp w8,#1\nb.hi local_9_evaluate_done\nldr s0,[x20,#0x30]\nfcmp s0,s0\nb.vs local_9_evaluate_done\nfabs s1,s0\nldr s2,float_43b40000\nfcmp s1,s2\nb.gt local_9_evaluate_done\nldr w8,[x19]\nadd x0,x19,#32\nadd x0,x0,w8,uxtw #4\nfmov s1,#4.0\nldr x16,native_6d3a784\nblr x16\nfmov s10,s0\nfmov s11,s2\nfmov s13,#4.0\n// Every native moving dribble can be a baseline; only a forward inward\n// route receives a preference flag.\nfabs s0,s9\nfmov s1,#14.0\nfcmp s0,s1\nb.lt local_9_evaluate_metrics\nfabs s0,s11\nfabs s1,s9\nfmov s2,#0.5\nfsub s1,s1,s2\nfcmp s0,s1\nb.gt local_9_evaluate_metrics\nfsub s0,s10,s8\nldr s1,[x19,#8]\nfmul s0,s0,s1\nfcmp s0,s2\nb.lt local_9_evaluate_metrics\norr w23,w23,#8\nldr w8,[x19,#28]\ntbz w8,#8,local_9_evaluate_metrics\norr w23,w23,#4\nb local_9_evaluate_metrics\nlocal_9_evaluate_shot:\nldr w8,[x20,#8]\ncmp w8,#1\nb.hi local_9_evaluate_done\nldr s0,[x20,#0xc]\nldr s1,[x19,#8]\nldr s2,[x19,#12]\nfmul s1,s1,s2\nfsub s0,s0,s1\nfabs s0,s0\nfmov s1,#3.0\nfcmp s0,s1\nb.vs local_9_evaluate_done\nb.gt local_9_evaluate_done\nldr s0,[x20,#0x10]\nfcmp s0,#0.0\nb.vs local_9_evaluate_done\nb.lt local_9_evaluate_done\nfmov s1,#3.5\nfcmp s0,s1\nb.gt local_9_evaluate_done\nldr s0,[x20,#0x14]\nfabs s0,s0\nfmov s1,#4.0\nfcmp s0,s1\nb.vs local_9_evaluate_done\nb.gt local_9_evaluate_done\n// Decode the precomputed target, but only compare long shots from a\n// sensible angle. Other original shots retain their native request type.\nldr s0,[x19,#8]\nldr s1,[x19,#12]\nfmul s0,s8,s0\nfsub s0,s1,s0\nfabs s1,s9\nldr s2,float_3f59999a\nldr w8,[x19,#28]\nand w9,w8,#0xff\ncmp w9,#3\nb.eq local_9_shot_wide_angle\ntbnz w8,#9,local_9_shot_wide_angle\nb local_9_shot_angle_test\nlocal_9_shot_wide_angle:\nfmov s2,#1.0\nlocal_9_shot_angle_test:\nfmul s2,s0,s2\nfcmp s1,s2\nb.gt local_9_evaluate_done\nfmul s0,s0,s0\nfmadd s0,s9,s9,s0\nldr s1,float_43a20000\ncmp w9,#3\nb.eq local_9_shot_wide_min\ntbnz w8,#9,local_9_shot_wide_min\nb local_9_shot_min_test\nlocal_9_shot_wide_min:\nldr s1,float_43100000\nlocal_9_shot_min_test:\nfcmp s0,s1\nb.lt local_9_evaluate_done\nldr s1,float_44800000\ncmp w9,#3\nb.eq local_9_shot_wide_max\ntbnz w8,#9,local_9_shot_wide_max\nb local_9_shot_max_test\nlocal_9_shot_wide_max:\nldr s1,float_44992000\nlocal_9_shot_max_test:\nfcmp s0,s1\nb.gt local_9_evaluate_done\nfsqrt s13,s0\nldr s10,[x20,#0xc]\nldr s11,[x20,#0x14]\nfsub s0,s10,s8\nfsub s1,s11,s9\nfmul s2,s0,s0\nfmadd s2,s1,s1,s2\nfsqrt s2,s2\nfmov s3,#10.0\nfdiv s3,s3,s2\nfmadd s10,s0,s3,s8\nfmadd s11,s1,s3,s9\norr w23,w23,#4\nlocal_9_evaluate_metrics:\ncmp w22,#3\nb.ne local_9_metrics_bounds\nldr w8,[x19,#28]\ntbz w8,#9,local_9_metrics_bounds\n// Lone Wolf may progress without Incisive Run. Retain the inward marker\n// separately so the combination can favour inward shooting setups.\nfsub s0,s10,s8\nldr s1,[x19,#8]\nfmul s0,s0,s1\nfmov s2,#0.5\nfcmp s0,s2\nb.lt local_9_metrics_bounds\nldr s2,[x19,#12]\nfmul s0,s10,s1\nfsub s0,s2,s0\nfmul s0,s0,s0\nfmadd s0,s11,s11,s0\nfmul s1,s8,s1\nfsub s1,s2,s1\nfmul s1,s1,s1\nfmadd s1,s9,s9,s1\nfcmp s0,s1\nb.ge local_9_metrics_bounds\norr w23,w23,#4\nlocal_9_metrics_bounds:\n// Snapshot validated the source positions; also validate native predicted\n// dribble endpoints, including NaNs and pitch bounds.\nfabs s0,s10\nldr s1,[x19,#12]\nfcmp s0,s1\nb.vs local_9_evaluate_done\nb.gt local_9_evaluate_done\nfabs s0,s11\nldr s1,[x19,#16]\nfcmp s0,s1\nb.vs local_9_evaluate_done\nb.gt local_9_evaluate_done\nmov x0,x19\nfmov s0,s8\nfmov s1,s9\nfmov s2,s10\nfmov s3,s11\nbl shared_studio_ai_opportunity_clearance\nfsqrt s14,s0\nfsqrt s15,s1\nfsqrt s12,s2\ncmp w22,#1\nb.eq local_9_metrics_shot\ncmp w22,#2\nb.eq local_9_metrics_pass\nfmov s0,#1.75\nfcmp s14,s0\nb.lt local_9_evaluate_done\nfmov s0,#2.5\nfcmp s15,s0\nb.lt local_9_evaluate_done\nfmov s0,#1.5\nfcmp s12,s0\nb.lt local_9_evaluate_done\nb local_9_metrics_position\nlocal_9_metrics_pass:\nfmov s0,#1.5\nfcmp s14,s0\nb.lt local_9_evaluate_done\nfmov s0,#2.5\nfcmp s15,s0\nb.lt local_9_evaluate_done\n// Clear, free reception inside the box is never sacrificed to a skill\n// preference. Through/lob passes already fail closed above.\nldr s0,[x19,#8]\nldr s1,[x19,#12]\nfmul s0,s10,s0\nfsub s0,s1,s0\nldr s1,float_41840000\nfcmp s0,s1\nb.gt local_9_pass_penetration\nfabs s0,s11\nldr s1,float_41a147ae\nfcmp s0,s1\nb.gt local_9_pass_penetration\nfmov s0,#3.0\nfcmp s15,s0\nb.lt local_9_pass_penetration\nfmov s0,#1.75\nfcmp s14,s0\nb.lt local_9_pass_penetration\norr w23,w23,#2\nlocal_9_pass_penetration:\n// Protect a clear forward receiver beyond the second-last opponent.\n// This is a conservative protection, not an offside/through-ball solver.\nfsub s0,s10,s8\nldr s1,[x19,#8]\nfmul s0,s0,s1\nfmov s2,#4.0\nfcmp s0,s2\nb.lt local_9_metrics_position\nldr w8,[x19,#4]\neor w8,w8,#1\nmov w9,#11\nmul w8,w8,w9\nadd x9,x19,#32\nadd x9,x9,w8,uxtw #4\nmov w10,#11\nmov w11,#0\nfmul s2,s10,s1\nlocal_9_penetration_loop:\nldr w8,[x9,#12]\ncbz w8,local_9_penetration_next\nldr s0,[x9]\nfmul s0,s0,s1\nfcmp s0,s2\nb.gt local_9_penetration_behind\nb local_9_penetration_next\nlocal_9_penetration_behind:\nadd w11,w11,#1\nlocal_9_penetration_next:\nadd x9,x9,#16\nsubs w10,w10,#1\nb.ne local_9_penetration_loop\ncmp w11,#1\nb.hi local_9_metrics_position\norr w23,w23,#2\nb local_9_metrics_position\nlocal_9_metrics_shot:\nfmov s0,#2.75\nfcmp s12,s0\nb.lt local_9_evaluate_done\nfmov s0,#1.5\nfcmp s14,s0\nb.lt local_9_evaluate_done\nlocal_9_metrics_position:\nmov x0,x19\ncmp w22,#1\nb.eq local_9_position_shot\nfmov s0,s10\nfmov s1,s11\nb local_9_position_call\nlocal_9_position_shot:\nfmov s0,s8\nfmov s1,s9\nlocal_9_position_call:\nbl shared_studio_ai_opportunity_position\nfmov s12,s0\nfmov s0,#4.0\nfsub s12,s12,s0\ncmp w22,#2\nb.ne local_9_position_risk\nldr s0,float_3e19999a\nfmsub s0,s13,s0,s12\nfmov s12,s0\nlocal_9_position_risk:\n// Remaining pressure and corridor uncertainty use the same bounded cost\n// scale for each action, after the hard safety gates above.\nfmov s0,#3.0\nfsub s1,s0,s14\nfmov s2,wzr\nfmax s1,s1,s2\nfmov s3,#4.0\nfmul s1,s1,s3\nfsub s0,s0,s15\nfmax s0,s0,s2\nfmadd s0,s0,s3,s1\nfsub s12,s12,s0\nfmax s12,s12,s2\n// Posture is stored separately; it does not secretly bias ordinary action\n// opportunity estimates. Only Lone Wolf uses it to rank repositioning.\nldr w8,[x19,#28]\nand w8,w8,#0xff\ncmp w8,#3\nb.ne local_9_posture_not_blitz\ncmp w22,#1\nb.eq local_9_posture_current\ncmp w22,#3\nb.ne local_9_posture_not_blitz\nfmov s0,s10\nfmov s1,s11\nldr s2,[x20,#0x30]\nb local_9_posture_compute\nlocal_9_posture_current:\nfmov s0,s8\nfmov s1,s9\nldr w8,[x19]\nadd x9,x19,#32\nadd x9,x9,w8,uxtw #4\nldr s2,[x9,#4]\nlocal_9_posture_compute:\nmov x0,x19\nbl shared_studio_ai_blitz_posture\ncbz w0,local_9_posture_unknown\nstr s0,[x21,#8]\nstr s1,[x21,#12]\nldr s2,float_420c0000\nfcmp s0,s2\nb.gt local_9_posture_store\nldr s2,float_40440000\nfcmp s1,s2\nb.lt local_9_posture_store\norr w23,w23,#16\nb local_9_posture_store\nlocal_9_posture_not_blitz:\norr w23,w23,#16\nb local_9_posture_store\nlocal_9_posture_unknown:\nldr s0,float_43340000\nstr s0,[x21,#8]\nlocal_9_posture_store:\nstr s12,[x21]\nstr w23,[x21,#4]\nlocal_9_evaluate_done:\nldp d14,d15,[sp,#96]\nldp d12,d13,[sp,#80]\nldp d10,d11,[sp,#64]\nldp d8,d9,[sp,#48]\nldp x23,x30,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#160\nret\n\n.align 3\n\nshared_studio_ai_cut_in_profile:\n\nstp x19,x20,[sp,#-112]!\nstp x21,x22,[sp,#16]\nstp x23,x24,[sp,#32]\nstp x25,x26,[sp,#48]\nstr x30,[sp,#64]\nstp d8,d9,[sp,#80]\nmov x19,x0\nmov w24,#0\ncbz x19,local_10_done\nldr x21,[x19]\nldr x20,[x19,#0x18]\ncbz x21,local_10_done\ncbz x20,local_10_done\nldr w22,[x21]\ncmp w22,#22\nb.hs local_10_done\nmov x0,x20\nldr x16,native_72c3e80\nblr x16\ncbz x0,local_10_done\nldr x16,native_697b60c\nblr x16\ncmp w0,#1\nb.ne local_10_done\nmov x0,x20\nmov w1,w22\nldr x16,native_72c40b0\nblr x16\ncbz x0,local_10_done\nldr x16,native_7301ef8\nblr x16\nmov x23,x0\ncbz x23,local_10_done\nldr w8,[x23,#0xd4]\ntbnz w8,#7,local_10_check_skills\nbl shared_studio_ai_preference_enabled\ncbz w0,local_10_done\nlocal_10_check_skills:\nmov x0,x23\nmov w1,#51\nldr x16,native_72b39c4\nblr x16\ntbnz w0,#0,local_10_blitz\nldr w8,[x23,#0xd4]\ntbnz w8,#7,local_10_other_skills\ntbz w8,#4,local_10_done\nlocal_10_other_skills:\nmov x0,x23\nmov w1,#7\nldr x16,native_72b39c4\nblr x16\ntbnz w0,#0,local_10_curler\nmov x0,x23\nmov w1,#42\nldr x16,native_72b39c4\nblr x16\ntbnz w0,#0,local_10_normal_shooter\nldr w8,[x23,#0xd4]\ntbz w8,#7,local_10_done\nlocal_10_normal_shooter:\nmov w24,#1\nb local_10_position\nlocal_10_blitz:\nmov w24,#3\nb local_10_position\nlocal_10_curler:\nmov w24,#2\nlocal_10_position:\nmov w0,w22\nldr x16,native_697d0f8\nblr x16\nmov w1,w0\nmov x0,x20\nldr x16,native_72c4028\nblr x16\ncbz x0,local_10_no\nldrsb w23,[x0,#0x28c]\ncmp w23,#1\nb.eq local_10_side_ok\ncmn w23,#1\nb.ne local_10_no\nlocal_10_side_ok:\nmov x0,x20\nldr x16,native_72c3e6c\nblr x16\nmov x26,x0\ncbz x26,local_10_no\nmov x0,x20\nmov w1,w22\nldr x16,native_72c408c\nblr x16\nmov x25,x0\ncbz x25,local_10_no\nldr s8,[x25,#0x4f4]\nldr s9,[x25,#0x4fc]\nldr s0,[x26]\nldr s1,float_42000000\nfcmp s0,s1\nb.vs local_10_no\nb.lt local_10_no\nldr s1,float_428c0000\nfcmp s0,s1\nb.gt local_10_no\nscvtf s1,w23\nfmul s8,s8,s1\nfsub s8,s0,s8\nfcmp s8,#0.0\nb.vs local_10_no\nb.lt local_10_no\nfabs s0,s9\nfcmp s0,s0\nb.vs local_10_no\nfmul s0,s0,s0\nfmadd s0,s8,s8,s0\nldr s1,float_42800000\nfcmp s0,s1\nb.lt local_10_no\nldr s1,float_44f20000\nfcmp s0,s1\nb.gt local_10_no\nmov x1,x25\nmov x2,x26\nmov w3,w23\nfmov s0,s8\nfmov s1,s9\nb local_10_done\nlocal_10_no:\nmov w24,#0\nlocal_10_done:\nmov w0,w24\nldp d8,d9,[sp,#80]\nldr x30,[sp,#64]\nldp x25,x26,[sp,#48]\nldp x23,x24,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#112\nret\n\n.align 3\n\nshared_studio_ai_select_cut_in_candidate:\n\nsub sp,sp,#1088\nstp x19,x20,[sp]\nstp x21,x22,[sp,#16]\nstp x23,x24,[sp,#32]\nstp x25,x26,[sp,#48]\nstp x27,x28,[sp,#64]\nstp x29,x30,[sp,#80]\nstp d8,d9,[sp,#96]\nstp d10,d11,[sp,#112]\nmov w20,w1\nmov w27,w1\ncmp w20,#30\nb.hs local_11_choice_done\nldr x19,[x0]\nldr x21,[x0,#0x10]\ncbz x19,local_11_choice_done\ncbz x21,local_11_choice_done\nmov w8,#0x49c8\nadd x22,x19,x8\nmov w8,#80\numaddl x8,w20,w8,x22\nldr w9,[x8]\nsub w9,w9,#1\ncmp w9,#2\nb.hi local_11_choice_done\nldr w9,[x8]\ncmp w9,#1\nb.ne local_11_choice_profile\nldr w9,[x8,#8]\ncmp w9,#1\nb.hi local_11_choice_done\nlocal_11_choice_profile:\nmov x0,x21\nbl shared_studio_ai_cut_in_profile\ncbz w0,local_11_choice_done\nstr w0,[sp,#1032]\nadd x23,sp,#128\nmov x0,x21\nmov x1,x23\nbl shared_studio_ai_opportunity_snapshot\ncbz w0,local_11_choice_done\nldr w8,[sp,#1032]\nstrb w8,[x23,#28]\nldr w8,[x23,#28]\nstr w8,[sp,#1024]\nadd x24,sp,#512\nmov w8,#0x48a8\nadd x29,x19,x8\nmov x0,x29\nldr x16,native_70e63cc\nblr x16\nmov x25,x0\nstr x25,[sp,#1000]\nmov x0,x29\nldr x16,native_70e63d0\nblr x16\nmov x26,x0\ncmp x26,x25\nb.lo local_11_choice_done\nsub x8,x26,x25\ncmp x8,#120\nb.hi local_11_choice_done\ntst x8,#3\nb.ne local_11_choice_done\nmov w28,#0\nlocal_11_evaluate_loop:\ncmp x25,x26\nb.hs local_11_evaluate_finished\nldr w29,[x25],#4\ncmp w29,#30\nb.hs local_11_evaluate_loop\nmov w8,#1\nlsl w8,w8,w29\ntst w28,w8\nb.ne local_11_evaluate_loop\norr w28,w28,w8\nmov w8,#80\numaddl x1,w29,w8,x22\nadd x2,x24,w29,uxtw #4\nmov x0,x23\nbl shared_studio_ai_opportunity_evaluate\nldr w8,[sp,#1024]\ntbnz w8,#9,local_11_evaluate_loop\nadd x8,x24,w29,uxtw #4\nldr w8,[x8,#4]\ntbnz w8,#1,local_11_choice_done\nb local_11_evaluate_loop\nlocal_11_evaluate_finished:\nmov w8,#1\nlsl w8,w8,w20\ntst w28,w8\nb.eq local_11_choice_done\nldr w8,[sp,#1024]\ntbnz w8,#9,local_11_lone_start\nadd x8,x24,w20,uxtw #4\nldr w9,[x8,#4]\ntbz w9,#0,local_11_choice_done\nldr s8,[x8]\nmov w8,#30\nstr w8,[sp,#1008]\nstr w8,[sp,#1012]\nstr w8,[sp,#1016]\nmov w8,#80\numaddl x8,w20,w8,x22\nldr w9,[x8]\nadd x8,sp,#1004\nstr w20,[x8,w9,uxtw #2]\nmov w28,#1\nlsl w28,w28,w9\nldr x25,[sp,#1000]\nlocal_11_equal_loop:\ncmp x25,x26\nb.hs local_11_equal_draw\nldr w29,[x25],#4\ncmp w29,#30\nb.hs local_11_equal_loop\ncmp w29,w20\nb.eq local_11_equal_loop\nadd x8,x24,w29,uxtw #4\nldr w9,[x8,#4]\ntbz w9,#0,local_11_equal_loop\nldr s10,[x8]\nfsub s0,s10,s8\nfabs s0,s0\nldr s1,float_41000000\nfcmp s0,s1\nb.vs local_11_equal_loop\nb.gt local_11_equal_loop\nmov w8,#80\numaddl x8,w29,w8,x22\nldr w10,[x8]\ncmp w10,#3\nb.ne local_11_equal_class\ntbz w9,#2,local_11_equal_loop\nlocal_11_equal_class:\nmov w8,#1\nlsl w8,w8,w10\ntst w28,w8\nb.ne local_11_equal_loop\nstr w10,[sp,#1028]\nmov x0,x19\nmov x1,x21\nmov w2,w29\nldr x16,native_70e72a0\nblr x16\ntbnz w0,#0,local_11_equal_loop\nldr w10,[sp,#1028]\nmov w8,#1\nlsl w8,w8,w10\norr w28,w28,w8\nadd x8,sp,#1004\nstr w29,[x8,w10,uxtw #2]\nb local_11_equal_loop\nlocal_11_equal_draw:\nmov x0,x23\nmov w1,w28\nmov w2,#0\nldr x3,[x21,#0x18]\nbl shared_studio_ai_equal_action_draw\ncbz w0,local_11_choice_done\nadd x8,sp,#1004\nldr w27,[x8,w0,uxtw #2]\nb local_11_choice_done\nlocal_11_lone_start:\nmov w8,#30\nstr w8,[sp,#1008]\nstr w8,[sp,#1012]\nldr s8,float_c47a0000\nfmov s9,s8\nldr x25,[sp,#1000]\nlocal_11_lone_loop:\ncmp x25,x26\nb.hs local_11_lone_finish\nldr w29,[x25],#4\ncmp w29,#30\nb.hs local_11_lone_loop\nadd x8,x24,w29,uxtw #4\nldr w9,[x8,#4]\ntbz w9,#0,local_11_lone_loop\nldr s10,[x8]\nldr s11,[x8,#8]\nmov w8,#80\numaddl x8,w29,w8,x22\nldr w10,[x8]\ncmp w10,#1\nb.eq local_11_lone_shot\ncmp w10,#3\nb.ne local_11_lone_loop\ntbz w9,#2,local_11_lone_loop\n// Incisive Run adds inward-route preference; Lone Wolf without it may use\n// any safe progress route. Posture quality distinguishes shooting setups.\nldr w8,[sp,#1024]\ntbz w8,#8,local_11_lone_route_pose\ntbz w9,#3,local_11_lone_route_pose\nfmov s0,#6.0\nfadd s10,s10,s0\nlocal_11_lone_route_pose:\ntbz w9,#4,local_11_lone_route_cost\nfmov s0,#20.0\nfadd s10,s10,s0\nlocal_11_lone_route_cost:\nldr s0,float_3e4ccccd\nfmsub s10,s11,s0,s10\nfcmp s10,s9\nb.le local_11_lone_loop\nmov w28,#3\nb local_11_lone_veto\nlocal_11_lone_shot:\nldr w8,[sp,#1032]\ncmp w8,#3\nb.ne local_11_lone_shot_score\ntbz w9,#4,local_11_lone_loop\nlocal_11_lone_shot_score:\nldr s0,float_3da3d70a\nfmsub s10,s11,s0,s10\nfcmp s10,s8\nb.le local_11_lone_loop\nmov w28,#1\nlocal_11_lone_veto:\ncmp w29,w20\nb.eq local_11_lone_accept\nmov x0,x19\nmov x1,x21\nmov w2,w29\nldr x16,native_70e72a0\nblr x16\ntbnz w0,#0,local_11_lone_loop\nlocal_11_lone_accept:\ncmp w28,#1\nb.ne local_11_lone_accept_route\nfmov s8,s10\nstr w29,[sp,#1008]\nb local_11_lone_loop\nlocal_11_lone_accept_route:\nfmov s9,s10\nstr w29,[sp,#1012]\nb local_11_lone_loop\nlocal_11_lone_finish:\nldr w8,[sp,#1008]\ncmp w8,#30\nb.lo local_11_lone_selected\nldr w8,[sp,#1012]\ncmp w8,#30\nb.hs local_11_choice_done\nlocal_11_lone_selected:\nmov w27,w8\nlocal_11_choice_done:\nmov w0,w27\nldp d10,d11,[sp,#112]\nldp d8,d9,[sp,#96]\nldp x29,x30,[sp,#80]\nldp x27,x28,[sp,#64]\nldp x25,x26,[sp,#48]\nldp x23,x24,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp]\nadd sp,sp,#1088\nret\n\n.align 3\n\nshared_studio_ai_prefer_curled_shot:\n\nsub sp,sp,#528\nstp x19,x20,[sp]\nstp x21,x30,[sp,#16]\nmov x19,x0\nmov x20,x1\nldr w8,[x19,#4]\ncmp w8,#25\nb.ne local_12_request_done\nmov x0,x20\nbl shared_studio_ai_preferred_shot_style\ncbz w0,local_12_legacy_request\ncmp w0,#1\nb.eq local_12_prefer_controlled\ncmp w0,#2\nb.eq local_12_prefer_low\nmov w8,#2\nb local_12_store_style\nlocal_12_prefer_controlled:\nmov w8,#1\nb local_12_store_style\nlocal_12_prefer_low:\nmov w8,#0\nlocal_12_store_style:\nstr w8,[x19,#8]\nb local_12_request_done\nlocal_12_legacy_request:\nldr w8,[x19,#8]\ncbnz w8,local_12_request_done\nmov x0,x20\nbl shared_studio_ai_cut_in_profile\ncmp w0,#2\nb.lo local_12_request_done\nstr w0,[sp,#32]\nadd x21,sp,#48\nmov x0,x20\nmov x1,x21\nbl shared_studio_ai_opportunity_snapshot\ncbz w0,local_12_request_done\nldr w8,[sp,#32]\nstrb w8,[x21,#28]\nadd x1,sp,#432\nmov w8,#1\nstr w8,[x1]\nstr wzr,[x1,#8]\nldr w8,[x19,#0xc]\nstr w8,[x1,#0xc]\nldr w8,[x19,#0x14]\nstr w8,[x1,#0x10]\nldr w8,[x19,#0x10]\nstr w8,[x1,#0x14]\nadd x2,sp,#512\nmov x0,x21\nbl shared_studio_ai_opportunity_evaluate\nldr w8,[sp,#516]\ntbz w8,#0,local_12_request_done\ntbz w8,#4,local_12_request_done\nldr w8,[x21,#28]\ntbnz w8,#9,local_12_request_controlled\nmov x0,x21\nmov w1,#6\nmov w2,#1\nldr x3,[x20,#0x18]\nbl shared_studio_ai_equal_action_draw\ncmp w0,#2\nb.ne local_12_request_done\nlocal_12_request_controlled:\nmov w8,#1\nstr w8,[x19,#8]\nlocal_12_request_done:\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp]\nadd sp,sp,#528\nret\n\n.align 3\n\nshared_studio_ai_preference_enabled:\nldr w0,local_13_ordinary_switch\nret\n.align 2\nlocal_13_ordinary_switch: .word 0x58414931\n\n.align 3\n\nshared_studio_ai_preferred_shot_style:\n\nsub sp,sp,#480\nstp x19,x20,[sp]\nstp x21,x22,[sp,#16]\nstp x23,x30,[sp,#32]\nmov x19,x0\nmov w23,#0\nbl shared_studio_ai_preference_enabled\ncbz w0,local_14_done\ncbz x19,local_14_done\nldr x8,[x19]\nldr x20,[x19,#0x18]\ncbz x8,local_14_done\ncbz x20,local_14_done\nldr w21,[x8]\ncmp w21,#22\nb.hs local_14_done\nmov x0,x20\nldr x16,native_72c3e80\nblr x16\ncbz x0,local_14_done\nldr x16,native_697b60c\nblr x16\ncmp w0,#1\nb.ne local_14_done\nmov x0,x20\nmov w1,w21\nldr x16,native_72c40b0\nblr x16\ncbz x0,local_14_done\nldr x16,native_7301ef8\nblr x16\ncbz x0,local_14_done\nmov x22,x0\nmov w1,#51\nldr x16,native_72b39c4\nblr x16\ntst w0,#1\ncset w23,ne\nlsl w23,w23,#1\nmov x0,x22\nmov w1,#58\nldr x16,native_72b39c4\nblr x16\ntbz w0,#0,local_14_heavy\norr w23,w23,#4\nlocal_14_heavy:\nmov x0,x22\nmov w1,#74\nldr x16,native_72b39c4\nblr x16\ntbz w0,#0,local_14_snapshot\norr w23,w23,#8\nlocal_14_snapshot:\ncbz w23,local_14_done\n// Skill-style choice is AFTER native shooting has been selected. Unrelated\n// players crossing a touchline must never veto the current player's style.\ncmp w23,#2\nb.eq local_14_only_blitz\ncmp w23,#4\nb.eq local_14_only_low\ncmp w23,#8\nb.eq local_14_only_heavy\nadd x8,sp,#64\nmov w9,#24\nlocal_14_clear_draw:\nstp xzr,xzr,[x8],#16\nsubs w9,w9,#1\nb.ne local_14_clear_draw\nstr w21,[sp,#64]\nstr w23,[sp,#92]\nmov x0,x20\nmov w1,w21\nldr x16,native_72c408c\nblr x16\ncbz x0,local_14_none\nadd x8,sp,#96\nadd x8,x8,w21,uxtw #4\nldr s0,[x0,#0x4f4]\nldr s1,[x0,#0x4fc]\nfcmp s0,s0\nb.vs local_14_none\nfcmp s1,s1\nb.vs local_14_none\nstr s0,[x8]\nstr s1,[x8,#8]\nldr w9,[x0,#0x4ec]\nstr w9,[x8,#4]\nmov w9,#1\nstr w9,[x8,#12]\nadd x0,sp,#64\nmov w1,w23\nmov w2,#2\nmov x3,x20\nbl shared_studio_ai_equal_action_draw\nmov w23,w0\nb local_14_done\nlocal_14_only_blitz:\nmov w23,#1\nb local_14_done\nlocal_14_only_low:\nmov w23,#2\nb local_14_done\nlocal_14_only_heavy:\nmov w23,#3\nb local_14_done\nlocal_14_none:\nmov w23,#0\nlocal_14_done:\nmov w0,w23\nldp x23,x30,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp]\nadd sp,sp,#480\nret\n\n.align 3\n\nshared_studio_ai_low_shot_permission:\n\nstp x19,x20,[sp,#-48]!\nstp x21,x30,[sp,#16]\nmov x19,x0\nmov w20,w1\nmov w21,w2\ncbz x19,local_15_none\ncbz x3,local_15_none\ncmp w20,#22\nb.hs local_15_none\nldr x8,data_15_rows\nmov w9,#24\numaddl x8,w20,w9,x8\ncmp w21,#1\nb.ne local_15_check\nstp x19,x3,[x8]\nstr w4,[x8,#16]\nmov w9,#1\nstr w9,[x8,#20]\nmov w0,#1\nb local_15_done\nlocal_15_check:\nldp x9,x10,[x8]\ncmp x9,x19\nb.ne local_15_none\ncmp x10,x3\nb.ne local_15_none\nldr w9,[x8,#20]\ncbz w9,local_15_none\nldr w9,[x8,#16]\nsub w9,w4,w9\ncmp w9,#2\nb.hi local_15_none\nmov w0,#1\nb local_15_done\nlocal_15_none:\nmov w0,#0\nlocal_15_done:\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#48\nret\n\n.align 3\n\nshared_studio_ai_bound_shot_power:\n\nstp x19,x20,[sp,#-112]!\nstp x21,x22,[sp,#16]\nstp x23,x24,[sp,#32]\nstp x25,x26,[sp,#48]\nstr x30,[sp,#64]\nstp d8,d9,[sp,#80]\nmov x19,x0\nmov x20,x1\nbl shared_studio_ai_preference_enabled\ncbz w0,local_16_done\ncbz x19,local_16_done\ncbz x20,local_16_done\nldr w21,[x19,#4]\ncmp w21,#22\nb.hs local_16_done\nldr x22,[x19,#0x30]\ncbz x22,local_16_done\nmov x0,x22\nldr x16,native_72c3e80\nblr x16\ncbz x0,local_16_done\nmov x25,x0\nldr x16,native_697b60c\nblr x16\ncmp w0,#1\nb.ne local_16_done\nmov w0,w21\nldr x16,native_72d7dc8\nblr x16\ncbz x0,local_16_done\nldr w8,[x0,#4]\ncmp w8,#25\nb.ne local_16_done\nldr w24,[x0,#8]\ncmp w24,#2\nb.hi local_16_done\nmov x0,x22\nmov w1,w21\nldr x16,native_72c40b0\nblr x16\ncbz x0,local_16_done\nldr x16,native_7301ef8\nblr x16\ncbz x0,local_16_done\nmov x23,x0\nldr s8,[x20,#0xe7c]\nfcmp s8,#0.0\nb.vs local_16_done\nb.le local_16_done\nfmov s0,#1.0\nfcmp s8,s0\nb.gt local_16_done\nldrb w8,[x20,#0xffa]\ncmp w24,#1\nb.eq local_16_controlled\ncmp w24,#2\nb.eq local_16_heavy_power\ncbnz w8,local_16_done\nmov w1,#58\nldr x16,native_72b39c4\nblr x16\ntbz w0,#0,local_16_done\nldr s0,float_3efae148\nfmin s8,s8,s0\nstr s8,[x20,#0xe7c]\nmov x0,x25\nldr x16,native_6a4bd08\nblr x16\nmov w26,w0\nmov x0,x22\nmov w1,w21\nldr x16,native_72c1a14\nblr x16\ncbz x0,local_16_done\nmov x3,x0\nmov x0,x22\nmov w1,w21\nmov w2,#1\nmov w4,w26\nbl shared_studio_ai_low_shot_permission\nb local_16_done\nlocal_16_controlled:\ncmp w8,#2\nb.ne local_16_done\nmov w1,#51\nldr x16,native_72b39c4\nblr x16\ntbz w0,#0,local_16_done\nldr s0,float_3f0ccccd\nfmax s8,s8,s0\nstr s8,[x20,#0xe7c]\nb local_16_done\nlocal_16_heavy_power:\ncmp w8,#3\nb.ne local_16_done\nmov w1,#74\nldr x16,native_72b39c4\nblr x16\ntbz w0,#0,local_16_done\nldr s0,float_3f266666\nfmax s8,s8,s0\nstr s8,[x20,#0xe7c]\nlocal_16_done:\nldp d8,d9,[sp,#80]\nldr x30,[sp,#64]\nldp x25,x26,[sp,#48]\nldp x23,x24,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#112\nret\n\n.align 3\n\nshared_studio_ai_allow_low_with_blitz:\n\nstp x19,x20,[sp,#-48]!\nstp x21,x30,[sp,#16]\nmov x19,x0\ncbz x19,local_17_none\nbl shared_studio_ai_preference_enabled\ncbz w0,local_17_none\nmov w8,#0x2a38\nldrb w20,[x19,x8]\ncmp w20,#22\nb.hs local_17_none\nldr x21,[x19,#0x4620]\ncbz x21,local_17_none\nmov x0,x21\nldr x16,native_72c3e80\nblr x16\ncbz x0,local_17_none\nldr x16,native_6a4bd08\nblr x16\nmov w4,w0\nmov x0,x21\nmov w1,w20\nmov w2,#0\nmov x3,x19\nbl shared_studio_ai_low_shot_permission\nb local_17_done\nlocal_17_none:\nmov w0,#0\nlocal_17_done:\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#48\nret\n\n.align 3\n\n.quad 6004517954967784754\n.quad entry_studio_ai_cut_in_candidate_choice\n.quad entry_studio_ai_shot_style_power\n.quad entry_studio_ai_low_and_blitz_coexist\n.quad entry_studio_ai_cut_in_shot_request\n.quad shared_studio_ai_opportunity_snapshot\n.quad shared_studio_ai_opportunity_position\n.quad shared_studio_ai_opportunity_clearance\n.quad shared_studio_ai_equal_action_draw\n.quad shared_studio_ai_blitz_posture\n.quad shared_studio_ai_opportunity_evaluate\n.quad shared_studio_ai_cut_in_profile\n.quad shared_studio_ai_select_cut_in_candidate\n.quad shared_studio_ai_prefer_curled_shot\n.quad shared_studio_ai_preference_enabled\n.quad shared_studio_ai_preferred_shot_style\n.quad shared_studio_ai_low_shot_permission\n.quad shared_studio_ai_bound_shot_power\n.quad shared_studio_ai_allow_low_with_blitz\n\n.align 3\nnative_70e57a4: .quad 118380452\nnative_71a27f4: .quad 119154676\nnative_6d628e0: .quad 114698464\nnative_6d62874: .quad 114698356\nnative_70e7434: .quad 118387764\nnative_72c3e80: .quad 120340096\nnative_697b60c: .quad 110605836\nnative_72c3e6c: .quad 120340076\nnative_72c4028: .quad 120340520\nnative_6a642f8: .quad 111559416\nnative_6a64358: .quad 111559512\nnative_72c408c: .quad 120340620\nnative_72c40b0: .quad 120340656\nnative_7301ef8: .quad 120594168\nnative_6910428: .quad 110167080\nnative_6ad3e50: .quad 112016976\nnative_6d3a784: .quad 114534276\nnative_72b39c4: .quad 120273348\nnative_697d0f8: .quad 110612728\nnative_70e63cc: .quad 118383564\nnative_70e63d0: .quad 118383568\nnative_70e72a0: .quad 118387360\nnative_72d7dc8: .quad 120421832\nnative_6a4bd08: .quad 111459592\nnative_72c1a14: .quad 120330772\nfloat_42000000: .word 1107296256\nfloat_428c0000: .word 1116471296\nfloat_42340000: .word 1110704128\nfloat_3fcccccd: .word 1070386381\nfloat_3f4ccccd: .word 1061997773\nfloat_42c80000: .word 1120403456\nfloat_47800000: .word 1199570944\nfloat_3d4ccccd: .word 1028443341\nfloat_43b40000: .word 1135869952\nfloat_42b40000: .word 1119092736\nfloat_44610000: .word 1147207680\nfloat_3f59999a: .word 1062836634\nfloat_43a20000: .word 1134690304\nfloat_44800000: .word 1149239296\nfloat_43100000: .word 1125122048\nfloat_44992000: .word 1150885888\nfloat_41840000: .word 1099169792\nfloat_41a147ae: .word 1101088686\nfloat_3e19999a: .word 1041865114\nfloat_420c0000: .word 1108082688\nfloat_40440000: .word 1078198272\nfloat_43340000: .word 1127481344\nfloat_42100000: .word 1108344832\nfloat_42800000: .word 1115684864\nfloat_44f20000: .word 1156710400\nfloat_41000000: .word 1090519040\nfloat_c47a0000: .word 3296329728\nfloat_3e4ccccd: .word 1045220557\nfloat_3da3d70a: .word 1034147594\nfloat_3efae148: .word 1056629064\nfloat_3f0ccccd: .word 1057803469\nfloat_3f266666: .word 1059481190\n.align 3\ndata_7_draw_state: .quad 6004685886959124480\ndata_15_rows: .quad 6004685886959124481",
+      "code": "entry_studio_ai_cut_in_candidate_choice:\n\nstp x19,x20,[sp,#-32]!\nstr x30,[sp,#16]\nmov x19,x0\nbl local_0_original\nmov w1,w0\nmov x0,x19\nbl shared_studio_ai_select_cut_in_candidate\nldr x30,[sp,#16]\nldp x19,x20,[sp],#32\nret\nlocal_0_original:\n.word 2847636477\nldr x16,native_70e57a4\nbr x16\n\n.align 3\n\nentry_studio_ai_shot_style_power:\n\nstp x19,x20,[sp,#-80]!\nstp x21,x30,[sp,#16]\nmov x19,x1\nmov x20,x2\nbl local_1_original\nstr x0,[sp,#32]\nstr q0,[sp,#48]\nmov x0,x19\nmov x1,x20\nbl shared_studio_ai_bound_shot_power\nldr x0,[sp,#32]\nldr q0,[sp,#48]\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#80\nret\nlocal_1_original:\nsub sp,sp,#0x110\nldr x16,native_71a27f4\nbr x16\n.align 3\n\nentry_studio_ai_low_and_blitz_coexist:\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\nldr x0,[x29,#-0x18]\nbl shared_studio_ai_allow_low_with_blitz\ncbz w0,local_2_restore\nstr xzr,[sp]\nlocal_2_restore:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\n\ntbz w0,#0,local_2_continue_low\nldr x16,native_6d628e0\nbr x16\nlocal_2_continue_low:\nldr x16,native_6d62874\nbr x16\n.align 3\n\nentry_studio_ai_cut_in_shot_request:\n\nstp x19,x20,[sp,#-32]!\nstr x30,[sp,#16]\nmov x19,x0\nmov x20,x1\nbl local_3_original\nmov x0,x19\nmov x1,x20\nbl shared_studio_ai_prefer_curled_shot\nldr x30,[sp,#16]\nldp x19,x20,[sp],#32\nret\nlocal_3_original:\n.word 2847767549\nldr x16,native_70e7434\nbr x16\n\n.align 3\n\nshared_studio_ai_opportunity_snapshot:\n\nstp x19,x20,[sp,#-96]!\nstp x21,x22,[sp,#16]\nstp x23,x24,[sp,#32]\nstp x25,x30,[sp,#48]\nstp d8,d9,[sp,#64]\nstr d10,[sp,#80]\nmov x19,x0\nmov x20,x1\nmov w25,#0\ncbz x19,local_4_snapshot_done\nldr x8,[x19]\nldr x21,[x19,#0x18]\ncbz x8,local_4_snapshot_done\ncbz x21,local_4_snapshot_done\nldr w22,[x8]\ncmp w22,#22\nb.hs local_4_snapshot_done\nstr w22,[x20]\ncmp w22,#11\ncset w23,hs\nstr w23,[x20,#4]\nmov x0,x21\nldr x16,native_72c3e80\nblr x16\nmov x24,x0\ncbz x24,local_4_snapshot_done\nmov x0,x24\nldr x16,native_697b60c\nblr x16\ncmp w0,#1\nb.ne local_4_snapshot_done\nmov x0,x21\nldr x16,native_72c3e6c\nblr x16\ncbz x0,local_4_snapshot_done\nldr s8,[x0]\nldr s9,[x0,#8]\nldr s0,float_42000000\nfcmp s8,s0\nb.vs local_4_snapshot_done\nb.lt local_4_snapshot_done\nldr s0,float_428c0000\nfcmp s8,s0\nb.gt local_4_snapshot_done\nfmov s0,#20.0\nfcmp s9,s0\nb.vs local_4_snapshot_done\nb.lt local_4_snapshot_done\nldr s0,float_42340000\nfcmp s9,s0\nb.gt local_4_snapshot_done\nstp s8,s9,[x20,#12]\nmov x0,x21\nmov w1,w23\nldr x16,native_72c4028\nblr x16\ncbz x0,local_4_snapshot_done\nldrsb w8,[x0,#0x28c]\ncmp w8,#1\nb.eq local_4_snapshot_side\ncmn w8,#1\nb.ne local_4_snapshot_done\nlocal_4_snapshot_side:\nscvtf s10,w8\nstr s10,[x20,#8]\nstr xzr,[x20,#20]\nstr wzr,[x20,#28]\nmov w22,#0\nlocal_4_snapshot_loop:\nadd x23,x20,#32\nadd x23,x23,w22,uxtw #4\nstr wzr,[x23,#12]\nmov x0,x24\nmov w1,w22\nldr x16,native_6a642f8\nblr x16\ncbz w0,local_4_snapshot_next\nmov x0,x24\nmov w1,w22\nldr x16,native_6a64358\nblr x16\ncbnz w0,local_4_snapshot_next\nmov x0,x21\nmov w1,w22\nldr x16,native_72c408c\nblr x16\ncbz x0,local_4_snapshot_done\nldr s0,[x0,#0x4f4]\nldr s1,[x0,#0x4fc]\nfabs s2,s0\nfabs s3,s1\nfcmp s2,s8\nb.vs local_4_snapshot_done\nb.gt local_4_snapshot_done\nfcmp s3,s9\nb.vs local_4_snapshot_done\nb.gt local_4_snapshot_done\nstr s0,[x23]\nldr w8,[x0,#0x4ec]\nstr w8,[x23,#4]\nstr s1,[x23,#8]\nmov w8,#1\nstr w8,[x23,#12]\ncmp w22,#11\ncset w8,hs\nadd x8,x20,w8,uxtw #2\nldr w9,[x8,#20]\nadd w9,w9,#1\nstr w9,[x8,#20]\nlocal_4_snapshot_next:\nadd w22,w22,#1\ncmp w22,#22\nb.lo local_4_snapshot_loop\nldp w8,w9,[x20,#20]\ncmp w8,#7\nb.lo local_4_snapshot_done\ncmp w9,#7\nb.lo local_4_snapshot_done\nldr w8,[x20]\nadd x9,x20,#32\nadd x9,x9,w8,uxtw #4\nldr w25,[x9,#12]\ncbz w25,local_4_snapshot_done\nmov x0,x21\nmov w1,w8\nldr x16,native_72c40b0\nblr x16\ncbz x0,local_4_snapshot_invalid\nldr x16,native_7301ef8\nblr x16\ncbz x0,local_4_snapshot_invalid\nldr w8,[x0,#0xd4]\nubfx w9,w8,#4,#1\nlsl w9,w9,#8\nubfx w8,w8,#7,#1\norr w9,w9,w8,lsl #9\nldrb w8,[x0,#0x35]\ncmp w8,#1\nb.hi local_4_snapshot_flags\norr w9,w9,w8,lsl #10\norr w9,w9,#0x800\nlocal_4_snapshot_flags:\nstr w9,[x20,#28]\nb local_4_snapshot_done\nlocal_4_snapshot_invalid:\nmov w25,#0\nlocal_4_snapshot_done:\nmov w0,w25\nldr d10,[sp,#80]\nldp d8,d9,[sp,#64]\nldp x25,x30,[sp,#48]\nldp x23,x24,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#96\nret\n\n.align 3\n\nshared_studio_ai_opportunity_position:\n\nldr s2,[x0,#8]\nldr s3,[x0,#12]\nfmul s0,s0,s2\nfsub s0,s3,s0\nfmul s0,s0,s0\nfmadd s0,s1,s1,s0\nfsqrt s0,s0\nldr s2,float_3fcccccd\nfmul s0,s0,s2\nfabs s1,s1\nldr s2,float_3f4ccccd\nfmadd s0,s1,s2,s0\nldr s1,float_42c80000\nfsub s0,s1,s0\nfmov s1,wzr\nfmax s0,s0,s1\nret\n\n.align 3\n\nshared_studio_ai_opportunity_clearance:\n\nfmov s16,s0\nfmov s17,s1\nfmov s18,s2\nfmov s19,s3\nfsub s20,s2,s0\nfsub s21,s3,s1\nfmul s22,s20,s20\nfmadd s22,s21,s21,s22\nldr s23,float_47800000\nfmov s24,s23\nfmov s25,s23\nldr w8,[x0,#4]\neor w8,w8,#1\nmov w9,#11\nmul w8,w8,w9\nadd x9,x0,#32\nadd x9,x9,w8,uxtw #4\nmov w10,#11\nfmov s26,#1.0\nfmov s27,wzr\nlocal_6_clearance_loop:\nldr w8,[x9,#12]\ncbz w8,local_6_clearance_next\nldr s0,[x9]\nldr s1,[x9,#8]\nfsub s2,s0,s16\nfsub s3,s1,s17\nfmul s4,s2,s2\nfmadd s4,s3,s3,s4\nfmin s25,s25,s4\nfsub s4,s0,s18\nfsub s5,s1,s19\nfmul s4,s4,s4\nfmadd s4,s5,s5,s4\nfmin s24,s24,s4\nfcmp s22,s27\nb.le local_6_clearance_point\nfmul s4,s2,s20\nfmadd s4,s3,s21,s4\nfdiv s4,s4,s22\nfmax s4,s4,s27\nfmin s4,s4,s26\nfmsub s2,s4,s20,s2\nfmsub s3,s4,s21,s3\nlocal_6_clearance_point:\nfmul s4,s2,s2\nfmadd s4,s3,s3,s4\nfmin s23,s23,s4\nlocal_6_clearance_next:\nadd x9,x9,#16\nsubs w10,w10,#1\nb.ne local_6_clearance_loop\nfmov s0,s23\nfmov s1,s24\nfmov s2,s25\nret\n\n.align 3\n\nshared_studio_ai_equal_action_draw:\n\nldr w8,[x0]\ncmp w8,#22\nb.hs local_7_draw_empty\ncmp w2,#2\nb.hi local_7_draw_empty\nmov w9,#22\nmadd w9,w2,w9,w8\nldr x10,data_7_draw_state\nadd x10,x10,x9,lsl #5\nmov w11,#0x9dc5\nmovk w11,#0x811c,lsl #16\neor w11,w11,w1\nldr w12,[x0,#28]\neor w11,w11,w12\nadd x12,x0,#32\nmov w13,#22\nfmov s4,#0.5\nmov w15,#0x193\nmovk w15,#0x100,lsl #16\nlocal_7_draw_hash:\nldr w14,[x12,#12]\neor w11,w11,w14\ncbz w14,local_7_draw_hash_next\nldr s0,[x12]\nldr s1,[x12,#8]\nfmul s0,s0,s4\nfmul s1,s1,s4\nfcvtzs w14,s0\neor w11,w11,w14\nmul w11,w11,w15\nfcvtzs w14,s1\neor w11,w11,w14\nmul w11,w11,w15\nlocal_7_draw_hash_next:\nadd x12,x12,#16\nsubs w13,w13,#1\nb.ne local_7_draw_hash\nadd x12,x0,#32\nadd x12,x12,w8,uxtw #4\nldr s0,[x12,#4]\nldr s1,float_3d4ccccd\nfmul s0,s0,s1\nfcvtzs w14,s0\neor w11,w11,w14\nldp x12,x13,[x10]\ncmp x12,x3\nb.ne local_7_draw_seed\ncmp x13,x11\nb.ne local_7_draw_next\nldr w0,[x10,#20]\nmov w12,#1\nlsl w12,w12,w0\ntst w12,w1\nb.ne local_7_draw_return\nlocal_7_draw_next:\nldr w12,[x10,#16]\nb local_7_draw_random\nlocal_7_draw_seed:\neor w12,w11,w3\neor w12,w12,w9\nmov w13,#0x79b9\nmovk w13,#0x9e37,lsl #16\neor w12,w12,w13\n// Avalanche nearby actor/session keys before the independent xorshift.\nmov w13,#0xca6b\nmovk w13,#0x85eb,lsl #16\neor w12,w12,w12,lsr #16\nmul w12,w12,w13\nmov w13,#0xae35\nmovk w13,#0xc2b2,lsl #16\neor w12,w12,w12,lsr #13\nmul w12,w12,w13\neor w12,w12,w12,lsr #16\nlocal_7_draw_random:\ncbnz w12,local_7_draw_nonzero\nmov w12,#1\nlocal_7_draw_nonzero:\neor w12,w12,w12,lsl #13\neor w12,w12,w12,lsr #17\neor w12,w12,w12,lsl #5\nmov w13,#0\nmov w14,w1\nlocal_7_draw_count:\nand w15,w14,#1\nadd w13,w13,w15\nlsr w14,w14,#1\ncbnz w14,local_7_draw_count\ncbz w13,local_7_draw_empty\numull x14,w12,w13\nlsr x14,x14,#32\nmov w0,#1\nlocal_7_draw_pick:\nmov w13,#1\nlsl w13,w13,w0\ntst w1,w13\nb.eq local_7_draw_pick_next\ncbz w14,local_7_draw_save\nsub w14,w14,#1\nlocal_7_draw_pick_next:\nadd w0,w0,#1\ncmp w0,#4\nb.lo local_7_draw_pick\nb local_7_draw_empty\nlocal_7_draw_save:\nstp x3,x11,[x10]\nstr w12,[x10,#16]\nstr w0,[x10,#20]\nlocal_7_draw_return:\nret\nlocal_7_draw_empty:\nmov w0,#0\nret\n\n.align 3\n\nshared_studio_ai_blitz_posture:\n\nstp x19,x20,[sp,#-112]!\nstp x21,x30,[sp,#16]\nstp d8,d9,[sp,#32]\nstp d10,d11,[sp,#48]\nmov x19,x0\nmov w21,#0\nfmov s8,s0\nfmov s9,s1\nfmov s10,s2\nldr w8,[x19,#28]\ntbz w8,#11,local_8_posture_done\nfcmp s10,s10\nb.vs local_8_posture_done\nfabs s0,s10\nldr s1,float_43b40000\nfcmp s0,s1\nb.gt local_8_posture_done\nldr s0,[x19,#8]\nldr s1,[x19,#12]\nfmul s0,s0,s1\nfsub s0,s0,s8\nstr s0,[sp,#64]\nstr wzr,[sp,#68]\nfneg s0,s9\nstr s0,[sp,#72]\nadd x0,sp,#64\nldr x16,native_6910428\nblr x16\nfmov s11,s0\nldr w8,[x19,#28]\nfmov s1,#25.0\ntbnz w8,#10,local_8_posture_left\nfsub s0,s0,s1\nb local_8_posture_ideal\nlocal_8_posture_left:\nfadd s0,s0,s1\nlocal_8_posture_ideal:\nfcmp s0,#0.0\nb.ge local_8_posture_upper\nldr s1,float_43b40000\nfadd s0,s0,s1\nlocal_8_posture_upper:\nldr s1,float_43b40000\nfcmp s0,s1\nb.lt local_8_posture_angle\nfsub s0,s0,s1\nlocal_8_posture_angle:\nstr s10,[sp,#80]\nstr s0,[sp,#84]\nadd x0,sp,#80\nadd x1,sp,#84\nldr x16,native_6ad3e50\nblr x16\nfmov s10,s0\nstr s8,[sp,#64]\nstr wzr,[sp,#68]\nstr s9,[sp,#72]\nldr w8,[x19,#28]\nldr s1,float_42b40000\ntbz w8,#10,local_8_posture_foot\nfneg s1,s1\nlocal_8_posture_foot:\nfadd s0,s11,s1\nadd x0,sp,#64\nldr s1,float_3f4ccccd\nldr x16,native_6d3a784\nblr x16\nfmov s1,s2\nfmov s2,s0\nfmov s3,s1\nmov x0,x19\nbl shared_studio_ai_opportunity_clearance\nfmov s1,s0\nmov w21,#1\nlocal_8_posture_done:\nfmov s0,s10\nmov w0,w21\nldp d10,d11,[sp,#48]\nldp d8,d9,[sp,#32]\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#112\nret\n\n.align 3\n\nshared_studio_ai_opportunity_evaluate:\n\nstp x19,x20,[sp,#-160]!\nstp x21,x22,[sp,#16]\nstp x23,x30,[sp,#32]\nstp d8,d9,[sp,#48]\nstp d10,d11,[sp,#64]\nstp d12,d13,[sp,#80]\nstp d14,d15,[sp,#96]\nmov x19,x0\nmov x20,x1\nmov x21,x2\nstr xzr,[x21]\nstr xzr,[x21,#8]\nldr w22,[x20]\nldr w8,[x19]\nadd x9,x19,#32\nadd x9,x9,w8,uxtw #4\nldr s8,[x9]\nldr s9,[x9,#8]\nmov w23,#1\ncmp w22,#2\nb.eq local_9_evaluate_pass\ncmp w22,#3\nb.eq local_9_evaluate_dribble\ncmp w22,#1\nb.eq local_9_evaluate_shot\nb local_9_evaluate_done\nlocal_9_evaluate_pass:\nldr w8,[x20,#0x1c]\ncmp w8,#22\nb.hs local_9_evaluate_done\nldr w9,[x19]\ncmp w8,w9\nb.eq local_9_evaluate_done\ncmp w8,#11\ncset w9,hs\nldr w10,[x19,#4]\ncmp w9,w10\nb.ne local_9_evaluate_done\n// Through/lob/special pass endpoints are not fully represented here.\n// Preserve native choices instead of pretending their current position is\n// the native predicted reception point.\nldr w9,[x20,#0x20]\ncbnz w9,local_9_evaluate_done\nldrb w9,[x20,#0x26]\nldrb w10,[x20,#0x27]\norr w9,w9,w10\nldrb w10,[x20,#0x28]\norr w9,w9,w10\nldrb w10,[x20,#0x29]\norr w9,w9,w10\nldrb w10,[x20,#0x2a]\norr w9,w9,w10\nldrb w10,[x20,#0x2b]\norr w9,w9,w10\ncbnz w9,local_9_evaluate_done\nadd x9,x19,#32\nadd x9,x9,w8,uxtw #4\nldr w8,[x9,#12]\ncbz w8,local_9_evaluate_done\nldr s10,[x9]\nldr s11,[x9,#8]\nfsub s0,s10,s8\nfsub s1,s11,s9\nfmul s0,s0,s0\nfmadd s0,s1,s1,s0\nfmov s1,#4.0\nfcmp s0,s1\nb.lt local_9_evaluate_done\nldr s1,float_44610000\nfcmp s0,s1\nb.gt local_9_evaluate_done\nfsqrt s13,s0\nb local_9_evaluate_metrics\nlocal_9_evaluate_dribble:\nldr w8,[x20,#0x2c]\nsub w8,w8,#2\ncmp w8,#1\nb.hi local_9_evaluate_done\nldr s0,[x20,#0x30]\nfcmp s0,s0\nb.vs local_9_evaluate_done\nfabs s1,s0\nldr s2,float_43b40000\nfcmp s1,s2\nb.gt local_9_evaluate_done\nldr w8,[x19]\nadd x0,x19,#32\nadd x0,x0,w8,uxtw #4\nfmov s1,#4.0\nldr x16,native_6d3a784\nblr x16\nfmov s10,s0\nfmov s11,s2\nfmov s13,#4.0\n// Every native moving dribble can be a baseline; only a forward inward\n// route receives a preference flag.\nfabs s0,s9\nfmov s1,#14.0\nfcmp s0,s1\nb.lt local_9_evaluate_metrics\nfabs s0,s11\nfabs s1,s9\nfmov s2,#0.5\nfsub s1,s1,s2\nfcmp s0,s1\nb.gt local_9_evaluate_metrics\nfsub s0,s10,s8\nldr s1,[x19,#8]\nfmul s0,s0,s1\nfcmp s0,s2\nb.lt local_9_evaluate_metrics\norr w23,w23,#8\nldr w8,[x19,#28]\ntbz w8,#8,local_9_evaluate_metrics\norr w23,w23,#4\nb local_9_evaluate_metrics\nlocal_9_evaluate_shot:\nldr w8,[x20,#8]\ncmp w8,#1\nb.hi local_9_evaluate_done\nldr s0,[x20,#0xc]\nldr s1,[x19,#8]\nldr s2,[x19,#12]\nfmul s1,s1,s2\nfsub s0,s0,s1\nfabs s0,s0\nfmov s1,#3.0\nfcmp s0,s1\nb.vs local_9_evaluate_done\nb.gt local_9_evaluate_done\nldr s0,[x20,#0x10]\nfcmp s0,#0.0\nb.vs local_9_evaluate_done\nb.lt local_9_evaluate_done\nfmov s1,#3.5\nfcmp s0,s1\nb.gt local_9_evaluate_done\nldr s0,[x20,#0x14]\nfabs s0,s0\nfmov s1,#4.0\nfcmp s0,s1\nb.vs local_9_evaluate_done\nb.gt local_9_evaluate_done\n// Decode the precomputed target, but only compare long shots from a\n// sensible angle. Other original shots retain their native request type.\nldr s0,[x19,#8]\nldr s1,[x19,#12]\nfmul s0,s8,s0\nfsub s0,s1,s0\nfabs s1,s9\nldr s2,float_3f59999a\nldr w8,[x19,#28]\nand w9,w8,#0xff\ncmp w9,#3\nb.eq local_9_shot_wide_angle\ntbnz w8,#9,local_9_shot_wide_angle\nb local_9_shot_angle_test\nlocal_9_shot_wide_angle:\nfmov s2,#1.0\nlocal_9_shot_angle_test:\nfmul s2,s0,s2\nfcmp s1,s2\nb.gt local_9_evaluate_done\nfmul s0,s0,s0\nfmadd s0,s9,s9,s0\nldr s1,float_43a20000\ncmp w9,#3\nb.eq local_9_shot_wide_min\ntbnz w8,#9,local_9_shot_wide_min\nb local_9_shot_min_test\nlocal_9_shot_wide_min:\nldr s1,float_43100000\nlocal_9_shot_min_test:\nfcmp s0,s1\nb.lt local_9_evaluate_done\nldr s1,float_44800000\ncmp w9,#3\nb.eq local_9_shot_wide_max\ntbnz w8,#9,local_9_shot_wide_max\nb local_9_shot_max_test\nlocal_9_shot_wide_max:\nldr s1,float_44992000\nlocal_9_shot_max_test:\nfcmp s0,s1\nb.gt local_9_evaluate_done\nfsqrt s13,s0\nldr s10,[x20,#0xc]\nldr s11,[x20,#0x14]\nfsub s0,s10,s8\nfsub s1,s11,s9\nfmul s2,s0,s0\nfmadd s2,s1,s1,s2\nfsqrt s2,s2\nfmov s3,#10.0\nfdiv s3,s3,s2\nfmadd s10,s0,s3,s8\nfmadd s11,s1,s3,s9\norr w23,w23,#4\nlocal_9_evaluate_metrics:\ncmp w22,#3\nb.ne local_9_metrics_bounds\nldr w8,[x19,#28]\ntbz w8,#9,local_9_metrics_bounds\n// Lone Wolf may progress without Incisive Run. Retain the inward marker\n// separately so the combination can favour inward shooting setups.\nfsub s0,s10,s8\nldr s1,[x19,#8]\nfmul s0,s0,s1\nfmov s2,#0.5\nfcmp s0,s2\nb.lt local_9_metrics_bounds\nldr s2,[x19,#12]\nfmul s0,s10,s1\nfsub s0,s2,s0\nfmul s0,s0,s0\nfmadd s0,s11,s11,s0\nfmul s1,s8,s1\nfsub s1,s2,s1\nfmul s1,s1,s1\nfmadd s1,s9,s9,s1\nfcmp s0,s1\nb.ge local_9_metrics_bounds\norr w23,w23,#4\nlocal_9_metrics_bounds:\n// Snapshot validated the source positions; also validate native predicted\n// dribble endpoints, including NaNs and pitch bounds.\nfabs s0,s10\nldr s1,[x19,#12]\nfcmp s0,s1\nb.vs local_9_evaluate_done\nb.gt local_9_evaluate_done\nfabs s0,s11\nldr s1,[x19,#16]\nfcmp s0,s1\nb.vs local_9_evaluate_done\nb.gt local_9_evaluate_done\nmov x0,x19\nfmov s0,s8\nfmov s1,s9\nfmov s2,s10\nfmov s3,s11\nbl shared_studio_ai_opportunity_clearance\nfsqrt s14,s0\nfsqrt s15,s1\nfsqrt s12,s2\ncmp w22,#1\nb.eq local_9_metrics_shot\ncmp w22,#2\nb.eq local_9_metrics_pass\nfmov s0,#1.75\nfcmp s14,s0\nb.lt local_9_evaluate_done\nfmov s0,#2.5\nfcmp s15,s0\nb.lt local_9_evaluate_done\nfmov s0,#1.5\nfcmp s12,s0\nb.lt local_9_evaluate_done\nb local_9_metrics_position\nlocal_9_metrics_pass:\nfmov s0,#1.5\nfcmp s14,s0\nb.lt local_9_evaluate_done\nfmov s0,#2.5\nfcmp s15,s0\nb.lt local_9_evaluate_done\n// Clear, free reception inside the box is never sacrificed to a skill\n// preference. Through/lob passes already fail closed above.\nldr s0,[x19,#8]\nldr s1,[x19,#12]\nfmul s0,s10,s0\nfsub s0,s1,s0\nldr s1,float_41840000\nfcmp s0,s1\nb.gt local_9_pass_penetration\nfabs s0,s11\nldr s1,float_41a147ae\nfcmp s0,s1\nb.gt local_9_pass_penetration\nfmov s0,#3.0\nfcmp s15,s0\nb.lt local_9_pass_penetration\nfmov s0,#1.75\nfcmp s14,s0\nb.lt local_9_pass_penetration\norr w23,w23,#2\nlocal_9_pass_penetration:\n// Protect a clear forward receiver beyond the second-last opponent.\n// This is a conservative protection, not an offside/through-ball solver.\nfsub s0,s10,s8\nldr s1,[x19,#8]\nfmul s0,s0,s1\nfmov s2,#4.0\nfcmp s0,s2\nb.lt local_9_metrics_position\nldr w8,[x19,#4]\neor w8,w8,#1\nmov w9,#11\nmul w8,w8,w9\nadd x9,x19,#32\nadd x9,x9,w8,uxtw #4\nmov w10,#11\nmov w11,#0\nfmul s2,s10,s1\nlocal_9_penetration_loop:\nldr w8,[x9,#12]\ncbz w8,local_9_penetration_next\nldr s0,[x9]\nfmul s0,s0,s1\nfcmp s0,s2\nb.gt local_9_penetration_behind\nb local_9_penetration_next\nlocal_9_penetration_behind:\nadd w11,w11,#1\nlocal_9_penetration_next:\nadd x9,x9,#16\nsubs w10,w10,#1\nb.ne local_9_penetration_loop\ncmp w11,#1\nb.hi local_9_metrics_position\norr w23,w23,#2\nb local_9_metrics_position\nlocal_9_metrics_shot:\nfmov s0,#2.75\nfcmp s12,s0\nb.lt local_9_evaluate_done\nfmov s0,#1.5\nfcmp s14,s0\nb.lt local_9_evaluate_done\nlocal_9_metrics_position:\nmov x0,x19\ncmp w22,#1\nb.eq local_9_position_shot\nfmov s0,s10\nfmov s1,s11\nb local_9_position_call\nlocal_9_position_shot:\nfmov s0,s8\nfmov s1,s9\nlocal_9_position_call:\nbl shared_studio_ai_opportunity_position\nfmov s12,s0\nfmov s0,#4.0\nfsub s12,s12,s0\ncmp w22,#2\nb.ne local_9_position_risk\nldr s0,float_3e19999a\nfmsub s0,s13,s0,s12\nfmov s12,s0\nlocal_9_position_risk:\n// Remaining pressure and corridor uncertainty use the same bounded cost\n// scale for each action, after the hard safety gates above.\nfmov s0,#3.0\nfsub s1,s0,s14\nfmov s2,wzr\nfmax s1,s1,s2\nfmov s3,#4.0\nfmul s1,s1,s3\nfsub s0,s0,s15\nfmax s0,s0,s2\nfmadd s0,s0,s3,s1\nfsub s12,s12,s0\nfmax s12,s12,s2\n// Posture is stored separately; it does not secretly bias ordinary action\n// opportunity estimates. Only Lone Wolf uses it to rank repositioning.\nldr w8,[x19,#28]\nand w8,w8,#0xff\ncmp w8,#3\nb.ne local_9_posture_not_blitz\ncmp w22,#1\nb.eq local_9_posture_current\ncmp w22,#3\nb.ne local_9_posture_not_blitz\nfmov s0,s10\nfmov s1,s11\nldr s2,[x20,#0x30]\nb local_9_posture_compute\nlocal_9_posture_current:\nfmov s0,s8\nfmov s1,s9\nldr w8,[x19]\nadd x9,x19,#32\nadd x9,x9,w8,uxtw #4\nldr s2,[x9,#4]\nlocal_9_posture_compute:\nmov x0,x19\nbl shared_studio_ai_blitz_posture\ncbz w0,local_9_posture_unknown\nstr s0,[x21,#8]\nstr s1,[x21,#12]\nldr s2,float_420c0000\nfcmp s0,s2\nb.gt local_9_posture_store\nldr s2,float_40440000\nfcmp s1,s2\nb.lt local_9_posture_store\norr w23,w23,#16\nb local_9_posture_store\nlocal_9_posture_not_blitz:\norr w23,w23,#16\nb local_9_posture_store\nlocal_9_posture_unknown:\nldr s0,float_43340000\nstr s0,[x21,#8]\nlocal_9_posture_store:\nstr s12,[x21]\nstr w23,[x21,#4]\nlocal_9_evaluate_done:\nldp d14,d15,[sp,#96]\nldp d12,d13,[sp,#80]\nldp d10,d11,[sp,#64]\nldp d8,d9,[sp,#48]\nldp x23,x30,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#160\nret\n\n.align 3\n\nshared_studio_ai_cut_in_profile:\n\nstp x19,x20,[sp,#-112]!\nstp x21,x22,[sp,#16]\nstp x23,x24,[sp,#32]\nstp x25,x26,[sp,#48]\nstr x30,[sp,#64]\nstp d8,d9,[sp,#80]\nmov x19,x0\nmov w24,#0\ncbz x19,local_10_done\nldr x21,[x19]\nldr x20,[x19,#0x18]\ncbz x21,local_10_done\ncbz x20,local_10_done\nldr w22,[x21]\ncmp w22,#22\nb.hs local_10_done\nmov x0,x20\nldr x16,native_72c3e80\nblr x16\ncbz x0,local_10_done\nldr x16,native_697b60c\nblr x16\ncmp w0,#1\nb.ne local_10_done\nmov x0,x20\nmov w1,w22\nldr x16,native_72c40b0\nblr x16\ncbz x0,local_10_done\nldr x16,native_7301ef8\nblr x16\nmov x23,x0\ncbz x23,local_10_done\nldr w8,[x23,#0xd4]\ntbnz w8,#7,local_10_check_skills\nbl shared_studio_ai_preference_enabled\ncbz w0,local_10_done\nlocal_10_check_skills:\nmov x0,x23\nmov w1,#51\nldr x16,native_72b39c4\nblr x16\ntbnz w0,#0,local_10_blitz\nldr w8,[x23,#0xd4]\ntbnz w8,#7,local_10_other_skills\ntbz w8,#4,local_10_done\nlocal_10_other_skills:\nmov x0,x23\nmov w1,#7\nldr x16,native_72b39c4\nblr x16\ntbnz w0,#0,local_10_curler\nmov x0,x23\nmov w1,#42\nldr x16,native_72b39c4\nblr x16\ntbnz w0,#0,local_10_normal_shooter\nldr w8,[x23,#0xd4]\ntbz w8,#7,local_10_done\nlocal_10_normal_shooter:\nmov w24,#1\nb local_10_position\nlocal_10_blitz:\nmov w24,#3\nb local_10_position\nlocal_10_curler:\nmov w24,#2\nlocal_10_position:\nmov w0,w22\nldr x16,native_697d0f8\nblr x16\nmov w1,w0\nmov x0,x20\nldr x16,native_72c4028\nblr x16\ncbz x0,local_10_no\nldrsb w23,[x0,#0x28c]\ncmp w23,#1\nb.eq local_10_side_ok\ncmn w23,#1\nb.ne local_10_no\nlocal_10_side_ok:\nmov x0,x20\nldr x16,native_72c3e6c\nblr x16\nmov x26,x0\ncbz x26,local_10_no\nmov x0,x20\nmov w1,w22\nldr x16,native_72c408c\nblr x16\nmov x25,x0\ncbz x25,local_10_no\nldr s8,[x25,#0x4f4]\nldr s9,[x25,#0x4fc]\nldr s0,[x26]\nldr s1,float_42000000\nfcmp s0,s1\nb.vs local_10_no\nb.lt local_10_no\nldr s1,float_428c0000\nfcmp s0,s1\nb.gt local_10_no\nscvtf s1,w23\nfmul s8,s8,s1\nfsub s8,s0,s8\nfcmp s8,#0.0\nb.vs local_10_no\nb.lt local_10_no\nfabs s0,s9\nfcmp s0,s0\nb.vs local_10_no\nfmul s0,s0,s0\nfmadd s0,s8,s8,s0\nldr s1,float_42800000\nfcmp s0,s1\nb.lt local_10_no\nldr s1,float_44f20000\nfcmp s0,s1\nb.gt local_10_no\nmov x1,x25\nmov x2,x26\nmov w3,w23\nfmov s0,s8\nfmov s1,s9\nb local_10_done\nlocal_10_no:\nmov w24,#0\nlocal_10_done:\nmov w0,w24\nldp d8,d9,[sp,#80]\nldr x30,[sp,#64]\nldp x25,x26,[sp,#48]\nldp x23,x24,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#112\nret\n\n.align 3\n\nshared_studio_ai_select_cut_in_candidate:\n\nsub sp,sp,#1088\nstp x19,x20,[sp]\nstp x21,x22,[sp,#16]\nstp x23,x24,[sp,#32]\nstp x25,x26,[sp,#48]\nstp x27,x28,[sp,#64]\nstp x29,x30,[sp,#80]\nstp d8,d9,[sp,#96]\nstp d10,d11,[sp,#112]\nmov w20,w1\nmov w27,w1\ncmp w20,#30\nb.hs local_11_choice_done\nldr x19,[x0]\nldr x21,[x0,#0x10]\ncbz x19,local_11_choice_done\ncbz x21,local_11_choice_done\nmov w8,#0x49c8\nadd x22,x19,x8\nmov w8,#80\numaddl x8,w20,w8,x22\nldr w9,[x8]\nsub w9,w9,#1\ncmp w9,#2\nb.hi local_11_choice_done\nldr w9,[x8]\ncmp w9,#1\nb.ne local_11_choice_profile\nldr w9,[x8,#8]\ncmp w9,#1\nb.hi local_11_choice_done\nlocal_11_choice_profile:\nmov x0,x21\nbl shared_studio_ai_cut_in_profile\ncbz w0,local_11_choice_done\nstr w0,[sp,#1032]\nadd x23,sp,#128\nmov x0,x21\nmov x1,x23\nbl shared_studio_ai_opportunity_snapshot\ncbz w0,local_11_choice_done\nldr w8,[sp,#1032]\nstrb w8,[x23,#28]\nldr w8,[x23,#28]\nstr w8,[sp,#1024]\nadd x24,sp,#512\nmov w8,#0x48a8\nadd x29,x19,x8\nmov x0,x29\nldr x16,native_70e63cc\nblr x16\nmov x25,x0\nstr x25,[sp,#1000]\nmov x0,x29\nldr x16,native_70e63d0\nblr x16\nmov x26,x0\ncmp x26,x25\nb.lo local_11_choice_done\nsub x8,x26,x25\ncmp x8,#120\nb.hi local_11_choice_done\ntst x8,#3\nb.ne local_11_choice_done\nmov w28,#0\nlocal_11_evaluate_loop:\ncmp x25,x26\nb.hs local_11_evaluate_finished\nldr w29,[x25],#4\ncmp w29,#30\nb.hs local_11_evaluate_loop\nmov w8,#1\nlsl w8,w8,w29\ntst w28,w8\nb.ne local_11_evaluate_loop\norr w28,w28,w8\nmov w8,#80\numaddl x1,w29,w8,x22\nadd x2,x24,w29,uxtw #4\nmov x0,x23\nbl shared_studio_ai_opportunity_evaluate\nldr w8,[sp,#1024]\ntbnz w8,#9,local_11_evaluate_loop\nadd x8,x24,w29,uxtw #4\nldr w8,[x8,#4]\ntbnz w8,#1,local_11_choice_done\nb local_11_evaluate_loop\nlocal_11_evaluate_finished:\nmov w8,#1\nlsl w8,w8,w20\ntst w28,w8\nb.eq local_11_choice_done\nldr w8,[sp,#1024]\ntbnz w8,#9,local_11_lone_start\nadd x8,x24,w20,uxtw #4\nldr w9,[x8,#4]\ntbz w9,#0,local_11_choice_done\nldr s8,[x8]\nmov w8,#30\nstr w8,[sp,#1008]\nstr w8,[sp,#1012]\nstr w8,[sp,#1016]\nmov w8,#80\numaddl x8,w20,w8,x22\nldr w9,[x8]\nadd x8,sp,#1004\nstr w20,[x8,w9,uxtw #2]\nmov w28,#1\nlsl w28,w28,w9\nldr x25,[sp,#1000]\nlocal_11_equal_loop:\ncmp x25,x26\nb.hs local_11_equal_draw\nldr w29,[x25],#4\ncmp w29,#30\nb.hs local_11_equal_loop\ncmp w29,w20\nb.eq local_11_equal_loop\nadd x8,x24,w29,uxtw #4\nldr w9,[x8,#4]\ntbz w9,#0,local_11_equal_loop\nldr s10,[x8]\nfsub s0,s10,s8\nfabs s0,s0\nldr s1,float_41000000\nfcmp s0,s1\nb.vs local_11_equal_loop\nb.gt local_11_equal_loop\nmov w8,#80\numaddl x8,w29,w8,x22\nldr w10,[x8]\ncmp w10,#3\nb.ne local_11_equal_class\ntbz w9,#2,local_11_equal_loop\nlocal_11_equal_class:\nmov w8,#1\nlsl w8,w8,w10\ntst w28,w8\nb.ne local_11_equal_loop\nstr w10,[sp,#1028]\nmov x0,x19\nmov x1,x21\nmov w2,w29\nldr x16,native_70e72a0\nblr x16\ntbnz w0,#0,local_11_equal_loop\nldr w10,[sp,#1028]\nmov w8,#1\nlsl w8,w8,w10\norr w28,w28,w8\nadd x8,sp,#1004\nstr w29,[x8,w10,uxtw #2]\nb local_11_equal_loop\nlocal_11_equal_draw:\nmov x0,x23\nmov w1,w28\nmov w2,#0\nldr x3,[x21,#0x18]\nbl shared_studio_ai_equal_action_draw\ncbz w0,local_11_choice_done\nadd x8,sp,#1004\nldr w27,[x8,w0,uxtw #2]\nb local_11_choice_done\nlocal_11_lone_start:\nmov w8,#30\nstr w8,[sp,#1008]\nstr w8,[sp,#1012]\nldr s8,float_c47a0000\nfmov s9,s8\nldr x25,[sp,#1000]\nlocal_11_lone_loop:\ncmp x25,x26\nb.hs local_11_lone_finish\nldr w29,[x25],#4\ncmp w29,#30\nb.hs local_11_lone_loop\nadd x8,x24,w29,uxtw #4\nldr w9,[x8,#4]\ntbz w9,#0,local_11_lone_loop\nldr s10,[x8]\nldr s11,[x8,#8]\nmov w8,#80\numaddl x8,w29,w8,x22\nldr w10,[x8]\ncmp w10,#1\nb.eq local_11_lone_shot\ncmp w10,#3\nb.ne local_11_lone_loop\ntbz w9,#2,local_11_lone_loop\n// Incisive Run adds inward-route preference; Lone Wolf without it may use\n// any safe progress route. Posture quality distinguishes shooting setups.\nldr w8,[sp,#1024]\ntbz w8,#8,local_11_lone_route_pose\ntbz w9,#3,local_11_lone_route_pose\nfmov s0,#6.0\nfadd s10,s10,s0\nlocal_11_lone_route_pose:\ntbz w9,#4,local_11_lone_route_cost\nfmov s0,#20.0\nfadd s10,s10,s0\nlocal_11_lone_route_cost:\nldr s0,float_3e4ccccd\nfmsub s10,s11,s0,s10\nfcmp s10,s9\nb.le local_11_lone_loop\nmov w28,#3\nb local_11_lone_veto\nlocal_11_lone_shot:\nldr w8,[sp,#1032]\ncmp w8,#3\nb.ne local_11_lone_shot_score\ntbz w9,#4,local_11_lone_loop\nlocal_11_lone_shot_score:\nldr s0,float_3da3d70a\nfmsub s10,s11,s0,s10\nfcmp s10,s8\nb.le local_11_lone_loop\nmov w28,#1\nlocal_11_lone_veto:\ncmp w29,w20\nb.eq local_11_lone_accept\nmov x0,x19\nmov x1,x21\nmov w2,w29\nldr x16,native_70e72a0\nblr x16\ntbnz w0,#0,local_11_lone_loop\nlocal_11_lone_accept:\ncmp w28,#1\nb.ne local_11_lone_accept_route\nfmov s8,s10\nstr w29,[sp,#1008]\nb local_11_lone_loop\nlocal_11_lone_accept_route:\nfmov s9,s10\nstr w29,[sp,#1012]\nb local_11_lone_loop\nlocal_11_lone_finish:\nldr w8,[sp,#1008]\ncmp w8,#30\nb.lo local_11_lone_selected\nldr w8,[sp,#1012]\ncmp w8,#30\nb.hs local_11_choice_done\nlocal_11_lone_selected:\nmov w27,w8\nlocal_11_choice_done:\nmov w0,w27\nldp d10,d11,[sp,#112]\nldp d8,d9,[sp,#96]\nldp x29,x30,[sp,#80]\nldp x27,x28,[sp,#64]\nldp x25,x26,[sp,#48]\nldp x23,x24,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp]\nadd sp,sp,#1088\nret\n\n.align 3\n\nshared_studio_ai_prefer_curled_shot:\n\nsub sp,sp,#528\nstp x19,x20,[sp]\nstp x21,x30,[sp,#16]\nmov x19,x0\nmov x20,x1\nldr w8,[x19,#4]\ncmp w8,#25\nb.ne local_12_request_done\nmov x0,x20\nbl shared_studio_ai_preferred_shot_style\ncbz w0,local_12_legacy_request\ncmp w0,#1\nb.eq local_12_prefer_controlled\ncmp w0,#2\nb.eq local_12_prefer_low\nmov w8,#2\nb local_12_store_style\nlocal_12_prefer_controlled:\nmov w8,#1\nb local_12_store_style\nlocal_12_prefer_low:\nmov w8,#0\nlocal_12_store_style:\nstr w8,[x19,#8]\nb local_12_request_done\nlocal_12_legacy_request:\nldr w8,[x19,#8]\ncbnz w8,local_12_request_done\nmov x0,x20\nbl shared_studio_ai_cut_in_profile\ncmp w0,#2\nb.lo local_12_request_done\nstr w0,[sp,#32]\nadd x21,sp,#48\nmov x0,x20\nmov x1,x21\nbl shared_studio_ai_opportunity_snapshot\ncbz w0,local_12_request_done\nldr w8,[sp,#32]\nstrb w8,[x21,#28]\nadd x1,sp,#432\nmov w8,#1\nstr w8,[x1]\nstr wzr,[x1,#8]\nldr w8,[x19,#0xc]\nstr w8,[x1,#0xc]\nldr w8,[x19,#0x14]\nstr w8,[x1,#0x10]\nldr w8,[x19,#0x10]\nstr w8,[x1,#0x14]\nadd x2,sp,#512\nmov x0,x21\nbl shared_studio_ai_opportunity_evaluate\nldr w8,[sp,#516]\ntbz w8,#0,local_12_request_done\ntbz w8,#4,local_12_request_done\nldr w8,[x21,#28]\ntbnz w8,#9,local_12_request_controlled\nmov x0,x21\nmov w1,#6\nmov w2,#1\nldr x3,[x20,#0x18]\nbl shared_studio_ai_equal_action_draw\ncmp w0,#2\nb.ne local_12_request_done\nlocal_12_request_controlled:\nmov w8,#1\nstr w8,[x19,#8]\nlocal_12_request_done:\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp]\nadd sp,sp,#528\nret\n\n.align 3\n\nshared_studio_ai_preference_enabled:\nldr w0,local_13_ordinary_switch\nret\n.align 2\nlocal_13_ordinary_switch: .word 0x58414931\n\n.align 3\n\nshared_studio_ai_preferred_shot_style:\n\nsub sp,sp,#480\nstp x19,x20,[sp]\nstp x21,x22,[sp,#16]\nstp x23,x30,[sp,#32]\nmov x19,x0\nmov w23,#0\nbl shared_studio_ai_preference_enabled\ncbz w0,local_14_done\ncbz x19,local_14_done\nldr x8,[x19]\nldr x20,[x19,#0x18]\ncbz x8,local_14_done\ncbz x20,local_14_done\nldr w21,[x8]\ncmp w21,#22\nb.hs local_14_done\nmov x0,x20\nldr x16,native_72c3e80\nblr x16\ncbz x0,local_14_done\nldr x16,native_697b60c\nblr x16\ncmp w0,#1\nb.ne local_14_done\nmov x0,x20\nmov w1,w21\nldr x16,native_72c40b0\nblr x16\ncbz x0,local_14_done\nldr x16,native_7301ef8\nblr x16\ncbz x0,local_14_done\nmov x22,x0\nmov w1,#51\nldr x16,native_72b39c4\nblr x16\ntst w0,#1\ncset w23,ne\nlsl w23,w23,#1\nmov x0,x22\nmov w1,#58\nldr x16,native_72b39c4\nblr x16\ntbz w0,#0,local_14_heavy\norr w23,w23,#4\nlocal_14_heavy:\nmov x0,x22\nmov w1,#74\nldr x16,native_72b39c4\nblr x16\ntbz w0,#0,local_14_snapshot\norr w23,w23,#8\nlocal_14_snapshot:\ncbz w23,local_14_done\n// Skill-style choice is AFTER native shooting has been selected. Unrelated\n// players crossing a touchline must never veto the current player's style.\ncmp w23,#2\nb.eq local_14_only_blitz\ncmp w23,#4\nb.eq local_14_only_low\ncmp w23,#8\nb.eq local_14_only_heavy\nadd x8,sp,#64\nmov w9,#24\nlocal_14_clear_draw:\nstp xzr,xzr,[x8],#16\nsubs w9,w9,#1\nb.ne local_14_clear_draw\nstr w21,[sp,#64]\nstr w23,[sp,#92]\nmov x0,x20\nmov w1,w21\nldr x16,native_72c408c\nblr x16\ncbz x0,local_14_none\nadd x8,sp,#96\nadd x8,x8,w21,uxtw #4\nldr s0,[x0,#0x4f4]\nldr s1,[x0,#0x4fc]\nfcmp s0,s0\nb.vs local_14_none\nfcmp s1,s1\nb.vs local_14_none\nstr s0,[x8]\nstr s1,[x8,#8]\nldr w9,[x0,#0x4ec]\nstr w9,[x8,#4]\nmov w9,#1\nstr w9,[x8,#12]\nadd x0,sp,#64\nmov w1,w23\nmov w2,#2\nmov x3,x20\nbl shared_studio_ai_equal_action_draw\nmov w23,w0\nb local_14_done\nlocal_14_only_blitz:\nmov w23,#1\nb local_14_done\nlocal_14_only_low:\nmov w23,#2\nb local_14_done\nlocal_14_only_heavy:\nmov w23,#3\nb local_14_done\nlocal_14_none:\nmov w23,#0\nlocal_14_done:\nmov w0,w23\nldp x23,x30,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp]\nadd sp,sp,#480\nret\n\n.align 3\n\nshared_studio_ai_low_shot_permission:\n\nstp x19,x20,[sp,#-48]!\nstp x21,x30,[sp,#16]\nmov x19,x0\nmov w20,w1\nmov w21,w2\ncbz x19,local_15_none\ncbz x3,local_15_none\ncmp w20,#22\nb.hs local_15_none\nldr x8,data_15_rows\nmov w9,#24\numaddl x8,w20,w9,x8\ncmp w21,#1\nb.ne local_15_check\nstp x19,x3,[x8]\nstr w4,[x8,#16]\nmov w9,#1\nstr w9,[x8,#20]\nmov w0,#1\nb local_15_done\nlocal_15_check:\nldp x9,x10,[x8]\ncmp x9,x19\nb.ne local_15_none\ncmp x10,x3\nb.ne local_15_none\nldr w9,[x8,#20]\ncbz w9,local_15_none\nldr w9,[x8,#16]\nsub w9,w4,w9\ncmp w9,#2\nb.hi local_15_none\nmov w0,#1\nb local_15_done\nlocal_15_none:\nmov w0,#0\nlocal_15_done:\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#48\nret\n\n.align 3\n\nshared_studio_ai_bound_shot_power:\n\nstp x19,x20,[sp,#-112]!\nstp x21,x22,[sp,#16]\nstp x23,x24,[sp,#32]\nstp x25,x26,[sp,#48]\nstr x30,[sp,#64]\nstp d8,d9,[sp,#80]\nmov x19,x0\nmov x20,x1\nbl shared_studio_ai_preference_enabled\ncbz w0,local_16_done\ncbz x19,local_16_done\ncbz x20,local_16_done\nldr w21,[x19,#4]\ncmp w21,#22\nb.hs local_16_done\nldr x22,[x19,#0x30]\ncbz x22,local_16_done\nmov x0,x22\nldr x16,native_72c3e80\nblr x16\ncbz x0,local_16_done\nmov x25,x0\nldr x16,native_697b60c\nblr x16\ncmp w0,#1\nb.ne local_16_done\nmov w0,w21\nldr x16,native_72d7dc8\nblr x16\ncbz x0,local_16_done\nldr w8,[x0,#4]\ncmp w8,#25\nb.ne local_16_done\nldr w24,[x0,#8]\ncmp w24,#2\nb.hi local_16_done\nmov x0,x22\nmov w1,w21\nldr x16,native_72c40b0\nblr x16\ncbz x0,local_16_done\nldr x16,native_7301ef8\nblr x16\ncbz x0,local_16_done\nmov x23,x0\nldr s8,[x20,#0xe7c]\nfcmp s8,#0.0\nb.vs local_16_done\nb.le local_16_done\nfmov s0,#1.0\nfcmp s8,s0\nb.gt local_16_done\nldrb w8,[x20,#0xffa]\ncmp w24,#1\nb.eq local_16_controlled\ncmp w24,#2\nb.eq local_16_heavy_power\ncbnz w8,local_16_done\nmov w1,#58\nldr x16,native_72b39c4\nblr x16\ntbz w0,#0,local_16_done\nldr s0,float_3efae148\nfmin s8,s8,s0\nstr s8,[x20,#0xe7c]\nmov x0,x25\nldr x16,native_6a4bd08\nblr x16\nmov w26,w0\nmov x0,x22\nmov w1,w21\nldr x16,native_72c1a14\nblr x16\ncbz x0,local_16_done\nmov x3,x0\nmov x0,x22\nmov w1,w21\nmov w2,#1\nmov w4,w26\nbl shared_studio_ai_low_shot_permission\nb local_16_done\nlocal_16_controlled:\ncmp w8,#2\nb.ne local_16_done\nmov w1,#51\nldr x16,native_72b39c4\nblr x16\ntbz w0,#0,local_16_done\nldr s0,float_3f0ccccd\nfmax s8,s8,s0\nstr s8,[x20,#0xe7c]\nb local_16_done\nlocal_16_heavy_power:\ncmp w8,#3\nb.ne local_16_done\nmov w1,#74\nldr x16,native_72b39c4\nblr x16\ntbz w0,#0,local_16_done\nldr s0,float_3f266666\nfmax s8,s8,s0\nstr s8,[x20,#0xe7c]\nlocal_16_done:\nldp d8,d9,[sp,#80]\nldr x30,[sp,#64]\nldp x25,x26,[sp,#48]\nldp x23,x24,[sp,#32]\nldp x21,x22,[sp,#16]\nldp x19,x20,[sp],#112\nret\n\n.align 3\n\nshared_studio_ai_allow_low_with_blitz:\n\nstp x19,x20,[sp,#-48]!\nstp x21,x30,[sp,#16]\nmov x19,x0\ncbz x19,local_17_none\nbl shared_studio_ai_preference_enabled\ncbz w0,local_17_none\nmov w8,#0x2a38\nldrb w20,[x19,x8]\ncmp w20,#22\nb.hs local_17_none\nldr x21,[x19,#0x4620]\ncbz x21,local_17_none\nmov x0,x21\nldr x16,native_72c3e80\nblr x16\ncbz x0,local_17_none\nldr x16,native_6a4bd08\nblr x16\nmov w4,w0\nmov x0,x21\nmov w1,w20\nmov w2,#0\nmov x3,x19\nbl shared_studio_ai_low_shot_permission\nb local_17_done\nlocal_17_none:\nmov w0,#0\nlocal_17_done:\nldp x21,x30,[sp,#16]\nldp x19,x20,[sp],#48\nret\n\n.align 3\n\n.quad 6004517954967784754\n.quad entry_studio_ai_cut_in_candidate_choice\n.quad entry_studio_ai_shot_style_power\n.quad entry_studio_ai_low_and_blitz_coexist\n.quad entry_studio_ai_cut_in_shot_request\n.quad shared_studio_ai_opportunity_snapshot\n.quad shared_studio_ai_opportunity_position\n.quad shared_studio_ai_opportunity_clearance\n.quad shared_studio_ai_equal_action_draw\n.quad shared_studio_ai_blitz_posture\n.quad shared_studio_ai_opportunity_evaluate\n.quad shared_studio_ai_cut_in_profile\n.quad shared_studio_ai_select_cut_in_candidate\n.quad shared_studio_ai_prefer_curled_shot\n.quad shared_studio_ai_preference_enabled\n.quad shared_studio_ai_preferred_shot_style\n.quad shared_studio_ai_low_shot_permission\n.quad shared_studio_ai_bound_shot_power\n.quad shared_studio_ai_allow_low_with_blitz",
+      "functions": {
+        "native_70e57a4": 118380452,
+        "native_71a27f4": 119154676,
+        "native_6d628e0": 114698464,
+        "native_6d62874": 114698356,
+        "native_70e7434": 118387764,
+        "native_72c3e80": 120340096,
+        "native_697b60c": 110605836,
+        "native_72c3e6c": 120340076,
+        "native_72c4028": 120340520,
+        "native_6a642f8": 111559416,
+        "native_6a64358": 111559512,
+        "native_72c408c": 120340620,
+        "native_72c40b0": 120340656,
+        "native_7301ef8": 120594168,
+        "native_6910428": 110167080,
+        "native_6ad3e50": 112016976,
+        "native_6d3a784": 114534276,
+        "native_72b39c4": 120273348,
+        "native_697d0f8": 110612728,
+        "native_70e63cc": 118383564,
+        "native_70e63d0": 118383568,
+        "native_70e72a0": 118387360,
+        "native_72d7dc8": 120421832,
+        "native_6a4bd08": 111459592,
+        "native_72c1a14": 120330772
+      },
+      "constants": {
+        "float_42000000": 32.0,
+        "float_428c0000": 70.0,
+        "float_42340000": 45.0,
+        "float_3fcccccd": 1.6,
+        "float_3f4ccccd": 0.8,
+        "float_42c80000": 100.0,
+        "float_47800000": 65536.0,
+        "float_3d4ccccd": 0.05,
+        "float_43b40000": 360.0,
+        "float_42b40000": 90.0,
+        "float_44610000": 900.0,
+        "float_3f59999a": 0.85,
+        "float_43a20000": 324.0,
+        "float_44800000": 1024.0,
+        "float_43100000": 144.0,
+        "float_44992000": 1225.0,
+        "float_41840000": 16.5,
+        "float_41a147ae": 20.16,
+        "float_3e19999a": 0.15,
+        "float_420c0000": 35.0,
+        "float_40440000": 3.0625,
+        "float_43340000": 180.0,
+        "float_42100000": 36.0,
+        "float_42800000": 64.0,
+        "float_44f20000": 1936.0,
+        "float_41000000": 8.0,
+        "float_c47a0000": -1000.0,
+        "float_3e4ccccd": 0.2,
+        "float_3da3d70a": 0.08,
+        "float_3efae148": 0.49,
+        "float_3f0ccccd": 0.55,
+        "float_3f266666": 0.65
+      },
+      "deferred_shared_refs": [],
+      "writable": {
+        "data_7_draw_state": 2112,
+        "data_15_rows": 528
+      },
+      "writable_fixups": [
+        [
+          6928,
+          2112
+        ],
+        [
+          6936,
+          528
+        ]
+      ],
+      "evidence": [
+        "preserve the original Blitz exclusion except a current CPU low-shot permission",
+        "all original Low Screamer skill/power/foot/geometry checks remain",
+        "72c408c native live PlayerInfo; position +4f4/+4fc",
+        "70ed20c..70ed248 checks native active/unavailable before reading positions",
+        "snapshot once per decision; no action evaluator, RNG or global cache",
+        "actor/domain-separated xorshift stream, multiply-high bounded class draw",
+        "stable when quantized situation and candidate classes are unchanged; no native RNG",
+        "body heading PlayerInfo +4ec; native yaw and absolute angle difference",
+        "compact foot parameter 43 -> 6a745e0 -> native ability byte 53",
+        "25-degree open-body target and strong-foot clearance are workshop estimates",
+        "70e5354 passes native result +1c to 70e74d0; recipient +0, mode +4",
+        "70e7ae8 uses native heading at result +30; original advance is pure geometry",
+        "workshop-only opportunity scale; static geometry plus conservative buffers",
+        "unknown predictions or modes stay native; never calls original action evaluators",
+        "6a74e74 parameter 66 -> AI bit 4; 6a74e94 sets bit 4",
+        "original match table c7fec0: skill 18 -> 51, 17 -> 7, 23 -> 42",
+        "72b39c4 effective match flags include innate and learned skills",
+        "AI candidate path only; normal match phase 1; current half side follows team +28c",
+        "equal tickets per action class inside estimated window; no native RNG",
+        "Lone Wolf: ready safe long shot, otherwise safe route towards shot/stance",
+        "one snapshot and cached unique candidates; current player at selector +10",
+        "owned Blitz/Low/Heavy skill styles use equal tickets after a native shot has already been chosen",
+        "fallback for other players retains previous Lone Wolf / ordinary curler logic; never force an animation",
+        "effective match skills 51 Blitz / 58 Low Screamer / 74 Heavy Shot",
+        "one equal ticket per available skill style, separate RNG domain 2",
+        "single style needs no geometry snapshot; multiple styles hash only the acting player",
+        "only a native shot request is modified; no pass/dribble selection changes",
+        "values only: current root, current actor, native frame counter; never dereference retained pointers",
+        "permission is valid for at most two native simulation ticks",
+        "run after the entire original native AI behavior 25 power handler",
+        "native final control mode must match the registered request subtype",
+        "bounded preference only: low <50%, Blitz >=50%, heavy >=65%; native motion gates remain"
+      ],
+      "address": 118380448,
+      "file_offset": 118364064,
+      "expected_hex": "fd7bbba9fa6701a9f85f02a9f65703a9f44f04a9fd030091140040f908158952f50300aa9302088be00313aa00030094f60300aae00313aafe020094df0200eb",
+      "entry_offset": 0,
+      "extra_entries": [
+        {
+          "name": "studio_ai_shot_style_power",
+          "address": 119154672,
+          "file_offset": 119138288,
+          "expected_hex": "ff4304d1ec4300fdeb2b096de9230a6dfd7b0ba9fc6f0ca9fa670da9f85f0ea9f6570fa9f44f10a9fdc3029148d03bd5f30302aae80b00f9f40301aa081540f9",
+          "entry_offset": 56
+        },
+        {
+          "name": "studio_ai_low_and_blitz_coexist",
+          "address": 114698352,
+          "file_offset": 114681968,
+          "expected_hex": "800300376842403948030035600e40bd01102c1e0020211ec5020054f8031f2a8dffff17d7010036e11f40b980148052e20313aae30314aae4031f2a25008052",
+          "entry_offset": 128
+        },
+        {
+          "name": "studio_ai_cut_in_shot_request",
+          "address": 118387760,
+          "file_offset": 118371376,
+          "expected_hex": "fd7bbda9f65701a9f44f02a9fd030091f30300aa200c40f9f40302aa8d72079475220091f60300aae00315aa1a000094e00316aa6a50e2971f0c007141010054",
+          "entry_offset": 448
+        }
+      ],
+      "helper_entries": {
+        "shared_studio_ai_opportunity_snapshot": 504,
+        "shared_studio_ai_opportunity_position": 1104,
+        "shared_studio_ai_opportunity_clearance": 1176,
+        "shared_studio_ai_equal_action_draw": 1392,
+        "shared_studio_ai_blitz_posture": 1792,
+        "shared_studio_ai_opportunity_evaluate": 2096,
+        "shared_studio_ai_cut_in_profile": 3576,
+        "shared_studio_ai_select_cut_in_candidate": 4088,
+        "shared_studio_ai_prefer_curled_shot": 5040,
+        "shared_studio_ai_preference_enabled": 5312,
+        "shared_studio_ai_preferred_shot_style": 5328,
+        "shared_studio_ai_low_shot_permission": 5744,
+        "shared_studio_ai_bound_shot_power": 5896,
+        "shared_studio_ai_allow_low_with_blitz": 6328
+      }
+    }
+  ],
+  "priority": [
+    "Blitz Curler",
+    "Long-range Curler",
+    "Long-range Shooting"
+  ],
+  "qualification": {
+    "ai_parameter": 66,
+    "ai_match_bit": 4,
+    "lone_wolf_match_bit": 7,
+    "lone_wolf_parameter": 151,
+    "blitz_requires_incisive": false,
+    "skills": {
+      "18": 51,
+      "17": 7,
+      "23": 42
+    }
+  },
+  "shot_styles": {
+    "stage": "only after native CPU chooses a shot",
+    "weights": "one equal ticket per available skill",
+    "styles": {
+      "Blitz Curler": {
+        "match_skill": 51,
+        "request_subtype": 1,
+        "power_min": 0.55
+      },
+      "Low Screamer": {
+        "match_skill": 58,
+        "request_subtype": 0,
+        "power_max": 0.49
+      },
+      "Heavy Shot": {
+        "match_skill": 74,
+        "request_subtype": 2,
+        "power_min": 0.65
+      }
+    },
+    "all_shooting_positions": true,
+    "native_motion_checks_preserved": true,
+    "low_and_blitz_coexist": "current CPU actor/root, at most two native ticks"
+  },
+  "selector_layout": {
+    "game_context_offset": 8,
+    "player_context_offset": 16,
+    "native_caller": "0x70e4bfc"
+  },
+  "opportunity": {
+    "scale": "workshop positional heuristic, not native utility or xG",
+    "window": 8.0,
+    "bonus": 0,
+    "ordinary_choice": "equal action classes",
+    "lone_wolf": "safe shot first, otherwise reposition; inward if Incisive Run",
+    "posture": "native heading, strong-foot space, estimated open-body alignment",
+    "snapshot_once": true,
+    "candidate_evaluations": "one per unique ID",
+    "unknown": "keep original",
+    "protected": [
+      "open box reception",
+      "clear defensive-line penetration"
+    ],
+    "decoded_pass_modes": [
+      "ordinary ground pass"
+    ],
+    "gameplay_calibrated": false
+  },
+  "limits": {
+    "native_candidates_only": true,
+    "native_shot_checks_retained": true,
+    "gameplay_acceptance": "pending user testing"
+  }
+}

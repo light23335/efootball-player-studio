@@ -21,7 +21,7 @@ class V192Tests(unittest.TestCase):
    protected=SimpleNamespace(install_root=lambda r:None);calls=[];callback=object()
    def original(root,progress=None,*,mode=None):calls.append((root,progress,mode));return {'ready':True}
    namespace={'initialize':original}
-   with patch.dict(sys.modules,{'_protected_runtime':protected,'legends_v10':legends}),patch('personal_runtime.install_pack_images'),patch('personal_runtime.patch_resource_checks'),patch('personal_runtime.install_display_previews'):
+   with patch.dict(sys.modules,{'_protected_runtime':protected,'legends_v10':legends}),patch('personal_runtime.install_pack_images'),patch('personal_runtime.patch_resource_checks'),patch('personal_runtime.install_display_previews'),patch('personal_runtime.install_save_import_sync'):
     install(namespace)
     self.assertEqual(namespace['initialize'](str(root),callback,mode='v16'),{'ready':True})
     self.assertIs(calls[-1][1],callback);self.assertEqual(calls[-1][2],'v16')

@@ -65,6 +65,8 @@ def start(home,native_dir):
     app.NativePackage=AndroidPackage;native_package.sign_v2=sign_v2_in_place
     apk_database.index_assets=index_assets
     native_library.convert_movie=android_movie;native_presets.convert_movie=android_movie
+    from android_card_movie import install as install_card_movie
+    install_card_movie()
     BaseServer=app.StudioServer
     BaseHandler=app.Handler
     class AndroidHandler(BaseHandler):

@@ -15,7 +15,7 @@ def repository(value):
  return value
 
 def version(value):
- match=re.fullmatch(r'(?:V16-)?v?(\d+\.\d+\.\d+(?:\.\d+)?)',str(value))
+ match=re.fullmatch(r'(?:V16-)?v?(\d+\.\d+(?:\.\d+){0,2})',str(value))
  if not match:return None
  parts=tuple(map(int,match[1].split('.')));return parts+(0,)*(4-len(parts))
 

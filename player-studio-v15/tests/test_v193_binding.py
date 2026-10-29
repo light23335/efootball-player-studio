@@ -116,6 +116,8 @@ class V193BindingTests(unittest.TestCase):
 
 class V17BindingTests(V193BindingTests):
  original_apk=Path('C:/Users/1/Downloads/73efootball-V17.apk')
+ if not original_apk.is_file():
+  original_apk=Path(__file__).resolve().parents[2].parent/'73efootball安装包及资源/73efootball-V17.apk'
 
  def test_two_stock_preparation_layers_and_isolated_native_worker(self):
   self.assertEqual([len(layer) for layer in self.installer.route_layers],[4,6])
@@ -143,5 +145,24 @@ class V17BindingTests(V193BindingTests):
   report=run(modified,capture(modified),engine)
   self.assertEqual(report['status'],'binding_installed',report)
   self.assertEqual(report['patched_hooks'],report['total_hooks'])
+
+ def test_cpu_coaching_observer_installs_through_actual_v17_worker_without_personal_cards(self):
+  import io,zipfile
+  from native_ai_match import hooks as match_hooks
+  from native_worker_sim import run
+  with zipfile.ZipFile(self.apk) as archive:engine=archive.read('lib/arm64-v8a/libUE4.so')
+  binding=copy.deepcopy(self.binding);binding['routes']=[]
+  binding['profile']['native_hooks']=match_hooks(io.BytesIO(engine))
+  actual,_=self.actual_loader(lambda *args:(0x7000000000+0x6000000,'isolated'))
+  modified,_=prepare(actual,binding);payload=capture(modified)
+  self.assertIn('ai_match_channel',payload)
+  with patch('ai_match_runtime.register_channel',return_value=object()) as register:
+   report=run(modified,payload,engine)
+  self.assertEqual(report['status'],'binding_installed',report)
+  self.assertEqual(report['patched_hooks'],report['total_hooks'])
+  register.assert_called_once()
+  self.assertGreaterEqual(len(register.call_args.args[0]),32768)
+  self.assertEqual(register.call_args.args[1],payload['ai_match_channel']['data_offset'])
+  self.assertEqual(register.call_args.args[4],payload['ai_match_channel']['proof'])
 
 if __name__=='__main__':unittest.main()

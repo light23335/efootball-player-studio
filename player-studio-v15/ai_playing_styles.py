@@ -5,6 +5,8 @@ Owned parameters 63..69 precede the skill block at 70; the three populated
 legacy columns (65, 68, 69) agree with all 14,379 complete native card pairs.
 The other four columns in the stock catalogue are usually placeholders, so
 read preserved Player.bin records first, just as the game does for AI styles.
+Lone Wolf is an independent extension: disk bit 687, virtual parameter 151,
+and match AI bit 7. Native owned arrays remain exactly 147 parameters.
 """
 FIELDS={
  'trickster':{'label':'魔术师','english':'Trickster','bit':616,'parameter':63},
@@ -15,18 +17,22 @@ FIELDS={
  'early_cross':{'label':'提前传中手','english':'Early Crosser','bit':351,'parameter':68},
  'long_ranger':{'label':'重炮手','english':'Long Ranger','bit':647,'parameter':69},
 }
+CUSTOM_SOURCE_BIT=687
+CUSTOM_PARAMETER=151
+OPTIONS={**FIELDS,'lone_wolf':{'label':'独狼','english':'Lone Wolf','custom':True,
+ 'description':'优先安全远射；否则带向射位。与内切突破组合时优先内切寻找射位；有弧线落叶射门时优先调整到适合该射门的姿态。'}}
 
 
 def validate(values):
- if not isinstance(values,list) or any(not isinstance(v,str) or v not in FIELDS for v in values):
-  raise ValueError('AI 比赛风格须从 7 项已支持风格中选择')
- return [k for k in FIELDS if k in values]
+ if not isinstance(values,list) or any(not isinstance(v,str) or v not in OPTIONS for v in values):
+  raise ValueError('AI 比赛风格须从已支持风格中选择')
+ return [k for k in OPTIONS if k in values]
 
 
 def from_record(row):
  if len(row)!=400:raise ValueError('AI 比赛风格的原生球员记录长度不兼容')
  bits=int.from_bytes(row,'little')
- return [k for k,f in FIELDS.items() if (bits>>f['bit'])&1]
+ return [k for k,f in FIELDS.items() if (bits>>f['bit'])&1]+(['lone_wolf']if(bits>>CUSTOM_SOURCE_BIT)&1 else [])
 
 
 def from_payload(payload):

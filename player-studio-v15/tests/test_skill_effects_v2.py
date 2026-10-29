@@ -9,6 +9,7 @@ import io
 import copy
 import json
 import math
+import os
 import struct
 import sys
 import unittest
@@ -16,7 +17,7 @@ import zipfile
 
 SOURCE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SOURCE / 'maintenance'))
-APK = Path('C:/Users/1/Downloads/73efootball-V17.apk')
+APK = Path(os.environ.get('STUDIO_TEST_APK',str(SOURCE.parent.parent/'73efootball安装包及资源/73efootball-V17.apk')))
 
 
 @unittest.skipUnless(APK.is_file(), 'requires original V17 APK')
@@ -168,8 +169,8 @@ class NativeSkillV2Tests(unittest.TestCase):
                 actual, actual_rng = self.severe(True, (74,), yaw, sign)
                 delta = (original[0] - yaw + 180) % 360 - 180
                 adjusted = (actual[0] - yaw + 180) % 360 - 180
-                self.assertAlmostEqual(adjusted, delta * .8, delta=.00005)
-                self.assertAlmostEqual(actual[1] - 10., (original[1] - 10.) * .8, places=5)
+                self.assertAlmostEqual(adjusted, delta * .5, delta=.00005)
+                self.assertAlmostEqual(actual[1] - 10., (original[1] - 10.) * .5, places=5)
                 self.assertEqual(struct.pack('<f', actual[2]), struct.pack('<f', original[2]))
                 self.assertEqual(actual_rng, original_rng)
 
@@ -221,9 +222,9 @@ class NativeSkillV2Tests(unittest.TestCase):
 
     def test_real_running_input_preserves_context_and_never_writes_measured_speed(self):
         r = self.r
-        for flag, speed, bonus in ((69, 10., .12), (69, 25., .03),
-                                    (70, 10., .06), (70, 25., .06),
-                                    (73, 10., .03), (73, 25., .12), (0, 10., 0.)):
+        for flag, speed, bonus in ((69, 10., .20), (69, 20., .13),(69,28.,.06),
+                                    (70, 10., .12), (70, 25., .12),
+                                    (73, 10., .06), (73,20.,.13),(73,28.,.20),(0, 10., 0.)):
             flags = {flag}
             def query(vm):
                 vm.reg_write(r.UC_ARM64_REG_W0, int(vm.reg_read(r.UC_ARM64_REG_W1) in flags))
@@ -259,7 +260,7 @@ class NativeSkillV2Tests(unittest.TestCase):
 
     def test_dribbling_acceleration_survives_original_integer_round_trip(self):
         r=self.r
-        for flag,speed,bonus in ((69,5.,.12),(69,22.,.03),(70,5.,.06),(73,22.,.12)):
+        for flag,speed,bonus in ((69,5.,.20),(69,20.,.13),(70,5.,.12),(73,20.,.13),(73,30.,.20)):
             vm=self.machine({0x6dcd87c:lambda m:m.reg_write(r.UC_ARM64_REG_W0,
                 int(m.reg_read(r.UC_ARM64_REG_W1)==flag))})
             self.install_all(vm)
@@ -296,6 +297,7 @@ class NativeSkillV2Tests(unittest.TestCase):
         from test_v193_binding import V17BindingTests
         from personal_binding import capture, prepare
         from native_worker_sim import run
+        V17BindingTests.original_apk=APK
         V17BindingTests.setUpClass()
         case = V17BindingTests()
         binding = copy.deepcopy(case.binding)
@@ -802,7 +804,7 @@ class NativeSkillV2Tests(unittest.TestCase):
         return vm.reg_read(self.r.UC_ARM64_REG_X0)
 
     def test_committed_windup_uses_final_request_and_real_short_pass_distance_snapshot(self):
-        for distance, expected in ((1.5,1.3/.8),(1.5001,1.3)):
+        for distance, expected in ((1.5,1.3/.6),(2.,1.3/.6),(2.0001,1.3)):
             vm,helpers,player,tracks=self.action_world({77})
             self.set_position(vm,11,distance,90,0)
             record=self.stage_kick(vm,helpers,player)
@@ -812,7 +814,7 @@ class NativeSkillV2Tests(unittest.TestCase):
             self.assertEqual(bytes(vm.mem_read(record,48)),original)
             row=self.kick_row(vm,helpers,player)
             qualification=struct.unpack('<I',vm.mem_read(row+40,4))[0]
-            self.assertEqual(qualification,int(distance<=1.5))
+            self.assertEqual(qualification,int(distance<=2.))
             # Qualification is immutable if the defender subsequently leaves.
             self.set_position(vm,11,5,0,0)
             self.assertEqual(struct.unpack('<I',vm.mem_read(row+40,4))[0],qualification)
@@ -833,8 +835,8 @@ class NativeSkillV2Tests(unittest.TestCase):
             record=self.stage_kick(vm,helpers,player,state=state,mode=mode,raw_motion=motion,power=power)
             self.prepare_kick(vm,helpers,player,record)
             yaw,pitch,speed=self.error_factors(vm,helpers,player)
-            self.assertAlmostEqual(yaw,.8 if wanted else 1.,places=6)
-            self.assertAlmostEqual(pitch,.8 if wanted else 1.,places=6)
+            self.assertAlmostEqual(yaw,.5 if wanted else 1.,places=6)
+            self.assertAlmostEqual(pitch,.5 if wanted else 1.,places=6)
             self.assertEqual(speed,1.)
 
     def native_queued_start(self,rate,flags,subtype=24):
@@ -888,8 +890,8 @@ class NativeSkillV2Tests(unittest.TestCase):
             fast=self.native_queued_start(rate,{76})
             vm,helpers,player,record,tracks,offset,queued=fast
             self.assertEqual(struct.pack('<f',offset),struct.pack('<f',base[-2]))
-            self.assertAlmostEqual(queued,rate/.8,places=6)
-            self.assertAlmostEqual((.5-offset)/queued,((.5-base[-2])/base[-1])*.8,places=6)
+            self.assertAlmostEqual(queued,rate/.6,places=6)
+            self.assertAlmostEqual((.5-offset)/queued,((.5-base[-2])/base[-1])*.6,places=6)
             vm.reg_write(r.UC_ARM64_REG_X19,record)
             vm.reg_write(r.UC_ARM64_REG_X21,player)
             self.execute(vm,0x6d42570,0x6d42574)
@@ -904,8 +906,8 @@ class NativeSkillV2Tests(unittest.TestCase):
 
     def test_through_and_air_windup_take_the_strongest_bonus_and_restore_on_native_release(self):
         for state,subtype,mode,flags,factor in (
-            (9,24,0,{76,72},.8),(9,24,3,{76,72},.8),
-            (9,24,3,{72},.88),(8,18,1,{72},.88),
+            (9,24,0,{76,72},.6),(9,24,3,{76,72},.6),
+            (9,24,3,{72},.6),(8,18,1,{72},.6),
             (9,22,0,{76,72},1.),(8,21,3,{76,72},1.),
         ):
             vm,helpers,player,tracks=self.action_world(flags)
@@ -954,14 +956,18 @@ class NativeSkillV2Tests(unittest.TestCase):
 
     def test_error_policy_separates_components_locks_short_pass_and_rejects_stale_actions(self):
         for state,subtype,mode,flags,distance,expected in (
-            (9,24,0,{76},8.,(.8,1.,1.)),
-            (9,24,3,{76},8.,(.8,1.,1.)),
-            (9,22,0,{77},1.5,(.8,.8,.8)),
-            (9,23,0,{77},1.5,(.8,.8,.8)),
-            (9,22,0,{77},1.501,(1.,1.,1.)),
+            (9,24,0,{76},8.,(.6,1.,1.)),
+            (9,24,3,{76},8.,(.6,1.,1.)),
+            (9,24,3,{72},8.,(.6,.6,.6)),
+            (9,24,3,{72,76},8.,(.6,.6,.6)),
+            (9,24,0,{72},8.,(1.,1.,1.)),
+            (9,22,0,{77},2.,(.6,.6,.6)),
+            (9,23,0,{77},2.,(.6,.6,.6)),
+            (9,22,0,{77},2.001,(1.,1.,1.)),
             (9,0,0,{77},1.,(1.,1.,1.)),
-            (8,18,1,{72},1.,(1.,1.,1.)),
-            (10,25,0,{74},1.,(.8,.8,1.)),
+            (8,18,1,{72},1.,(.6,.6,.6)),
+            (8,18,1,set(),1.,(1.,1.,1.)),
+            (10,25,0,{74},1.,(.5,.5,1.)),
         ):
             vm,helpers,player,tracks=self.action_world(flags)
             self.set_position(vm,11,distance,0,0)
@@ -989,8 +995,8 @@ class NativeSkillV2Tests(unittest.TestCase):
 
     def test_cold_finisher_checks_box_and_distance_at_release_and_never_compounds_heavy(self):
         for flags,x,distance,expected in (
-            ({75},36.,2.,.85),({75},35.999,2.,1.),
-            ({75},40.,2.0001,1.),({74,75},40.,2.,.8),
+            ({75},36.,2.5,.5),({75},35.999,2.5,1.),
+            ({75},40.,2.5001,1.),({74,75},40.,2.5,.5),
             ({75},-40.,1.,1.),
         ):
             vm,helpers,player,tracks=self.action_world(flags)
@@ -1023,9 +1029,9 @@ class NativeSkillV2Tests(unittest.TestCase):
             vm.reg_write(r.UC_ARM64_REG_S0,self.bits(delta))
             self.execute(vm,0x6d54ac8,0x6d54acc)
             actual=struct.unpack('<f',vm.mem_read(angle,4))[0]
-            self.assertAlmostEqual(actual,(yaw+delta*.8)%360,places=4)
+            self.assertAlmostEqual(actual,(yaw+delta*.6)%360,places=4)
 
-    def normal_error(self,patched,state,subtype,flags,sign):
+    def normal_error(self,patched,state,subtype,flags,sign,mode=0):
         r=self.r
         draws=[]
         def sample(label,value):
@@ -1054,7 +1060,7 @@ class NativeSkillV2Tests(unittest.TestCase):
         self.set_position(vm,11,41,0,0)
         if patched:
             helpers=self.install_all(vm)
-            record=self.stage_kick(vm,helpers,player,state=state,subtype=subtype)
+            record=self.stage_kick(vm,helpers,player,state=state,subtype=subtype,mode=mode)
             self.prepare_kick(vm,helpers,player,record)
         else:vm.mem_write(player+0xad0,bytes([state]))
         vm.mem_write(0x4100c004,struct.pack('<f',1.))
@@ -1073,9 +1079,9 @@ class NativeSkillV2Tests(unittest.TestCase):
 
     def test_normal_native_error_generator_uses_each_skills_components_without_extra_rng(self):
         for state,subtype,flags,factors in (
-            (10,0,{74},(.8,.8,1.)),(10,0,{75},(.85,.85,1.)),
-            (10,0,{74,75},(.8,.8,1.)),(9,24,{76},(.8,1.,1.)),
-            (9,22,{77},(.8,.8,.8)),
+            (10,0,{74},(.5,.5,1.)),(10,0,{75},(.5,.5,1.)),
+            (10,0,{74,75},(.5,.5,1.)),(9,24,{76},(.6,1.,1.)),
+            (9,22,{77},(.6,.6,.6)),
         ):
             for sign in (0,1):
                 original,rng=self.normal_error(False,state,subtype,flags,sign)
@@ -1092,7 +1098,7 @@ class NativeSkillV2Tests(unittest.TestCase):
         return math.degrees(math.atan2(x,z))%360.,math.degrees(math.atan2(y,math.hypot(x,z))),math.sqrt(x*x+y*y+z*z)
 
     def trajectory(self,patched,velocity,reference,offset,yaw,pitch,ratio,
-                   state=10,subtype=0,flags=(74,),caller=0x6d535bc,category=0):
+                   state=10,subtype=0,flags=(74,),caller=0x6d535bc,category=0,mode=0):
         r=self.r
         def fmod(m):
             m.reg_write(r.UC_ARM64_REG_S0,self.bits(math.fmod(
@@ -1101,7 +1107,7 @@ class NativeSkillV2Tests(unittest.TestCase):
         if patched:
             vm,helpers,player,_=self.action_world(set(flags))
             self.set_position(vm,0,40,0,0);self.set_position(vm,11,41,0,0)
-            record=self.stage_kick(vm,helpers,player,state=state,subtype=subtype)
+            record=self.stage_kick(vm,helpers,player,state=state,subtype=subtype,mode=mode)
             self.prepare_kick(vm,helpers,player,record)
             vm.reg_write(r.UC_ARM64_REG_X19,player)
         else:vm=self.machine({})
@@ -1127,9 +1133,9 @@ class NativeSkillV2Tests(unittest.TestCase):
         for caller in (0x6d535bc,0x6d53694):
             for sign in (-1,1):
                 for state,subtype,flags,factors in (
-                    (10,0,{74},(.8,.8,1.)),(10,0,{75},(.85,.85,1.)),
-                    (10,0,{74,75},(.8,.8,1.)),(9,24,{76},(.8,1.,1.)),
-                    (9,22,{77},(.8,.8,.8)),
+                    (10,0,{74},(.5,.5,1.)),(10,0,{75},(.5,.5,1.)),
+                    (10,0,{74,75},(.5,.5,1.)),(9,24,{76},(.6,1.,1.)),
+                    (9,22,{77},(.6,.6,.6)),
                 ):
                     velocity,reference=(.1,2.,30.),(.1,0.,30.)
                     error=(.1*sign,.05*sign,0.)
@@ -1220,7 +1226,7 @@ class NativeSkillV2Tests(unittest.TestCase):
                     info=bytes(vm.mem_read(0x47000000,0x16000))
                     actual=self.contact_ratio(vm,True,first,second)
                     self.assertAlmostEqual(original,.4 if first==holder else .6,places=6)
-                    self.assertAlmostEqual(actual,60/168 if first==holder else 108/168,places=6)
+                    self.assertAlmostEqual(actual,60/195 if first==holder else 135/195,places=6)
                     self.assertEqual(bytes(vm.mem_read(0x48000000,0x16000)),before)
                     self.assertEqual(bytes(vm.mem_read(0x47000000,0x16000)),info)
 
@@ -1251,7 +1257,7 @@ class NativeSkillV2Tests(unittest.TestCase):
                 vm=self.shield_world(owned=case!='no-skill')
                 if case=='front':self.set_position(vm,11,0,0,1)
                 if case=='side':self.set_position(vm,11,1,0,0)
-                if case=='far':self.set_position(vm,11,0,0,-1.5001)
+                if case=='far':self.set_position(vm,11,0,0,-1.8001)
                 if case=='inactive':vm.mem_write(0x4300420d,bytes([0]))
                 if case=='wrong-opponent':vm.mem_write(0x470005ac,struct.pack('<I',12))
                 if case=='no-contact':vm.mem_write(0x47000601,bytes([0]))
@@ -1266,6 +1272,64 @@ class NativeSkillV2Tests(unittest.TestCase):
             original=self.contact_ratio(self.shield_world(),False,caller=caller)
             actual=self.contact_ratio(self.shield_world(),True,caller=caller)
             self.assertEqual(struct.pack('<f',actual),struct.pack('<f',original))
+
+
+    def test_stronger_acceleration_profiles_are_continuous_monotonic_and_bounded(self):
+        r=self.r;speeds=(0.,11.999,12.,12.001,16.,19.999,20.,20.001,24.,27.999,28.,28.001,40.)
+        curves={}
+        for flag in (69,70,73):
+            vm=self.machine({0x6dcd87c:lambda m:m.reg_write(r.UC_ARM64_REG_W0,int(m.reg_read(r.UC_ARM64_REG_W1)==flag))})
+            self.install(vm,self.hooks['studio_running_acceleration_input'])
+            vm.mem_write(0x400082b8,struct.pack('<Q',0x41000000));samples=[]
+            for speed in speeds:
+                vm.mem_write(0x41000344,struct.pack('<f',speed));vm.reg_write(r.UC_ARM64_REG_S0,self.bits(.5))
+                self.execute(vm,0x20000000,0x6f40b94)
+                samples.append(self.float(vm,r.UC_ARM64_REG_S0)-.5)
+            self.assertTrue(all(.05999<=value<=.20001 for value in samples))
+            if flag==69:self.assertTrue(all(a>=b-1e-6 for a,b in zip(samples,samples[1:])))
+            if flag==73:self.assertTrue(all(a<=b+1e-6 for a,b in zip(samples,samples[1:])))
+            if flag==70:self.assertTrue(all(abs(value-.12)<1e-6 for value in samples))
+            self.assertLess(abs(samples[5]-samples[7]),.0001)
+            self.assertAlmostEqual(samples[0],.20 if flag==69 else .12 if flag==70 else .06,places=6)
+            self.assertAlmostEqual(samples[-1],.06 if flag==69 else .12 if flag==70 else .20,places=6)
+            vm.reg_write(r.UC_ARM64_REG_S0,self.bits(1.15));self.execute(vm,0x20000000,0x6f40b94)
+            self.assertAlmostEqual(self.float(vm,r.UC_ARM64_REG_S0),1.2,places=6)
+            curves[flag]=samples
+        self.assertGreater(curves[69][0],curves[73][0]);self.assertLess(curves[69][-1],curves[73][-1])
+
+    def test_long_pass_precision_covers_air_modes_and_lofted_through_without_double_scaling(self):
+        for state,subtype,mode,flags in ((8,18,1,{72}),(8,18,2,{72}),
+                                       (9,24,3,{72}),(9,24,3,{72,76})):
+            for sign in (0,1):
+                with self.subTest(state=state,subtype=subtype,mode=mode,flags=flags,sign=sign):
+                    original,rng=self.normal_error(False,state,subtype,flags,sign,mode)
+                    actual,draws=self.normal_error(True,state,subtype,flags,sign,mode)
+                    expected=((359.+((original[0]-359.+180.)%360.-180.)*.6)%360.,
+                              10.+(original[1]-10.)*.6,100.+(original[2]-100.)*.6)
+                    for value,wanted in zip(actual,expected):self.assertAlmostEqual(value,wanted,places=4)
+                    self.assertEqual(draws,rng)
+
+    def test_long_pass_trajectory_contracts_all_random_components_and_preserves_spin(self):
+        for state,subtype,mode,flags in ((8,18,1,{72}),(9,24,3,{72}),(9,24,3,{72,76})):
+            for caller in (0x6d535bc,0x6d53694):
+                velocity,reference=(.1,2.,30.),(.1,0.,30.);error=(.1,.05,0.)
+                before,spin,_=self.trajectory(False,velocity,reference,error,2.,1.,1.1,caller=caller)
+                baseline,_,_=self.trajectory(False,velocity,reference,(0.,0.,0.),0.,0.,1.,caller=caller)
+                after,actual_spin,_=self.trajectory(True,velocity,reference,error,2.,1.,1.1,
+                    state=state,subtype=subtype,flags=flags,caller=caller,mode=mode)
+                native=self.polar_host(struct.unpack('<3f',before));ideal=self.polar_host(struct.unpack('<3f',baseline))
+                actual=self.polar_host(struct.unpack('<3f',after));delta=(native[0]-ideal[0]+180.)%360.-180.
+                expected=((ideal[0]+delta*.6)%360.,ideal[1]+(native[1]-ideal[1])*.6,ideal[2]+(native[2]-ideal[2])*.6)
+                self.assertAlmostEqual((actual[0]-expected[0]+180.)%360.-180.,0.,delta=.0003)
+                self.assertAlmostEqual(actual[1],expected[1],delta=.0003)
+                self.assertAlmostEqual(actual[2],expected[2],delta=.0001)
+                self.assertEqual(actual_spin,spin)
+
+    def test_shield_new_distance_boundary_is_inclusive_and_keeps_facing_requirement(self):
+        for distance,enabled in ((1.5,True),(1.8,True),(1.8001,False)):
+            vm=self.shield_world();self.set_position(vm,11,0,0,-distance)
+            actual=self.contact_ratio(vm,True)
+            self.assertAlmostEqual(actual,60/195 if enabled else .4,places=6)
 
 
 if __name__ == '__main__':
