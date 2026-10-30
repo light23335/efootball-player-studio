@@ -78,7 +78,7 @@ def migrate_controller(c):
 
 DEFAULTS={'frame_rate':{'enabled':False,'target':160},'display':{'enabled':False,'height':1080},'card_motion':{'enabled':True},
           'ai_cut_in_shots':{'enabled':True},
-          'ai_division_squads':{'enabled':True},
+          'ai_division_squads':{'enabled':True,'include_diy':True},
           'action_trace':{'enabled':False},
           'controller':{'enabled':False,'preset':'default','mapping_revision':3,'bindings':preset(),'manual_shortcuts':[],'swap_sticks':False,'invert_right_y':False}}
 
@@ -104,6 +104,7 @@ def normalize(body):
         out[key].update(value)
         if type(out[key]['enabled']) is not bool:raise ValueError('游戏设置开关无效')
     fps=out['frame_rate']['target'];height=out['display']['height']
+    if type(out['ai_division_squads']['include_diy']) is not bool:raise ValueError('AI 阵容包含 DIY 球员开关无效')
     if type(fps) is not int or not 15<=fps<=999:raise ValueError('帧率上限须为 15–999 的整数')
     if type(height) is not int or not 480<=height<=2160:raise ValueError('分辨率短边须为 480–2160，最高 4K')
     c=out['controller']

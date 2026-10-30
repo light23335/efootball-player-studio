@@ -1,4 +1,5 @@
 """Content-addressed custom pack banners, cropped identically to the UI."""
+from export_errors import export_context, exported
 from pathlib import Path
 import hashlib,io,re
 
@@ -19,19 +20,20 @@ def compile_covers(packs,store):
     from PIL import Image,ImageOps
     files={};bindings={};routes={}
     for pack in packs:
-        cover=normalize(pack.get('cover'))
-        if not cover:continue
-        path=store.root/'assets'/cover['asset_id']
-        if not path.is_file():raise ValueError(pack['name']+'：卡包封面文件缺失，请重新选择图片')
-        with Image.open(path) as source:
-            source=ImageOps.exif_transpose(source).convert('RGBA');w,h=source.size
-            if w*h>64*1024*1024:raise ValueError('卡包封面图片像素过大，请先缩小图片')
-            scale=max(1200/w,480/h)*cover['zoom'];cw,ch=1200/scale,480/scale
-            left=(w-cw)*(cover['x']+100)/200;top=(h-ch)*(cover['y']+100)/200
-            crop=source.transform((1200,480),Image.Transform.EXTENT,(left,top,left+cw,top+ch),Image.Resampling.BICUBIC)
-            canvas=Image.new('RGBA',crop.size,(16,26,44,255));canvas.alpha_composite(crop)
-            encoded=io.BytesIO();canvas.convert('RGB').save(encoded,format='JPEG',quality=95,optimize=True);raw=encoded.getvalue()
-        digest=hashlib.sha256(raw).hexdigest();relative=PREFIX+digest+'.jpg';request='/player-studio/pack-covers/'+digest
-        files[relative]=raw;bindings[pack['uuid']]={'c':request,'d':request}
-        routes[request]={'path':relative,'sha256':digest,'bytes':len(raw),'mime':'image/jpeg'}
+        with export_context('卡包',pack,'读取和编译卡包封面'):
+            cover=normalize(pack.get('cover'))
+            if not cover:continue
+            path=store.root/'assets'/cover['asset_id']
+            if not path.is_file():raise ValueError(pack['name']+'：卡包封面文件缺失，请重新选择图片')
+            with Image.open(path) as source:
+                source=ImageOps.exif_transpose(source).convert('RGBA');w,h=source.size
+                if w*h>64*1024*1024:raise ValueError('卡包封面图片像素过大，请先缩小图片')
+                scale=max(1200/w,480/h)*cover['zoom'];cw,ch=1200/scale,480/scale
+                left=(w-cw)*(cover['x']+100)/200;top=(h-ch)*(cover['y']+100)/200
+                crop=source.transform((1200,480),Image.Transform.EXTENT,(left,top,left+cw,top+ch),Image.Resampling.BICUBIC)
+                canvas=Image.new('RGBA',crop.size,(16,26,44,255));canvas.alpha_composite(crop)
+                encoded=io.BytesIO();canvas.convert('RGB').save(encoded,format='JPEG',quality=95,optimize=True);raw=encoded.getvalue()
+            digest=hashlib.sha256(raw).hexdigest();relative=PREFIX+digest+'.jpg';request='/player-studio/pack-covers/'+digest
+            files[relative]=raw;bindings[pack['uuid']]={'c':request,'d':request}
+            routes[request]={'path':relative,'sha256':digest,'bytes':len(raw),'mime':'image/jpeg'}
     return files,bindings,routes

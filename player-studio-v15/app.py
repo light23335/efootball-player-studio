@@ -1,5 +1,6 @@
 """Offline Windows player design studio. All traffic stays on 127.0.0.1."""
 from __future__ import annotations
+from export_errors import export_context, exported
 
 import argparse
 import base64
@@ -39,13 +40,15 @@ from native_package import NativePackage
 from card_types import CARD_TYPES
 from overall import calculate as calculate_overall
 from coaches import CoachStore, normalize_coach, TACTICS
+from player_folders import PlayerFolders
 from native_appearance import validate as validate_appearance
 from ai_playing_styles import OPTIONS as AI_PLAYING_STYLES,project_value as ai_styles,validate as validate_ai_styles
 import packs
+import editor_drafts
 from window_sessions import WindowSessions
 from booster_library import BoosterLibrary
 
-APP_VERSION = "2.0"
+APP_VERSION = "2.0.4"
 GAME_PLATFORM = "android"
 MAX_PERSONAL_PLAYERS = 10000
 BUNDLE = Path(getattr(sys, "_MEIPASS", Path(__file__).absolute().parent))
@@ -87,7 +90,7 @@ def normalize_project(value):
     # Preserve the original permanent identity and every unrecognized field.
     p["package_id"] = str(uuid.UUID(p.get("package_id") or str(uuid.uuid4())))
     if p.get("format", "73efootball-personal-player-project") != "73efootball-personal-player-project":
-        raise ValueError("请选择个人球员工程；.efplayer 请在更新迁移页面使用")
+        raise ValueError("请选择 .efproject 或个人球员工程 JSON；不支持旧版 .efplayer 快照")
     if p.get("version", 1) != 1:
         raise ValueError("工程版本较新，需要升级软件后打开")
     p["format"] = "73efootball-personal-player-project"
@@ -299,6 +302,7 @@ def dialog(kind="open", category="project", initial=""):
                "save": "游戏存档\0*.efsave;*.sqlite3\0所有文件\0*.*\0",
                "package": "独立球员包\0*.efplayer\0所有文件\0*.*\0",
                "apk": "安卓游戏 APK\0*.apk\0所有文件\0*.*\0",
+               "content-delta": "内容增量包 ZIP\0*.zip\0所有文件\0*.*\0",
                "update": "APK 增量包\0*.efupdate\0所有文件\0*.*\0"}
     class OPENFILENAMEW(ctypes.Structure):
         _fields_ = [("lStructSize", wintypes.DWORD), ("hwndOwner", wintypes.HWND), ("hInstance", wintypes.HINSTANCE),
@@ -331,6 +335,7 @@ class Store:
         for folder in ("assets", "exports", "backups", "tmp", "players"):
             (self.root / folder).mkdir(exist_ok=True)
         self.lock = threading.RLock()
+        self.player_folders = PlayerFolders(self)
         self.coaches = CoachStore(self.root, CATALOG['ABILITIES'])
         self.boosters = BoosterLibrary(self.root)
         self.project_path = self.root / "current-project.json"
@@ -458,24 +463,37 @@ class Store:
                 if removed:pack_path.write_bytes(old_packs)
                 if current:self.save(previous,manual=True)
                 raise
+            folder_warning=None
+            try:self.player_folders.forget(package_id)
+            except (ValueError,OSError) as error:folder_warning=str(error)
             return {'deleted':True,'package_id':package_id,'removed_pack_members':removed,
-                    'current_cleared':current,'project':self.project,'backup':str(backup)}
+                    'current_cleared':current,'project':self.project,'backup':str(backup),'folder_warning':folder_warning}
 
-    def list_players(self, query='', offset=0, limit=None):
+    def list_players(self, query='', offset=0, limit=None, folder_id=None):
         if type(offset) is not int or offset<0 or (limit is not None and (type(limit) is not int or not 1<=limit<=100)):
             raise ValueError('球员分页参数无效')
         rows, errors = [], []
         query = str(query).casefold()[:120]
         with self.lock:
+            folder_error=None
+            try:folders=self.player_folders.read()
+            except ValueError as error:
+                if folder_id:raise
+                folder_error=str(error);folders={'folders':[],'members':{}}
+            names={r['id']:r['name'] for r in folders['folders']}
+            if folder_id and folder_id!='unfiled' and folder_id not in names:raise ValueError('文件夹已不存在，请刷新列表')
             for path in (self.root / 'players').glob('*.json'):
                 try:
                     entry = self.saved_player(path.stem)
                     p = entry['project']
+                    group=folders['members'].get(p['package_id'])
+                    if folder_id and (group is not None if folder_id=='unfiled' else group!=folder_id):continue
                     if query and query not in ' '.join([p['identity']['name'], p['display_name'], p['package_id']]).casefold():
                         continue
                     rows.append({'package_id': p['package_id'], 'name': p['identity']['name'],
                                  'display_name': p['display_name'], 'card_type': p['card_type'],
                                  'position': p['identity']['position'], 'level': p['initial_level'],
+                                 'folder_id':group,'folder_name':names.get(group),
                                  'max_level': p['max_level'], 'overall': calculate_overall(p, CATALOG),
                                  'portrait': p['appearance']['portrait'], 'saved_at': entry['saved_at']})
                 except (ValueError, KeyError, OSError) as exc:
@@ -483,7 +501,7 @@ class Store:
         rows.sort(key=lambda item: item['saved_at'], reverse=True)
         total=len(rows)
         return {'rows':rows[offset:offset+limit] if limit else rows,'total':total,'offset':offset,
-                'saved_total':sum(1 for _ in (self.root/'players').glob('*.json'))-len(errors),'capacity':MAX_PERSONAL_PLAYERS,'errors':errors}
+                'saved_total':sum(1 for _ in (self.root/'players').glob('*.json'))-len(errors),'capacity':MAX_PERSONAL_PLAYERS,'errors':errors,'folder_error':folder_error}
 
     def import_asset(self, path, category):
         source = Path(path).absolute()
@@ -564,14 +582,16 @@ class Store:
         self.save(p, manual=True)
         return p
 
+    @exported('球员工程','导出工程',lambda self,project: project)
     def export_project(self, project):
         p = normalize_project(project)
         files = {"project.json": json.dumps(p, ensure_ascii=False, indent=2).encode("utf8")}
         for name in referenced_assets(p):
             source = self.root / "assets" / name
             if not source.is_file():
-                raise ValueError("工程引用的资源缺失，请重新导入图片或模型")
-            files["assets/" + name] = source.read_bytes()
+                raise ValueError("工程引用的资源缺失："+name+"，请重新导入图片或模型")
+            with export_context('工程素材',name,'读取图片、模型或动画文件'):
+                files["assets/" + name] = source.read_bytes()
         manifest = {"format": "73efootball-studio-project", "version": 1, "package_id": p["package_id"],
                     "game_platform":GAME_PLATFORM, "created_at": migration.stamp(), "sha256": {k: migration.digest(v) for k, v in files.items()}}
         files["manifest.json"] = migration.compact(manifest).encode("utf8")
@@ -720,16 +740,30 @@ class Handler(BaseHTTPRequestHandler):
         expected = "http://127.0.0.1:" + str(self.server.server_port)
         if origin and origin != expected:
             return self.send({"error": "来源不匹配"}, 403)
+        path = urlsplit(self.path).path
         try:
             size = int(self.headers.get("Content-Length", "0"))
             if not 0 <= size <= 8 * 1024 * 1024:
                 raise ValueError("请求过大")
             body = migration.read_json(self.rfile.read(size) or b"{}")
-            path = urlsplit(self.path).path
             store = self.server.store
             self.server.last_seen = time.monotonic()
             if path == "/api/project/save":
                 result = store.save(body["project"], body.get("manual", False))
+                if body['project'].get('identity',{}).get('name','').strip():
+                    try:store.save_player(body['project'])
+                    except ValueError as exc:result['draft_message']=str(exc)
+            elif path == '/api/editor/drafts':
+                result={'rows':editor_drafts.listing(store)}
+            elif path == '/api/editor/drafts/save':
+                value=body.get('value')
+                if body.get('category')=='coach' and value and str(value.get('name','')).strip():
+                    # Persist the raw edit before optional resource preparation.
+                    editor_drafts.update(store,'coach',value,commit=False)
+                    from coach_models import prepare
+                    try:value=prepare(value,self.server.library)
+                    except (ValueError,OSError):pass  # An unavailable head must not lose text edits.
+                result=editor_drafts.update(store,body['category'],value)
             elif path == '/api/project/checkpoint':
                 value=normalize_project(body['project'])
                 backup=store.root/'backups'/('before-template-'+datetime.now().strftime('%Y%m%d-%H%M%S-')+uuid.uuid4().hex[:6]+'.json')
@@ -739,6 +773,8 @@ class Handler(BaseHTTPRequestHandler):
                 result = self.server.window_sessions.open(body['session'])
             elif path == '/api/window/close':
                 def save_window():
+                    for draft in body.get('editor_drafts',[]):
+                        editor_drafts.update(store,draft['category'],draft.get('value'),commit=False)
                     value=body.get('project')
                     if value is None and body.get('package_id')==store.project['package_id'] and 'patch' in body:
                         from window_sessions import apply_project_delta
@@ -749,7 +785,19 @@ class Handler(BaseHTTPRequestHandler):
             elif path == '/api/players/save':
                 result = store.save_player(body['project'])
             elif path == '/api/players/list':
-                result = store.list_players(body.get('query', ''),body.get('offset',0),body.get('limit'))
+                result = store.list_players(body.get('query', ''),body.get('offset',0),body.get('limit'),body.get('folder_id'))
+            elif path == '/api/players/folders/list':
+                result = store.player_folders.listing()
+            elif path == '/api/players/folders/create':
+                result = store.player_folders.create(body.get('name'),body.get('player_ids',[]))
+            elif path == '/api/players/folders/add':
+                result = store.player_folders.add(body.get('folder_id'),body.get('player_ids'))
+            elif path == '/api/players/folders/remove':
+                result = store.player_folders.remove(body.get('folder_id'),body.get('player_ids'))
+            elif path == '/api/players/folders/rename':
+                result = store.player_folders.rename(body.get('folder_id'),body.get('name'))
+            elif path == '/api/players/folders/delete':
+                result = store.player_folders.delete(body.get('folder_id'),body.get('confirmed',False))
             elif path == '/api/boosters/list':
                 result = store.boosters.list(body.get('query',''),body.get('offset',0))
             elif path == '/api/players/delete':
@@ -766,7 +814,10 @@ class Handler(BaseHTTPRequestHandler):
                 result = store.coaches.save(coach)
             elif path == '/api/coaches/model/template':
                 from coach_models import template
-                result = template(self.server.library,body.get('source_id'))
+                result = template(self.server.library,body.get('source_id'),allow_default=True)
+            elif path == '/api/coaches/model/current':
+                from coach_models import current
+                result = current(self.server.library,body.get('coach'))
             elif path == '/api/coaches/model/preview':
                 from coach_models import preview_coach
                 result = preview_coach(self.server.library,body.get('head_model'))
@@ -775,6 +826,7 @@ class Handler(BaseHTTPRequestHandler):
             elif path == '/api/coaches/delete':
                 from coach_deletion import delete_coach
                 result = delete_coach(store,body.get('uuid'),body.get('confirmed',False))
+                editor_drafts.remove(store,'coach',body['uuid'])
             elif path == '/api/coaches/heads/list':
                 from coach_heads import catalogue
                 result = catalogue(self.server.library,self.server.catalog['coaches'])
@@ -804,6 +856,10 @@ class Handler(BaseHTTPRequestHandler):
                 result = original_portraits(self.server.library,self.server.catalog['coaches'],body.get('ids'))
             elif path == "/api/library/search":
                 result = self.server.library.search(body)
+            elif path == '/api/library/recycle':
+                if self.server.native_package.status()['phase']=='working' or self.server.game_import.status()['phase']=='working':raise ValueError('请等待当前生成或导入完成，再调整回收站')
+                from catalogue_trash import change as recycle_change
+                result=recycle_change(self.server.library,body)
             elif path == "/api/library/player":
                 result = self.server.library.player(body["id"])
             elif path == '/api/library/card':
@@ -826,6 +882,8 @@ class Handler(BaseHTTPRequestHandler):
                 result = self.server.library.summary()
             elif path == '/api/game-import/start':
                 result = self.server.game_import.start(body)
+            elif path == '/api/game-import/inspect-delta':
+                result = self.server.game_import.inspect_delta(body['path'])
             elif path == '/api/setup/status':
                 result = self.server.setup.status(body.get('refresh',False))
             elif path == '/api/setup/preferences':
@@ -862,9 +920,9 @@ class Handler(BaseHTTPRequestHandler):
             elif path == '/api/packs/save':
                 result = packs.save(store,body['pack'])
             elif path == '/api/packs/random-options':
-                result = {'rows':packs.random_options(self.server.library.resources)}
+                result = {'rows':packs.random_options(self.server.library.resources,store)}
             elif path == '/api/packs/random':
-                result = packs.random_members(self.server.library.resources,body)
+                result = packs.random_members(self.server.library.resources,body,store)
             elif path == '/api/appearance/profile':
                 from native_appearance import profile
                 result = profile(self.server.library.resources,body['id']) or {}
@@ -909,34 +967,6 @@ class Handler(BaseHTTPRequestHandler):
                 result = store.import_asset(body["path"], body.get("category", "image"))
             elif path == "/api/assets/data":
                 result = store.import_screenshot(body["data"])
-            elif path == "/api/save/players":
-                with migration.save_input(body["path"]) as (db, meta, info), contextlib.closing(migration.connect(db, True)) as c:
-                    result = {"players": [{"id": r["id"], "serial": r["serial"], **migration.progress({"player": json.loads(r["json"])})} for r in c.execute("SELECT id,serial,json FROM gameplayers ORDER BY id,serial")]}
-            elif path == "/api/package/inspect":
-                manifest, state, _ = migration.load_package(body["path"])
-                result = {"manifest": {k: v for k, v in manifest.items() if k not in ("db", "sha256")}, "careerplan_rows": len(state["careerplan"])}
-            elif path == "/api/package/export":
-                project_file = store.root / "current-project.json"
-                cid, serial = int(body["id"]), int(body["serial"])
-                bound = store.project.get("card_id"), store.project.get("serial")
-                if any(v is not None for v in bound) and bound != (cid, serial):
-                    raise ValueError("此工程已绑定另一球员实例，请打开对应工程或新建工程")
-                output = store.root / "exports" / ("个人球员-" + datetime.now().strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:4] + ".efplayer")
-                result = migration.export_player(body["save"], body["apk"], cid, serial, output,
-                    project=project_file, previous=body.get("previous") or None)
-                updated = copy.deepcopy(store.project)
-                updated.update(card_id=cid, serial=serial)
-                store.save(updated, manual=True)
-                result["binding"] = {"card_id": cid, "serial": serial}
-                result["url"] = "/exports/" + quote(output.name)
-            elif path in ("/api/migration/plan", "/api/migration/import"):
-                output = None
-                if path.endswith("/import"):
-                    suffix = ".efsave" if Path(body["save"]).suffix.lower() == ".efsave" else ".sqlite3"
-                    output = store.root / "exports" / ("迁移后存档-" + datetime.now().strftime("%Y%m%d-%H%M%S-") + uuid.uuid4().hex[:4] + suffix)
-                result = migration.migration(body["save"], body["package"], body["apk"], output, body.get("prefer", "package"))
-                if output:
-                    result["url"] = "/exports/" + quote(output.name)
             elif path == "/api/exit":
                 result = {"closed": True}
                 threading.Thread(target=self.server.shutdown, daemon=True).start()
@@ -945,7 +975,13 @@ class Handler(BaseHTTPRequestHandler):
             self.send(result)
         except Exception as exc:
             logging.exception("Operation failed")
-            self.send({"error": str(exc)}, 400)
+            if '/export' in path:
+                from export_errors import failure
+                request_body=locals().get('body',{});request_body=request_body if isinstance(request_body,dict) else {}
+                item=request_body.get('project') or request_body.get('package_id') or request_body.get('save') or path
+                if path=='/api/package/export':item=request_body.get('player_name') or ('球员卡号 '+str(request_body.get('id'))+'／实例 '+str(request_body.get('serial')))
+                exc=failure(exc,'导出资料',item,path)
+            self.send({"error": str(exc),"error_context":getattr(exc,'contexts',[]),"error_type":getattr(exc,'original_type',type(exc).__name__)}, 400)
 
 
 def open_window(url, data):

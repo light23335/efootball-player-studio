@@ -5,6 +5,11 @@ from game_settings import DEFAULTS,BUTTONS,normalize,preset,legacy_preset,contro
 import copy
 
 class GameSettingsTests(unittest.TestCase):
+ def test_diy_pool_preference_is_boolean_and_defaults_to_previous_behaviour(self):
+  self.assertTrue(normalize({})['ai_division_squads']['include_diy'])
+  self.assertFalse(normalize({'ai_division_squads':{'include_diy':False}})['ai_division_squads']['include_diy'])
+  for bad in (0,1,'false',None):
+   with self.assertRaises(ValueError):normalize({'ai_division_squads':{'include_diy':bad}})
  def test_ai_master_off_also_disables_lone_wolf_without_erasing_player_style(self):
   player={'ai_playing_styles':['lone_wolf','cut_in']};before=copy.deepcopy(player)
   for selected in ([],[player]):

@@ -1,3 +1,4 @@
+import {exportStep} from './export-errors.js';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $=s=>document.querySelector(s);
 
@@ -7,8 +8,9 @@ export class CoachHeads {
     document.addEventListener('click',e=>{
       const b=e.target.closest('[data-head-action],[data-coach-head-view]');if(!b)return;
       if(b.dataset.coachHeadView){this.openFor(b.dataset.coachHeadView).catch(e=>this.toast(e.message,true));return;}
-      if(this.busy)return;
-      this.action(b.dataset.headAction).catch(error=>{this.message=error.message;this.toast(error.message,true);this.paint();});
+      if(this.busy&&b.dataset.headAction!=='close')return;
+      const run=()=>this.action(b.dataset.headAction);
+      (b.dataset.headAction==='export'?exportStep(this.currentCoach?.name,'导出教练头模 GLB',run):run()).catch(error=>{this.message=error.message;this.toast(error.message,true);this.paint();});
     });
     document.addEventListener('change',e=>{
       if(e.target.id==='coach-head-target'&&!this.busy)this.select(e.target.value).catch(error=>this.toast(error.message,true));
@@ -16,7 +18,7 @@ export class CoachHeads {
     });
     document.addEventListener('input',e=>{if(e.target.id==='coach-head-query'){this.query=e.target.value;this.options();}});
   }
-  render(){return `<section class="panel coach-head-panel"><div class="panel-title"><h2>教练三维头模 · 测试版</h2><button class="button secondary" data-head-action="toggle">${this.open?'收起头模工作区':'打开头模工作区'}</button></div><div class="panel-body" id="coach-head-body" ${this.open?'':'hidden'}></div></section>`;}
+  render(){return !this.open?'':`<section class="panel coach-head-panel"><div class="panel-title"><h2>${esc(this.currentCoach?.name||'教练')} · 当前三维头模</h2><button class="button secondary" data-head-action="close">关闭预览</button></div><div class="panel-body" id="coach-head-body"></div></section>`;}
   async activate(page){
     this.active=page==='coaches';if(!this.active)return;
     try{const data=await this.api('coaches/heads/list',{});if(!this.active)return;
@@ -33,17 +35,21 @@ export class CoachHeads {
   }
   paint(){
     const body=$('#coach-head-body');if(!body)return;body.hidden=!this.open;if(!this.open)return;
+    if(this.currentCoach?.type==='custom'){
+      body.innerHTML=`<p class="note">当前自建教练正在使用的头模。导入自己的 GLB 后，这里直接显示导入的模型。</p><div class="model-stage coach-head-stage" id="coach-head-stage"></div><div class="model-hint">拖动旋转 · 滚轮或双指缩放</div><div class="portrait-actions"><button class="button secondary" data-edit-coach="${esc(this.currentCoach.id)}">编辑教练 / 更换头模</button></div><p class="migration-status" role="status">${esc(this.busy?'正在读取当前头模…':this.message||'')}</p>`;
+      this.attach().catch(error=>this.toast(error.message,true));return;
+    }
     const selected=this.rows.find(r=>r.path===this.target);const saved=this.saved.find(r=>r.target===this.target);
     const disabled=this.busy?'disabled':'';
-    body.innerHTML=`<p class="panel-description">查看比赛中的三维教练头模，导出 GLB 后编辑，或换用另一份原版头模。这里替换原版资源。自建教练请在“编辑教练”中的独立头模区域导入 GLB。</p>
-      ${!this.ready?'<p class="migration-status">请先在“游戏来源与更新”准备游戏和离线资源，再重新打开此工作区。</p>':`<div class="field-grid"><label class="field"><span>搜索教练 / 资源编号</span><input class="input" id="coach-head-query" value="${esc(this.query)}" placeholder="例如 Allegri、Guardiola 或 437" ${disabled}></label><label class="field"><span>替换目标（${this.rows.length} 个原版头模）</span><select id="coach-head-target" ${disabled}></select></label></div>`}
+    body.innerHTML=`<p class="panel-description">直接查看这名教练当前使用的头模。保存过替换时显示替换结果；可在这里导出或更换模型。</p>
+      ${!this.ready?'<p class="migration-status">请先在“游戏来源与更新”准备游戏和离线资源。</p>':''}
       ${selected?`<p class="note coach-head-path">目标：${esc(selected.path)}</p><p class="note">按资源路径替换，使用同一路径的所有教练都会受影响。姓名来自编号匹配，具体比赛加载效果需游戏内验收。恢复原版时请使用未含本次替换的来源 APK。</p>
       <div class="coach-head-layout"><div><div class="model-stage coach-head-stage" id="coach-head-stage"></div><div class="model-hint">左键旋转 · 滚轮缩放 · 右键平移</div><div class="portrait-actions"><label><input type="checkbox" data-head-option="wireframe" ${this.viewer?.options.wireframe?'checked':''}>线框</label><label><input type="checkbox" data-head-option="skeleton" ${this.viewer?.options.skeleton?'checked':''}>骨架</label><label><input type="checkbox" data-head-option="rotate" ${this.viewer?.options.rotate?'checked':''}>旋转</label></div></div>
       <div><h3>替换方式</h3><label class="field"><span>换用原版教练头模</span><select id="coach-head-source" ${disabled}>${this.rows.map(r=>`<option value="${esc(r.path)}" ${(this.draft?.source||this.target)===r.path?'selected':''}>${esc(this.label(r))}</option>`).join('')}</select></label><div class="portrait-actions"><button class="button secondary" data-head-action="native" ${disabled}>预览所选原版头模</button><button class="button secondary" data-head-action="upload" ${disabled}>导入自制 GLB 并验证</button></div><p class="note">GLB 使用米制游戏坐标并内嵌贴图。推荐先导出本教练的原版 GLB，在原坐标中编辑后导入。兼容骨架保留可用权重；非兼容骨架采用原生头骨中性绑定，无法保留其面部表情。</p>
       <p class="note">当前方案：${this.draft?.mode==='custom'?'自制 GLB':this.draft?.mode==='native'?esc(this.rows.find(r=>r.path===this.draft.source)?.label||'原版头模'):'尚未选择替换'}${saved?' · 已保存的替换会列入 APK 导出':''}</p>
       <div class="portrait-actions"><button class="button secondary" data-head-action="original" ${disabled}>查看原版目标</button><button class="button secondary" data-head-action="draft" ${disabled||!this.draft?'disabled':''}>查看替换效果</button><button class="button secondary" data-head-action="export" ${disabled||!this.previewData?'disabled':''}>导出当前预览 GLB</button></div>
       <div class="portrait-actions"><button class="button primary" data-head-action="save" ${disabled||!this.draft?'disabled':''}>保存替换用于 APK</button><button class="button subtle" data-head-action="delete" ${disabled||!saved?'disabled':''}>取消已保存的替换</button></div>
-      <p class="note">头模配置独立保存在本机 data/coach-heads.json，不随球员工程分享。保存后到“APK 实装”勾选教练头模写入。</p></div></div>`:''}
+      <p class="note">保存后到“APK 实装”勾选教练头模写入；取消替换后，下次生成恢复原版。</p></div></div>`:''}
       <p class="migration-status ${this.message?.includes('失败')?'error':''}" id="coach-head-status" role="status">${esc(this.busy?'正在解码与验证，请稍候…':this.message||'选择一个原版教练头模开始。')}</p>`;
     this.options();this.attach().catch(error=>{this.message=error.message;const status=$('#coach-head-status');if(status)status.textContent='三维预览未能启动：'+error.message;});
   }
@@ -72,11 +78,20 @@ export class CoachHeads {
     }finally{if(seq===this.sequence){this.busy=false;this.paint();}}
   }
   async openFor(id){
-    this.open=true;await this.activate('coaches');const match=this.rows.find(r=>r.coach_ids.includes(String(id)));
-    if(match)await this.select(match.path);else{this.message='未找到此教练编号精确匹配的独立头模。可以在列表中浏览其他原版教练资源。';this.paint();}
-    $('.coach-head-panel')?.scrollIntoView({block:'start',behavior:'smooth'});
+    const coach=this.lookupCoach?.(id);if(!coach)throw Error('未找到这名教练，请刷新列表');
+    const seq=++this.sequence;this.currentCoach=structuredClone(coach);this.open=true;this.busy=true;
+    this.target=null;this.draft=null;this.previewData=null;this.message='';this.rerender();
+    try{
+      const result=await this.api('coaches/model/current',{coach:this.currentCoach});
+      if(seq!==this.sequence)return;
+      this.target=result.template_path;this.draft=structuredClone(result.replacement||null);this.previewData=result;
+      this.message=result.personal?(result.head_model?.asset_id?'已显示你上传的教练头模。':'已显示这名教练的默认 / 继承头模。'):(result.replacement?'已显示当前保存的替换头模。':'已显示原版教练当前头模。');
+    }catch(error){if(seq===this.sequence)this.message=error.message;}
+    finally{if(seq===this.sequence){this.busy=false;this.paint();}}
+    if(seq===this.sequence)$('.coach-head-panel')?.scrollIntoView({block:'start',behavior:'smooth'});
   }
   async action(action){
+    if(action==='close'){this.open=false;this.sequence++;this.busy=false;this.viewer?.update({model:{asset:null}});this.rerender();return;}
     if(action==='toggle'){this.open=!this.open;this.rerender();return;}
     if(action==='original'){await this.load(false);return;}
     if(action==='draft'){if(this.draft)await this.load(true);return;}

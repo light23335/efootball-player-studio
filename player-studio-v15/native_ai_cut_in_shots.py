@@ -4,7 +4,7 @@ import json
 import struct
 from studio_resources import bundled_resources
 
-REVISION='v17-ai-cut-in-opportunity-v4-equal-shot-styles'
+REVISION='v17-ai-cut-in-opportunity-v6-probability-native-shot-modes'
 
 
 def hooks(engine,ordinary_enabled=True):

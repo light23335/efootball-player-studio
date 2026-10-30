@@ -1,0 +1,191 @@
+/* ==========================================================================
+   球员工坊 · LIQUID GLASS — 布局模式（index.html 头部脚本按窗口计算）
+   html[data-ui-shell]  desk 三栏 · compact 窄窗/横屏手机 · phone 竖屏手机
+   html[data-ui-stage]  column 常驻展台 · sheet 浮动按钮打开的展台抽屉
+   body.is-editor       编辑球员分区（资料…模型），手机上球员卡置顶、编辑区为玻璃抽屉
+   ========================================================================== */
+
+@media(max-width:1900px){.head-actions .button:not(.primary) .label{display:none}.head-actions .button:not(.primary){width:44px;min-width:44px;padding:0}.head-actions .button svg{width:18px;height:18px}.save-status{font-size:0;gap:0}}
+@media(min-width:1700px){.card-stage{width:min(370px,82%)}}
+
+/* ---------- compact: narrow windows, phones held sideways ---------- */
+html[data-ui-shell=compact] .dock{left:12px;width:64px;padding:10px 8px;border-radius:24px}
+html[data-ui-shell=compact] .dock-logo{width:42px;height:42px;font-size:22px}
+html[data-ui-shell=compact] .dock-button{width:46px;height:46px;border-radius:15px}
+html[data-ui-shell=compact] .main-shell{padding-left:88px}
+html[data-ui-shell=compact] .sidebar{left:88px}
+html[data-ui-shell=compact] .identity{grid-template-columns:auto minmax(0,1fr);gap:20px;padding:20px 24px}
+html[data-ui-shell=compact] .identity-budget{grid-column:1/-1}
+html[data-ui-shell=compact] .gauge{width:100px;height:100px}
+html[data-ui-shell=compact] .gauge b{font-size:42px}
+html[data-ui-shell=compact] .gauge small{bottom:17px}
+html[data-ui-shell=compact] .hub-hero{padding:32px 34px;min-height:360px}
+@media(max-height:600px){
+  .dock{top:10px;bottom:10px;transform:none;overflow-y:auto;scrollbar-width:none;justify-content:flex-start}
+  .dock-logo{display:none}
+  .dock hr{margin:2px 0}
+  .head{top:8px;margin-bottom:14px}
+  .workbench{padding-top:10px}
+  .identity{padding:14px 20px;gap:16px;margin-bottom:14px}
+  .gauge{width:78px!important;height:78px!important}
+  .gauge b{font-size:32px!important}
+  .gauge small{display:none}
+  .identity-name h1{font-size:24px}
+  .identity-name .cn{margin-bottom:6px}
+  .page-heading{margin-bottom:16px}
+  .page-heading h1{font-size:28px}
+  .page-heading p{display:none}
+  .preview-fab{right:14px;bottom:14px;height:48px}
+  .preview-fab b{width:36px;height:36px;font-size:15px}
+  .hub-hero{min-height:0}
+}
+
+/* ---------- phone (portrait) ---------- */
+html[data-ui-shell=phone]{--gutter:14px}
+html[data-ui-shell=phone] .dock{left:50%;top:auto;bottom:calc(12px + env(safe-area-inset-bottom));flex-direction:row;width:auto;max-width:calc(100vw - 20px);padding:7px;gap:2px;transform:translateX(-50%);border-radius:26px}
+html[data-ui-shell=phone] .dock-logo,html[data-ui-shell=phone] .dock hr,html[data-ui-shell=phone] #shell-command,html[data-ui-shell=phone] .dock-tip{display:none}
+html[data-ui-shell=phone] .dock-sections{flex-direction:row;gap:2px}
+html[data-ui-shell=phone] .dock-button{width:48px;height:48px;border-radius:18px}
+html[data-ui-shell=phone] .dock-button svg{width:21px;height:21px}
+html[data-ui-shell=phone] .main-shell{padding-left:0}
+html[data-ui-shell=phone] .sidebar{left:10px;top:10px;bottom:calc(84px + env(safe-area-inset-bottom));width:calc(100vw - 20px)}
+html[data-ui-shell=phone] .workbench{display:block;padding:12px var(--gutter) calc(120px + env(safe-area-inset-bottom))}
+html[data-ui-shell=phone] .head{position:relative;top:0;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+html[data-ui-shell=phone] .seg{order:2;width:100%}
+html[data-ui-shell=phone] .head-actions{width:100%;margin:0;justify-content:flex-end}
+html[data-ui-shell=phone] .head-actions .glass-icon,html[data-ui-shell=phone] #open-project{display:none}
+html[data-ui-shell=phone] .head-actions .button{width:auto;min-width:0;padding:0 16px;font-size:13px;gap:6px}
+html[data-ui-shell=phone] .head-actions .button .label{display:inline}
+html[data-ui-shell=phone] .head-actions #save-player{flex:1}
+html[data-ui-shell=phone] .page-heading{flex-wrap:wrap;align-items:flex-end;gap:14px;margin-bottom:20px}
+html[data-ui-shell=phone] .page-heading h1{font-size:32px}
+html[data-ui-shell=phone] .page-heading>.button{min-height:40px}
+html[data-ui-shell=phone] .identity{grid-template-columns:auto minmax(0,1fr);gap:16px;padding:18px}
+html[data-ui-shell=phone] .identity-budget{grid-column:1/-1}
+html[data-ui-shell=phone] .gauge{width:88px;height:88px}
+html[data-ui-shell=phone] .gauge b{font-size:36px}
+html[data-ui-shell=phone] .gauge small{bottom:14px}
+html[data-ui-shell=phone] .identity-name h1{font-size:26px}
+html[data-ui-shell=phone] .toast-container{bottom:calc(92px + env(safe-area-inset-bottom))}
+html[data-ui-shell=phone] .task-dock{right:12px;bottom:calc(88px + env(safe-area-inset-bottom));width:min(360px,calc(100vw - 24px))}
+html[data-ui-shell=phone] .preview-fab{right:14px;bottom:calc(86px + env(safe-area-inset-bottom));height:50px;padding:0 18px 0 6px;font-size:13px}
+html[data-ui-shell=phone] .preview-fab b{width:38px;height:38px;font-size:16px}
+html[data-ui-shell=phone] body.has-tasks .preview-fab{bottom:calc(146px + env(safe-area-inset-bottom))}
+html[data-ui-shell=phone][data-ui-stage=sheet] .preview-area{top:auto;left:8px;right:8px;bottom:8px;width:auto;max-height:90dvh;max-height:90vh;transform:translateY(calc(100% + 16px))}
+html[data-ui-shell=phone][data-ui-stage=sheet] body.preview-sheet-open .preview-area{transform:none}
+html[data-ui-shell=phone] .mini-model-stage{height:52vh}
+
+/* phone editor pages: the card leads, the editor slides over it like a glass sheet */
+html[data-ui-shell=phone] body.is-editor .workbench{padding-top:0}
+html[data-ui-shell=phone] body.is-editor .preview-area{position:relative;top:auto;left:auto;right:auto;bottom:auto;z-index:1;width:auto;height:auto;max-height:none;min-height:0;margin:0 calc(var(--gutter)*-1);padding:34px 0 26px;border-radius:0;background:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;transform:none;visibility:visible;overflow:visible}
+html[data-ui-shell=phone] body.is-editor .preview-area>:not(#preview-card):not(.stage-name):not(.preview-tabs){display:none}
+html[data-ui-shell=phone] body.is-editor .stage-name{display:block;top:6px;font-size:76px}
+html[data-ui-shell=phone] body.is-editor .card-stage{width:58%}
+html[data-ui-shell=phone] body.is-editor .card-shadow{margin-top:16px}
+html[data-ui-shell=phone] body.is-editor .card-caption,html[data-ui-shell=phone] body.is-editor .native-motion-controls,html[data-ui-shell=phone] body.is-editor #export-card{display:none}
+html[data-ui-shell=phone] body.is-editor #preview-stats,html[data-ui-shell=phone] body.is-editor #preview-model{display:none!important}
+html[data-ui-shell=phone] body.is-editor .preview-tabs{display:none}
+html[data-ui-shell=phone] body.is-editor .editor-area{position:relative;z-index:2;margin:0 calc(var(--gutter)*-1);padding:22px var(--gutter) 10px;border-radius:32px 32px 0 0;
+  background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.035) 300px,transparent 600px);-webkit-backdrop-filter:blur(30px) saturate(1.5);backdrop-filter:blur(30px) saturate(1.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.28)}
+html[data-ui-shell=phone] body.is-editor .editor-area:before{content:"";display:block;width:44px;height:5px;margin:-10px auto 14px;border-radius:5px;background:rgba(255,255,255,.35)}
+html[data-ui-shell=phone] body.is-editor .preview-fab{display:none}
+
+/* hub on smaller screens */
+@media(max-width:1100px){.hub-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+html[data-ui-shell=phone] .hub{gap:12px}
+html[data-ui-shell=phone] .hub-hero{grid-template-columns:1fr;min-height:0;padding:26px 22px 24px;gap:18px;border-radius:28px}
+html[data-ui-shell=phone] .hero-card{order:-1;width:56%;margin:0 auto}
+html[data-ui-shell=phone] .hero-copy h2{font-size:38px}
+html[data-ui-shell=phone] .hero-meta b{font-size:56px}
+html[data-ui-shell=phone] .hero-actions .button{flex:1;min-height:46px;padding:8px 14px}
+html[data-ui-shell=phone] .hub-hero .hero-name{font-size:96px;bottom:auto;top:10px;right:auto;left:50%;transform:translateX(-50%)}
+html[data-ui-shell=phone] .hub-tiles{grid-template-columns:1fr 1fr;gap:12px}
+html[data-ui-shell=phone] .tile{min-height:150px;padding:18px}
+html[data-ui-shell=phone] .tile:after{display:none}
+html[data-ui-shell=phone] .tile strong{font-size:16px}
+html[data-ui-shell=phone] .tile small{display:none}
+html[data-ui-shell=phone] .tile .tile-icon{width:42px;height:42px;border-radius:14px}
+html[data-ui-shell=phone] .tile .tile-count{right:18px;top:16px;font-size:34px}
+html[data-ui-shell=phone] .tile .tile-count small{display:none}
+html[data-ui-shell=phone] .rail-card{height:206px}
+html[data-ui-shell=phone] .hub-rail{grid-auto-columns:142px}
+
+/* ---------- content reflow ---------- */
+@media(max-width:1100px){
+  .coach-head-layout{grid-template-columns:1fr}
+  .coach-head-stage{height:380px}
+}
+@media(max-width:760px){
+  .panel{border-radius:var(--r-lg)}
+  .panel-title{padding:18px 18px 10px}
+  .panel-body{padding:2px 18px 20px}
+  .field-grid>.field:has(>span:first-child){grid-template-columns:minmax(0,1fr);row-gap:6px;padding:12px 0}
+  .field-grid>.field:has(>span:first-child)>*:not(:first-child){grid-column:1}
+  .field-grid>.field:has(>span:first-child)>span:first-child{font-size:12.5px;color:var(--muted)}
+  .type-option{padding:12px 10px}
+  .model-controls-grid,.morph-grid{grid-template-columns:1fr}
+  .main-model-stage{height:clamp(280px,56vh,440px)}
+  .welcome-banner{padding:24px 20px}
+  .welcome-actions .button{flex:1;min-width:130px}
+  .beginner-steps{grid-template-columns:1fr}
+  .beginner-steps>.panel:first-child{grid-column:auto}
+  .installation-choices{grid-template-columns:1fr}
+  .setup-field .input-row{flex-wrap:wrap}
+  .setup-field select{flex-basis:100%}
+  .setup-field .button{width:100%}
+  .home-cache>.button{width:100%}
+  .tutorial-topic summary{flex-wrap:wrap;padding:16px 18px}
+  .library-summary{gap:16px;padding:16px 18px}
+  .library-summary strong{font-size:28px}
+  .library-summary>.inline-badge{display:none}
+  .library-player-grid,.native-asset-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .native-avatar{height:128px}
+  .native-library .search-box{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0;background:none;box-shadow:none}
+  .native-library .search-box>svg,.native-library .search-box>[data-icon]{display:none}
+  .native-library #library-query{grid-column:1/-1;width:100%;padding:12px 16px;border-radius:999px;background:rgba(0,0,0,.22);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+  .native-library .search-box select{width:100%;min-width:0;max-width:none}
+  .personal-player-grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr))}
+  .coach-grid{grid-template-columns:1fr}
+  .preset-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+  .card-person{align-items:flex-start;gap:14px}
+  .card-person-image{width:86px;height:118px}
+  .thumbnail-editor{grid-template-columns:1fr}
+  .thumbnail-editor canvas{max-width:240px}
+  .training-grid{grid-template-columns:1fr}
+  .training-position{width:100%}
+  .training-position select{flex:1;max-width:none}
+  .training-actions .inline-tip{width:100%;margin-left:0}
+  .comparison-grid{grid-template-columns:1fr}
+  .controller-binding{grid-template-columns:1fr auto}
+  .controller-binding-inputs{grid-column:1/-1;grid-row:2}
+  .coach-link-slot>.field-grid{grid-template-columns:1fr}
+  .coach-link-slot{padding:14px}
+  .export-list .player-option{display:grid;grid-template-columns:1fr 1fr}
+  .export-list .player-option>div{grid-column:1/-1}
+  .export-list .button{width:100%}
+  .personal-folders{padding:16px}
+  .folder-heading,.folder-current{align-items:stretch}
+  .folder-current>strong,.folder-actions{width:100%}
+  .folder-actions .button,.folder-tab{min-height:44px}
+  .folder-tab>span{max-width:180px}
+  .motion-source-row{flex-wrap:wrap;align-items:flex-start;gap:10px}
+  .motion-actions{align-items:stretch}
+  .motion-actions .button{width:100%}
+  .coach-identity-picker .coach-picker-toggle,.coach-identity-picker [type="search"]{min-height:46px;font-size:14px}
+  .coach-identity-results button{min-height:48px;font-size:14px}
+  .input-row{flex-wrap:wrap}
+  .input-row>.input,.input-row>select{flex:1 1 200px}
+  dialog{padding:28px 22px 24px;border-radius:var(--r-lg)}
+}
+@media(max-width:420px){
+  .skill-grid{grid-template-columns:1fr}
+  .palette-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .library-result-bar{flex-direction:column;align-items:flex-start}
+  .detail-list{grid-template-columns:1fr}
+  .welcome-actions .button{min-width:0}
+}
+
+/* ---------- Android touch sizing ---------- */
+body[data-platform=android]{--touch:46px}
+body[data-platform=android] .button,body[data-platform=android] select,body[data-platform=android] .input{min-height:var(--touch)}
+body[data-platform=android] .nav-item{min-height:50px;font-size:15px}

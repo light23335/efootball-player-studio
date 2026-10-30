@@ -1,0 +1,7 @@
+Exception during registration:
+System.ComponentModel.Win32Exception (2): An error occurred trying to start process 'dotnet-suggest' with working directory 'D:\download\73efootball-V13等2项文件'. 系统找不到指定的文件。
+   at System.Diagnostics.Process.StartWithCreateProcess(ProcessStartInfo startInfo)
+   at System.Diagnostics.Process.StartCore(ProcessStartInfo startInfo)
+   at System.Diagnostics.Process.Start()
+   at System.CommandLine.Invocation.Process.StartProcess(String command, String args, String workingDir, Action`1 stdOut, Action`1 stdErr, ValueTuple`2[] environmentVariables)
+   at System.CommandLine.Builder.CommandLineBuilderExtensions.<>c.<<RegisterWithDotnetSuggest>b__5_1>d.MoveNext()

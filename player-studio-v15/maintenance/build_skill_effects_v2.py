@@ -261,13 +261,14 @@ def build(engine, release=False):
     add_trajectory(builder)
     add_shield(builder)
     bundle = builder.bundle('studio_skill_runtime_v2', builder.rows + builder.helpers)
-    return {'revision': 'skill-effects-v2-1.9.15.10-lone-wolf' if release else 'skill-effects-v2-lone-wolf-candidate',
+    return {'revision': 'skill-effects-v2-2.0.3-pass-windup-contact-guard' if release else 'skill-effects-v2-pass-windup-contact-guard-candidate',
             'production_ready': bool(release),
             'custom_skill_protocol':CUSTOM_PROTOCOL,
             'engine_sha256': ENGINE_SHA, 'hooks': builder.rows, 'helpers': builder.helpers,
             'bundles': [bundle],
             'balance':{'shot_error_factor':.5,'cold_distance_m':2.5,
-                       'pass_error_factor':.6,'windup_duration_factor':.6,
+                       'pass_error_factor':.6,'windup_duration_factor':.6,'air_pass_windup_duration_factor':.6,
+                       'pass_windup_guard':'pre-existing dribble possession, stationary native motion and local contact root; otherwise native timing',
                        'short_pass_distance_m':2.,'shield_distance_m':1.8,'shield_resistance_factor':1.5,
                        'air_pass_error_components':['yaw','pitch','speed'],
                        'acceleration':{'curve':'smoothstep','speed_start':12.,'speed_end':28.,

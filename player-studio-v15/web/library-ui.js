@@ -1,20 +1,24 @@
 import {cardTypes,cardTypeName} from './domain.js';
+import {choosePlayerAction} from './player-prompts.js';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $=s=>document.querySelector(s);
 export class LibraryUI {
   constructor(context){
-    Object.assign(this,context);this.mode='players';this.query='';this.page=0;this.kind='';this.position='';this.rows=[];this.active=false;this.request=0;
+    Object.assign(this,context);this.mode='players';this.query='';this.page=0;this.kind='';this.position='';this.rows=[];this.active=false;this.request=0;this.selected=new Set();
     document.addEventListener('click',e=>this.click(e));
     document.addEventListener('input',e=>{
+      if(e.target.dataset.libCheck){if(e.target.checked)this.selected.add(e.target.dataset.libCheck);else this.selected.delete(e.target.dataset.libCheck);this.updateRecycleButton();}
       if(e.target.id==='library-query'){this.query=e.target.value;this.page=0;clearTimeout(this.timer);this.timer=setTimeout(()=>this.refresh(),320);}
       if(e.target.id==='library-kind'){this.kind=e.target.value;this.page=0;this.refresh();}
       if(e.target.id==='library-position'){this.position=e.target.value;this.page=0;this.refresh();}
       if(e.target.dataset.librarySource)this[e.target.dataset.librarySource]=e.target.value;
     });
   }
+  playerMode(){return ['players','trash'].includes(this.mode);}
+  updateRecycleButton(){const button=$('[data-lib-recycle-selected]');if(button){button.disabled=!this.selected.size;button.textContent=(this.mode==='trash'?'恢复所选':'所选移入回收站')+`（${this.selected.size}）`;}}
   render(){
-    const labels=[['players','全部球员'],['portrait','原版球员图'],['thumbnail','游戏内小头像'],['card','原版卡面图层'],['model','原版模型'],['setup','资源设置']];
-    return `<div class="native-library"><div class="library-summary"><strong>${this.status.players.toLocaleString()}<small>条球员记录</small></strong><strong>${this.status.assets.toLocaleString()}<small>项原版美术资源</small></strong><span class="inline-badge ${this.status.phase==='ready'?'':'warning'}" id="library-ready">${this.status.phase==='ready'?'原版资源已就绪':'需要准备美术资源'}</span></div><div class="filter-tabs library-tabs">${labels.map(([id,label])=>`<button data-lib-mode="${id}" class="${this.mode===id?'active':''}">${label}</button>`).join('')}</div>${this.mode==='setup'?this.setupHtml():`<div class="search-box">⌕<input id="library-query" value="${esc(this.query)}" placeholder="${['players','thumbnail'].includes(this.mode)?'搜索姓名、英文名、球员 ID':'搜索原始文件名或球员编号'}">${this.mode==='players'?`<select id="library-position"><option value="">全部位置</option>${this.catalog.POSITIONS.map(p=>`<option ${p===this.position?'selected':''}>${p}</option>`).join('')}</select><select id="library-kind"><option value="">全部卡种</option>${cardTypes.map(([k,label])=>`<option value="${k}" ${this.kind===k?'selected':''}>${cardTypeName(k)} · ${label}</option>`).join('')}</select>`:''}</div><div class="library-result-bar"><span id="library-total">正在读取本地数据库…</span><button class="button subtle" data-lib-load>读取本页原图</button></div><div id="library-results"></div><div id="library-pagination" class="library-pagination"></div>`}<p class="note">资料与美术来自你提供的 APK。选择“载入资料”会建立可编辑草稿；不会改写原始 APK 或现有球员。原版图像和模型没有自绘替代。</p></div>`;
+    const labels=[['players','全部球员'],['trash','回收站'],['portrait','原版球员图'],['thumbnail','游戏内小头像'],['card','原版卡面图层'],['model','原版模型'],['setup','资源设置']];
+    return `<div class="native-library"><div class="library-summary"><strong>${this.status.players.toLocaleString()}<small>条球员记录</small></strong><strong>${this.status.assets.toLocaleString()}<small>项原版美术资源</small></strong><span class="inline-badge ${this.status.phase==='ready'?'':'warning'}" id="library-ready">${this.status.phase==='ready'?'原版资源已就绪':'需要准备美术资源'}</span></div><div class="filter-tabs library-tabs">${labels.map(([id,label])=>`<button data-lib-mode="${id}" class="${this.mode===id?'active':''}">${label}</button>`).join('')}</div>${this.mode==='setup'?this.setupHtml():`<div class="search-box">⌕<input id="library-query" value="${esc(this.query)}" placeholder="${['players','trash','thumbnail'].includes(this.mode)?'搜索姓名、英文名、球员 ID':'搜索原始文件名或球员编号'}">${this.playerMode()?`<select id="library-position"><option value="">全部位置</option>${this.catalog.POSITIONS.map(p=>`<option ${p===this.position?'selected':''}>${p}</option>`).join('')}</select><select id="library-kind"><option value="">全部卡种</option>${cardTypes.map(([k,label])=>`<option value="${k}" ${this.kind===k?'selected':''}>${cardTypeName(k)} · ${label}</option>`).join('')}</select>`:''}</div><div class="library-result-bar"><span id="library-total">正在读取本地数据库…</span><button class="button subtle" data-lib-load>读取本页原图</button></div><div id="library-results"></div><div id="library-pagination" class="library-pagination"></div>`}<p class="note">资料与美术来自你提供的 APK。选择“载入资料”会建立可编辑草稿；不会改写原始 APK 或现有球员。原版图像和模型没有自绘替代。</p></div>`;
   }
   setupHtml(){return `<section class="panel"><div class="panel-title"><h2>读取你已有的两个 APK</h2></div><div class="panel-body"><p class="panel-description">第一次使用会在程序旁建立原版美术缓存，约占 4 GB。转换后的图片与模型按需缓存；准备完成后不需要联网。</p>${[['apk','主程序 APK'],['companion','离线资源包 APK']].map(([key,label])=>`<label class="field"><span>${label}</span><div class="input-row"><input class="input" data-library-source="${key}" id="library-source-${key}" value="${esc(this[key])}"><button class="button secondary" data-lib-pick="${key}">选择</button></div></label>`).join('<div style="height:15px"></div>')}<button style="margin-top:18px" class="button primary" data-lib-setup>准备原版资源</button><p class="native-status" id="native-setup-status">${esc(this.status.message||'所有源文件保持只读。')}</p></div></section>`;}
   activate(page){this.active=page==='library';if(this.active&&this.mode!=='setup')this.refresh();if(this.active&&this.mode==='setup')this.poll();}
@@ -22,7 +26,7 @@ export class LibraryUI {
     if(!this.active||this.mode==='setup')return;
     const request=++this.request;$('#library-results').innerHTML='<div class="loading-state"><span class="spinner"></span>读取数据库…</div>';
     try{
-      const data=await this.api(this.mode==='players'?'library/search':'library/assets',{query:this.query,page:this.page,position:this.position,kind:this.mode==='players'?this.kind:this.mode});
+      const data=await this.api(this.playerMode()?'library/search':'library/assets',{query:this.query,page:this.page,position:this.position,kind:this.playerMode()?this.kind:this.mode,recycle_bin:this.mode==='trash'});
       if(!this.active||request!==this.request)return;
       this.rows=data.rows;this.result=data;this.renderRows();this.loadImages();
     }catch(e){this.toast(e.message,true);}
@@ -30,17 +34,18 @@ export class LibraryUI {
   renderRows(){
     if(!$('#library-results'))return;
     const data=this.result;$('#library-total').textContent=`共 ${data.total.toLocaleString()} 项 · 第 ${data.page+1} / ${data.pages} 页`;
-    if(this.mode==='players')$('#library-results').innerHTML=`<div class="library-player-grid">${data.rows.map(r=>`<article class="library-player"><div class="native-avatar" data-native-avatar="${r.portrait||''}"><span>原版球员图</span></div><div class="library-player-info"><strong>${esc(r.name)}</strong><small>${esc(r.name_en)}</small><div class="native-tags"><span>${r.position}</span><span>${esc(cardTypeName(r.card_type))}</span>${r.overall?`<span>原库总评 ${r.overall}</span>`:''}</div><code>${esc(r.id)}</code><button class="button secondary" data-lib-player="${r.id}">载入资料并编辑</button></div></article>`).join('')}</div>`;
+    if(this.playerMode())$('#library-results').innerHTML=`<div class="portrait-actions"><button class="button subtle" data-lib-select-page>勾选本页</button><button class="button secondary" data-lib-recycle-selected disabled>所选移入回收站（0）</button></div><p class="note">回收站保留资料，可随时恢复。移入后从下次生成的可用卡库、卡包和 AI 抽取中排除；原版卡和增量卡均适用。会移除游戏内已持有的同卡球员并清理阵容引用；首次处理前备份存档，共用美术资源保留。</p><div class="library-player-grid">${data.rows.map(r=>`<article class="library-player"><div class="native-avatar" data-native-avatar="${r.portrait||''}"><span>原版球员图</span></div><div class="library-player-info"><label class="checkbox-line"><input type="checkbox" data-lib-check="${r.id}" ${this.selected.has(r.id)?'checked':''}>选择</label><strong>${esc(r.name)}</strong><small>${esc(r.name_en)}</small><div class="native-tags"><span>${r.position}</span><span>${esc(cardTypeName(r.card_type))}</span>${r.overall?`<span>原库总评 ${r.overall}</span>`:''}</div><code>${esc(r.id)}</code>${this.mode==='trash'?`<button class="button secondary" data-lib-recycle="${r.id}">恢复此卡</button>`:`<button class="button secondary" data-lib-player="${r.id}">载入资料并编辑</button><button class="button subtle" data-lib-recycle="${r.id}">移入回收站</button>`}</div></article>`).join('')}</div>`;
     else $('#library-results').innerHTML=`<div class="native-asset-grid">${data.rows.map(r=>`<article class="native-asset">${r.kind==='model'?'<div class="native-model-mark">原版 3D 网格<br><small>点击后读取模型与原材质</small></div>':`<div class="native-asset-image" data-native-avatar="${r.id}">${r.converted?`<img src="${r.converted.url}" alt="${esc(r.name)}">`:'<span>等待读取原图</span>'}</div>`}<strong>${esc(r.player_name||r.name)}</strong><small title="${esc(r.path)}">${esc(r.path)}</small><div class="native-asset-actions">${r.kind==='model'?`<button class="button primary" data-lib-apply="${r.id}" data-lib-slot="model">预览原版模型</button>`:`<button class="button secondary" data-lib-apply="${r.id}" data-lib-slot="${this.mode==='thumbnail'?'thumbnail':r.kind==='portrait'?'portrait':'background'}">${this.mode==='thumbnail'?'设为游戏内小头像':r.kind==='portrait'?'设为球员图':'设为卡面背景'}</button>${r.kind==='card'?`<button class="button subtle" data-lib-apply="${r.id}" data-lib-slot="foreground">设为前景图层</button><button class="button subtle" data-lib-apply="${r.id}" data-lib-slot="full">完整原图</button>`:''}`}</div></article>`).join('')}</div>`;
     if(!data.rows.length)$('#library-results').innerHTML='<div class="no-matches">没有匹配的原版条目，换一个姓名、编号或文件名试试。</div>';
     $('#library-pagination').innerHTML=`<button class="button secondary" data-lib-page="${data.page-1}" ${data.page===0?'disabled':''}>上一页</button><span>${data.page+1} / ${data.pages}</span><button class="button secondary" data-lib-page="${data.page+1}" ${data.page+1>=data.pages?'disabled':''}>下一页</button>`;
+    this.updateRecycleButton();
   }
   async convert(ids){
     const data=await this.api('library/convert',{ids});return data.results;
   }
   async loadImages(){
     if(!this.active||this.mode==='setup'||this.mode==='model'||this.status.phase!=='ready')return;
-    const request=this.request,ids=this.rows.map(r=>this.mode==='players'?r.portrait:r.id).filter(Boolean);if(!ids.length)return;
+    const request=this.request,ids=this.rows.map(r=>this.playerMode()?r.portrait:r.id).filter(Boolean);if(!ids.length)return;
     try{
       const result=await this.convert([...new Set(ids)]);
       if(request!==this.request||!this.active)return;
@@ -138,7 +143,7 @@ export class LibraryUI {
   scheduleCardInfo(){
     clearTimeout(this.infoTimer);const p=this.project(),card=p.native_card;if(!card?.ui||this.status.phase!=='ready')return;
     const team=p.identity.team_id??card.info?.team_id??0,nation=p.identity.nation_id??card.info?.nation_id??0;
-    if(card.info?.symbol_revision===2&&card.info?.team_id===team&&card.info?.nation_id===nation)return;
+    if(card.info?.symbol_revision===3&&card.info?.team_id===team&&card.info?.nation_id===nation)return;
     const uuid=p.package_id,id=card.source_id;
     this.infoTimer=setTimeout(async()=>{try{
       const info=await this.api('library/card-info',{id,team_id:team,nation_id:nation}),current=this.project();
@@ -162,9 +167,11 @@ export class LibraryUI {
     }catch(e){this.toast(e.message,true);}
   }
   async click(event){
-    const button=event.target.closest('[data-lib-mode],[data-lib-player],[data-lib-apply],[data-lib-page],[data-lib-load],[data-lib-pick],[data-lib-setup]');if(!button||button.disabled)return;
+    const button=event.target.closest('[data-lib-mode],[data-lib-player],[data-lib-apply],[data-lib-page],[data-lib-load],[data-lib-pick],[data-lib-setup],[data-lib-recycle],[data-lib-recycle-selected],[data-lib-select-page]');if(!button||button.disabled)return;
     try{
-      if(button.dataset.libMode){this.mode=button.dataset.libMode;this.page=0;this.query='';this.rerender();return;}
+      if(button.dataset.libMode){this.mode=button.dataset.libMode;this.page=0;this.query='';this.selected.clear();this.rerender();return;}
+      if(button.hasAttribute('data-lib-select-page')){for(const row of this.rows)this.selected.add(row.id);this.renderRows();return;}
+      if(button.hasAttribute('data-lib-recycle')||button.hasAttribute('data-lib-recycle-selected')){const ids=button.dataset.libRecycle?[button.dataset.libRecycle]:[...this.selected];if(!ids.length)return;const restore=this.mode==='trash';if(!restore&&await choosePlayerAction('移入球员回收站？',`共 ${ids.length} 张卡。保留本机资料，下次生成从卡库、卡包和 AI 阵容排除。游戏中已持有的同卡球员也会移除，阵容可能需要补位。原资料留在回收站，首次处理前备份游戏存档。`,[{id:'trash',label:'移入回收站'}])!=='trash')return;const result=await this.api('library/recycle',{ids,action:restore?'restore':'trash'});this.selected.clear();this.toast(result.message);await this.refresh();return;}
       if(button.dataset.libPage!==undefined){this.page=Number(button.dataset.libPage);this.refresh();return;}
       if(button.hasAttribute('data-lib-load'))return this.loadImages();
       if(button.dataset.libPick){const r=await this.api('dialog',{category:'apk'});if(r.path){this[button.dataset.libPick]=r.path;$('#library-source-'+button.dataset.libPick).value=r.path;}return;}

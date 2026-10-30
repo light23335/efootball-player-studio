@@ -1,4 +1,5 @@
 """Clone inspected UE4 packages and compile personal RGBA textures."""
+from export_errors import export_context, exported
 from pathlib import Path
 import io
 import json
@@ -6,6 +7,7 @@ import struct
 
 from native_iostore import Container,package_id,package_names,rename_package,export_rebindings,read_package_header
 from native_appearance import face_skin,original_face_skin
+from card_front import front_overrides
 
 
 def logical_package(path):
@@ -144,6 +146,7 @@ def verify_portrait_locations(packages,binding):
     return {'root':True,'Variation2022':True,'textures_per_location':len(required)}
 
 
+@exported('球员','编译卡面、脸模和材质',lambda project,*args,**kwargs: project)
 def compile_art(project,identity,library,rigged_path=None,reference_path=None,mesh_metadata=None,asset_key=None):
     from PIL import Image,ImageFont,ImageDraw
     from native_glb import Glb,prove_binding
@@ -229,7 +232,9 @@ def compile_art(project,identity,library,rigged_path=None,reference_path=None,me
         add_texture(key+'_l',flat,mini_template)
     report['league_portraits']={'direct_keys':sorted(league_keys),'suffixes':['_','_l'],'native_size':[128,128],'shared_originals_preserved':True}
     binding={'appearance_id':int(card['source_id']),'portrait_name':person+'_','asset_key':person,'card_aliases':aliases,
-             'thumbnail_names':names(person,motion)}
+             'thumbnail_names':names(person,motion),'front_names':front_overrides(card,person)}
+    report['front_portrait']={'slot':'F07','name':person+'f','mini_isolated':True,
+                              'legacy_filename_alias_independent':True}
     report['portrait_locations']=verify_portrait_locations(result,binding)
     if not model.get('asset'):raise ValueError('请先载入游戏原版脸模或已绑定 V13 骨架的自制 GLB')
     if native_face:

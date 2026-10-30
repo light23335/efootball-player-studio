@@ -1,10 +1,11 @@
+import {exportStep} from './export-errors.js';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $=s=>document.querySelector(s);
 
 export class CoachModelEditor {
   constructor(context){
     Object.assign(this,context);this.sequence=0;this.scope=null;
-    document.addEventListener('click',e=>{const b=e.target.closest('[data-personal-coach-model]');if(b&&!this.busy)this.action(b.dataset.personalCoachModel).catch(error=>{this.message=error.message;this.paint();this.toast(error.message,true);});});
+    document.addEventListener('click',e=>{const b=e.target.closest('[data-personal-coach-model]');if(b&&!this.busy){const run=()=>this.action(b.dataset.personalCoachModel);(b.dataset.personalCoachModel==='export-template'?exportStep(this.row()?.name,'导出教练 GLB 模板',run):run()).catch(error=>{this.message=error.message;this.paint();this.toast(error.message,true);});}});
     document.addEventListener('change',e=>{if(e.target.dataset.personalCoachOption)this.viewer?.setOption(e.target.dataset.personalCoachOption,e.target.checked);});
   }
   render(){return '<section class="personal-coach-model"><h3>这名自建教练的独立三维头模</h3><div id="personal-coach-model-body"><p class="note">正在读取原版头模模板…</p></div></section>';}
@@ -26,13 +27,13 @@ export class CoachModelEditor {
   paint(){
     const body=$('#personal-coach-model-body'),row=this.row();if(!body||!row)return;
     const head=row.head_model,disabled=this.busy?'disabled':'';
-    if(!head){body.innerHTML=`<p class="note">${esc(this.message||this.data?.message||'正在读取原版头模模板…')}</p><p class="note">请从“只看有三维头模”的原版教练复制，再导入自己的 GLB。</p>`;return;}
+    if(!head){body.innerHTML=`<p class="note">${esc(this.message||this.data?.message||'正在读取默认教练头模…')}</p><p class="note">准备好游戏资源后会自动分配默认头模，即可导入自己的 GLB。</p>`;return;}
     body.innerHTML=`<p class="note">此头模只绑定当前自建教练；生成 APK 时随这名教练一起写入。原版教练和其他复制教练各自保留自己的脸。</p><p class="note coach-head-path">原版骨架模板：${esc(head.template_path.split('/').at(-1))}</p>
       <div class="coach-head-layout"><div><div class="model-stage coach-head-stage" id="personal-coach-model-stage"></div><div class="model-hint">左键旋转 · 滚轮缩放 · 右键平移</div><div class="portrait-actions"><label><input type="checkbox" data-personal-coach-option="wireframe" ${this.viewer?.options.wireframe?'checked':''}>线框</label><label><input type="checkbox" data-personal-coach-option="skeleton" ${this.viewer?.options.skeleton?'checked':''}>骨架</label></div></div>
       <div><h3>${head.asset_id?'已导入自制 GLB':'沿用原版头模'}</h3><p class="note">建议先导出此教练的原版 GLB，在原坐标和骨架上修改后导入。兼容的骨骼权重可以继续驱动原版表情；不同骨架只能使用头颈中性绑定，不能自动获得眨眼、张嘴等表情。</p>
       <div class="portrait-actions"><button class="button secondary" data-personal-coach-model="export-template" ${disabled}>导出原版 GLB 模板</button><button class="button primary" data-personal-coach-model="upload" ${disabled}>导入我的 GLB 脸模</button></div>
       <div class="portrait-actions"><button class="button secondary" data-personal-coach-model="preview" ${disabled}>预览当前头模</button><button class="button subtle" data-personal-coach-model="reset" ${disabled}>恢复原版头模</button></div>
-      <p class="note">导入后点击本页底部“保存教练”，再去“APK 实装”勾选这名自建教练。无需在原版头模工作区保存全局替换。</p></div></div>
+      <p class="note">导入后点击本页底部“保存教练”，再去“APK 实装”勾选这名教练，头模会随教练一起写入。</p></div></div>
       <p class="migration-status" role="status">${esc(this.busy?'正在解码、绑定并检查教练头模…':this.message||'头模将独立绑定到当前自建教练。')}</p>`;
     this.attach().catch(error=>this.toast(error.message,true));
   }

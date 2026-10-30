@@ -6,7 +6,7 @@ from native_tables import PLAYER,APPEARANCE,VARIATION,ALIASES
 from card_types import editor_card_type
 
 PREFIX='assets/gateway-release/'
-IMPORT_REVISION='apk-catalogue-compatible-v10-coach-country-club'
+IMPORT_REVISION='apk-catalogue-compatible-v11-content-v2-registry'
 
 def active_resources(base,store):
     path=Path(store)/'active-game.json'
@@ -235,12 +235,72 @@ class GameImport:
     def start(self,body):
         if self.status()['phase']=='working':raise ValueError('正在导入游戏数据，请稍候')
         if self.server.native_package.status()['phase']=='working' or self.server.library.state['phase']=='preparing':raise ValueError('请等待当前实装或资源准备结束')
+        if body.get('operation')=='content-delta':return self.start_delta(body)
         apk=Path(body.get('apk','')).absolute();companion=Path(body.get('companion','')).absolute()
         if not apk.is_file() or apk.suffix.lower()!='.apk' or not companion.is_file():raise ValueError('请选择新版主 APK 和已有离线资源 APK')
         with self.lock:
             if self.state['phase']=='working':raise ValueError('正在导入游戏数据，请稍候')
             self.state={'phase':'working','message':'核对新版 APK 与兼容性','result':None}
         threading.Thread(target=self._work,args=(apk,companion),daemon=True).start();return self.status()
+    def inspect_delta(self,path):
+        from content_delta import Delta
+        with Delta(path) as delta:return delta.summary()
+    def start_delta(self,body):
+        from apk_sources import resolve
+        recorded=resolve(self.server.library,self.server.store)
+        apk=Path(body.get('apk') or recorded.get('apk') or '').absolute()
+        companion=Path(body.get('companion') or recorded.get('companion') or '').absolute()
+        path=Path(body.get('path','')).absolute()
+        if not apk.is_file() or not companion.is_file():raise ValueError('请先导入 V17 主包和离线资源，或填写上方两个 APK 路径')
+        if not path.is_file() or path.suffix.lower()!='.zip':raise ValueError('请选择内容增量 ZIP')
+        with self.lock:
+            if self.state['phase']=='working':raise ValueError('正在导入游戏数据，请稍候')
+            self.state={'phase':'working','message':'检查内容增量包的清单与全部哈希','result':None}
+        threading.Thread(target=self._delta_work,args=(apk,companion,path),daemon=True).start();return self.status()
+    def _delta_work(self,apk,companion,path):
+        from content_delta import Delta,build_source,read_catalogue
+        work=None;output=None;committed=False
+        try:
+            with Delta(path) as delta:
+                with zipfile.ZipFile(apk) as archive:prior=read_catalogue(archive)
+                for receipt in prior['packages']:
+                    if receipt['package_id']==delta.manifest['package_id']:
+                        if receipt['manifest_sha256']!=delta.digest:raise ValueError('同名增量包内容已改变，请使用新的包编号')
+                        if not receipt.get('pending_entities'):
+                            self._work(apk,companion)
+                            if self.status()['phase']=='done':
+                                result=self.status()['result'];result.update(content_delta=receipt,already_installed=True)
+                                self.update(phase='done',message='此内容增量包已经导入，未重复追加卡片或资源',result=result)
+                            return
+                root=self.server.store.root
+                work=root/'tmp'/('content-delta-'+uuid.uuid4().hex);work.mkdir(parents=True)
+                folder=root/'content-sources';folder.mkdir(exist_ok=True)
+                output=folder/(delta.digest[:24]+'-'+uuid.uuid4().hex[:8]+'.apk')
+                built=work/'source.apk'
+                receipt=build_source(delta,apk,built,work,self.server.library.profile,self.update)
+                if receipt.get('already_installed'):
+                    self._work(apk,companion);return
+                os.replace(built,output)
+                self.update(message='导入增量来源，重建资源库与美术索引')
+                self._work(output,companion)
+                if self.status()['phase']!='done':raise ValueError(self.status().get('message','增量资料库导入失败'))
+                committed=True
+                result=self.status()['result'];result['content_delta']=receipt
+                try:
+                    reports=root/'content-reports';reports.mkdir(exist_ok=True)
+                    report_name=delta.manifest['package_id']+'-'+delta.digest[:12]+'.json'
+                    raw_report=json.dumps(receipt,ensure_ascii=False,indent=2)
+                    (reports/report_name).write_text(raw_report,'utf8')
+                    (root/'exports'/report_name).write_text(raw_report,'utf8')
+                    result['content_delta_report']={'url':'/exports/'+report_name,'name':report_name}
+                except OSError as exc:result['report_warning']='已导入；独立报告未能保存，逐项记录仍保留在 APK 内容清单：'+str(exc)
+                self.update(phase='done',message='内容增量已启用；工程、签名与游戏存档保留，新卡未自动发放',result=result)
+        except Exception as exc:
+            self.update(phase='error',message='导入内容增量失败：'+str(exc))
+        finally:
+            if output and output.is_file() and not committed:output.unlink()
+            if work and work.is_dir() and work.resolve().parent==(self.server.store.root/'tmp').resolve() and work.name.startswith('content-delta-'):
+                shutil.rmtree(work,ignore_errors=True)
     def _work(self,apk,companion):
         from native_library import NativeLibrary
         staging=None;previous_resources=self.server.library.resources
@@ -275,10 +335,15 @@ class GameImport:
                 (staging/'native-resource-profile.json').write_text(json.dumps(profile,ensure_ascii=False,indent=2),encoding='utf8')
                 self.update(message='重建新版球员、等级、国家与球队数据库')
                 counts=build_catalogue(apk,staging);library=NativeLibrary(staging,self.server.library.home,self.server.store)
+                from catalogue_trash import restore_catalogue
+                restore_catalogue(staging,self.server.store)
                 if library.state['phase']!='ready':library.state={'phase':'preparing','message':'准备新版美术资源','files':0,'bytes':0};library._setup(apk,companion)
                 if library.state['phase']!='ready':raise ValueError(library.state.get('message') or '新版美术资源准备失败')
                 self.update(message='读取新版卡面、脸模与小头像索引')
                 counts['assets']=index_assets(library)
+                from content_delta import finish_catalogue
+                content=finish_catalogue(apk,staging)
+                if content:counts['content_delta']=content
                 report={'format':'player-studio-apk-database-v1','import_revision':IMPORT_REVISION,'apk':str(apk),'apk_sha256':apk_hash,'companion':str(companion),'release_id':release,'engine_sha256':engine,'counts':counts,'personal_data_preserved':True,'in_game_tested':False}
                 (staging/'import-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8');staging.rename(destination);staging=None
             self.server.use_resources(destination)

@@ -46,6 +46,23 @@ mov x0,x21
 mov x1,x23
 bl shared_studio_ai_opportunity_snapshot
 cbz w0,choice_done
+// Only a native on-ball candidate decision in the attacking third qualifies.
+ldr w8,[x23]
+add x9,x23,#32
+add x9,x9,w8,uxtw #4
+ldr s0,[x9]
+ldr s1,[x23,#8]
+fmul s0,s0,s1
+ldr s1,[x23,#12]
+fmov s2,#3.0
+fdiv s1,s1,s2
+fcmp s0,s1
+b.vs choice_done
+b.lt choice_done
+mov x0,x21
+mov w1,#0
+bl shared_studio_ai_probability_gate
+cbz w0,choice_done
 ldr w8,[sp,#1032]
 strb w8,[x23,#28]
 ldr w8,[x23,#28]
@@ -276,13 +293,26 @@ ldr w8,[x19,#4]
 cmp w8,#25
 b.ne request_done
 mov x0,x20
+mov w1,#0
+bl shared_studio_ai_record_shot_style
+mov x0,x20
+mov w1,#1
+bl shared_studio_ai_probability_gate
+cbz w0,request_done
+mov x0,x20
 bl shared_studio_ai_preferred_shot_style
+mov w1,w0
+mov x0,x20
+bl shared_studio_ai_record_shot_style
 cbz w0,legacy_request
 cmp w0,#1
 b.eq prefer_controlled
 cmp w0,#2
 b.eq prefer_low
-mov w8,#2
+mov x0,x20
+bl shared_studio_ai_outside_penalty_area
+cbz w0,request_done
+mov w8,#3
 b store_style
 prefer_controlled:
 mov w8,#1
@@ -305,6 +335,20 @@ mov x0,x20
 mov x1,x21
 bl shared_studio_ai_opportunity_snapshot
 cbz w0,request_done
+// The legacy Incisive/Lone-Wolf fallback follows the same zone restriction;
+// owned skill-style requests above remain a separate 80-percent feature.
+ldr w8,[x21]
+add x9,x21,#32
+add x9,x9,w8,uxtw #4
+ldr s0,[x9]
+ldr s1,[x21,#8]
+fmul s0,s0,s1
+ldr s1,[x21,#12]
+fmov s2,#3.0
+fdiv s1,s1,s2
+fcmp s0,s1
+b.vs request_done
+b.lt request_done
 ldr w8,[sp,#32]
 strb w8,[x21,#28]
 add x1,sp,#432

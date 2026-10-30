@@ -14,11 +14,11 @@ export function windowDelta(before,after,path=[],out=[]){
  out.push({op:'set',path,value:after});return out;
 }
 export class WindowSession{
- constructor(api,project,token){this.api=api;this.project=project;this.baseline=structuredClone(project());this.token=token;this.id=crypto.randomUUID();this.started=false;}
+ constructor(api,project,token,extra=()=>[]){this.api=api;this.project=project;this.extra=extra;this.baseline=structuredClone(project());this.token=token;this.id=crypto.randomUUID();this.started=false;}
  async start(){await this.api('window/open',{session:this.id});this.started=true;
   const close=()=>{if(!this.started)return;this.started=false;
-   const project=this.project();let body=JSON.stringify({session:this.id,project});
-   if(new Blob([body]).size>55000)body=JSON.stringify({session:this.id,package_id:project.package_id,patch:windowDelta(this.baseline,project)});
+   const project=this.project(),editor_drafts=this.extra();let body=JSON.stringify({session:this.id,project,editor_drafts});
+   if(new Blob([body]).size>55000)body=JSON.stringify({session:this.id,package_id:project.package_id,patch:windowDelta(this.baseline,project),editor_drafts});
    const url='/api/window/close?token='+encodeURIComponent(this.token);
    if(!navigator.sendBeacon(url,new Blob([body],{type:'application/json'})))fetch(url,{method:'POST',body,keepalive:true,headers:{'Content-Type':'application/json'}}).catch(()=>{});
   };

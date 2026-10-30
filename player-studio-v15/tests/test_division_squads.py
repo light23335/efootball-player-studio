@@ -43,6 +43,22 @@ def native_formation(roles):
 
 
 class DivisionSquadTests(unittest.TestCase):
+    def test_content_delta_cards_are_stock_pool_when_diy_switch_is_off(self):
+        cid=52904601946818;p=card(cid,12);p['_content_package']='V18-V19'
+        self.put_card(p);self.doc['division_squads']['include_diy']=False
+        self.doc['content_catalogue']={'players':[{'card_id':str(cid),'definition':p}]}
+        self.assertIn(cid,{r['gameplayer_id']['id']for r in self.g.cards(self.db)})
+        self.doc['division_squads']['excluded_ids'].append(str(cid))
+        self.assertNotIn(cid,{r['gameplayer_id']['id']for r in self.g.cards(self.db)})
+    def test_optional_diy_exclusion_covers_current_and_previously_installed_cards(self):
+        known=card(999001,0);legacy=card(999002,0);legacy['_personal_player_uuid']='previous-export'
+        self.put_card(known);self.put_card(legacy)
+        self.doc['players']=[{'identity':{'card_id':999001,'previous_card_ids':[999001]}}]
+        self.assertIn(999001,{p['gameplayer_id']['id'] for p in self.g.cards(self.db)})
+        self.doc['division_squads']['include_diy']=False
+        result={p['gameplayer_id']['id'] for p in self.g.cards(self.db)}
+        self.assertNotIn(999001,result);self.assertNotIn(999002,result);self.assertIn(1000,result)
+        self.assertTrue(ds.configuration({},[],{'include_diy':False})['include_diy'] is False)
     def test_exact_stock_custom_cards_are_ai_only_excluded_but_diy_and_namesakes_remain(self):
         before=self.db.execute('select count(*)from managed_cards').fetchone()[0]
         for cid in ds.STOCK_AI_EXCLUDED_CARD_IDS:self.put_card(card(cid,12))
@@ -52,7 +68,26 @@ class DivisionSquadTests(unittest.TestCase):
                              {'identity':{'card_id':keeper,'bound_original_player_id':8554053},'owned':{'name':'My goalkeeper'}}]
         ids={int(c['gameplayer_id']['id'])for c in self.g.cards(self.db)}
         self.assertFalse(ids&ds.STOCK_AI_EXCLUDED_CARD_IDS);self.assertIn(copied,ids);self.assertIn(keeper,ids)
-        self.assertEqual(self.db.execute('select count(*)from managed_cards').fetchone()[0],before+21)
+        self.assertEqual(self.db.execute('select count(*)from managed_cards').fetchone()[0],before+len(ds.STOCK_AI_EXCLUDED_CARD_IDS)+2)
+
+    def test_v18_v19_exact_cards_excluded_from_ai_without_removing_player_cards(self):
+        excluded={89136418985321,89136418985316,89136418985320,89136418985323,
+                  89136418985324,89136418985322,89136418985325}
+        self.assertTrue(excluded <= ds.STOCK_AI_EXCLUDED_CARD_IDS)
+        for cid in excluded:
+            p=card(cid,12);p['_content_package']='V18-V19';self.put_card(p)
+        # Same footballer on another stock card, and a DIY copied from an
+        # excluded card, remain eligible under the existing pool rules.
+        namesake=89136418985321+(1<<28);copied=90159680001999
+        self.put_card(card(namesake,12));self.put_card(card(copied,12))
+        self.doc['players']=[{'identity':{'card_id':copied,'bound_original_player_id':89136418985321}}]
+        before=list(self.db.execute('select card_id,fingerprint,payload from managed_cards order by card_id'))
+        for include_diy in (True,False):
+            self.doc['division_squads']['include_diy']=include_diy
+            ids={p['gameplayer_id']['id']for p in self.g.cards(self.db)}
+            self.assertFalse(ids & excluded);self.assertIn(namesake,ids)
+            self.assertEqual(copied in ids,include_diy)
+        self.assertEqual(before,list(self.db.execute('select card_id,fingerprint,payload from managed_cards order by card_id')))
 
     def test_bound_custom_variants_share_original_person_but_unbound_remain_independent(self):
         original=(397808<<28)|4522
@@ -181,6 +216,30 @@ class DivisionSquadTests(unittest.TestCase):
         out=self.g.build(self.db,template(),3,random.Random(18))
         self.assertTrue(all(p['disp_overall']>40 and p['disp_max_overall']==p['disp_overall'] for p in out['player_list']))
         self.assertEqual(before,list(self.db.execute('select card_id,payload from managed_cards order by card_id')))
+
+    def test_reused_current_snapshot_repairs_40_display_cache_without_redrawing(self):
+        out=self.g.build(self.db,template(),3,random.Random(18))
+        before=copy.deepcopy(out)
+        out['player_list'][3]['disp_overall']=40
+        out['player_list'][3]['disp_max_overall']=40
+        self.assertTrue(self.g.repair_snapshot(self.db,out))
+        self.assertGreater(out['player_list'][3]['disp_overall'],40)
+        self.assertEqual(out['player_list'][3]['parameters'],before['player_list'][3]['parameters'])
+        self.assertEqual(out[ds.MARKER]['card_ids'],before[ds.MARKER]['card_ids'])
+        self.assertEqual(out['squad_data'],before['squad_data'])
+        self.assertEqual(out['coach_data'],before['coach_data'])
+        self.assertFalse(self.g.repair_snapshot(self.db,out))
+
+    def test_reused_snapshot_recovers_collapsed_parameters_from_same_card_only(self):
+        out=self.g.build(self.db,template(),3,random.Random(18))
+        before=copy.deepcopy(out)
+        out['player_list'][4]['parameters'][14:41]=[0]*27
+        out['player_list'][4]['disp_overall']=100  # A good cache cannot hide bad real attributes.
+        self.assertTrue(self.g.repair_snapshot(self.db,out))
+        self.assertEqual(out['player_list'][4]['parameters'],before['player_list'][4]['parameters'])
+        self.assertEqual(out[ds.MARKER]['card_ids'],before[ds.MARKER]['card_ids'])
+        self.assertGreater(out['player_list'][4]['disp_overall'],40)
+        self.assertTrue(any(r['kind']=='parameters' for r in out[ds.MARKER]['payload_repairs']))
 
     def test_primary_aptitudes_use_distinct_native_order(self):
         self.assertEqual(ds.APTITUDE_INDEX, (13, 10, 11, 12, 6, 7, 8, 9, 5, 3, 4, 2, 1))

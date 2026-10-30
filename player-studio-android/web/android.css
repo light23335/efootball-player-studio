@@ -1,67 +1,20 @@
+/* Android overlay for the Liquid Glass UI. Layout modes come from the shared
+   layout.css (bottom dock in portrait, slim dock in landscape); this file only
+   adds touch-specific tuning. */
 html{touch-action:manipulation}
 body{overscroll-behavior-y:contain}
 input,select,textarea{font-size:16px!important}
-.button,.nav-item,select{min-height:44px}
 input[type=range]{min-height:32px}
-input[type=checkbox]{min-width:22px;min-height:22px}
-.main-shell{min-width:0}
-.android-mobile-nav{display:none}
+input[type=checkbox],input[type=radio]{min-width:22px;min-height:22px}
 .model-stage{touch-action:none}
-.main-model-stage{height:clamp(260px,58vh,480px)}
-@media(max-width:760px){
- .app-shell{display:block}
- .sidebar{position:sticky;inset:0 0 auto;top:0;width:100%;height:auto;display:block;padding:8px 12px;border-right:0;border-bottom:1px solid #293445}
- .brand,.workspace-badge,.nav-label,.sidebar-bottom,.nav-divider,#navigation,#migration-nav{display:none!important}
- .android-mobile-nav{display:flex;align-items:center;gap:14px;min-width:0}
- .android-mobile-nav strong{white-space:nowrap;font-size:14px;font-weight:600;color:#bcebd8}
- .android-mobile-nav select{flex:1;min-width:0;width:0;font-size:14px!important;min-height:44px;padding:9px 12px}
- .main-shell{margin-left:0!important;width:100%!important}
- .topbar{position:static;height:auto;padding:10px 12px;gap:8px;flex-wrap:wrap}
- .top-actions{width:100%;justify-content:flex-start;gap:7px;flex-wrap:wrap}
- .top-actions .icon-button{width:36px;height:40px}
- .top-actions .button{font-size:12px;padding:10px}
- .top-actions #open-project{display:inline-flex}
- .workbench{display:flex;flex-direction:column;padding:16px 12px 30px;gap:18px}
- .editor-area,.preview-area{width:100%;min-width:0}
- .preview-area{position:static;max-height:none;order:-1}
- .preview-header{padding:5px 12px;min-height:54px}
- .preview-header .preview-state{display:none}
- .android-preview-toggle{min-height:44px}
- .android-preview-collapsed>*:not(.preview-header){display:none!important}
- .page-heading{align-items:flex-start}
- .page-heading>div{min-width:0}
- .page-heading .button{flex-shrink:0;max-width:36%}
- .panel-description,.page-heading p{font-size:13px;line-height:1.8}
- .field>span:first-child{font-size:12px}
- .field-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 12px}
- .field-grid.three{grid-template-columns:repeat(2,minmax(0,1fr))}
- .field small,.note{font-size:11px;line-height:1.8}
- .input-row{min-width:0;gap:8px}
- .input-row input{min-width:0}
- .input-row .button{max-width:43%;white-space:normal}
- .button{white-space:normal}
- .filter-tabs button,.preset-filters button{min-height:44px;font-size:12px}
- .preset-filters,.model-toolbar,.portrait-actions{flex-wrap:wrap}
- .native-library .search-box{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding:0;border:0;background:none}
- .native-library #library-query{grid-column:1/-1;width:100%;padding:12px;border:1px solid #303f50;border-radius:6px;background:#111a27;color:#e3e9f1}
- .native-library .search-box select{width:100%;min-width:0;max-width:none;margin:0;padding:10px}
- .library-summary{gap:14px;flex-wrap:wrap}
- .library-result-bar{gap:10px;align-items:center}
- .library-result-bar .button{flex-shrink:0}
- .model-hint{line-height:1.8}
- .main-model-stage{height:clamp(260px,55vh,430px)}
- .native-row,.native-result,.note,.panel-description{overflow-wrap:anywhere}
- .toast-container{left:12px;right:12px}
- dialog{max-width:96vw;max-height:92vh}
+.main-shell{min-width:0}
+/* No hover on touch screens: keep cards still so taps do not leave them lifted. */
+@media(hover:none){
+ .library-player:hover,.personal-player:hover,.preset-tile:hover,.coach-card:hover,.palette:hover,.tile:hover,.rail-card:hover,.button:hover,.dock-button:hover,.icon-button:hover{transform:none}
+ .dock-tip{display:none}
 }
-@media(max-width:380px){
- .top-actions{gap:5px}
- .top-actions .button{padding:10px 8px;font-size:11px}
- .top-actions .icon-button{width:30px}
- .field-grid:not(.three){grid-template-columns:1fr}
- .span-two{grid-column:auto}
- .library-result-bar{align-items:flex-start;flex-direction:column}
-}
-@media(min-width:761px){.android-preview-toggle{display:none}}
-
-@media(max-width:760px){.preview-pane#preview-card .card-stage{align-self:start;align-items:flex-start;min-height:0}.card-stage #player-card{align-self:flex-start;flex:0 0 auto;width:100%;height:auto!important;aspect-ratio:1200/1720;object-fit:contain;max-height:none}}
+/* WebView: keep live blur on the few floating layers, use solid glass for long lists. */
+.ambient{filter:blur(70px) saturate(1.2)}
+.panel,.ability-group{-webkit-backdrop-filter:none;backdrop-filter:none;background:linear-gradient(135deg,rgba(255,255,255,.09),rgba(255,255,255,.035))}
+dialog{max-width:96vw;max-height:92vh;max-height:92dvh}
+.native-row,.native-result,.note,.panel-description{overflow-wrap:anywhere}

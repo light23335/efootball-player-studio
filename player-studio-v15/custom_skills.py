@@ -21,9 +21,9 @@ ROWS = (
     {'id': 74, 'name': '冷血终结', 'english': 'Cold-Blooded Finisher',
      'description': '在对方禁区内射门且最近对手距离不超过 2.5 米时，水平和仰角随机瞄准偏差降低 50%。球速不变。'},
     {'id': 75, 'name': '手术刀直塞', 'english': 'Surgical Through Pass',
-     'description': '地面与挑传直塞的水平随机方向偏差降低 40%，传球动作开始至实际出球的前摇缩短 40%；出球后恢复原速。'},
+     'description': '地面与挑传直塞的水平随机方向偏差降低 40%；已控球、接近静止且触球位置就绪时前摇缩短 40%，出球后恢复原速。跑动、接球及不安全衔接保留原生时序。'},
     {'id': 76, 'name': '从容不迫', 'english': 'Composed Distributor',
-     'description': '在对手距离不超过 2 米时开始短传，本次短传的方向、仰角和球速随机扰动降低 40%，动作前摇缩短 40%。'},
+     'description': '在对手距离不超过 2 米时开始短传，本次短传的方向、仰角和球速随机扰动降低 40%；已控球、接近静止且触球位置就绪时前摇缩短 40%，不安全衔接保留原生时序。'},
     {'id': 77, 'name': '钢铁支点', 'english': 'Iron Target Man',
      'description': '实际背身护球时，同一身后对手距离不超过 1.8 米，护球对抗抗性提高 50%。'},
 )
@@ -136,8 +136,8 @@ def text_groups(locale='zha'):
     chinese = locale in ('zha', 'chi')
     descriptions = (
         'When shooting inside the opposing penalty area with an opponent within 2.5 m, reduces horizontal and elevation random aiming error by 50%. Ball speed is unchanged.',
-        'Reduces ground and lofted through-pass horizontal random aiming error by 40% and the time from motion start to ball contact by 40%. Restores the original playback rate after release.',
-        'When starting a short pass with an opponent within 2 m, reduces direction, elevation and speed random perturbations by 40%, and the pre-contact wind-up by 40%.',
+        'Reduces ground and lofted through-pass horizontal random aiming error by 40%. With established possession, a nearly stationary actor and a local contact pose, reduces pre-contact wind-up by 40% and restores the original rate after release. Running, receiving and unsafe transitions retain native timing.',
+        'When starting a short pass with an opponent within 2 m, reduces direction, elevation and speed random perturbations by 40%. With established possession, a nearly stationary actor and a local contact pose, reduces pre-contact wind-up by 40%; unsafe transitions retain native timing.',
         'During actual back-to-goal shielding with the same opponent behind and within 1.8 m, increases shielding contest resistance by 50%.',
     )
     return [

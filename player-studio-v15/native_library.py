@@ -17,6 +17,7 @@ from native_movie import convert_movie
 from native_models import resolve_face,person_keys
 from native_skeletal import FACE_DECODER_REVISION
 from native_presets import NativePresets
+from native_symbols import merged_symbols,resolve_club,converted_symbol,informative_symbol
 
 
 def glb_textures(path, materials, output):
@@ -55,6 +56,8 @@ class NativeLibrary:
         self.ffmpeg=self.home/'tools/video/ffmpeg.exe'
         self.card_media=json.loads((self.resources/'native-card-media.json').read_text(encoding='utf8'))
         self.card_widgets=json.loads((self.resources/'native-card-widgets.json').read_text(encoding='utf8'))
+        content=self.resources/'content-catalogue.json'
+        self.content_routes={str(r['cardId']):r for r in json.loads(content.read_text('utf8')).get('routes',[])} if content.is_file() else {}
         self.presets=NativePresets(self)
         self.convert_lock=threading.Lock();self.setup_lock=threading.Lock();self.number_lock=threading.Lock()
         self.thumbnail_lock=threading.Lock();self.thumbnail_frames=OrderedDict()
@@ -89,6 +92,11 @@ class NativeLibrary:
     def search(self, body):
         q=str(body.get('query','')).strip().casefold()[:120];kind=body.get('kind','');page=max(0,int(body.get('page',0)));limit=24
         where=[];values=[]
+        from catalogue_trash import active as trash_items
+        recycled=trash_items(self.store)
+        if recycled:
+            where.append('id '+('IN'if body.get('recycle_bin')else'NOT IN')+' ('+','.join('?'for _ in recycled)+')');values.extend(recycled)
+        elif body.get('recycle_bin'):where.append('0')
         if q:
             where.append('search LIKE ?');values.append('%'+q.replace('%','').replace('_','')+'%')
         if body.get('position'):
@@ -105,7 +113,7 @@ class NativeLibrary:
             rows=[dict(r) for r in c.execute('SELECT id,name,name_en,position,card_type,overall,level_limit,base_id,source FROM players'+clause+' ORDER BY CASE WHEN card_type="BigTime" THEN 0 WHEN card_type="Epic" THEN 1 WHEN card_type="Legendary" THEN 2 ELSE 3 END, CAST(id AS INTEGER) DESC LIMIT ? OFFSET ?',values+[limit,page*limit])]
             for row in rows:
                 row['portrait']=self._portrait(c,row['id'],row['base_id'])
-        return {'rows':rows,'total':count,'page':page,'pages':max(1,(count+limit-1)//limit)}
+        return {'rows':rows,'total':count,'page':page,'pages':max(1,(count+limit-1)//limit),'recycled':len(recycled)}
 
     def _portrait(self,c,pid,base):
         for candidate in (pid+'_l',pid+'_',base+'_l',base+'_'):
@@ -220,7 +228,7 @@ class NativeLibrary:
     def card(self,pid):
         if self.state['phase']!='ready':raise ValueError('请先准备原版资源缓存')
         player=self.player(pid)
-        ident=int(pid);style=(ident>>40)&255;style=f'{style>>4:02d}{style&15:02d}';agent=(ident>>28)&4095
+        ident=int(self.content_routes.get(str(pid),{}).get('suiteDonorId',pid));style=(ident>>40)&255;style=f'{style>>4:02d}{style&15:02d}';agent=(ident>>28)&4095
         limited=bool(ident&(1<<48))
         layers=[];movies=[];missing=[]
         native_movies={Path(path).stem:path for path in self.card_media['movies']}
@@ -295,6 +303,9 @@ class NativeLibrary:
         nation=int(nation_id) if nation_id is not None else int(nation)
         if not 0<=team<=131071 or not 0<=nation<=511:raise ValueError('球队或国家编号超出原表范围')
         graphics=self.card_widgets['graphics'];symbols=self.card_widgets['symbols'];paths={}
+        if not hasattr(self,'_preview_symbols'):
+            self._preview_symbols=merged_symbols(symbols,self.face_assets().files) if self.containers.is_dir() else dict(symbols)
+        symbols=self._preview_symbols
         for i in range(6):
             key=f'UiPlayerCardInfo_RarityStar_{i}'
             if key in graphics:paths[f'stars{i}']=graphics[key]
@@ -304,7 +315,9 @@ class NativeLibrary:
         for i in range(6):
             name='CmnIconBoosterTiny_'+(str(i) if i else 'Empty')
             if name in graphics:paths[f'booster{i}']=graphics[name]
-        for key,names in [('club',[f'e_{team:06d}_r_l',f'e_{team:06d}_r',f'e_{team:06d}_f_l',f'e_{team:06d}_f']),('nation',[f'{nation:03d}_l',f'{nation:03d}'])]:
+        club=resolve_club(symbols,team)
+        if club:paths['club']=club
+        for key,names in [('nation',[f'{nation:03d}_l',f'{nation:03d}'])]:
             path=next((symbols[n] for n in names if n in symbols),None)
             if path:paths[key]=path
         imported={};missing=[]
@@ -312,11 +325,13 @@ class NativeLibrary:
             needed=[v for v in paths.values() if not (self.converted/Path(v).with_suffix('.png')).is_file()]
             if needed:self.run(needed)
             for key,ref in paths.items():
-                image=self.converted/Path(ref).with_suffix('.png')
+                image=converted_symbol(self.converted,ref) if key=='club' else self.converted/Path(ref).with_suffix('.png')
                 if not image.is_file():missing.append(ref);continue
+                if key=='club' and not informative_symbol(image):missing.append(ref);continue
                 asset=self.store.import_asset(image,'image')
                 imported[key]={'asset_id':asset['id'],'kind':'image','path':ref}
-        return {'source_id':str(pid),'team_id':team,'nation_id':nation,'symbol_revision':2,
+        return {'source_id':str(pid),'team_id':team,'nation_id':nation,'symbol_revision':3,
+                'club_missing':bool(team and 'club' not in imported),'club_preferred':bool(team),
                 'national_team':not bool(payload.get('initial_base_team_id')),
                 'rarity':max(0,min(5,int(payload.get('default_rarity',0))+1)),
                 'assets':imported,'missing':missing}

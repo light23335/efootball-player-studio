@@ -178,12 +178,13 @@ def compose(payload,routes,profile,capacity=4194304):
         if hook.get('action_trace_schema'):
             from action_trace import SCHEMA
             schema=hook['action_trace_schema']
-            if schema!=SCHEMA or out.get('action_trace_channel') or len(writable_locations)!=1 or writable_locations[0][1]!=SCHEMA['bytes']:
+            index=hook.get('action_trace_writable_index',0)
+            if schema!=SCHEMA or out.get('action_trace_channel') or type(index)is not int or not 0<=index<len(writable_locations) or writable_locations[index][1]!=SCHEMA['bytes']:
                 raise ValueError('动作观察通道描述或容量无效')
             fence=hook.get('helper_entries',{}).get('shared_studio_action_trace_fence')
             if type(fence)is not int or fence%4 or not 0<=fence<=len(body)-8:
                 raise ValueError('动作观察屏障入口无效')
-            out['action_trace_channel']={'version':1,'data_offset':writable_locations[0][0],
+            out['action_trace_channel']={'version':SCHEMA['version'],'data_offset':writable_locations[index][0],
                     'schema':copy.deepcopy(schema),'code_region':'root','fence_offset':at+fence}
         blob.extend(body)
     if len(blob)>capacity:raise ValueError('个人美术绑定超出已分配容量')
@@ -337,7 +338,11 @@ def _thumbnail_hook(payload,blob,routes,profile):
     """
     rows=bytearray();date_offset=profile.get('front_date_offset')
     private_front=any(r.get('front_names') is not None for r in routes)
-    row_size=416 if private_front else 160
+    compact_front=private_front and all(r.get('front_names') is None or
+        (isinstance(r['front_names'],list) and len(r['front_names'])==10 and
+         r['front_names'][5]==r['front_names'][8]=='' and isinstance(r['front_names'][6],str) and r['front_names'][6] and
+         all(v is None or i in (3,5,8) and v=='' or i==6 for i,v in enumerate(r['front_names']))) for r in routes)
+    row_size=(192 if compact_front else 416) if private_front else 160
     if date_offset is not None and (type(date_offset) is not int or not 8<=date_offset<profile['mini_offset'] or date_offset%24!=8):raise ValueError('大卡日期图层位置无效')
     for route in sorted(routes,key=lambda r:r['cardId']):
         values=route.get('thumbnail_names')
@@ -355,7 +360,14 @@ def _thumbnail_hook(payload,blob,routes,profile):
         if private_front:
             front=route.get('front_names')
             if front is not None and (not isinstance(front,list) or len(front)!=10):raise ValueError('独立大卡需要10个图层槽位')
+            if compact_front:
+                value=front[6] if front else ''
+                if not isinstance(value,str) or len(value)>22 or any(c not in '0123456789abcdefghijklmnopqrstuvwxyz_' for c in value):raise ValueError('大图人物名称无效')
+                rows.extend(bytes([len(value)*2])+value.encode('ascii').ljust(23,b'\0'))
+                rows.extend(struct.pack('<Q',(1|int(front[3]=='')*2) if front else 0))
+                continue
             for value in front or ['']*10:
+                if value is None:rows.extend(b'\xff'+bytes(23));continue
                 if not isinstance(value,str) or len(value)>22 or any(c not in '0123456789abcdefghijklmnopqrstuvwxyz_' for c in value):raise ValueError('独立大卡图层名称无效')
                 raw=value.encode('ascii');rows.extend(bytes([len(raw)*2])+raw.ljust(23,b'\0'))
             rows.extend(struct.pack('<QQ',int(front is not None),0))
@@ -396,12 +408,21 @@ def _thumbnail_hook(payload,blob,routes,profile):
         emit(0x91000260|(date_offset<<10));calls.append(len(words));emit(0);emit(0xd63f0200)
     if private_front:
         if date_offset!=200 or profile['mini_offset']!=440:raise ValueError('独立大卡原生结构尚未适配')
-        emit(0xf940a3e1);emit(0xf940c822);branch('cbz','done',2) # front-present at record+400
-        for slot in range(10):
-            offset=160+slot*24
-            emit(0xf940a3e1);emit(0x39400022|(offset<<10));emit(0x53017c42)
+        emit(0xf940a3e1);emit(0xf9405c22 if compact_front else 0xf940c822);branch('cbz','done',2)
+        for slot in ([6] if compact_front else range(10)):
+            offset=160 if compact_front else 160+slot*24
+            emit(0xf940a3e1);emit(0x39400022|(offset<<10))
+            emit(0x7103fc5f);branch('eq','front_next_'+str(slot)) # 0xff retains native slot.
+            emit(0x53017c42)
             emit(0x91000021|((offset+1)<<10));emit(0x91000260|((8+slot*24)<<10))
             calls.append(len(words));emit(0);emit(0xd63f0200)
+            labels['front_next_'+str(slot)]=len(words)
+        if compact_front:
+            for slot in (5,3):
+                if slot==3:
+                    emit(0xf940a3e1);emit(0xf9405c22);emit(0x53017c42);branch('cbz','done',2)
+                emit(0xf940a3e1);emit(0x91002421);emit(0x2a1f03e2)
+                emit(0x91000260|((8+slot*24)<<10));calls.append(len(words));emit(0);emit(0xd63f0200)
     branch('b','done')
     labels['stock']=len(words);stock_ref=len(words);emit(0);emit(0xd35cfeea);emit(0x9100054a)
     labels['stock_loop']=len(words);emit(0xf9400128);branch('cbz','done',8)
@@ -838,7 +859,8 @@ class _BindingCtypes:
 
     def _register_action_channel(self,prefix_address,extension_address):
         descriptor=self.payload['action_trace_channel'];region=descriptor['code_region']
-        if descriptor.get('version')!=1 or region not in ('root','extension'):
+        from action_trace import VERSION
+        if descriptor.get('version')!=VERSION or region not in ('root','extension'):
             raise ValueError('Action observer relocation descriptor invalid')
         raw=bytes.fromhex(self.payload['extension_blob_hex']if region=='extension'else self.payload['blob_hex'])
         offset=descriptor['fence_offset'];base=extension_address if region=='extension'else prefix_address
@@ -883,7 +905,7 @@ def _outer(root):
 
 def prepare(function,binding):
     original=capture(function)
-    if fingerprint(original)!=binding['original_fingerprint']:raise ValueError('原生美术接口指纹改变，未写入运行时')
+    if fingerprint(original)!=binding.get('prepared_fingerprint',binding['original_fingerprint']):raise ValueError('原生美术接口指纹改变，未写入运行时')
     payload=compose(original,binding['routes'],binding['profile'])
     old=function.__code__;replacement=_outer.__code__
     if (old.co_cellvars,old.co_freevars)!=(replacement.co_cellvars,replacement.co_freevars):
@@ -922,12 +944,15 @@ def prepare(function,binding):
     if capture(modified)!=payload:raise ValueError('个人美术绑定自检失败')
     return modified,{'routes':len(binding['routes']),'code_bytes':len(bytes.fromhex(payload['blob_hex'])),'page_bytes':unit,
                      'extension_code_bytes':len(bytes.fromhex(payload.get('extension_blob_hex',''))),
-                     'stock_routes_preserved':len(proof.get('stock_route_ids',[]))}
+                     'stock_routes_preserved':len(proof.get('stock_route_ids',[])),
+                     'shared_registry_pipeline':bool(proof.get('registry'))}
 
 
 def install(module,binding,root):
     previous=module._start_legend_portrait_binding
     if getattr(previous,'_personal_binding',False):return
+    from art_registry import prepare_runtime
+    previous=prepare_runtime(previous,binding)
     function,report=prepare(previous,binding)
     def start(resource_root):return function(resource_root)
     start._personal_binding=True

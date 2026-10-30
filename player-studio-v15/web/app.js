@@ -1,3 +1,4 @@
+import {exportStep} from './export-errors.js';
 import {skillCapacityNotice} from './skill-capacity.js';
 import {renderStyleHelp,syncStyleHelp,setStyleCheckPosition} from './playing-style-ui.js';
 import {MotionUI} from './motion-ui.js';
@@ -5,6 +6,7 @@ import {TaskCenter} from './task-center.js';
 import {ReleaseUpdatesUI} from './release-updates.js';
 import {AndroidSidebarResize} from './sidebar-layout.js';
 import {WindowSession} from './window-session.js';
+import {EditorAutosave,saveTarget,saveLabels} from './editor-autosave.js';
 import {BoosterLibraryUI} from './booster-library-ui.js';
 import {WorkspaceNavigation,editorPages,playerReady} from './navigation-ui.js';
 import {choosePlayerAction,playerLoadChoices} from './player-prompts.js';
@@ -69,16 +71,15 @@ const pages={
  skills:{title:'技能与风格',short:'技能风格',icon:'spark',description:'搭配天生与追加技能，确定你的球场风格。'},
  card:{title:'卡面设计',short:'卡面设计',icon:'image',description:'选择游戏原版卡图、背景与图层，实时预览你的编辑结果。'},
  model:{title:'模型预览',short:'模型预览',icon:'cube',description:'从游戏已有模型中选择，检查原始网格、贴图、骨架与动画。'},
- migration:{title:'更新与迁移',short:'更新迁移',icon:'archive',description:'导出已实装球员的最新快照，保留数据和培养进度。'},
  native:{title:'APK 球员实装',short:'APK 实装',icon:'cube',description:'选择内容与安装方式，生成可安装的游戏 APK。'},
  apk:{title:'游戏来源与更新',short:'游戏来源与更新',icon:'refresh',description:'导入新版游戏主包，校验后更新球员数据库与原版资源索引。'}
 };
 let project,catalog,currentPage='home',preview='card',abilityFilter='all',skillQuery='',skillMode='innate',skillSelectedOnly=false;
 let past=[],future=[],lastChangeKey='',lastChangeTime=0,version=0,savedVersion=0,saveTimer=null,savePromise=null,viewer;
+let editorAutosave;
 let toolsUI,onboardingUI,releaseUpdatesUI,boosterLibraryUI,motionUI,taskCenter,navigationMode='simple';
 const workspaceNavigation=new WorkspaceNavigation($('#navigation'));
 let simulation,imageCache=new Map(),cardDrawVersion=0,modelMetadata={},libraryUI,updateUI,nativePackageUI,personalUI,coachUI,presetsUI,packUI,nativeCard,identityOptions={nation:[],team:[]};
-const migrationState={mode:'export',save:'',apk:'',package:'',previous:'',prefer:'package',players:[],selected:null,plan:null,status:'',statusType:'',resultUrl:null};
 
 async function api(path,body){
   const response=await fetch('/api/'+path,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json','X-Studio-Token':token},body:body===undefined?undefined:JSON.stringify(body)});
@@ -129,7 +130,7 @@ function renderProfile(){
 }
 
 function renderAbilities(){
-  return `<div class="row-between" style="margin-bottom:16px"><div class="inline-tip">输入 1 级基础能力 · 不含培养与增能</div><button class="button subtle" data-action="preset">${icon('spark')}载入前锋参考模板</button></div><div class="filter-tabs">${[['all','全部 26 项'],...statGroups.map((g,i)=>[String(i),g.name])].map(([key,name])=>`<button class="${abilityFilter===key?'active':''}" data-ability-filter="${key}">${name}</button>`).join('')}</div><section class="panel"><div class="panel-title"><h2>基础能力</h2><span class="tag">基础 → 预览</span></div>${statGroups.filter((g,i)=>abilityFilter==='all'||abilityFilter===String(i)).map(group=>`<div class="stat-section-label">${group.name}</div>${group.indices.map(index=>`<div class="stat-row"><label for="ability-${index}">${esc(catalog.ABILITIES[index])}</label><input type="range" aria-label="${esc(catalog.ABILITIES[index])}滑杆" data-bind="base_abilities.${index}" min="1" max="105" value="${project.base_abilities[index]}"><input id="ability-${index}" aria-label="${esc(catalog.ABILITIES[index])}" class="input" type="number" min="1" max="105" data-bind="base_abilities.${index}" value="${project.base_abilities[index]}"><div class="stat-final" data-stat-final="${index}"></div></div>`).join('')}`).join('')}<div style="height:15px"></div></section>`;
+  return `<div class="ability-toolbar"><div class="filter-tabs">${[['all','全部 26 项'],...statGroups.map((g,i)=>[String(i),g.name])].map(([key,name])=>`<button class="${abilityFilter===key?'active':''}" data-ability-filter="${key}">${name}</button>`).join('')}</div><button class="button secondary" data-action="preset">${icon('spark')}载入前锋参考模板</button></div><p class="inline-tip ability-tip">拖动或输入 1 级基础能力（1–105）；右侧为计入培养、增能与教练后的最终值。</p><div class="ability-groups">${statGroups.map((group,i)=>[group,i]).filter(([,i])=>abilityFilter==='all'||abilityFilter===String(i)).map(([group,i])=>`<section class="ability-group panel"><header><h2>${group.name}</h2><b class="num" data-group-avg="${i}"></b></header>${group.indices.map(index=>`<div class="stat-row"><label for="ability-${index}">${esc(catalog.ABILITIES[index])}</label><input type="range" aria-label="${esc(catalog.ABILITIES[index])}滑杆" data-bind="base_abilities.${index}" min="1" max="105" value="${project.base_abilities[index]}"><input id="ability-${index}" aria-label="${esc(catalog.ABILITIES[index])}" class="input" type="number" min="1" max="105" data-bind="base_abilities.${index}" value="${project.base_abilities[index]}"><div class="stat-final num" data-stat-final="${index}"></div></div>`).join('')}</section>`).join('')}</div>`;
 }
 
 function boosterLabel(b){if(!b.label.includes('�'))return b.label;const entries=Object.entries(b.effects);return entries.length===26?'全能力 '+(entries[0][1]>=0?'+':'')+entries[0][1]:entries.map(([i,v])=>catalog.ABILITIES[i]+(v>=0?'+':'')+v).join(' / ')||'无常驻效果';}
@@ -180,20 +181,6 @@ function renderModel(){
   headPanel(project,viewer)+bodyPanel(project,range)+equipmentPanel(project,catalog.equipment)+panel('视图与已有动画',`<div class="field-grid">${range('model.scale','整体显示缩放',.4,1.8,.01,'×')}${range('model.rotation','模型转向',-180,180,1,'°')}</div><label class="field" style="margin-top:15px"><span>模型已有动画</span><select id="model-animation"><option value="-1">暂无动画</option></select></label><div id="model-morphs" class="morph-grid"></div><div class="model-info" id="model-info"></div>`);
 }
 
-function pathField(key,label,category){return `<div class="path-field"><label for="migration-${key}">${label}</label><div class="input-row"><input class="input" id="migration-${key}" data-migration="${key}" value="${esc(migrationState[key])}" placeholder="选择文件，或粘贴完整路径"><button class="button secondary" data-migration-pick="${key}" data-category="${category}">${icon('folder')}选择</button></div></div>`;}
-function renderMigration(){
-  return `<div class="segmented migration-tabs"><button data-migration-mode="export" class="${migrationState.mode==='export'?'active':''}">导出最新球员包</button><button data-migration-mode="import" class="${migrationState.mode==='import'?'active':''}">更新后重新导入</button></div>`+
-  (migrationState.mode==='export'?panel('导出已实装球员的当前状态',`<p class="panel-description">使用游戏导出的最新存档。这里只保存所选实例的实际能力与培养记录，设计草稿不会直接写入存档。</p>${pathField('save','当前游戏存档','save')}${pathField('apk','当前版本 APK','apk')}${pathField('previous','上一份球员包 选填，用于沿用永久身份','package')}<div class="portrait-actions"><button class="button secondary" data-action="read-players">读取球员列表</button><button class="button primary" data-action="export-snapshot" ${migrationState.selected?'':'disabled'}>导出最新快照</button></div><div id="migration-players"></div>`,'SNAPSHOT'):
-  panel('合并到新版存档',`<p class="panel-description">先启动新版完成其自身迁移，再导出新版目标存档。检查通过后生成新文件，原文件和其他球员保持。</p>${pathField('package','更新前最新球员包','package')}${pathField('save','新版导出的目标存档','save')}${pathField('apk','新版 APK','apk')}<label class="field" style="margin-bottom:17px"><span>状态冲突时的选择</span><select id="migration-prefer">${[['package','恢复包内状态，拒绝覆盖更新的培养进度'],['stop','发现差异时停止'],['target','保留目标球员的当前状态']].map(([v,label])=>`<option value="${v}" ${migrationState.prefer===v?'selected':''}>${label}</option>`).join('')}</select></label><div class="portrait-actions"><button class="button secondary" data-action="inspect-package">检查球员包</button><button class="button secondary" data-action="migration-plan">预览迁移计划</button><button class="button primary" data-action="migration-apply" ${migrationState.plan?'':'disabled'}>生成迁移后存档</button></div>`,'MIGRATION'))+
-  `<div id="migration-output"></div>`+
-  panel('更新前记得刷新快照',`<p class="panel-description" style="margin:0">旧球员包只能还原导出当时的状态。每次更新前，先导出最新存档并刷新快照，后续经验与培养才能保留下来。原版数据布局或引擎发生变化时，工具会停止并等待适配。</p><div class="version-note">${icon('check')}已核对 V13 · 147 项参数布局</div>`);
-}
-function updateMigrationOutput(){
-  const target=$('#migration-output');if(!target)return;
-  target.innerHTML=(migrationState.status?`<div class="migration-status ${migrationState.statusType}">${esc(migrationState.status)}</div>`:'')+(migrationState.resultUrl?`<div class="download-result"><span>文件已生成并保存在本机</span><a class="button secondary" download href="${esc(migrationState.resultUrl)}">下载文件</a></div>`:'');
-  const list=$('#migration-players');if(list)list.innerHTML=migrationState.players.length?`<div class="player-list">${migrationState.players.map((p,i)=>`<label class="player-option"><input type="radio" name="native-player" value="${i}" ${migrationState.selected?.id===p.id&&migrationState.selected?.serial===p.serial?'checked':''}><div><strong>${p.id}</strong><div>实例 ${p.serial} · ${p.games} 场 · ${p.goal} 球</div></div><small>Lv.${p.level} · ${p.exp_total} EXP</small></label>`).join('')}</div>`:'';
-}
-
 function renderPage(){
   if(project&&version===savedVersion)window.dispatchEvent(new CustomEvent('studio-project-saved',{detail:project}));
   presetsUI?.close();
@@ -201,13 +188,13 @@ function renderPage(){
   const page=pages[currentPage];
   workspaceNavigation.activate(currentPage,playerReady(project));
   $('#compact-page-select').value=currentPage==='library'?'personal':currentPage;
+  updateSaveButton();
   $('#page-title').textContent=page.title;$('#breadcrumb-page').textContent=page.short;$('#page-description').textContent=page.description;
-  $('#page-eyebrow').textContent=currentPage==='migration'?'KEEP YOUR PROGRESS':currentPage==='model'?'SHAPE YOUR PLAYER':'CREATE YOUR OWN LEGACY';
+  $('#page-eyebrow').textContent=currentPage==='model'?'SHAPE YOUR PLAYER':'CREATE YOUR OWN LEGACY';
   $$('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.page===currentPage));
-  $('#editor-content').innerHTML=({home:()=>onboardingUI.render(),tutorial:()=>onboardingUI.renderTutorial(),tools:()=>toolsUI.render(),packs:()=>packUI.render(),personal:()=>personalUI.render(),coaches:()=>coachUI.render(),library:()=>libraryUI.render(),profile:renderProfile,abilities:renderAbilities,training:renderTraining,skills:renderSkills,motion:()=>motionUI.render(),card:renderCard,model:renderModel,migration:renderMigration,apk:()=>updateUI.render(),native:()=>nativePackageUI.render()})[currentPage]();
+  $('#editor-content').innerHTML=({home:()=>onboardingUI.render(),tutorial:()=>onboardingUI.renderTutorial(),tools:()=>toolsUI.render(),packs:()=>packUI.render(),personal:()=>personalUI.render(),coaches:()=>coachUI.render(),library:()=>libraryUI.render(),profile:renderProfile,abilities:renderAbilities,training:renderTraining,skills:renderSkills,motion:()=>motionUI.render(),card:renderCard,model:renderModel,apk:()=>updateUI.render(),native:()=>nativePackageUI.render()})[currentPage]();
   workspaceNavigation.activate(currentPage,playerReady(project));
   if(currentPage==='skills')updateSkillGrid();
-  if(currentPage==='migration')updateMigrationOutput();
   if(currentPage==='model'){viewer?.attach($('#main-model-stage'));updateModelControls();}
   else if(preview==='model')viewer?.attach($('#mini-model-stage'));
   if(currentPage==='model'&&!project.model.physique)loadPhysique();
@@ -215,7 +202,7 @@ function renderPage(){
   releaseUpdatesUI?.activate(currentPage).catch(()=>{});
   onboardingUI?.activate(currentPage).catch(e=>toast(e.message,true));
   packUI?.activate(currentPage);toolsUI?.activate(currentPage).catch(e=>toast(e.message,true));
-  motionUI?.activate(currentPage);
+  motionUI?.activate(currentPage);libraryUI?.scheduleCardInfo();
   if(currentPage==='card')presetsUI.refresh();
 }
 function navigate(page){if(!pages[page])return;if(editorPages.has(page)&&!playerReady(project)){toast('请先从资源库读取球员，或打开“我的球员”中的工程');$('#compact-page-select').value=currentPage==='library'?'personal':currentPage;return;}currentPage=page;if(!project||!viewer)return;renderPage();window.scrollTo({top:0,behavior:'instant'});}
@@ -231,6 +218,7 @@ function updateLive(){
   if(!project||!catalog)return;
   simulation=simulate(project,catalog);
   syncStyleHelp(project,catalog);
+  document.querySelectorAll('[data-skin-tone]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.skinTone)===project.model.skin_tone)));
   $$('[data-identity-code]').forEach(el=>el.textContent=project.identity[el.dataset.identityCode==='nation'?'nation_id':'team_id']??'未选择');
   $('#project-uuid').textContent=project.package_id.slice(0,8)+' · '+project.package_id.slice(-8);
   $('#preview-series').textContent=(project.card_series||project.card_type).replace('BigTime','BIG TIME').toUpperCase()+' · '+(project.appearance.card_title||'PERSONAL EDITION');
@@ -239,6 +227,7 @@ function updateLive(){
   coachUI?.updatePreview();
   const current=sixStats(simulation.final),base=sixStats(simulation.base);
   $('#preview-summary').innerHTML=['速度','射门','传球','盘带','防守','身体'].map((name,i)=>`<div class="mini-stat"><span>${name}</span><strong style="color:${ratingColor(current[i])}">${current[i]}</strong>${current[i]!==base[i]?`<small>${current[i]>base[i]?'+':''}${current[i]-base[i]}</small>`:''}</div>`).join('');
+  $$('[data-group-avg]').forEach(n=>{const ids=statGroups[n.dataset.groupAvg].indices;n.textContent=Math.round(ids.reduce((sum,i)=>sum+simulation.final[i],0)/ids.length);});
   $$('[data-stat-final]').forEach(n=>{const i=n.dataset.statFinal,delta=simulation.final[i]-simulation.base[i];n.style.color=ratingColor(simulation.final[i]);n.innerHTML=`${simulation.final[i]}${delta?`<small>${delta>0?'+':''}${delta}</small>`:''}`;});
   $$('[data-value]').forEach(n=>n.textContent=get(n.dataset.value)+(n.dataset.unit||''));
   const budget=$('#budget-card');if(budget){
@@ -299,7 +288,7 @@ async function importMotion(role){
   commit(()=>{if(role==='both')project.native_card.custom_motion=result;else project.native_card.custom_motion.mini=result.mini;},'card-motion');
   renderPage();toast('动态背景已导入，可预览并生成 APK');
 }
-async function busy(button,fn){if(button?.classList.contains('busy'))return;button?.classList.add('busy');try{return await fn();}catch(error){toast(error.message,true);}finally{button?.classList.remove('busy');}}
+async function busy(button,fn){if(button?.classList.contains('busy'))return;button?.classList.add('busy');try{return await (String(button?.dataset.action||button?.id||'').includes('export')?exportStep(project.identity.name,'导出卡面、模型或球员资料',fn):fn());}catch(error){toast(error.message,true);}finally{button?.classList.remove('busy');}}
 
 function updateModelControls(){
   const notice=$('#head-fit-notice');if(notice){const spec=modelMetadata.headPreview;notice.textContent=spec?[spec.neck?.warning||'颈部已按当前导出设置处理。',spec.notice].filter(Boolean).join(' '):'正在读取导出接合预览…';}
@@ -334,22 +323,15 @@ const actions={
   'remove-portrait':()=>{commit(()=>project.appearance.portrait=null,'portrait-remove');renderPage();},
   'remove-background':()=>commit(()=>project.appearance.background_image=null,'background-remove'),
   'photo-reset':()=>{commit(()=>Object.assign(project.appearance,{photo_zoom:1,photo_x:0,photo_y:0}),'photo-reset');renderPage();},
-  'export-card':exportCard,
+  'export-card':()=>exportStep(project.identity.name,'导出卡面 PNG',exportCard),
   'upload-model':()=>importAsset('model','model.asset'),
   'reset-model':()=>{commit(()=>project.model.asset=null,'model-reset');renderPage();},
   'upload-model-texture':()=>importAsset('image','model.texture'),
   'remove-model-texture':()=>commit(()=>project.model.texture=null,'texture-remove'),
   'head-handles-reset':()=>{commit(()=>{project.model.binding_handles={head:[0,0,0],neck_root:[0,0,0]};project.model.head_vertical_cm=0;});renderPage();},
-  'export-model':async()=>{const data=await viewer.exportGLB();download(data,'我的球员-头模预览.glb','model/gltf-binary');toast('已导出头模预览；游戏实装请在 APK 实装页生成安装包');},
+  'export-model':()=>exportStep(project.identity.name,'导出头模 GLB',async()=>{const data=await viewer.exportGLB();download(data,'我的球员-头模预览.glb','model/gltf-binary');toast('已导出头模预览；游戏实装请在 APK 实装页生成安装包');}),
   'model-to-card':async()=>{const result=await api('assets/data',{data:viewer.snapshot()});commit(()=>{project.appearance.portrait=result.id;project.native_art??={};project.native_art.full=null;project.native_art.portrait={asset_id:result.id,kind:'model-capture',path:(project.model.native_source?.path||'导入模型')+' · 预览取景'};project.appearance.photo_zoom=1;project.appearance.photo_x=0;project.appearance.photo_y=0;},'model-to-card');showPreview('card');toast('当前模型取景已用于卡面照片');},
-  'read-players':async()=>{const data=await api('save/players',{path:migrationState.save});migrationState.players=data.players;migrationState.selected=null;renderPage();toast(`读取到 ${data.players.length} 名持有球员`);},
-  'export-snapshot':async()=>{if(!migrationState.selected)throw Error('请先选择持有球员实例');await flushSave();const p=migrationState.selected;const data=await api('package/export',{save:migrationState.save,apk:migrationState.apk,previous:migrationState.previous,id:p.id,serial:p.serial});if(data.binding)commit(()=>Object.assign(project,data.binding),'native-binding');migrationState.resultUrl=data.url;migrationState.statusType='success';migrationState.status=`已导出最新球员快照\n永久身份 ${data.package_id}\n等级 ${data.progress.level} · 累计经验 ${data.progress.exp_total}\n保存位置 ${data.output}`;updateMigrationOutput();toast('独立球员快照已生成');},
-  'inspect-package':async()=>{const data=await api('package/inspect',{path:migrationState.package});const m=data.manifest;migrationState.statusType='success';migrationState.status=`球员包校验通过\n永久身份 ${m.package_id}\n卡牌 ID ${m.card_id} · 实例 ${m.serial}\n等级 ${m.progress.level} · 经验 ${m.progress.exp_total}\n培养记录 ${data.careerplan_rows} 条`;migrationState.resultUrl=null;updateMigrationOutput();},
-  'migration-plan':async()=>{try{const data=await api('migration/plan',migrationBody());migrationState.plan=data;migrationState.statusType='success';migrationState.status=formatPlan(data);migrationState.resultUrl=null;renderPage();toast('迁移检查通过，可以生成新存档');}catch(error){migrationState.plan=null;migrationState.statusType='error';migrationState.status=error.message;renderPage();throw error;}},
-  'migration-apply':async()=>{if(!migrationState.plan)throw Error('请先预览并通过迁移检查');const data=await api('migration/import',migrationBody());migrationState.statusType='success';migrationState.status=formatPlan(data)+`\n\n输出 ${data.output}\n备份 ${data.backup}`;migrationState.resultUrl=data.url;migrationState.plan=null;renderPage();toast('新存档已生成，原文件已保留并备份');}
 };
-function migrationBody(){return {save:migrationState.save,package:migrationState.package,apk:migrationState.apk,prefer:migrationState.prefer};}
-function formatPlan(data){const labels={insert:'恢复缺失的球员实例',unchanged:'球员数据一致，登记独立包', 'keep-target':'保留目标当前状态','replace-registered':'恢复已登记个人球员'};return `迁移检查通过 · ${labels[data.action]||data.action}\n永久身份 ${data.package_id}\n等级 ${data.progress_after.level} · 经验 ${data.progress_after.exp_total}\n培养记录 ${data.careerplan_rows} 条\n目标版本 ${data.target_release}\n\n只合并这一名球员；卡面、脸模等客户端资源需与版本匹配。`;}
 
 function handleInput(event){
   const el=event.target;
@@ -379,9 +361,6 @@ function handleInput(event){
   }else if(el.dataset.modelOption){viewer.setOption(el.dataset.modelOption,el.checked);}
   else if(el.id==='model-animation'){viewer.play(Number(el.value));}
   else if(el.dataset.morphMesh){commit(()=>{project.model.morphs??={};project.model.morphs[el.dataset.morphKey]=Number(el.value);},'morph-'+el.dataset.morphKey);viewer.setMorph(el.dataset.morphMesh,Number(el.dataset.morphIndex),Number(el.value));}
-  else if(el.dataset.migration){migrationState[el.dataset.migration]=el.value;migrationState.plan=null;const apply=$('[data-action="migration-apply"]');if(apply)apply.disabled=true;if(el.dataset.migration==='save'){migrationState.players=[];migrationState.selected=null;const exportButton=$('[data-action="export-snapshot"]');if(exportButton)exportButton.disabled=true;}}
-  else if(el.name==='native-player'){migrationState.selected=migrationState.players[Number(el.value)];$('[data-action="export-snapshot"]').disabled=false;}
-  else if(el.id==='migration-prefer'){migrationState.prefer=el.value;migrationState.plan=null;$('[data-action="migration-apply"]').disabled=true;}
 }
 
 document.addEventListener('input',handleInput);
@@ -398,8 +377,6 @@ document.addEventListener('click',event=>{
   const skill=event.target.closest('[data-skill]');if(skill&&!skill.disabled){const id=Number(skill.dataset.skill),target=skillMode==='innate'?'innate_skills':'additional_skills';commit(()=>{const selected=project[target].includes(id);project.innate_skills=project.innate_skills.filter(v=>v!==id);project.additional_skills=project.additional_skills.filter(v=>v!==id);if(!selected)project[target].push(id);},'skill'+id);updateSkillGrid();return;}
   const palette=event.target.closest('[data-palette]');if(palette){const [accent,background,jersey]=palette.dataset.palette.split(',');commit(()=>Object.assign(project.appearance,{accent,background,jersey}),'palette');renderPage();return;}
   const view=event.target.closest('[data-view]');if(view)return viewer.view(view.dataset.view);
-  const migrationMode=event.target.closest('[data-migration-mode]');if(migrationMode){migrationState.mode=migrationMode.dataset.migrationMode;migrationState.plan=null;migrationState.status='';migrationState.resultUrl=null;renderPage();return;}
-  const picker=event.target.closest('[data-migration-pick]');if(picker)return busy(picker,async()=>{const path=await choose(picker.dataset.category);if(path){migrationState[picker.dataset.migrationPick]=path;migrationState.plan=null;if(picker.dataset.migrationPick==='save'){migrationState.players=[];migrationState.selected=null;}renderPage();}});
 });
 
 $('#undo-button').onclick=undo;$('#redo-button').onclick=redo;
@@ -420,11 +397,45 @@ async function preparePlayerLoad(){
 $('#new-project').onclick=event=>busy(event.currentTarget,()=>createPlayerSlot());
 $('#help-button').onclick=()=>navigate('tutorial');$('#close-help').onclick=()=>$('#help-dialog').close();$('#help-done').onclick=()=>$('#help-dialog').close();
 $('#open-model-page').onclick=()=>{showPreview('card');navigate('model');};
-$('#export-card').onclick=()=>busy($('#export-card'),exportCard);
-$('#save-player').onclick=event=>busy(event.currentTarget,()=>personalUI.save());
+$('#export-card').onclick=()=>busy($('#export-card'),()=>exportStep(project.identity.name,'导出卡面 PNG',exportCard));
+$('#save-player').onclick=event=>busy(event.currentTarget,saveCurrent);
+function updateSaveButton(){const kind=saveTarget(currentPage),button=$('#save-player');button.innerHTML=icon('check')+saveLabels[kind];button.title=saveLabels[kind];button.disabled=(kind==='coach'&&!coachUI?.editing)||(kind==='pack'&&!packUI?.editing);}
+async function saveCurrent(){const kind=saveTarget(currentPage);if(kind==='player')return personalUI.save();await editorAutosave.flush();const result=editorAutosave.results.get(kind);if(result&&!result.committed)throw Error(result.message||'草稿已保存，请完善资料');if(kind==='settings'&&editorAutosave.results.get('progress')?.message)throw Error(editorAutosave.results.get('progress').message);toast(saveLabels[kind].replace('保存','已保存'));}
+function progressDraft(){
+ if(!$('#division-value'))return toolsUI?.progressDraft;
+ const body={enabled:$('#division-enabled').checked,style_mode:$('#division-style-mode').value};
+ for(const k of ['division','points','matches','wins','draws','losses'])body[k]=Number($(k==='division'?'#division-value':'#division-'+k).value);
+ toolsUI.progressDraft=body;return body;
+}
+async function initializeEditorAutosave(){
+ editorAutosave=new EditorAutosave({api,read:()=>({coach:coachUI?.editing,pack:packUI?.editing,
+  settings:toolsUI?.gameSettings.value,progress:progressDraft()}),onState:(kind,state,message)=>{
+   if((kind==='progress'?'settings':kind)!==saveTarget(currentPage))return;
+   const el=$('#save-status');el.className='save-status'+(state==='error'?' error':state==='pending'||state==='saving'?' saving':'');
+   el.textContent={pending:'修改待保存',saving:'正在自动保存',saved:'已自动保存到本机',draft:'草稿已保存，资料待完善',error:'自动保存失败，请点击保存重试'}[state];el.title=message||'';
+  }});
+ await editorAutosave.start();
+ const saved=await api('editor/drafts',{});
+ for(const [category,ui] of [['coach',coachUI],['pack',packUI]]){
+  const rows=Object.values(saved.rows).filter(r=>r.category===category&&r.value).sort((a,b)=>a.saved_at-b.saved_at);
+  ui.draftRows=rows.map(r=>r.value);
+  if(rows.length)ui.editing=structuredClone(rows.at(-1).value);
+ }
+ window.addEventListener('studio-editor-saved',event=>{
+  const {category,result,value}=event.detail;
+  if(category==='coach'){
+   coachUI.draftRows=[...(coachUI.draftRows||[]).filter(r=>r.uuid!==value.uuid),value];
+   if(result.coach){const row=result.coach;coachUI.custom=[...coachUI.custom.filter(r=>r.id!==row.id),row];
+    if(coachUI.editing?.uuid===row.uuid&&!coachUI.editing.head_model&&row.head_model)coachUI.editing.head_model=structuredClone(row.head_model);
+    commit(()=>{project.custom_coaches??=[];project.custom_coaches=[...project.custom_coaches.filter(r=>r.id!==row.id),row];},'autosave-coach-reference');}
+  }
+  if(category==='pack'){packUI.draftRows=[...(packUI.draftRows||[]).filter(r=>r.uuid!==value.uuid),value];if(result.rows)packUI.rows=result.rows;if(currentPage==='packs'&&!packUI.editing)packUI.list();}
+  if(category==='coach'&&currentPage==='coaches'&&!coachUI.editing)coachUI.renderResults();
+ });
+}
 $('#card-motion-toggle').onclick=event=>{nativeCard.setMotion(!nativeCard.motion);event.currentTarget.textContent=nativeCard.motion?'暂停原版动画':'播放原版动画';};
 document.addEventListener('keydown',event=>{
-  if(event.ctrlKey&&event.key.toLowerCase()==='s'){event.preventDefault();flushSave(true).then(()=>toast('工程已保存')).catch(()=>{});}
+  if(event.ctrlKey&&event.key.toLowerCase()==='s'){event.preventDefault();saveCurrent().catch(error=>toast(error.message,true));}
   if(event.ctrlKey&&event.key.toLowerCase()==='z'&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){event.preventDefault();event.shiftKey?redo():undo();}
 });
 let drag=null;
@@ -437,7 +448,7 @@ function renderNavigation(){
  $('#compact-page-select').innerHTML=navigationGroups.map(([label,ids])=>`<optgroup label="${label}">${ids.map(id=>`<option value="${id}">${pages[id].title}</option>`).join('')}</optgroup>`).join('');$('#compact-page-select').value=currentPage==='library'?'personal':currentPage;$('#compact-page-select').onchange=e=>navigate(e.target.value);
  const item=id=>{const p=pages[id];return `<button class="nav-item ${id===currentPage?'active':''}" data-page="${id}" title="${p.title}"><span>${icon(p.icon)}</span><span>${p.title}</span></button>`;};
  const top=$('#navigation').scrollTop;
- $('#navigation').innerHTML=navigationMode==='full'?Object.keys(pages).filter(id=>!['migration','library'].includes(id)).map(item).join(''):navigationGroups.map(([label,ids],index)=>`<section class="nav-group" data-nav-section="${index}"><button type="button" class="nav-group-toggle" data-nav-group="${index}" aria-expanded="false" aria-controls="nav-section-${index}"><span class="nav-chevron" aria-hidden="true">▸</span>${label}${index===2?'<small data-player-required>先读取球员</small>':''}</button><div id="nav-section-${index}" hidden>${ids.filter(id=>!['migration','library'].includes(id)).map(item).join('')}</div></section>`).join('');
+ $('#navigation').innerHTML=navigationMode==='full'?Object.keys(pages).filter(id=>id!=='library').map(item).join(''):navigationGroups.map(([label,ids],index)=>`<section class="nav-group" data-nav-section="${index}"><button type="button" class="nav-group-toggle" data-nav-group="${index}" aria-expanded="false" aria-controls="nav-section-${index}"><span class="nav-chevron" aria-hidden="true">▸</span>${label}${index===2?'<small data-player-required>先读取球员</small>':''}</button><div id="nav-section-${index}" hidden>${ids.filter(id=>id!=='library').map(item).join('')}</div></section>`).join('');
  workspaceNavigation.activate(currentPage,playerReady(project));$('#navigation').scrollTop=top;
  const switcher=document.querySelector('#navigation-mode-toggle');if(switcher){switcher.textContent=navigationMode==='simple'?'切换完整导航':'切换新手导航';switcher.dataset.navigation=navigationMode==='simple'?'full':'simple';}
 }
@@ -445,18 +456,19 @@ function renderNavigation(){
 async function boot(){
   hydrateIcons();
   taskCenter=new TaskCenter({api,navigate,toast,page:()=>currentPage});
-  const data=await api('bootstrap');project=data.project;if(data.platform==='pc')await new WindowSession(api,()=>project,token).start();new AndroidSidebarResize(data.platform);const setup=await api('setup/status',{}).catch(()=>({preferences:{navigation:'simple'},recommended_mode:'coexist',resources_needed:{update:true,coexist:true}}));navigationMode=setup.preferences.navigation;renderNavigation();project=data.project;catalog=data.catalog;identityOptions=data.identities||identityOptions;migrationState.apk=data.default_apk;
+  const data=await api('bootstrap');project=data.project;if(data.platform==='pc')await new WindowSession(api,()=>project,token,()=>{editorAutosave?.capture();return editorAutosave?.closeRows()||[];}).start();new AndroidSidebarResize(data.platform);const setup=await api('setup/status',{}).catch(()=>({preferences:{navigation:'simple'},recommended_mode:'coexist',resources_needed:{update:true,coexist:true}}));navigationMode=setup.preferences.navigation;renderNavigation();project=data.project;catalog=data.catalog;identityOptions=data.identities||identityOptions;
   libraryUI=new LibraryUI({api,commit,project:()=>project,catalog,toast,navigate,rerender:renderPage,beforeLoadPlayer:preparePlayerLoad,status:data.library,apk:data.default_apk,companion:data.default_companion});
   updateUI=new GameImportUI({api,toast,apk:data.default_apk,companion:data.default_companion,rerender:renderPage});
   nativePackageUI=new NativePackageUI({api,toast,platform:data.platform,project:()=>project,apk:data.default_apk,companion:data.default_companion,installationMode:setup.recommended_mode,resourcesNeeded:setup.resources_needed,rigged:data.default_rigged||''});
   releaseUpdatesUI=new ReleaseUpdatesUI({api,toast});
-  onboardingUI=new OnboardingUI({api,toast,flushSave,mode:()=>navigationMode,setMode:mode=>{navigationMode=mode;renderNavigation();renderPage();},setSources:(selected,mode)=>{for(const ui of [libraryUI,updateUI])for(const key of ['apk','companion'])if(selected[key])ui[key]=selected[key];migrationState.apk=selected.apk||migrationState.apk;}});
-  toolsUI=new WorkspaceTools({api,toast,project:()=>project,flushSave});
+  onboardingUI=new OnboardingUI({api,toast,flushSave,mode:()=>navigationMode,setMode:mode=>{navigationMode=mode;renderNavigation();renderPage();},setSources:(selected,mode)=>{for(const ui of [libraryUI,updateUI])for(const key of ['apk','companion'])if(selected[key])ui[key]=selected[key];}});
+  toolsUI=new WorkspaceTools({api,toast,project:()=>project,flushSave,flushEditors:()=>editorAutosave?.flush()});
   boosterLibraryUI=new BoosterLibraryUI({api,toast,project:()=>project,flushSave,commit,rerender:renderPage});
   packUI=new PackUI({api,toast,rerender:renderPage});
   motionUI=new MotionUI({api,toast,project:()=>project,commit,rerender:renderPage});
   personalUI=new PersonalUI({api,toast,beforeOpenPlayer:async()=>{if(await choosePlayerAction('读取已保存球员','将切换当前编辑内容。当前工程会先备份；切换到其他球员时会保存当前球员。若要创建另一名球员，请使用新建独立槽位。',[{id:'open',label:'备份并读取球员',primary:true}])!=='open')return false;await api('project/checkpoint',{project});return true;},project:()=>project,flushSave,navigate,rerender:renderPage,onPlayerDeleted:id=>{if(packUI.editing)packUI.editing.members=packUI.editing.members.filter(m=>m.kind!=='custom'||m.id!==id);},replaceProject:p=>{past=[];future=[];project=p;version++;savedVersion=version;}});
-  coachUI=new CoachUI({api,toast,catalog,onCoachDeleted:uuid=>nativePackageUI?.coachIds.delete(uuid),replaceProject:p=>{past=[];future=[];project=p;version++;savedVersion=version;lastChangeKey='';},identities:()=>identityOptions,project:()=>project,commit,flushSave,navigate,rerender:renderPage,resourceKey:()=>libraryUI.status.cache_directory+':'+libraryUI.status.phase,custom:data.custom_coaches?.rows||[]});
+  coachUI=new CoachUI({api,toast,catalog,flushEditors:()=>editorAutosave?.flush(),onCoachDeleted:uuid=>nativePackageUI?.coachIds.delete(uuid),replaceProject:p=>{past=[];future=[];project=p;version++;savedVersion=version;lastChangeKey='';},identities:()=>identityOptions,project:()=>project,commit,flushSave,navigate,rerender:renderPage,resourceKey:()=>libraryUI.status.cache_directory+':'+libraryUI.status.phase,custom:data.custom_coaches?.rows||[]});
+  await initializeEditorAutosave();
   presetsUI=new CardPresetsUI({api,toast,project:()=>project,commit,rerender:renderPage});
   nativeCard=new NativeCardRenderer($('#player-card'),state=>{$('#native-card-status').textContent=`原版图层 ${state.layers} · 动画 ${state.videos} · 资料素材 ${state.ui||0}${state.missing?' · '+state.missing+' 项未读取':''}`;$('#card-motion-toggle').hidden=!state.videos;},catalog);
   viewer=new ModelViewer(meta=>{if(meta.error){toast(meta.error,true);return;}modelMetadata=meta;updateModelControls();});
@@ -475,3 +487,5 @@ boot().catch(error=>{$('#editor-content').innerHTML=`<div class="empty-state">�
 
 
 document.addEventListener('change',event=>{const group=event.target.dataset.styleCheckPosition;if(group&&project){setStyleCheckPosition(group,event.target.value,project,catalog);syncStyleHelp(project,catalog);}});
+
+document.addEventListener('click',event=>{const tone=event.target.closest('[data-skin-tone]');if(!tone)return;const value=Number(tone.dataset.skinTone);commit(()=>set('model.skin_tone',value),'skin-tone');const select=document.querySelector('[data-bind="model.skin_tone"]');if(select)select.value=value;});

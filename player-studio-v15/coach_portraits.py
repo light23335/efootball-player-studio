@@ -1,4 +1,5 @@
 """Custom coach portraits use the game's coach-ID texture lookup."""
+from export_errors import export_context, exported
 import hashlib,io
 import json
 from pathlib import Path
@@ -64,12 +65,13 @@ def compile_portraits(coaches,definitions,library):
     assets=Assets(library.containers);raw,_=assets.get(FOLDER+'coach_8_')
     packages=[];report=[]
     for coach,definition in selected:
-        name=FOLDER+'coach_'+str(definition['id'])+'_'
-        image=pixels(coach['portrait'],library.store)
-        data,meta=texture(raw,name,image)
-        if name not in package_names(data):raise ValueError('教练头像原生资源名称校验失败')
-        packages.append((name,data,meta))
-        report.append({'uuid':coach['uuid'],'id':definition['id'],'path':name,'size':list(image.size),'sha256':hashlib.sha256(data).hexdigest()})
+        with export_context('教练',coach,'编译游戏头像'):
+            name=FOLDER+'coach_'+str(definition['id'])+'_'
+            image=pixels(coach['portrait'],library.store)
+            data,meta=texture(raw,name,image)
+            if name not in package_names(data):raise ValueError('教练头像原生资源名称校验失败')
+            packages.append((name,data,meta))
+            report.append({'uuid':coach['uuid'],'id':definition['id'],'path':name,'size':list(image.size),'sha256':hashlib.sha256(data).hexdigest()})
     return packages,report
 
 

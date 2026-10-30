@@ -2,75 +2,98 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0c121c">
-  <title>球员工坊 · 自建教练独立脸模版</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#070a12">
+  <title>球员工坊 · PLAYER STUDIO</title>
   <link rel="icon" type="image/svg+xml" href="/icon.svg">
+  <script>
+  /* 布局模式先于首帧计算：desk 三栏 · compact 窄窗/横屏手机 · phone 竖屏手机；展台为常驻列(column)或抽屉(sheet)。 */
+  (()=>{const root=document.documentElement;
+   const set=(key,value)=>{if(value==null)root.removeAttribute('data-'+key);else if(root.getAttribute('data-'+key)!==value)root.setAttribute('data-'+key,value);};
+   const apply=()=>{const w=innerWidth,h=innerHeight,shell=w<=760?'phone':(w<1280||h<=600)?'compact':'desk';
+    set('ui-shell',shell);set('ui-stage',shell==='desk'?'column':'sheet');set('ui-orient',w>h?'landscape':'portrait');};
+   window.__studioLayout=apply;apply();addEventListener('resize',apply);addEventListener('orientationchange',()=>setTimeout(apply,120));})();
+  </script>
   <link rel="stylesheet" href="/styles.css">
-  <link rel="stylesheet" href="/onboarding.css">
-  <link rel="stylesheet" href="/packs.css">
-  <link rel="stylesheet" href="/sidebar-layout.css">
-  <link rel="stylesheet" href="/motion.css">
-  <link rel="stylesheet" href="/playing-style.css">
-  <link rel="stylesheet" href="/task-center.css">
+  <link rel="stylesheet" href="/shell.css">
+  <link rel="stylesheet" href="/pages.css">
+  <link rel="stylesheet" href="/layout.css">
   <script type="importmap">{"imports":{"three":"/vendor/three/build/three.module.js","three/addons/":"/vendor/three/examples/jsm/"}}</script>
 </head>
 <body>
-  <dialog id="disclaimer-dialog"><h2>使用声明</h2><p>本软件仅供个人娱乐、学习与交流，完全免费。不得销售、付费分发、捆绑收费或用于任何盈利活动。</p><p>游戏、球员及相关素材权利归各原权利人所有。本软件为非官方工具，与游戏官方无关联。请仅处理你有权使用的本地文件，并自行保管工程与存档。</p><button class="button primary" id="disclaimer-accept">我已了解，进入软件</button></dialog>
+  <div class="ambient" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="veil" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="ui-gauge" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--c1)"/><stop offset=".55" style="stop-color:var(--c2)"/><stop offset="1" style="stop-color:var(--c3)"/></linearGradient></defs></svg>
+  <dialog id="disclaimer-dialog" class="menu-dialog"><div class="menu-dialog-mark"><span class="mark">P</span><span>PLAYER STUDIO</span></div><h2>使用声明</h2><p>本软件仅供个人娱乐、学习与交流，完全免费。不得销售、付费分发、捆绑收费或用于任何盈利活动。</p><p>游戏、球员及相关素材权利归各原权利人所有。本软件为非官方工具，与游戏官方无关联。请仅处理你有权使用的本地文件，并自行保管工程与存档。</p><button class="button primary" id="disclaimer-accept">我已了解，进入软件</button></dialog>
   <script>document.getElementById('disclaimer-accept').onclick=()=>{sessionStorage.setItem('studio-disclaimer','1');document.getElementById('disclaimer-dialog').close()};if(sessionStorage.getItem('studio-disclaimer')!=='1')document.getElementById('disclaimer-dialog').showModal();</script>
   <div class="app-shell">
-    <aside class="sidebar" id="workspace-sidebar">
-      <a class="brand" href="#"><img src="/icon.svg" alt=""><span>球员工坊<small>PLAYER STUDIO</small></span></a>
-      <div class="workspace-badge"><span class="status-dot"></span>本地工作区<span>V17 · 1.9.15.1</span></div>
-      <div class="nav-label">工作区</div><button class="quiet-button navigation-mode-toggle" id="navigation-mode-toggle" data-navigation="full">切换完整导航</button>
+    <nav class="dock glass" id="dock" aria-label="分区">
+      <a class="dock-logo" href="#" id="shell-home" aria-label="回到总览">P</a>
+      <div class="dock-sections" id="section-tabs"></div>
+      <hr>
+      <button class="dock-button" id="shell-command" type="button" aria-label="快速跳转"><span data-icon="search"></span><span class="dock-tip">快速跳转 · Ctrl K</span></button>
+      <button class="dock-button" id="shell-menu-button" type="button" aria-label="全部菜单" aria-controls="workspace-sidebar" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg><span class="dock-tip">全部菜单</span></button>
+    </nav>
+    <aside class="sidebar glass" id="workspace-sidebar" aria-label="全部菜单">
+      <div class="drawer-head"><a class="brand" href="#"><span class="mark">P</span><span>球员工坊<small>PLAYER STUDIO</small></span></a><button class="icon-button drawer-close" id="shell-menu-close" type="button" aria-label="关闭菜单">×</button></div>
+      <div class="workspace-badge"><span class="status-dot"></span>本地工作区<span>V17 · 2.0.4</span></div>
+      <div class="nav-label">全部功能</div><button class="quiet-button navigation-mode-toggle" id="navigation-mode-toggle" data-navigation="full">切换完整导航</button>
       <nav id="navigation" aria-label="工作区导航"></nav>
       <div class="nav-divider"></div>
-      <button class="nav-item" data-page="migration" id="migration-nav"><span data-icon="archive"></span><span>更新与迁移</span><span class="nav-arrow">↗</span></button>
       <div class="sidebar-bottom">
         <div class="identity-mark"><span data-icon="fingerprint"></span><div>永久工程身份<small id="project-uuid">正在读取</small></div></div>
         <button class="quiet-button" id="help-button"><span data-icon="help"></span>使用说明</button>
       </div>
     </aside>
-    <div class="sidebar-resizer" id="sidebar-resizer" role="separator" aria-orientation="vertical" aria-controls="workspace-sidebar" aria-label="左右拖动调整导航宽度" title="左右拖动调整导航宽度，双击恢复默认" tabindex="0" hidden><span aria-hidden="true">⋮</span></div>
+    <div class="sidebar-resizer" id="sidebar-resizer" role="separator" aria-orientation="vertical" aria-controls="workspace-sidebar" aria-label="左右拖动调整导航宽度" tabindex="0" hidden><span aria-hidden="true">⋮</span></div>
     <main class="main-shell">
-      <header class="topbar"><label class="compact-navigation">工作区<select id="compact-page-select" aria-label="切换工作区"></select></label>
-        <div class="breadcrumb">个人球员<span>/</span><strong id="breadcrumb-page">资料</strong></div>
-        <div class="top-actions">
-          <span id="save-status" class="save-status"><i class="status-dot"></i>已保存到本机</span>
-          <button class="icon-button" id="undo-button" title="撤销" aria-label="撤销"><span data-icon="undo"></span></button>
-          <button class="icon-button" id="redo-button" title="重做" aria-label="重做"><span data-icon="redo"></span></button>
-          <div class="toolbar-separator"></div>
-          <button class="button primary" id="save-player"><span data-icon="check"></span>保存球员</button>
-          <button class="button secondary" id="open-project"><span data-icon="folder"></span>打开工程</button>
-          <button class="button primary" id="export-project"><span data-icon="export"></span>导出工程</button>
-        </div>
-      </header>
       <div class="workbench">
-        <section class="editor-area">
-          <div class="page-heading"><div><div class="eyebrow" id="page-eyebrow">CREATE YOUR OWN LEGACY</div><h1 id="page-title">球员资料</h1><p id="page-description">从名字到球场位置，定义属于你的球员。</p></div><button class="button subtle" id="new-project"><span data-icon="plus"></span>新建球员</button></div>
-          <div id="editor-content"><div class="loading-state"><span class="spinner"></span>正在打开本地工程…</div></div>
-        </section>
-        <aside class="preview-area">
-          <div class="preview-header"><span><i class="live-dot"></i>实时预览</span><span class="preview-state">设计工程</span></div>
-          <div id="coach-selection" class="coach-selection"></div>
-          <div class="preview-tabs" role="tablist"><button class="active" data-preview="card">球员卡面</button><button data-preview="stats">能力概览</button><button data-preview="model">3D 模型</button></div>
+        <aside class="preview-area" id="stage" aria-label="球员卡展台">
+          <div class="preview-header"><span><i class="live-dot"></i>球员卡</span><span class="preview-state">设计工程</span><button class="icon-button preview-close" type="button" aria-label="关闭" title="关闭">×</button></div>
+          <div class="stage-name" id="stage-name" aria-hidden="true"></div>
           <div class="preview-pane" id="preview-card">
-            <div class="card-stage"><div id="card-empty" class="native-card-empty">尚未选择游戏原版图像<br><small>请先从球员与原版资源库选择</small></div><canvas id="player-card" width="600" height="860" aria-label="实时球员卡面预览"></canvas></div>
+            <div class="card-stage" id="card-tilt"><div id="card-empty" class="native-card-empty">尚未选择游戏原版图像<br><small>请先从球员与原版资源库选择</small></div><canvas id="player-card" width="600" height="860" aria-label="实时球员卡面预览"></canvas><i class="card-holo" aria-hidden="true"></i><i class="card-glare" aria-hidden="true"></i></div>
+            <i class="card-shadow" aria-hidden="true"></i>
             <div class="card-caption"><span id="preview-series">EPIC · PERSONAL EDITION</span><span id="preview-level">Lv.1 / 35</span></div>
             <div class="native-motion-controls"><span id="native-card-status"></span><button class="text-link" id="card-motion-toggle" hidden>暂停原版动画</button></div>
             <div id="preview-overall" class="overall-summary" aria-live="polite"></div>
             <div class="preview-summary" id="preview-summary"></div>
-            <button class="button secondary full-width" id="export-card"><span data-icon="image"></span>导出卡面 PNG</button>
+            <button class="button secondary" id="export-card"><span data-icon="image"></span>导出卡面 PNG</button>
           </div>
           <div class="preview-pane hidden" id="preview-stats"><div id="radar-chart"></div><div id="stat-overview"></div></div>
           <div class="preview-pane hidden" id="preview-model"><div id="mini-model-stage" class="model-stage mini-model-stage"></div><div class="model-hint">左键旋转 · 滚轮缩放 · 右键平移</div><button class="button secondary full-width" id="open-model-page">打开模型工作区</button></div>
+          <div class="preview-tabs" role="tablist"><button class="active" data-preview="card">卡面</button><button data-preview="stats">能力概览</button><button data-preview="model">3D 模型</button></div>
+          <div id="coach-selection" class="coach-selection"></div>
           <div class="preview-footer"><span data-icon="info"></span><p>总评包含所选教练的已配置加成，不含状态箭头。APK 实装已接入；完整材质动画、脸模与比赛效果仍待游戏内验收。</p></div>
         </aside>
+        <section class="editor-area">
+          <header class="head">
+            <nav class="seg glass" id="page-tabs" aria-label="当前分区页面"></nav>
+            <div class="head-actions">
+              <span id="save-status" class="save-status"><i class="status-dot"></i>已保存到本机</span>
+              <button class="icon-button glass-icon" id="undo-button" title="撤销" aria-label="撤销"><span data-icon="undo"></span></button>
+              <button class="icon-button glass-icon" id="redo-button" title="重做" aria-label="重做"><span data-icon="redo"></span></button>
+              <button class="button secondary" id="open-project" title="打开工程"><span data-icon="folder"></span><span class="label">打开工程</span></button>
+              <button class="button secondary" id="export-project" title="导出工程"><span data-icon="export"></span><span class="label">导出工程</span></button>
+              <button class="button primary" id="save-player" title="保存球员"><span data-icon="check"></span><span class="label">保存球员</span></button>
+            </div>
+            <label class="compact-navigation">工作区<select id="compact-page-select" aria-label="切换工作区"></select></label>
+          </header>
+          <section id="hub" class="hub" aria-label="总览" hidden></section>
+          <section id="identity" class="identity glass" aria-label="当前球员" hidden></section>
+          <div class="page-heading">
+            <div class="page-heading-text"><div class="breadcrumb">球员工坊<span>/</span><strong id="breadcrumb-page">资料</strong></div><div class="eyebrow" id="page-eyebrow">CREATE YOUR OWN LEGACY</div><h1 id="page-title">球员资料</h1><p id="page-description">从名字到球场位置，定义属于你的球员。</p></div>
+            <button class="button secondary" id="new-project"><span data-icon="plus"></span>新建球员</button>
+          </div>
+          <div id="editor-content"><div class="loading-state"><span class="spinner"></span>正在打开本地工程…</div></div>
+        </section>
       </div>
     </main>
   </div>
   <div class="toast-container" id="toasts" aria-live="polite"></div>
-  <dialog id="help-dialog"><button class="dialog-close icon-button" id="close-help" aria-label="关闭">×</button><div class="eyebrow">PLAYER STUDIO</div><h2>球员工坊 V17 · 1.9.11</h2><p>所有内容保存在本机，退出后再次打开会恢复工程。导出 .efproject 会把资料、照片与模型一起打包。</p><ol><li><strong>资料与能力</strong>：填写 1 级基础值，再用培养模拟查看升级后的变化。</li><li><strong>技能</strong>：区分天生与额外习得，追加技能最多 5 项。</li><li><strong>卡面</strong>：选择原版预设与人物图，列表可自动播放原版视频。</li><li><strong>模型</strong>：选择游戏已有脸模，或使用已核对的 V13 骨架 GLB。静态模型需匹配的骨架版本。</li><li><strong>APK 实装</strong>：从原 APK 生成个人球员测试包；首次安装配套生成同签名资源 APK。</li><li><strong>更新迁移</strong>：更新前导出最新 .efplayer 实际进度快照，再合并到新版导出的存档。</li></ol><p class="muted">备份整个 data，尤其是 data/signing。首次改签版不能直接覆盖原签名游戏。游戏内验收范围和实装限制见随附“测试说明.json”。</p><button class="button primary" id="help-done">开始创作</button></dialog>
+  <dialog id="help-dialog" class="menu-dialog"><button class="dialog-close icon-button" id="close-help" aria-label="关闭">×</button><div class="menu-dialog-mark"><span class="mark">P</span><span>PLAYER STUDIO</span></div><h2>球员工坊 V17 · 2.0.4</h2><p>所有内容保存在本机，退出后再次打开会恢复工程。导出 .efproject 会把资料、照片与模型一起打包。</p><ol><li><strong>资料与能力</strong>：填写 1 级基础值，再用培养模拟查看升级后的变化。</li><li><strong>技能</strong>：天生、追加分别显示最多 100 项，超过的配置仍可导入并保存。</li><li><strong>卡面</strong>：选择原版预设与人物图，列表可自动播放原版视频。</li><li><strong>模型</strong>：选择游戏已有脸模，或使用已核对的 V13 骨架 GLB。静态模型需匹配的骨架版本。</li><li><strong>APK 实装</strong>：从原 APK 生成个人球员测试包；首次安装配套生成同签名资源 APK。</li></ol><p class="muted">备份整个 data，尤其是 data/signing。首次改签版不能直接覆盖原签名游戏。游戏内验收范围和实装限制见随附“测试说明.json”。</p><button class="button primary" id="help-done">开始创作</button></dialog>
   <script type="module" src="/app.js"></script>
+  <script type="module" src="/shell.js"></script>
 </body>
 </html>

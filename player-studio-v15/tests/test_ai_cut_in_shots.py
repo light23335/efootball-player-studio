@@ -31,7 +31,7 @@ class NativeAiCutInTests(unittest.TestCase):
         cls.segments=[(s['p_vaddr'],s['p_offset'],s['p_filesz'],s['p_memsz'])for s in elf.iter_segments()if s['p_type']=='PT_LOAD']
         cls.candidate=build(cls.engine)
 
-    def setup_context(self,skills=(17,),incisive=True,x=27.,z=18.,side=1,phase=1,index=7,game_word=0,patched=True,lone_wolf=False,heading=None,foot=0,fixed_class='eligible'):
+    def setup_context(self,skills=(17,),incisive=True,x=27.,z=18.,side=1,phase=1,index=7,game_word=0,patched=True,lone_wolf=False,heading=None,foot=0,fixed_class='eligible',probability=True):
         self.info=0x42010100;self.root=0x42010200;self.model=0x43000000
         self.states=0x44000000;self.players=0x45000000
         slot=index if 0<=index<22 else 0
@@ -89,6 +89,13 @@ class NativeAiCutInTests(unittest.TestCase):
                 self.assertIn(selected,choices)
                 vm.reg_write(r.UC_ARM64_REG_W0,selected);vm.reg_write(r.UC_ARM64_REG_PC,vm.reg_read(r.UC_ARM64_REG_X30))
             vm.hook_add(self.u.UC_HOOK_CODE,controlled_draw)
+        if patched and probability is not None and 'shared_studio_ai_probability_gate' in self.helpers:
+            gate=self.helpers['shared_studio_ai_probability_gate']
+            def controlled_gate(vm,address,size,data):
+                if address==gate:
+                    vm.reg_write(r.UC_ARM64_REG_W0,int(probability))
+                    vm.reg_write(r.UC_ARM64_REG_PC,vm.reg_read(r.UC_ARM64_REG_X30))
+            vm.hook_add(self.u.UC_HOOK_CODE,controlled_gate)
         return vm
 
     def set_slot(self,vm,index,skills=(),incisive=False,x=29.,z=12.,lone_wolf=False,heading=90.,foot=0):
@@ -599,8 +606,8 @@ class NativeAiCutInTests(unittest.TestCase):
         self.assertEqual(counts,{0:0,1:100})
 
     def test_skill_shot_styles_have_equal_tickets_and_preserve_native_target(self):
-        for skills,allowed in [((18,),{1}),((24,),{0}),((25,),{2}),((18,24),{0,1}),((18,24,25),{0,1,2})]:
-            vm=self.setup_context(skills=skills,incisive=False,x=45.,z=3.,fixed_class=None)
+        for skills,allowed in [((18,),{1}),((24,),{0}),((25,),{3}),((18,24),{0,1}),((18,24,25),{0,1,3})]:
+            vm=self.setup_context(skills=skills,incisive=False,x=25.,z=3.,fixed_class=None)
             counts={n:0 for n in allowed};out=0x42009000
             for key in range(600):
                 vm.mem_write(self.ctx+0x18,struct.pack('<Q',self.root+key*16))
@@ -612,7 +619,7 @@ class NativeAiCutInTests(unittest.TestCase):
             for count in counts.values():self.assertTrue(expected*.75<=count<=expected*1.25,(skills,counts))
 
     def test_unrelated_player_outside_pitch_does_not_veto_any_owned_shot_style(self):
-        for skills,expected in [((18,),1),((24,),0),((25,),2),((18,24,25),1)]:
+        for skills,expected in [((18,),1),((24,),0),((25,),3),((18,24,25),1)]:
             vm=self.setup_context(skills=skills,incisive=False,lone_wolf=True)
             vm.mem_write(self.players+2*0x1000+0x4f4,struct.pack('<3f',0.,0.,34.1))
             # This invalidates opportunity comparison, but must not invalidate
@@ -637,7 +644,7 @@ class NativeAiCutInTests(unittest.TestCase):
                0x6ad2f60:scalar(90.),0x72c3fbc:ret(0),0x72c3fe4:ret(ai),
                0x72fae2c:ret(0),0x731c5d0:pair,0x730b294:scalar(1.),
                0x72c3f10:ret(rng),0x734317c:ret(0),0x72c40b0:ret(state),
-               0x72c1a14:ret(actor),0x6a4bd08:lambda vm:vm.reg_write(r.UC_ARM64_REG_W0,self.power_clock)}
+               0x72c1a14:ret(player),0x72c19f8:ret(actor),0x698f7e0:ret(model),0x6a4bd08:lambda vm:vm.reg_write(r.UC_ARM64_REG_W0,self.power_clock)}
         vm=self.machine(stubs);vm.mem_map(control,0x30000);vm.mem_map(model,0x30000)
         vm.mem_map(state,0x10000);vm.mem_map(actor,0x10000)
         vm.mem_write(info+4,struct.pack('<I',7));vm.mem_write(info+0x30,struct.pack('<Q',model))
@@ -646,6 +653,14 @@ class NativeAiCutInTests(unittest.TestCase):
         vm.mem_write(state+0x394+0xc0,sum(1<<n for n in skills).to_bytes(12,'little'))
         vm.mem_write(actor+0x2a38,b'\7');vm.mem_write(actor+0x4620,struct.pack('<Q',model))
         self.helpers=self.install_all(vm)if patched else {}
+        if patched:
+            # The power stage consumes the selected request-stage ticket.
+            # Different native shot modes cannot grant a different skill's ticket.
+            style={0:2,1:1,3:3}.get(subtype,0)
+            for n,v in enumerate((model,7,1,style,100)):
+                vm.reg_write(getattr(r,'UC_ARM64_REG_X'+str(n)),v)
+            vm.reg_write(r.UC_ARM64_REG_X30,0x2003f000)
+            vm.emu_start(self.helpers['shared_studio_ai_style_ticket'],0x2003f000,count=10000)
         self.power_addresses=dict(control=control,info=info,model=model,phase=phase,state=state,actor=actor,action=action)
         return vm
 
@@ -665,12 +680,81 @@ class NativeAiCutInTests(unittest.TestCase):
                 self.assertEqual(before[:0xe7c],after[:0xe7c]);self.assertEqual(before[0xe80:],after[0xe80:])
                 self.assertEqual((return0,q0),(return1,q1))
                 base=struct.unpack_from('<f',before,0xe7c)[0];value=struct.unpack_from('<f',after,0xe7c)[0]
-                expected=min(base,.49)if subtype==0 else max(base,.55)if subtype==1 else max(base,.65)if subtype==2 else base
+                expected=min(base,.49)if subtype==0 else max(base,.55)if subtype==1 else (.65 if base<=.5 else base)if subtype==3 else base
                 self.assertAlmostEqual(value,expected,places=6,msg=(distance,subtype))
+
+    def test_original_engine_subtype_dispatch_separates_chip_and_stunning(self):
+        # Execute the complete UNPATCHED behavior-25 handler. Its low rodata
+        # switch table is at file 0xc8fa46 (NOT text VA minus 0x4000).
+        self.assertEqual(list(self.engine[0xc8fa46:0xc8fa4b]),[0,142,46,0,0])
+        expected={0:(0,False),1:(2,False),2:(3,False),3:(0,True),4:(1,False)}
+        for subtype,want in expected.items():
+            control,_,_=self.native_power(self.power_fixture(subtype,patched=False))
+            word=struct.unpack_from('<I',control,0xff8)[0]
+            self.assertEqual(((word>>16)&255,bool(word&(1<<26))),want)
+
+    def test_heavy_preserves_native_type_inside_box_and_requests_stunning_only_outside(self):
+        for x,z,outside in [(45.,3.,False),(36.,20.16,False),(35.9,3.,True),(45.,20.3,True),(-45.,3.,False)]:
+            vm=self.setup_context(skills=(25,),incisive=False,x=x,z=z)
+            for original in (0,1,2,4):
+                out=0x42009000;data=struct.pack('<III3f',9,25,original,52.5,1.,0.)
+                vm.mem_write(out,data);self.run_helper(vm,'studio_ai_prefer_curled_shot',out,self.ctx)
+                self.assertEqual(struct.unpack('<I',vm.mem_read(out+8,4))[0],3 if outside else original,(x,z,original))
+                self.assertEqual(bytes(vm.mem_read(out+12,12)),data[12:])
+
+    def test_heavy_lifts_only_original_power_at_or_below_half_to_65_percent(self):
+        for subtype in (0,1,2,3,4):
+            for power in (.3,.499,.5,.501,.55,.8):
+                vm=self.power_fixture(subtype);a=self.power_addresses
+                self.run_helper(vm,'studio_ai_style_ticket',a['model'],7,1,3,100)
+                vm.mem_write(a['control']+0xe7c,struct.pack('<f',power))
+                vm.mem_write(a['control']+0xff8,struct.pack('<I',0x12345678))
+                self.run_helper(vm,'studio_ai_bound_shot_power',a['info'],a['control'])
+                value=struct.unpack('<f',vm.mem_read(a['control']+0xe7c,4))[0]
+                self.assertAlmostEqual(value,.65 if power<=.5 else power,places=6)
+                self.assertEqual(bytes(vm.mem_read(a['control']+0xff8,4)),struct.pack('<I',0x12345678))
+
+    def test_probability_rejection_preserves_request_type_and_does_not_leave_a_style_ticket(self):
+        vm=self.setup_context(skills=(18,24,25),probability=False)
+        out=0x42009000;data=struct.pack('<III3f',9,25,2,52.5,1.,0.)
+        vm.mem_write(out,data);self.run_helper(vm,'studio_ai_prefer_curled_shot',out,self.ctx)
+        self.assertEqual(bytes(vm.mem_read(out,len(data))),data)
+        self.assertEqual(self.run_helper(vm,'studio_ai_style_ticket',self.model,7,0,0,0),0)
+        self.candidates(vm,{0:{'kind':2},1:{'kind':3,'angle':135.}})
+        self.assertEqual(self.choose(vm),0)
+
+    def test_actual_probability_is_stable_within_a_decision_and_about_80_percent(self):
+        vm=self.setup_context(probability=None);r=self.r;clock=[0]
+        def tick(vm,address,size,data):
+            if address==0x6a4bd08:
+                vm.reg_write(r.UC_ARM64_REG_W0,clock[0]);vm.reg_write(r.UC_ARM64_REG_PC,vm.reg_read(r.UC_ARM64_REG_X30))
+        vm.hook_add(self.u.UC_HOOK_CODE,tick)
+        counts=[]
+        for domain in (0,1):
+            passed=0
+            for n in range(2000):
+                clock[0]=n*30;value=self.run_helper(vm,'studio_ai_probability_gate',self.ctx,domain)
+                self.assertEqual(value,self.run_helper(vm,'studio_ai_probability_gate',self.ctx,domain))
+                passed+=value
+            counts.append(passed);self.assertTrue(1500<passed<1700,passed)
+        self.assertNotEqual(counts[0],counts[1])
+
+    def test_incisive_and_lone_wolf_candidate_changes_are_restricted_to_attacking_third(self):
+        for side,slot in ((1,7),(-1,18)):
+            for wolf in (False,True):
+                vm=self.setup_context(x=17.4*side,z=18.,side=side,index=slot,lone_wolf=wolf)
+                self.candidates(vm,{0:{'kind':2},1:{'kind':3,'angle':135. if side==1 else 225.}})
+                self.assertEqual(self.choose(vm),0)
+
+    def test_legacy_curler_request_also_keeps_native_type_before_attacking_third(self):
+        vm=self.setup_context(skills=(17,),lone_wolf=True,x=17.4,z=12.)
+        out=0x42009000;data=struct.pack('<III3f',9,25,0,52.5,1.,0.)
+        vm.mem_write(out,data);self.run_helper(vm,'studio_ai_prefer_curled_shot',out,self.ctx)
+        self.assertEqual(bytes(vm.mem_read(out,len(data))),data)
 
     def test_power_preference_is_disabled_without_skill_or_during_set_piece(self):
         for skills,phase in [((),1),((51,58,74),0)]:
-            for subtype in (0,1,2):
+            for subtype in (0,1,2,3):
                 before=self.native_power(self.power_fixture(subtype,skills,distance=10.,patched=False,phase_value=phase))
                 after=self.native_power(self.power_fixture(subtype,skills,distance=10.,phase_value=phase))
                 self.assertEqual(before,after)
@@ -682,7 +766,7 @@ class NativeAiCutInTests(unittest.TestCase):
         self.power_clock+=1;self.assertEqual(self.run_helper(vm,'studio_ai_allow_low_with_blitz',a['actor']),0)
         self.power_clock=100
         vm.mem_write(a['actor']+0x4620,struct.pack('<Q',a['model']+16))
-        self.assertEqual(self.run_helper(vm,'studio_ai_allow_low_with_blitz',a['actor']),0)
+        self.assertEqual(self.run_helper(vm,'studio_ai_allow_low_with_blitz',a['actor']),1)
         vm.mem_write(a['actor']+0x4620,struct.pack('<Q',a['model']))
         vm.mem_write(a['actor']+0x2a38,b'\10')
         self.assertEqual(self.run_helper(vm,'studio_ai_allow_low_with_blitz',a['actor']),0)

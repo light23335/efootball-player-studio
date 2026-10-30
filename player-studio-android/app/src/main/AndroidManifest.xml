@@ -12,7 +12,7 @@
         <package android:name="com.efootball.revival.diyassets" />
         <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent>
     </queries>
-    <application android:label="球员工坊" android:icon="@drawable/studio_icon" android:roundIcon="@drawable/studio_icon" android:theme="@android:style/Theme.Material.NoActionBar"
+    <application android:label="球员工坊" android:icon="@drawable/studio_launcher" android:roundIcon="@drawable/studio_launcher" android:theme="@android:style/Theme.Material.NoActionBar"
         android:allowBackup="false" android:largeHeap="true" android:pageSizeCompat="enabled"
         android:usesCleartextTraffic="false" android:networkSecurityConfig="@xml/network_security">
         <activity android:name=".MainActivity" android:exported="true"

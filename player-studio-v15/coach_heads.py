@@ -1,4 +1,6 @@
 """Inspect and replace existing manager face packages; never guess a new coach route."""
+from export_errors import call as _export_data
+from export_errors import export_context, exported
 from pathlib import Path
 import copy,hashlib,io,json,os,re,threading,uuid
 
@@ -34,7 +36,7 @@ class CoachHeadStore:
     def list(self):
         with self.lock:
             if not self.path.exists():return []
-            doc=json.loads(self.path.read_text(encoding='utf8'))
+            doc=_export_data("资料文件",self.path,"读取并解析 JSON",lambda: json.loads(self.path.read_text(encoding='utf8')))
             if doc.get('version')!=1 or not isinstance(doc.get('rows'),list):raise ValueError('教练头模配置版本无效')
             rows=[normalize(r) for r in doc['rows']]
             if len({r['target'] for r in rows})!=len(rows):raise ValueError('教练头模配置包含重复目标')
@@ -169,7 +171,7 @@ def compile_head(library,value,destination=None):
     source=opaque_materials(Glb(file.read_bytes()));bound,rig=adapt_skeleton(source,reference)
     # The target coach itself is the carrier: its own skeleton, offsets and LODs remain.
     with library.convert_lock:library.run([target],'json')
-    document=json.loads((library.converted/Path(target).with_suffix('.json')).read_text(encoding='utf-8-sig'))
+    document=_export_data("资料文件",library.converted / Path(target).with_suffix('.json'),"读取并解析 JSON",lambda: json.loads((library.converted/Path(target).with_suffix('.json')).read_text(encoding='utf-8-sig')))
     mesh=next((e for e in document if e.get('Type')=='SkeletalMesh' and e.get('ImportedBounds')),None)
     if mesh is None:raise ValueError('教练头模边界资料未能解码')
     converted,mesh_report=replace_head(raw,bound,reference,mesh,neck_seam=False,preserve_expression=False)
@@ -198,7 +200,7 @@ def compile_head(library,value,destination=None):
         group[material_path]=(material_raw,material_meta)
         renames[material_path]=folder+'MI_StudioCoach_Hair_'+suffix+'_slot'+str(slot)
         with library.convert_lock:library.run(['PesMobile/Content/'+shader_path[6:]+'.uasset'],'json')
-        mat_doc=json.loads((library.converted/Path('PesMobile/Content/'+shader_path[6:]).with_suffix('.json')).read_text(encoding='utf-8-sig'))
+        mat_doc=_export_data("资料文件",library.converted / Path('PesMobile/Content/' + shader_path[6:]).with_suffix('.json'),"读取并解析 JSON",lambda: json.loads((library.converted/Path('PesMobile/Content/'+shader_path[6:]).with_suffix('.json')).read_text(encoding='utf-8-sig')))
         params=[p for e in mat_doc for p in e.get('Properties',{}).get('TextureParameterValues',[])]
         mapped={}
         for p in params:
@@ -248,9 +250,10 @@ def preview(library,value):
 def compile_heads(library,rows):
     packages=[];reports=[];seen=set()
     for row in rows:
-        row=normalize(row)
-        if row['target'] in seen:raise ValueError('不能同时写入两份相同目标的教练头模')
-        seen.add(row['target']);art,report,_,_=compile_head(library,row);packages.extend(art);reports.append(report)
+        with export_context('教练头模',row,'编译原版教练头模替换'):
+            row=normalize(row)
+            if row['target'] in seen:raise ValueError('不能同时写入两份相同目标的教练头模')
+            seen.add(row['target']);art,report,_,_=compile_head(library,row);packages.extend(art);reports.append(report)
     return packages,reports
 
 

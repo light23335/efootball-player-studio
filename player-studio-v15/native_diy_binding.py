@@ -130,12 +130,13 @@ class PreparedInstaller:
         self.proof={'kind':'v16-prepared','raw_fingerprint':fingerprint(raw_payload),'raw_worker_fingerprint':code_fingerprint(raw_worker),'prepared_worker_fingerprint':code_fingerprint(nested['worker']),'stock_route_ids':[r['cardId'] for r in routes]}
         self.allocator_code=allocator_code;self.size=size
 
-    def function(self,allocate):
-        raw=types.FunctionType(self.raw_code,{'allocate_portrait_pages':allocate})
+    def function(self,allocate,original_globals=None):
+        namespace=dict(original_globals or {},allocate_portrait_pages=allocate)
+        raw=types.FunctionType(self.raw_code,namespace)
         def require(ok,message):
             if not ok:raise ValueError(message)
         if self.allocator_code.co_freevars!=('size',):raise ValueError('V16 原生分配器闭包改变')
         # Reconstruct the real prepared allocator, too. No native call is
         # made: verification provides stubs for every memory operation.
         prepared=types.FunctionType(self.allocator_code,{'require':require,'os':types.SimpleNamespace(sysconf=lambda name:4096)},closure=(types.CellType(self.size),)) if self.size>4096 else allocate
-        return types.FunctionType(self.code,{'__DIY_PAYLOAD__':self.payload,'allocate_portrait_pages':prepared,'_start_legend_portrait_binding':raw})
+        return types.FunctionType(self.code,dict(namespace,__DIY_PAYLOAD__=self.payload,allocate_portrait_pages=prepared,_start_legend_portrait_binding=raw))

@@ -26,7 +26,7 @@ test('export refresh uses imported paths, preserves manual picks and follows a c
 
 test('beginner navigation retains all editing and management pages',()=>{
  const all=navigationGroups.flatMap(([,pages])=>pages);
- for(const page of ['personal','profile','abilities','training','skills','card','model','packs','coaches','native','apk','tools','migration'])assert.ok(all.includes(page),page);
+ for(const page of ['personal','profile','abilities','training','skills','card','model','packs','coaches','native','apk','tools'])assert.ok(all.includes(page),page);
  assert.ok(tutorialTopics.length>=12);
 });
 test('home shows cache cleanup and tutorial search keeps relevant entries',()=>{

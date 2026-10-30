@@ -7,9 +7,9 @@ Signing uses the operator's existing private release key.
 from pathlib import Path
 import argparse,hashlib,io,json,re,struct,sys,zipfile
 ROOT=Path(__file__).resolve().parent
-VERSION='2.0-android.1'
-VERSION_CODE=200000
-RETIRED_CORE_MODULES={'team_workshop.py','team_cpk.py','team_workshop.pyc','team_cpk.pyc'}
+VERSION='2.0.4-android.1'
+VERSION_CODE=200004
+RETIRED_CORE_MODULES={'team_workshop.py','team_cpk.py','team_workshop.pyc','team_cpk.pyc','draw_policy.py','draw_journal.py','draw_policy.pyc','draw_journal.pyc'}
 
 def compact_editor_apk(source,output,changes,removed=()):
     """Write one copy of each editor asset and retain 16-KiB .so alignment."""
@@ -113,7 +113,7 @@ def main():
                     z.writestr(item.relative_to(core).as_posix(),raw)
             for name in ('personal_runtime.py','personal_binding.py','division_squads.py','native_overall.py',
                          'ai_tactical_profiles.py','ai_division_sessions.py','ai_match_manager.py',
-                         'ai_match_channel.py','ai_match_runtime.py','ai_match_state.py','action_trace.py'):z.write(core/name,name)
+                         'ai_match_channel.py','ai_match_runtime.py','ai_match_state.py','action_trace.py','league_rules.py','art_registry.py','native_diy_binding.py'):z.write(core/name,name)
             for item in (ROOT/'licenses').glob('*'):
                 if item.is_file():z.write(item,'licenses/'+item.name)
             z.write(ROOT/'THIRD_PARTY_NOTICES.md','licenses/THIRD_PARTY_NOTICES.md')
@@ -156,6 +156,9 @@ def main():
         from dex_checks import inspect_runtime
         dex_names={n for n in source.namelist() if re.fullmatch(r'classes\d*\.dex',n)}|{n for n in changes if re.fullmatch(r'classes\d*\.dex',n)}
         dex_preflight=inspect_runtime({n:changes[n] if n in changes else source.read(n) for n in dex_names-removed})
+        from launcher_icon import prepare_launcher
+        icon_changes,icon_removed,icon_report=prepare_launcher(source,(ROOT/'app/src/main/res/drawable-nodpi/studio_launcher.png').read_bytes())
+        changes.update(icon_changes);removed.update(icon_removed)
         # Added DEX and marker entries must also be written, not only replacements.
         missing={k:v for k,v in changes.items() if k not in source.namelist()}
     compact_editor_apk(a.base,work/'unsigned-android.apk',changes,removed)
@@ -174,7 +177,7 @@ def main():
                 raw.seek(entry.header_offset+26);length,extra=struct.unpack('<HH',raw.read(4))
                 alignment=16384 if entry.filename.endswith('.so') else 4
                 if (entry.header_offset+30+length+extra)%alignment:raise ValueError('APK alignment failure: '+entry.filename)
-    report={'version':VERSION,'version_code':VERSION_CODE,'path':str(Path(a.output).resolve()),'bytes':Path(a.output).stat().st_size,'sha256':hashlib.sha256(Path(a.output).read_bytes()).hexdigest(),'signature':verification,'base_activity_lifecycle_preserved':True,'physical_controller_helper_added':bool(a.controller_dex),'native_codecs_unchanged':True,'installed_games_helper_added':True,'dex_preflight':dex_preflight,'compiled_runtime_replaced':bool(a.runtime_dex_dir)}
+    report={'version':VERSION,'version_code':VERSION_CODE,'path':str(Path(a.output).resolve()),'bytes':Path(a.output).stat().st_size,'sha256':hashlib.sha256(Path(a.output).read_bytes()).hexdigest(),'signature':verification,'launcher_icon':icon_report,'base_activity_lifecycle_preserved':True,'physical_controller_helper_added':bool(a.controller_dex),'native_codecs_unchanged':True,'installed_games_helper_added':True,'dex_preflight':dex_preflight,'compiled_runtime_replaced':bool(a.runtime_dex_dir)}
     Path(a.output).with_suffix('.build.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8');print(json.dumps(report,ensure_ascii=False))
 
 if __name__=='__main__':main()

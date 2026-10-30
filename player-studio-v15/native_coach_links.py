@@ -1,4 +1,6 @@
 """Coach Link-up conditions. IDs in coach slots 2/3 are not boosters."""
+from export_errors import call as _export_data
+from export_errors import export_context, exported
 import copy
 import json
 from pathlib import Path
@@ -10,7 +12,7 @@ RESOURCE=bundled_resources()
 
 
 def schema(resources=None):
-    return json.loads(((Path(resources) if resources else RESOURCE)/'native-coach-links.json').read_text(encoding='utf8'))
+    return _export_data("资料文件",(Path(resources) if resources else RESOURCE) / 'native-coach-links.json',"读取并解析 JSON",lambda: json.loads(((Path(resources) if resources else RESOURCE)/'native-coach-links.json').read_text(encoding='utf8')))
 
 
 def rows(raw):
@@ -67,22 +69,23 @@ def compile_links(cpk,coaches,registry,info=None):
     info=info or schema();wrapped=cpk.read(TABLE);records=rows(unwrap(wrapped))
     assigned=registry.setdefault('links',{});by_coach={};routes=[]
     for coach in coaches:
-        selected=[]
-        for slot,config in enumerate(normalize_slots(coach.get('linkups'),info)):
-            if config is None:selected.append(0);continue
-            template=config['template_id']
-            if template not in records:raise ValueError('原 APK 缺少所选心有灵犀类型')
-            if decode(records[template],info)==config:selected.append(template);continue
-            key=coach['uuid']+':'+str(slot)
-            ident=assigned.get(key)
-            if ident is None:
-                ident=next((v for v in range(256,512) if v not in records and v not in assigned.values()),None)
-                if ident is None:raise ValueError('本次 APK 的独立心有灵犀条件编号已用完')
-                assigned[key]=ident
-            if type(ident) is not int or not 256<=ident<512:raise ValueError('独立心有灵犀编号无效')
-            records[ident]=encode(records[template],config,ident,info)
-            routes.append({'id':ident,'template_id':template});selected.append(ident)
-        by_coach[coach['uuid']]=selected
+        with export_context('教练',coach,'编译心有灵犀触发条件'):
+            selected=[]
+            for slot,config in enumerate(normalize_slots(coach.get('linkups'),info)):
+                if config is None:selected.append(0);continue
+                template=config['template_id']
+                if template not in records:raise ValueError('原 APK 缺少所选心有灵犀类型')
+                if decode(records[template],info)==config:selected.append(template);continue
+                key=coach['uuid']+':'+str(slot)
+                ident=assigned.get(key)
+                if ident is None:
+                    ident=next((v for v in range(256,512) if v not in records and v not in assigned.values()),None)
+                    if ident is None:raise ValueError('本次 APK 的独立心有灵犀条件编号已用完')
+                    assigned[key]=ident
+                if type(ident) is not int or not 256<=ident<512:raise ValueError('独立心有灵犀编号无效')
+                records[ident]=encode(records[template],config,ident,info)
+                routes.append({'id':ident,'template_id':template});selected.append(ident)
+            by_coach[coach['uuid']]=selected
     return {TABLE:wrap(b''.join(records[k] for k in sorted(records)),wrapped)},by_coach,routes
 
 
@@ -109,7 +112,7 @@ def repair_legacy(document,info=None,resources=None):
         from native_cpk import Cpk
         report=Path(resources)/'import-report.json'
         try:
-            apk=json.loads(report.read_text(encoding='utf8'))['apk'];native={}
+            apk=_export_data("资料文件",report,"读取并解析 JSON",lambda: json.loads(report.read_text(encoding='utf8')))['apk'];native={}
             with zipfile.ZipFile(apk) as archive:
                 for source in ('livedata','custom-resources/legends-v10'):
                     cpk=Cpk(archive.read('assets/gateway-release/'+source+'/dt870_mobile_and.cpk'))

@@ -18,7 +18,7 @@ def game_options(store,body=None):
     for k,low,high in [('division',1,10),('points',0,99999),('matches',0,9999),('wins',0,9999),('draws',0,9999),('losses',0,9999)]:
         if type(value[k]) is not int or not low<=value[k]<=high:raise ValueError(k+' 的数值超出范围')
     if value['wins']+value['draws']+value['losses']!=value['matches']:raise ValueError('胜、平、负之和须等于已赛场次')
-    if value['division']>=4 and (value['matches']>2 or value['points']>6):raise ValueError('组别 10–4 当前轮最多已赛 2 场、积分 0–6；第 3 场由游戏结算升降级')
+    if value['division']>=4 and (value['matches']>9 or value['points']>27):raise ValueError('组别 10–4 当前轮最多已赛 9 场、积分 0–27；第 10 场由游戏结算升降级')
     if value['division']>=4 and value['points']!=3*value['wins']+value['draws']:raise ValueError('组别 10–4 积分须为 胜场×3＋平场')
     previous=game_options(store)
     progress_keys=('enabled','division','points','matches','wins','draws','losses')

@@ -10,6 +10,168 @@ from skill_hook_ir import call,jump,save_all,restore_all
 
 def add_shot_styles(b):
     b.helper('studio_ai_preference_enabled','ldr w0,ordinary_switch\nret\n.align 2\nordinary_switch: .word 0x58414931\n')
+    b.helper('studio_ai_probability_gate',f'''
+stp x19,x20,[sp,#-48]!
+stp x21,x30,[sp,#16]
+mov x19,x0
+mov w20,w1
+cbz x19,gate_no
+ldr x8,[x19]
+cbz x8,gate_no
+ldr w21,[x8]
+cmp w21,#22
+b.hs gate_no
+{call('root')}
+cbz x0,gate_no
+str x0,[sp,#32]
+{call('game_info')}
+cbz x0,gate_no
+{call('phase')}
+cmp w0,#1
+b.ne gate_no
+{call('root')}
+{call('game_info')}
+{call('clock')}
+// A stable decision window prevents repeated getter calls from rerolling.
+mov w9,#30
+udiv w8,w0,w9
+ldr x9,[sp,#32]
+eor x9,x9,x9,lsr #32
+mov w10,#0x9e37
+mul w10,w21,w10
+eor w8,w8,w10
+mov w10,#0x45d9
+mul w10,w20,w10
+eor w8,w8,w10
+eor w8,w8,w9
+eor w8,w8,w8,lsr #16
+mov w10,#0x7feb
+movk w10,#0x352d,lsl #16
+mul w8,w8,w10
+eor w8,w8,w8,lsr #15
+mov w10,#0x846c
+movk w10,#0x68b9,lsl #16
+mul w8,w8,w10
+eor w8,w8,w8,lsr #16
+mov w9,#5
+udiv w10,w8,w9
+msub w8,w10,w9,w8
+cmp w8,#4
+cset w0,lo
+b gate_done
+gate_no:
+mov w0,#0
+gate_done:
+ldp x21,x30,[sp,#16]
+ldp x19,x20,[sp],#48
+ret
+''',{'root':0x698f7e0,'game_info':0x72c3e80,'phase':0x697b60c,'clock':0x6a4bd08},
+      evidence=['80 percent private deterministic decision-window gate, separate candidate/shot domains',
+                'no native RNG, native choice untouched on rejection; 30 native ticks per stable window'])
+    b.helper('studio_ai_style_ticket','''
+cmp w1,#22
+b.hs ticket_none
+ldr x8,tickets
+add x8,x8,x1,lsl #4
+cbz w2,ticket_check
+str x0,[x8]
+str w4,[x8,#8]
+str w3,[x8,#12]
+mov w0,w3
+ret
+ticket_check:
+ldr x9,[x8]
+cmp x9,x0
+b.ne ticket_none
+ldr w9,[x8,#8]
+sub w9,w4,w9
+cmp w9,#2
+b.hi ticket_none
+ldr w0,[x8,#12]
+ret
+ticket_none:
+mov w0,#0
+ret
+''',writable={'tickets':22*16},evidence=['current root value and slot/frame only; no retained pointer dereference',
+    'carry the selected equal-weight style to the original power stage; expire in two simulation ticks'])
+    b.helper('studio_ai_record_shot_style',f'''
+stp x19,x20,[sp,#-48]!
+stp x21,x30,[sp,#16]
+mov x19,x0
+mov w20,w1
+cbz x19,record_done
+ldr x8,[x19]
+cbz x8,record_done
+ldr w21,[x8]
+cmp w21,#22
+b.hs record_done
+{call('root')}
+cbz x0,record_done
+str x0,[sp,#32]
+{call('game_info')}
+cbz x0,record_done
+{call('clock')}
+mov w4,w0
+ldr x0,[sp,#32]
+mov w1,w21
+mov w2,#1
+mov w3,w20
+bl shared_studio_ai_style_ticket
+record_done:
+mov w0,w20
+ldp x21,x30,[sp,#16]
+ldp x19,x20,[sp],#48
+ret
+''',{'root':0x698f7e0,'game_info':0x72c3e80,'clock':0x6a4bd08})
+    b.helper('studio_ai_outside_penalty_area',f'''
+stp x19,x20,[sp,#-48]!
+stp x21,x30,[sp,#16]
+mov x19,x0
+cbz x19,inside_or_unknown
+ldr x8,[x19]
+cbz x8,inside_or_unknown
+ldr w1,[x8]
+cmp w1,#22
+b.hs inside_or_unknown
+ldr x20,[x19,#0x18]
+cbz x20,inside_or_unknown
+mov x0,x20
+{call('player_info')}
+cbz x0,inside_or_unknown
+ldr w8,[x0,#0x4f4]
+ldr w9,[x0,#0x4fc]
+stp w8,w9,[sp,#32]
+mov x0,x20
+{call('pitch')}
+cbz x0,inside_or_unknown
+ldr s0,[x0]
+fcmp s0,#0.0
+b.vs inside_or_unknown
+b.le inside_or_unknown
+ldr s1,box_depth
+fsub s0,s0,s1
+ldr s1,[sp,#32]
+fabs s1,s1
+fcmp s1,s0
+b.vs inside_or_unknown
+b.lt outside
+ldr s1,[sp,#36]
+fabs s1,s1
+ldr s0,box_half_width
+fcmp s1,s0
+b.vs inside_or_unknown
+b.gt outside
+inside_or_unknown:
+mov w0,#0
+b box_done
+outside:
+mov w0,#1
+box_done:
+ldp x21,x30,[sp,#16]
+ldp x19,x20,[sp],#48
+ret
+''',{'player_info':0x72c408c,'pitch':0x72c3e6c},{'box_depth':16.5,'box_half_width':20.16},
+      ['native pitch half-length and current player position; preserve native type inside either penalty area or on unknown geometry'])
     b.helper('studio_ai_preferred_shot_style',f'''
 sub sp,sp,#480
 stp x19,x20,[sp]
@@ -193,6 +355,18 @@ mov x25,x0
 {call('phase')}
 cmp w0,#1
 b.ne done
+{call('root')}
+cbz x0,done
+str x0,[sp,#72]
+mov x0,x25
+{call('clock')}
+mov w4,w0
+ldr x0,[sp,#72]
+mov w1,w21
+mov w2,#0
+bl shared_studio_ai_style_ticket
+mov w26,w0
+cbz w26,done
 mov w0,w21
 {call('action')}
 cbz x0,done
@@ -200,8 +374,6 @@ ldr w8,[x0,#4]
 cmp w8,#25
 b.ne done
 ldr w24,[x0,#8]
-cmp w24,#2
-b.hi done
 mov x0,x22
 mov w1,w21
 {call('player_state')}
@@ -217,11 +389,20 @@ fmov s0,#1.0
 fcmp s8,s0
 b.gt done
 ldrb w8,[x20,#0xffa]
-cmp w24,#1
-b.eq controlled
-cmp w24,#2
+cmp w26,#3
 b.eq heavy_power
+cmp w26,#1
+b.eq controlled_type
+cbnz w24,done
+cmp w26,#2
+b.ne done
 cbnz w8,done
+b low_power
+controlled_type:
+cmp w24,#1
+b.ne done
+b controlled
+low_power:
 mov w1,#58
 {call('skill')}
 tbz w0,#0,done
@@ -231,12 +412,14 @@ str s8,[x20,#0xe7c]
 mov x0,x25
 {call('clock')}
 mov w26,w0
-mov x0,x22
+{call('root')}
+cbz x0,done
+str x0,[sp,#72]
 mov w1,w21
 {call('actor')}
 cbz x0,done
 mov x3,x0
-mov x0,x22
+ldr x0,[sp,#72]
 mov w1,w21
 mov w2,#1
 mov w4,w26
@@ -253,8 +436,9 @@ fmax s8,s8,s0
 str s8,[x20,#0xe7c]
 b done
 heavy_power:
-cmp w8,#3
-b.ne done
+fmov s0,#0.5
+fcmp s8,s0
+b.gt done
 mov w1,#74
 {call('skill')}
 tbz w0,#0,done
@@ -271,11 +455,11 @@ ldp x19,x20,[sp],#112
 ret
 ''',{'game_info':0x72c3e80,'phase':0x697b60c,'action':0x72d7dc8,
       'player_state':0x72c40b0,'abilities':0x7301ef8,'skill':0x72b39c4,
-      'clock':0x6a4bd08,'actor':0x72c1a14},
+      'clock':0x6a4bd08,'root':0x698f7e0,'actor':0x72c19f8},
       {'low_ceiling':.49,'controlled_floor':.55,'heavy_floor':.65},
       ['run after the entire original native AI behavior 25 power handler',
        'native final control mode must match the registered request subtype',
-       'bounded preference only: low <50%, Blitz >=50%, heavy >=65%; native motion gates remain'])
+       'selected-style ticket: low <50%, Blitz >=50%, heavy only lifts original <=50% to 65%; native mode flags unchanged'])
 
     b.add('studio_ai_shot_style_power',0x71a27f0,'''
 stp x19,x20,[sp,#-80]!
@@ -306,11 +490,13 @@ mov x19,x0
 cbz x19,none
 bl shared_studio_ai_preference_enabled
 cbz w0,none
-mov w8,#0x2a38
-ldrb w20,[x19,x8]
+mov x0,x19
+{call('actor_index')}
+mov w20,w0
 cmp w20,#22
 b.hs none
-ldr x21,[x19,#0x4620]
+{call('root')}
+mov x21,x0
 cbz x21,none
 mov x0,x21
 {call('game_info')}
@@ -329,7 +515,7 @@ done:
 ldp x21,x30,[sp,#16]
 ldp x19,x20,[sp],#48
 ret
-''',{'game_info':0x72c3e80,'clock':0x6a4bd08})
+''',{'game_info':0x72c3e80,'clock':0x6a4bd08,'root':0x698f7e0,'actor_index':0x6d3ea38})
     b.add('studio_ai_low_and_blitz_coexist',0x6d62870,save_all()+'''
 ldr x0,[x29,#-0x18]
 bl shared_studio_ai_allow_low_with_blitz

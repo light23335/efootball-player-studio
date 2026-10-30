@@ -4,6 +4,7 @@ No coach preview bonus is baked into a player's abilities. Editor training is
 used only for a first grant; the Android importer preserves an existing owned
 instance and its ledger when the same permanent package is imported again.
 """
+from export_errors import export_context, exported
 import copy
 import hashlib
 import json
@@ -87,6 +88,7 @@ def reserve_identity(project, occupied, registry):
             'bound_person_ids':list(row.get('bound_person_ids',[]))}
 
 
+@exported('球员','编译基础能力、技能和永久编号',lambda project,*args,**kwargs: project)
 def compile_player(project,catalog,costs,identity,template,nation_id,team_id,source_record=None,game_version='V17'):
     innate_limit,additional_limit=(100,100) if game_version=='V17' else (20,10)
     if len(project.get('innate_skills',[]))>innate_limit:raise ValueError(f'工程已完整保留；当前游戏实装支持天生技能最多 {innate_limit} 项，请调整后生成 APK')

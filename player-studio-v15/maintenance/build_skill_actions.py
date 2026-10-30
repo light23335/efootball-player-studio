@@ -8,6 +8,93 @@ from skill_hook_ir import call, jump, save_all, restore_all, FRAME, SIMD
 
 
 def add_actions(builder):
+    # Candidate motion records already describe a future contact pose. Never
+    # advance a running/receiving actor to it after the native solve. The
+    # original TONE path advances timing before selection (0x6d70c78) and also
+    # adjusts its turn horizon (0x6d45e50); a late rate change has neither.
+    builder.helper('studio_stationary_ball_holder', f'''
+stp x19,x20,[sp,#-32]!
+stp x21,x30,[sp,#16]
+mov x19,x0
+cbz x19,no
+mov w8,#0x2a38
+ldrb w21,[x19,x8]
+cmp w21,#22
+b.hs no
+ldr s0,[x19,#0x344]
+fcmp s0,#0.0
+b.vs no
+b.lt no
+ldr s1,stationary_limit
+fcmp s0,s1
+b.gt no
+ldr x0,[x19,#0x4620]
+cbz x0,no
+ldr x8,[x0,#0x10]
+cbz x8,no
+{call('holder')}
+cmp w0,w21
+b.ne no
+mov w0,#1
+b done
+no:
+mov w0,#0
+done:
+ldp x21,x30,[sp,#16]
+ldp x19,x20,[sp],#32
+ret
+''', {'holder':0x733d574}, {'stationary_limit':.01}, evidence=[
+        'native 0x69baf90..0x69bb044 writes measured motion metric +0x344',
+        '0x733d574 obtains current ball holder from the same match context',
+        'unknown ownership, nonfinite speed and moving actors fail closed'])
+
+    builder.helper('studio_local_pass_contact', '''
+stp x19,x20,[sp,#-32]!
+str x30,[sp,#16]
+mov x19,x0
+mov x20,x1
+cbz x20,no
+bl shared_studio_stationary_ball_holder
+cbz w0,no
+ldrb w8,[x20,#0x1b]
+cbnz w8,no
+ldr s0,[x20,#0x2c]
+fcmp s0,#0.0
+b.ne no
+b.vs no
+ldrsh w8,[x20,#0x18]
+cmp w8,#1
+b.lt no
+// +0 is the future actor root used by native 0x69bc8a0, not a skill ID.
+ldr s0,[x20]
+ldr s1,[x19,#8]
+fsub s0,s0,s1
+fmul s0,s0,s0
+ldr s1,[x20,#4]
+ldr s2,[x19,#12]
+fsub s1,s1,s2
+fmadd s0,s1,s1,s0
+ldr s1,[x20,#8]
+ldr s2,[x19,#16]
+fsub s1,s1,s2
+fmadd s0,s1,s1,s0
+ldr s1,local_pose_squared
+fcmp s0,s1
+b.vs no
+b.gt no
+mov w0,#1
+b done
+no:
+mov w0,#0
+done:
+ldr x30,[sp,#16]
+ldp x19,x20,[sp],#32
+ret
+''', constants={'local_pose_squared':.0225}, evidence=[
+        'native 0x6d3f174..0x6d3f190 supplies compact +0 and actor +8 to root solve',
+        'stationary owned ball and a local contact root within 0.15 m only',
+        'explicit offsets, one-touch reception, unknown or moving contact retain native timing'])
+
     builder.helper('studio_kick_slot', '''
 cbz x0,none
 mov w8,#0x2a38
@@ -69,6 +156,17 @@ str wzr,[x23,#40]
 ldr x9,[x20,#8]
 ldr w9,[x9,#8]
 str w9,[x23,#44]
+// Capture the state before entering the new kick handler. A freshly received
+// ball or a running actor must not acquire a bonus just because its new state
+// has already become ANIME_LONG/SHORT_PASS at initialization.
+ldrb w8,[x19,#0xad0]
+sub w8,w8,#4
+cmp w8,#2
+b.hi staged
+mov x0,x19
+bl shared_studio_stationary_ball_holder
+str w0,[x23,#40]
+staged:
 mov w8,#1
 str w8,[x23,#36]
 done:
@@ -129,6 +227,8 @@ add x8,x8,#1
 str x8,[x22,#56]
 mov w8,#2
 str w8,[x22,#36]
+ldr w8,[x22,#40]
+str w8,[sp,#64]
 str wzr,[x22,#40]
 ldr w23,[x22,#32]
 cmp w23,#1
@@ -205,6 +305,13 @@ mov w8,#4
 str w8,[x22,#40]
 b done
 speed:
+ldr w8,[sp,#64]
+cmp w8,#1
+b.ne done
+mov x0,x19
+mov x1,x20
+bl shared_studio_local_pass_contact
+cbz w0,done
 mov x0,x19
 fmov s0,s8
 fmov s1,s9
@@ -227,6 +334,7 @@ ret
         ['0x6d3ef68: original base R is also used by contact-time conversion',
          'short-pass pressure qualification is locked at motion start',
          'through and air-pass bonuses take the strongest duration factor',
+         'running, receiving and nonlocal contact keep the complete native timing',
          'heavy-shot eligibility belongs to this actual selected action'])
 
     builder.helper('studio_cancel_committed_kick', '''

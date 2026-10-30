@@ -647,9 +647,9 @@
       "ai_match_channel.py": "02e6846bbcf632fb8d2f7ddbcfaad68d01c8b14df43114529e3e077cdf9cb9c8",
       "ai_tactical_profiles.py": "f73bbd3e88564bc7a1ff5269d7d09a4265133e0e9c1344e47d52a27471bb0f6a",
       "ai_division_sessions.py": "e8c4a520d5656f64dbd95d05fa8bb3802f4db94d212673c1ea2b941c0295184c",
-      "division_squads.py": "7d08741c38508597fceb3528cbbb6a73a1770efa3680ba85fcee91230f69e51f",
-      "personal_binding.py": "cbfe9fa552fc9d13a00231ad39425d3bd432e83c46a1ccefd412ae8b556d0545",
-      "personal_runtime.py": "a7cd6e7f2bd263324d23b7e08594fe92c9d011e07c95222c83fe9881a766e933"
+      "division_squads.py": "fbb8549fae4154f9884fcfe581c757dd7b45e94f0b448082dab2929e6d955ddc",
+      "personal_binding.py": "77f683d120c08354ae81a8fe14f17846a1b28f484ff81f1427594938d713b57f",
+      "personal_runtime.py": "685556606188a875dafb86ef9773fe88ed403c0f5a8e45acc5caf6c2e09904c3"
     },
     "original_engine_sha256": "efd257d9e41b622d6ecb8f51f7b0a8ee8820113fd427c5572025df1c8eecc7b8",
     "live_policy_evidence_sha256": "7db19a7ed1037ec330def0c4b9f6eb849ce48b43c5edcded05b9bfbf1308a2c6",
@@ -702,7 +702,7 @@
       "capability_evidence": "Existing native executor tests apply; changed rejection paths require original-instruction regression and user game test",
       "native_instruction_regression": "new epoch before first snapshot: stale coach pointer not read; native fallback returned"
     },
-    "action_observer_note": "Independent read-only action ring integration; coaching protocol and C image unchanged. New action observer game acceptance pending.",
+    "action_observer_note": "Separate physical actor / player info lookup, dribble candidate and motion journal. Coaching C image/policy unchanged; current game acceptance pending.",
     "policy_update_1_9_15_18": {
       "revision": "v17-situational-coach-v5-continuous-planning",
       "native_adapter_unchanged": true,
@@ -716,6 +716,46 @@
       ],
       "real_game_current_policy_tested": false,
       "local_only": true
+    },
+    "payload_integrity_2_0_1": {
+      "original_native_prepare_and_reuse_tested": true,
+      "preserves_owned_players": true,
+      "gameplay_reproduction_of_intermittent_40": false,
+      "native_code_unchanged": true
+    },
+    "draw_league_update_2_0_4": {
+      "native_coaching_executor_unchanged": true,
+      "runtime_changes": "draw presentation and V17 league settlement hook",
+      "validation": "scenario, transaction/retry and original scene-selector instruction probes",
+      "real_game_current_draw_and_league_tested": false,
+      "local_only": true,
+      "additional_changes": [
+        "optional exclusion of current and legacy DIY catalogue cards",
+        "exact full F07 overrides with unchanged-slot markers and compact front routes"
+      ],
+      "additional_validation": "all preset route audit; ARM64 compact/full/partial front probes; 10000 compact route capacity; AI pool exclusion fixtures; existing native coaching executor unchanged"
+    },
+    "content_import_note": "2.0.4 v2 declarative content merge and shared original-installer registry preparation. AI decisions and C code unchanged; current live validation pending.",
+    "source_change_review": {
+      "scope": "7 exact AI-only exclusions, trace channel schema/registration, lifecycle observer only",
+      "ai_match_runtime_unchanged": true,
+      "squad_generation_ast_unchanged_except_exclusions": true,
+      "native_adapter_body_sha256": "32c4c44b9f7d4980f992daeaa3b06113ccb38bc579bba76591a7467231dca703",
+      "new_real_game_validation": false,
+      "draw_203_rollback": {
+        "scope": "Draw functions restored exactly to 2.0.3 AST; all other runtime functions preserved",
+        "changed_functions": [
+          "draw_response_fields",
+          "native_draw_fields",
+          "install_display_previews",
+          "sanitize_draw_effects"
+        ],
+        "native_coaching_executor_unchanged": true,
+        "native_adapter_sha256": "32c4c44b9f7d4980f992daeaa3b06113ccb38bc579bba76591a7467231dca703",
+        "before": "93c57ee52cd458a21229250a41589c97ac8a8fdd567863fbf70e2055abeb1c0d",
+        "after": "685556606188a875dafb86ef9773fe88ed403c0f5a8e45acc5caf6c2e09904c3",
+        "game_acceptance": "pending"
+      }
     }
   },
   "guard_revision": "epoch-and-root-before-retained-coach-v2"

@@ -1,0 +1,44 @@
+[
+  {
+    "tone": 1,
+    "hex": "#a98675",
+    "texture": "PesMobile/Content/Assets/MaterialLibrary/Character/Body/CommonTextures/T_Sk1_Skin_D.uasset",
+    "decoded_png_sha256": "5f7001e0732bc7f6b2dc6a0d0f501f7001d4a90c3ad79e6c5fe832c39d56f6be",
+    "method": "median RGB of central 50% width/height of original diffuse skin texture; unlit reference only"
+  },
+  {
+    "tone": 2,
+    "hex": "#a2775d",
+    "texture": "PesMobile/Content/Assets/MaterialLibrary/Character/Body/CommonTextures/T_Sk2_Skin_D.uasset",
+    "decoded_png_sha256": "0783b56917e7147d3c17b576e3c2f29cfe6026ff0a00c279393ebd8906777ce0",
+    "method": "median RGB of central 50% width/height of original diffuse skin texture; unlit reference only"
+  },
+  {
+    "tone": 3,
+    "hex": "#a27455",
+    "texture": "PesMobile/Content/Assets/MaterialLibrary/Character/Body/CommonTextures/T_Sk3_Skin_D.uasset",
+    "decoded_png_sha256": "e427db6a8c2a86b1b9eadcfe9f24f06112e47b2774161654363364792c18c1d4",
+    "method": "median RGB of central 50% width/height of original diffuse skin texture; unlit reference only"
+  },
+  {
+    "tone": 4,
+    "hex": "#87644d",
+    "texture": "PesMobile/Content/Assets/MaterialLibrary/Character/Body/CommonTextures/T_Sk4_Skin_D.uasset",
+    "decoded_png_sha256": "69a5b1b1a9afd11f44d61df75582e7f0b096ec072d100ed713151bc80c4bf379",
+    "method": "median RGB of central 50% width/height of original diffuse skin texture; unlit reference only"
+  },
+  {
+    "tone": 5,
+    "hex": "#654a3c",
+    "texture": "PesMobile/Content/Assets/MaterialLibrary/Character/Body/CommonTextures/T_Sk5_Skin_D.uasset",
+    "decoded_png_sha256": "f23f36fe40bc8b75bcd3a3fd4a5954df5274682cb7a5cfa1e77cb11a39e900d8",
+    "method": "median RGB of central 50% width/height of original diffuse skin texture; unlit reference only"
+  },
+  {
+    "tone": 6,
+    "hex": "#553e34",
+    "texture": "PesMobile/Content/Assets/MaterialLibrary/Character/Body/CommonTextures/T_Sk6_Skin_D.uasset",
+    "decoded_png_sha256": "838a8a262f0c9c65b7ea96fd626fe10850b7fcb6fe2819fdfce86f8f5f23d6e6",
+    "method": "median RGB of central 50% width/height of original diffuse skin texture; unlit reference only"
+  }
+]

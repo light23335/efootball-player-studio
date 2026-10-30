@@ -369,11 +369,13 @@ def apply_weekly_condition(conn,definition):
 def apply_definitions(conn,document):
     if document.get('format')!='personal-player-native-v1':raise ValueError('Unknown personal player format')
     if conn.in_transaction:raise ValueError('Personal import requires a transaction boundary')
+    backup_recycled_owned(conn,document.get('catalogue_recycle_bin',[]))
     row=conn.execute('select value from meta where key=?',(REGISTRY_KEY,)).fetchone()
     registry=json.loads(row[0]) if row else {}
     result=[]
     try:
         conn.execute('BEGIN IMMEDIATE')
+        apply_content_catalogue(conn,document.get('content_catalogue',{}))
         apply_game_options(conn,document.get('game_options',{}))
         policy_changed=False
         if document.get('pack_policy',{}).get('allow_china_edition'):
@@ -462,6 +464,7 @@ def apply_definitions(conn,document):
         if policy_changed or not document.get('revision') or not pack_revision or pack_revision[0]!=document['revision']:
             apply_packs(conn,document.get('packs',[]))
             if document.get('revision'):conn.execute("insert into meta values('personal_pack_revision_v1',?) on conflict(key) do update set value=excluded.value",(document['revision'],))
+        apply_catalogue_recycle(conn,document.get('catalogue_recycle_bin',[]))
         conn.execute('insert into meta values(?,?) on conflict(key) do update set value=excluded.value',(REGISTRY_KEY,compact(registry)))
         conn.commit()
     except BaseException:
@@ -483,6 +486,97 @@ def apply_game_options(conn,options):
     state['best']=min(state.get('best',10),options['division'])
     ai_division.save(conn,state)
     conn.execute('insert into meta values(?,?) on conflict(key) do update set value=excluded.value',(key,revision))
+
+
+def apply_catalogue_recycle(conn,rows):
+    """Reversible catalogue exclusion; owned removal was explicitly requested."""
+    if not rows and not conn.execute("select 1 from meta where key='studio_recycled_catalogue_v1'").fetchone():return
+    conn.execute('create table if not exists excluded_catalog_ids(card_id text primary key,reason text not null)')
+    conn.execute("delete from excluded_catalog_ids where reason='Workshop recycle bin'")
+    archived=conn.execute("select value from meta where key='studio_recycled_catalogue_v1'").fetchone()
+    archived=json.loads(archived[0])if archived else {}
+    selected={str(row['id'])for row in rows}
+    for cid,record in list(archived.items()):
+        if cid not in selected:
+            if isinstance(record,list):record={'card':record,'members':[]}
+            conn.execute('insert or ignore into managed_cards values(?,?,?,?,?,?)',record['card'])
+            if conn.execute("select 1 from sqlite_master where name='managed_members'").fetchone():
+                conn.executemany('insert or ignore into managed_members values(?,?,?)',record.get('members',[]))
+            archived.pop(cid)
+    for cid in selected:
+        row=conn.execute('select * from managed_cards where card_id=?',(cid,)).fetchone()
+        members=list(conn.execute('select * from managed_members where card_id=?',(cid,)))if conn.execute("select 1 from sqlite_master where name='managed_members'").fetchone()else[]
+        if row:archived[cid]={'card':list(row),'members':[list(r)for r in members]or(archived.get(cid)or{}).get('members',[])}
+        conn.execute('delete from managed_cards where card_id=?',(cid,))
+        if conn.execute("select 1 from sqlite_master where name='managed_members'").fetchone():conn.execute('delete from managed_members where card_id=?',(cid,))
+        conn.execute('insert or replace into excluded_catalog_ids values(?,?)',(cid,'Workshop recycle bin'))
+    conn.execute('insert into meta values(?,?) on conflict(key)do update set value=excluded.value',('studio_recycled_catalogue_v1',compact(archived)))
+    remove_recycled_owned(conn,selected)
+
+
+def backup_recycled_owned(conn,rows):
+    ids={str(r['id'])for r in rows}
+    if not ids:return
+    if not any(conn.execute('select 1 from gameplayers where id=? limit 1',(int(cid),)).fetchone()for cid in ids):return
+    filename=next((r[2]for r in conn.execute('pragma database_list')if r[1]=='main'),None)
+    if not filename:return  # In-memory seed/tests have no user save to back up.
+    import sqlite3
+    folder=Path(filename).parent/'studio-recycle-backups';folder.mkdir(exist_ok=True)
+    digest=hashlib.sha256(compact(sorted(ids)).encode()).hexdigest()[:24]
+    target=folder/(digest+'.sqlite3')
+    if target.is_file():return
+    temp=target.with_suffix('.tmp')
+    backup=sqlite3.connect(temp)
+    try:
+        conn.backup(backup)
+        if backup.execute('pragma quick_check').fetchone()[0]!='ok':raise ValueError('回收站存档备份校验失败，未移除球员')
+    finally:backup.close()
+    temp.replace(target)
+
+
+def remove_recycled_owned(conn,ids):
+    """Remove exact card IDs and remap squad indices; never match a player name."""
+    ids={str(cid)for cid in ids}
+    if not ids:return
+    tables={r[0]for r in conn.execute("select name from sqlite_master where type='table'")}
+    if 'squads'in tables:
+        for squad_id,raw in list(conn.execute('select squad_id,json from squads')):
+            squad=json.loads(raw);data=squad.get('squad_data',{});old=data.get('player_list',[])
+            removed={i for i,row in enumerate(old)if str((row.get('gameplayer_id')or{}).get('id'))in ids}
+            if not removed:continue
+            mapping={old:new for new,old in enumerate(i for i in range(len(old))if i not in removed)}
+            data['player_list']=[row for i,row in enumerate(old)if i not in removed]
+            plan=data.get('squad_gameplan',{});settings=plan.get('match_plan_settings',{})
+            def remap(value):return mapping.get(value,255)if type(value)is int else value
+            for key in ('order','set_piece_taker','df_overlap_setplay'):
+                if isinstance(settings.get(key),list):settings[key]=[remap(v)for v in settings[key]]
+            if 'captain'in settings:settings['captain']=remap(settings['captain'])
+            for formation in plan.get('formation',[]):
+                for link in formation.get('coach_link_data',[]):
+                    for key in ('key_member_Id','link_member_Id'):
+                        if key in link:link[key]=remap(link[key])
+                    if any(link.get(k)==255 for k in ('key_member_Id','link_member_Id')):link['is_link_on']='NO'
+            conn.execute('update squads set json=? where squad_id=?',(compact(squad),squad_id))
+    for table,column in (('gameplayers','id'),('player_pool','id'),('careerplan','id'),('owned_identity_aliases','id')):
+        if table in tables:
+            conn.executemany('delete from '+table+' where '+column+'=?',[(int(cid),)for cid in ids])
+    # Player-specific live caches must not retain a previous opponent snapshot.
+    for key,raw in list(conn.execute("select key,value from meta where key='ai_division_active_match'")):
+        if any('"id":'+cid in raw.replace(' ','')or '"id":"'+cid+'"'in raw.replace(' ','')for cid in ids):conn.execute('delete from meta where key=?',(key,))
+
+
+def apply_content_catalogue(conn,catalogue):
+    """Register source cards only. Never grant cards or rewrite owned progress."""
+    if not catalogue or not catalogue.get('packages'):return
+    if catalogue.get('format')!='studio-content-catalogue-v1':raise ValueError('Unknown content catalogue format')
+    for row in catalogue.get('players',[]):
+        cid=str(row['card_id']);payload=compact(row['definition']);origin=row['origin']
+        current=conn.execute('select payload from managed_cards where card_id=?',(cid,)).fetchone()
+        if current:continue
+        conn.execute('insert into managed_cards values(?,?,?,?,?,?)',(cid,hashlib.sha256(payload.encode()).hexdigest(),payload,
+                     origin['card_type'],origin.get('subtype'),'studio-content-delta'))
+    conn.execute('insert into meta values(?,?) on conflict(key) do update set value=excluded.value',
+                 ('studio_content_packages_v1',compact(catalogue.get('packages',[]))))
 
 
 def apply_packs(conn,packs):
@@ -593,6 +687,9 @@ def install(namespace):
         if document.get('game_version')=='V17':
             import action_trace
             action_trace.configure(root,document)
+        if document.get('game_version')=='V17':
+            import league_rules
+            league_rules.install()
         import legends_v10
         if document.get('native_binding'):
             import personal_binding
@@ -638,6 +735,8 @@ def install(namespace):
             if document.get('game_version')=='V17' and 'division_squads' in document:
                 import division_squads
                 division_squads.install(lambda:configured['document'],root,namespace.get('_logic'))
+            if document.get('game_version')=='V17':
+                action_trace.install_lifecycle(namespace.get('_logic'))
             configured['display']=True
         return result
     namespace['initialize']=initialize
@@ -833,3 +932,16 @@ def draw_response_fields(players,profiles,series_by_id=None):
     if profiles.get('player_selection')=='auto' or (len(players)==1 and profiles.get('single_player_selection')=='auto'):
         special={'id':0,'serial':0}
     return {'effect_list':effects,'special_gacha_effect_player_id':special,'pickup_cardtype_list':pickups}
+
+
+def draw_series(player,series_by_id):
+    meta=player.get('_draw_gacha_v1') or {}
+    normalize=lambda value:''.join(c for c in str(value or '').lower() if c not in ' _-')
+    kind,sub=normalize(meta.get('card_type')),normalize(meta.get('subtype'))
+    if (kind,sub) in (('epic','bigtime'),('highlight','showtime')):kind=sub
+    override=series_by_id.get(str(player.get('gameplayer_id',{}).get('id')))
+    if override:kind=normalize(override)
+    if not kind and player.get('type')=='LEGENDARY':kind='legendary'
+    return {'bigtime':'BigTime','epic':'Epic','legendary':'Legendary','showtime':'ShowTime'}.get(kind)
+
+

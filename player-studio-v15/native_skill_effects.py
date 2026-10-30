@@ -7,7 +7,7 @@ VISIBLE={9:'施丹式转身',25:'重炮攻门',43:'长传好手',52:'健步如�
 DESCRIPTIONS={9:'带球时使用施丹式转身；动作由游戏原生操作触发。',
               25:'凌空抽射或蓄力达到 50% 的射门，水平和仰角随机瞄准偏差降低 50%。',
               24:'普通射门与紫色射门均可触发；保留原生低于 50% 蓄力及其他动作条件。',
-              43:'长传、传中及挑传直塞的动作前摇缩短 40%，方向、仰角和球速随机扰动降低 40%；出球后恢复原速，理想球速保持原值。',
+              43:'长传、传中及挑传直塞的方向、仰角和球速随机扰动降低 40%；已控球、接近静止且触球位置就绪时，前摇缩短 40%，出球后恢复原速。跑动、接球及不安全衔接保留原生时序，理想球速不变。',
               52:'按身高采用更强的平滑加速曲线：爆发型（≤175 cm）偏低速起步，掌控型（176–185 cm）均衡，漫长型（≥186 cm）偏中高速追赶。'}
 RESOURCE=bundled_resources()
 
@@ -64,7 +64,7 @@ def text_groups(resources=None,locale='zha'):
     descriptions={9:'Performs a Zidane turn while dribbling using the native game controls.',
                   25:'Reduces horizontal and elevation random aiming error by 50% for volleys or shots with at least 50% power.',
                   24:'Increases the speed of eligible low-power shots below 50% power. Applies to normal and Stunning Shots; other native motion conditions still apply.',
-                  43:'Reduces pre-contact wind-up and direction, elevation and speed random perturbations by 40% for lofted passes, crosses and lofted through passes. Restores the original playback rate after release; nominal ball speed is unchanged.',
+                  43:'Reduces direction, elevation and speed random perturbations by 40% for lofted passes, crosses and lofted through passes. With established possession, a nearly stationary actor and a local contact pose, reduces pre-contact wind-up by 40% and restores the original rate after release. Running, receiving and unsafe transitions retain native timing; nominal ball speed is unchanged.',
                   52:'Uses stronger smooth acceleration curves: explosive low-speed starts up to 175 cm, balanced controlled acceleration from 176 to 185 cm, and lengthy mid/high-speed acceleration from 186 cm.'}
     result={}
     for row in data['rows']:

@@ -754,6 +754,12 @@ class NativeSkillV2Tests(unittest.TestCase):
         self.populate_world(vm)
         vm, helpers, player, tracks = self.rate_world(vm, player=0x44000000)
         vm.mem_write(player + 8, struct.pack('<3f', 0, 0, 0))
+        # Real native ball-holder getter, separate from actor/PlayerInfo.
+        vm.mem_map(0x46000000,0x40000)
+        vm.mem_write(0x42000010,struct.pack('<Q',0x46000000))
+        vm.mem_write(0x46028780,struct.pack('<I',0))
+        vm.mem_write(player+0x4620,struct.pack('<Q',0x42000000))
+        vm.mem_write(player+0xad0,bytes([4]))
         self.native_rate(vm, player, 1.3)
         return vm, helpers, player, tracks
 
@@ -778,8 +784,9 @@ class NativeSkillV2Tests(unittest.TestCase):
         vm.mem_write(spec, struct.pack('<3I', raw_motion, 0, 0))
         vm.mem_write(final, struct.pack('<2I', state,
             native_kind if final_kind is None else final_kind))
-        # XYZ point at the start proves it must not be mistaken for IDs.
-        vm.mem_write(record, struct.pack('<3f', 39.25, 0, -12.5))
+        # XYZ is the native future root pose, never a motion descriptor.
+        vm.mem_write(record, bytes(vm.mem_read(player+8,12)))
+        vm.mem_write(record+0x18,struct.pack('<h',30))
         vm.mem_write(record+0x24, struct.pack('<f',1.3))
         for i, value in enumerate((player,header,spec,record,final)):
             vm.reg_write(getattr(r, 'UC_ARM64_REG_X'+str(i)),value)
@@ -839,7 +846,7 @@ class NativeSkillV2Tests(unittest.TestCase):
             self.assertAlmostEqual(pitch,.5 if wanted else 1.,places=6)
             self.assertEqual(speed,1.)
 
-    def native_queued_start(self,rate,flags,subtype=24):
+    def native_queued_start(self,rate,flags,subtype=24,mode=0,speed=0.):
         """Run real start-offset/window arithmetic and the native queue writer.
 
         Clip metadata is fixed: 60 Hz, contact at .5 s, requested contact after
@@ -847,7 +854,8 @@ class NativeSkillV2Tests(unittest.TestCase):
         """
         r=self.r
         vm,helpers,player,tracks=self.action_world(flags)
-        record=self.stage_kick(vm,helpers,player,state=9,subtype=subtype)
+        vm.mem_write(player+0x344,struct.pack('<f',speed))
+        record=self.stage_kick(vm,helpers,player,state=9,subtype=subtype,mode=mode)
         vm.mem_write(record+0x24,struct.pack('<f',rate))
         vm.mem_write(record+0x18,struct.pack('<h',30))
         vm.mem_write(record+0x2c,struct.pack('<f',0.))
@@ -920,6 +928,77 @@ class NativeSkillV2Tests(unittest.TestCase):
             vm.reg_write(self.r.UC_ARM64_REG_X19,0x41001000)
             self.execute(vm,0x6d42570,0x6d42574)
             self.assertEqual(bytes(vm.mem_read(tracks,128)),original)
+
+    def test_pass_windup_rejects_running_and_first_touch_without_losing_error_bonus(self):
+        for state,subtype,mode,flags,factor in (
+                (8,18,1,{72},(.6,.6,.6)),
+                (9,24,3,{72},(.6,.6,.6)),
+                (9,24,0,{76},(.6,1.,1.)),
+                (9,24,3,{76,72},(.6,.6,.6)),
+                (9,22,0,{77},(.6,.6,.6))):
+            for reason in ('running','receiving','not-holder','unknown-context',
+                           'nonlocal-pose','explicit-offset','clip-offset','zero-lead',
+                           'nan-speed','nan-pose','changed-owner'):
+                with self.subTest(state=state,flags=flags,reason=reason):
+                    vm,helpers,player,tracks=self.action_world(flags)
+                    self.set_position(vm,11,1.,0.,0.)
+                    if reason=='running':vm.mem_write(player+0x344,struct.pack('<f',10.))
+                    if reason=='receiving':vm.mem_write(player+0xad0,bytes([7]))
+                    if reason=='not-holder':vm.mem_write(0x46028780,struct.pack('<I',11))
+                    if reason=='unknown-context':vm.mem_write(0x42000010,bytes(8))
+                    if reason=='nan-speed':vm.mem_write(player+0x344,struct.pack('<f',float('nan')))
+                    record=self.stage_kick(vm,helpers,player,state,subtype,mode)
+                    if reason=='nonlocal-pose':vm.mem_write(record,struct.pack('<f',1.))
+                    if reason=='explicit-offset':vm.mem_write(record+0x1b,bytes([1]))
+                    if reason=='clip-offset':vm.mem_write(record+0x2c,struct.pack('<f',.1))
+                    if reason=='zero-lead':vm.mem_write(record+0x18,bytes(2))
+                    if reason=='nan-pose':vm.mem_write(record,struct.pack('<f',float('nan')))
+                    if reason=='changed-owner':vm.mem_write(0x46028780,struct.pack('<I',11))
+                    original=bytes(vm.mem_read(record,48));tracks_before=bytes(vm.mem_read(tracks,128))
+                    self.assertAlmostEqual(self.prepare_kick(vm,helpers,player,record),1.3,places=6)
+                    self.assertEqual(bytes(vm.mem_read(record,48)),original)
+                    self.assertEqual(bytes(vm.mem_read(tracks,128)),tracks_before)
+                    actual=self.error_factors(vm,helpers,player)
+                    for a,b in zip(actual,factor):self.assertAlmostEqual(a,b,places=6)
+
+    def test_stationary_air_pass_and_through_pass_shorten_by_40_percent_without_stacking(self):
+        for flags,mode in (({72},3),({76},0),({72,76},3)):
+            normal=self.native_queued_start(1.,set(),mode=mode)
+            fast=self.native_queued_start(1.,flags,mode=mode)
+            self.assertAlmostEqual((.5-fast[-2])/fast[-1],.6*((.5-normal[-2])/normal[-1]),places=6)
+
+    def test_running_air_pass_keeps_original_native_queue_and_contact_time(self):
+        for flags,mode in (({72},3),({76},0),({72,76},3)):
+            normal=self.native_queued_start(.8,set(),mode=mode,speed=10.)
+            fast=self.native_queued_start(.8,flags,mode=mode,speed=10.)
+            self.assertEqual(normal[-2:],fast[-2:])
+            self.assertAlmostEqual((.5-fast[-2])/fast[-1],.5,places=6)
+
+    def test_original_tone_advances_both_native_selection_and_turn_horizon_by_five_ticks(self):
+        # Original skill 26 maps to match flag 65. This is the unchanged native
+        # implementation, with only ownership/FPS supplied as controlled input.
+        r=self.r
+        for flags,state,ticks in (({65},10,25),(set(),10,30),({65},9,30)):
+            vm,helpers,player,tracks=self.action_world(flags)
+            vm.reg_write(r.UC_ARM64_REG_X0,player)
+            vm.reg_write(r.UC_ARM64_REG_W2,state)
+            self.execute(vm,0x6d5d048)
+            seconds=self.float(vm,r.UC_ARM64_REG_S0)
+            self.assertAlmostEqual(seconds,5/60 if ticks==25 else 0.,places=6)
+            def fps(m,pc,size,user):
+                if pc==0x68d83d4:
+                    m.reg_write(r.UC_ARM64_REG_S0,self.bits(60.))
+                    m.reg_write(r.UC_ARM64_REG_PC,m.reg_read(r.UC_ARM64_REG_X30))
+            vm.hook_add(self.u.UC_HOOK_CODE,fps)
+            vm.reg_write(r.UC_ARM64_REG_S9,self.bits(.5))
+            vm.reg_write(r.UC_ARM64_REG_S8,self.bits(1.))
+            vm.reg_write(r.UC_ARM64_REG_X21,0x41011000)
+            self.execute(vm,0x6d70c7c,0x6d70c9c)
+            self.assertEqual(struct.unpack('<i',vm.mem_read(0x41011000,4))[0],ticks)
+            vm.reg_write(r.UC_ARM64_REG_S0,self.bits(seconds))
+            vm.reg_write(r.UC_ARM64_REG_W25,30)
+            self.execute(vm,0x6d45e54,0x6d45e88)
+            self.assertEqual(vm.reg_read(r.UC_ARM64_REG_W3),ticks)
 
     def test_fallback_stale_motion_or_different_handler_record_never_get_windup_bonus(self):
         for invalid in ('fallback','different_pointer','changed_motion','changed_state','changed_context'):

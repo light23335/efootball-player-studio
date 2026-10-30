@@ -1,4 +1,5 @@
 // Preview-only native MobileIconInfo layout (192 x 192). Never exported to art.
+import {emblemKind} from './native-card.js';
 const cache=new Map();
 async function font(record){
   if(!record?.asset_id)return 'Arial';
@@ -15,7 +16,7 @@ async function image(record){
 export function miniOverlayState(project,simulation={}){
   const assets=project.native_card?.info?.assets||{};
   return {position:project.identity?.position||'',overall:simulation.ovr??project.native_card?.info?.overall??'',
-    emblem:assets.club||assets.nation,fonts:project.native_card?.fonts||{},boosted:simulation.ovr>simulation.baseOvr};
+    emblem:assets[emblemKind(project)],fonts:project.native_card?.fonts||{},boosted:simulation.ovr>simulation.baseOvr};
 }
 export async function prepareMiniOverlay(project,simulation){
   const state=miniOverlayState(project,simulation);

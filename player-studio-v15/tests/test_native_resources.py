@@ -64,7 +64,7 @@ class PersonalResourceTests(unittest.TestCase):
         before=copy.deepcopy(bt);result=draw_response_fields([bt],profiles)
         self.assertIn('OPENING_BIGTIME',result['effect_list'])
         self.assertNotIn('OPENING_EPIC',result['effect_list'])
-        self.assertEqual(result['special_gacha_effect_player_id'],bt['gameplayer_id'])
+        self.assertEqual(result['special_gacha_effect_player_id'],{'id':123,'serial':987})
         self.assertEqual(bt,before)
         epic=copy.deepcopy(bt);epic['_draw_gacha_v1']['card_type']='Epic'
         self.assertIn('OPENING_EPIC',draw_response_fields([epic],profiles)['effect_list'])
@@ -101,10 +101,11 @@ class PersonalResourceTests(unittest.TestCase):
     def test_multi_walkout_uses_scene_selection_without_reordering_or_editing_receipts(self):
         profiles=json.loads((RESOURCE/'native-draw-profiles.json').read_text())
         for series in ('BigTime','Epic','ShowTime'):
-            players=[{'gameplayer_id':{'id':123+i%3,'serial':987+i},'level_info':{'level':1},
+            players=[{'gameplayer_id':{'id':123+i%3,'serial':987+i},'type':'LEGENDARY','level_info':{'level':1},
                       '_draw_gacha_v1':{'card_type':series,'pickup':True}} for i in range(10)]
             before=copy.deepcopy(players);result=draw_response_fields(players,profiles)
             self.assertEqual(result['special_gacha_effect_player_id'],{'id':0,'serial':0})
+            self.assertFalse(any(e.startswith('REVIVAL')for e in result['effect_list']))
             self.assertEqual(result['effect_list'],profiles[series])
             self.assertEqual(result['pickup_cardtype_list'],[{'id':123+i,'serial':0} for i in range(3)])
             self.assertEqual(players,before)

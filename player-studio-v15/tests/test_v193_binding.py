@@ -19,7 +19,7 @@ class V193BindingTests(unittest.TestCase):
   cls.route={'cardId':990001,'suiteDonorId':990001,'portraitKey':'8900001','modelFaceKey':'8900001','club_id':108,'position':1,'maximum_overall':99,'presentation_rarity':10}
   cls.binding={'original_fingerprint':fingerprint(cls.payload),'routes':[cls.route],'profile':cls.profile,'source':cls.installer.proof}
 
- def actual_loader(self,allocator=None):
+ def actual_loader(self,allocator=None,layers=None):
   """Run only the inspected pure composition functions, never APK modules."""
   def function(module,name,namespace):
    def find(code):
@@ -45,7 +45,7 @@ class V193BindingTests(unittest.TestCase):
   raw=types.FunctionType(self.installer.raw_code,{'allocate_portrait_pages':allocator or forbidden});raw.__globals__['_start_legend_portrait_binding']=raw
   actual=raw
   with patch.dict(sys.modules,{'diy_binding_outer':outer}):
-   for layer in self.installer.route_layers:actual,payload,_=real_prepare(actual,layer)
+   for layer in layers or self.installer.route_layers:actual,payload,_=real_prepare(actual,layer)
   return actual,payload
 
  def test_preflight_uses_actual_v16_loader_and_resizes_only_our_entry_span(self):
@@ -120,7 +120,8 @@ class V17BindingTests(V193BindingTests):
   original_apk=Path(__file__).resolve().parents[2].parent/'73efootball安装包及资源/73efootball-V17.apk'
 
  def test_two_stock_preparation_layers_and_isolated_native_worker(self):
-  self.assertEqual([len(layer) for layer in self.installer.route_layers],[4,6])
+  self.assertEqual([len(layer) for layer in self.installer.original_route_layers],[4,6])
+  self.assertEqual([len(layer) for layer in self.installer.route_layers],[10])
   actual,payload=self.actual_loader(lambda *args:(0x7000000000+0x6000000,'isolated'))
   self.assertEqual(payload,self.payload)
   modified,_=prepare(actual,self.binding)
@@ -129,6 +130,21 @@ class V17BindingTests(V193BindingTests):
   with zipfile.ZipFile(self.apk) as archive:engine=archive.read('lib/arm64-v8a/libUE4.so')
   report=run(modified,capture(modified),engine)
   self.assertEqual(report['status'],'binding_installed',report)
+
+ def test_real_original_two_layer_startup_uses_same_flat_registry_as_export(self):
+  from art_registry import prepare_runtime
+  calls=[]
+  def allocation(*args):calls.append(args[3]);return 0x100000,'original'
+  actual,original_payload=self.actual_loader(allocation,self.installer.original_route_layers)
+  self.assertNotEqual(fingerprint(original_payload),fingerprint(self.payload))
+  binding=copy.deepcopy(self.binding)
+  binding.update(original_fingerprint=fingerprint(self.installer.raw_payload),prepared_fingerprint=fingerprint(self.payload))
+  rebuilt=prepare_runtime(actual,binding,self.installer.allocator_code)
+  self.assertEqual(capture(rebuilt),self.payload)
+  modified,report=prepare(rebuilt,binding)
+  forbidden=lambda *args:(_ for _ in ()).throw(AssertionError('native memory must not be used'))
+  self.assertEqual(modified.__globals__['allocate_portrait_pages'](None,[],0,4096,forbidden,forbidden,forbidden,[]),(0x100000,'original'))
+  self.assertEqual(calls,[4096]);self.assertTrue(report['shared_registry_pipeline'])
 
  def test_coaches_only_binding_installs_custom_link_adapters(self):
   import io,zipfile

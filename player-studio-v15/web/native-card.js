@@ -1,5 +1,6 @@
 // Original assets and native widget states; browser composition, not UE rendering.
 import {formatCardDate,originalCardDate} from './card-design.js';
+export function emblemKind(project){const id=project.identity?.team_id??project.native_card?.info?.team_id;return (id===undefined?!!project.native_card?.info?.assets?.club:Number(id)>0)?'club':'nation';}
 // The blank preset's f04 can contain a fully opaque mechanical/background
 // design. It must be below the replacement portrait, rather than treated as
 // a transparent foreground frame. Original complete cards retain their order.
@@ -107,7 +108,7 @@ export class NativeCardRenderer {
         const date=formatCardDate(p.appearance.card_date??originalCardDate(card));
         if(date&&p.appearance.card_date_visible!==false)text(date,{...widgets.Text_Date,visible:customDate?card.card_type==='BigTime':widgets.Text_Date.visible},this.fonts.sans);
         image('logo',widgets.Img_eFootballLogo);
-        const info=card.info||{},club=!!this.decorations.club;
+        const info=card.info||{},club=emblemKind(p)==='club';
         image(club?'club':'nation',{...(club?widgets.EmblemClub||widgets.EmblemNationality:widgets.EmblemNationality),visible:true});
         const stars=widgets.ScaleBox_RarityStar;
         const rarity=p.appearance.card_rarity||info.rarity;image('stars'+rarity,{...stars,x:stars.x-3,y:stars.y-3,w:117,h:27});

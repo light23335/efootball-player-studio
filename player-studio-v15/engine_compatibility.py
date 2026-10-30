@@ -29,13 +29,16 @@ def detect(apk,resources,release,known=None):
         from native_binding_source import read_installer,verify_installer
         from personal_binding import fingerprint
         payload,code=read_installer(apk)
+        # The inspected V17 composition protocol identifies the interface
+        # family even when a user renames/re-signs a derived APK.
+        verified_v17=getattr(code,'proof',{}).get('interface_family')=='V17'
         route_profile=json.loads((resources/'native-route-templates.json').read_text(encoding='utf8'))
         route_profile.update(club_emblems=True,external_routes=True)
         for name in ('position','acquisition','overall','thumbnail'):
             route_profile[name+'_hook']=json.loads((resources/('native-'+name+'-hook.json')).read_text(encoding='utf8'))
         route={'cardId':90000000,'suiteDonorId':90000000,'portraitKey':'8000000','modelFaceKey':'8000000','club_id':100,'position':0,'maximum_overall':100,'presentation_rarity':10}
         verify_installer(code,{'original_fingerprint':fingerprint(payload),'routes':[route],'profile':route_profile})
-        return {**(known or {}),'family':profile.get('family','V14'),'game_version':game_version(apk,release,(known or profile).get('game_version','V16')),
+        return {**(known or {}),'family':profile.get('family','V14'),'game_version':'V17'if verified_v17 else game_version(apk,release,(known or profile).get('game_version','V16')),
                 'validation':'Automatic interface verification; full-engine digest is recorded for integrity only.',
                 'compatibility':{'mode':'interfaces','regions':len(contract['regions']),'installer':'verified'}}
     except (OSError,KeyError,ValueError) as exc:

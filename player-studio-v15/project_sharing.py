@@ -1,17 +1,21 @@
 """Portable multi-player projects with verified assets and collision-safe import."""
+from export_errors import export_context, exported, call as export_call
 from pathlib import Path
 import json,uuid
 
+@exported('多球员工程','导出所选工程',lambda store,selected,current: "所选球员 "+str(selected))
 def export_selected(store,selected,current):
     import app
     if not isinstance(selected,list) or not 1<=len(selected)<=100 or len(set(selected))!=len(selected):raise ValueError('请选择 1–100 名球员')
-    projects=[app.normalize_project(current) if uid==current['package_id'] else store.saved_player(uid)['project'] for uid in selected]
+    projects=[app.normalize_project(current) if uid==current['package_id'] else export_call('球员',uid,'读取待导出工程',store.saved_player,uid)['project'] for uid in selected]
     files={'projects.json':json.dumps(projects,ensure_ascii=False,indent=2).encode()}
     for project in projects:
-        for name in app.referenced_assets(project):
-            path=store.root/'assets'/name
-            if not path.is_file():raise ValueError(project['identity']['name']+'：工程引用的资源缺失')
-            files['assets/'+name]=path.read_bytes()
+        with export_context('球员',project,'收集工程资源'):
+            for name in app.referenced_assets(project):
+                with export_context('工程素材',name,'读取图片、模型或动画文件'):
+                    path=store.root/'assets'/name
+                    if not path.is_file():raise ValueError('工程引用的资源缺失：'+name)
+                    files['assets/'+name]=path.read_bytes()
     if sum(map(len,files.values()))>512*1024*1024:raise ValueError('工程包总大小超过 512 MB，请分批导出')
     manifest={'format':'73efootball-studio-project','version':2,'game_platform':app.GAME_PLATFORM,'players':len(projects),'sha256':{k:app.migration.digest(v) for k,v in files.items()}}
     files['manifest.json']=app.migration.compact(manifest).encode()

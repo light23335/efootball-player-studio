@@ -18,7 +18,7 @@ from pathlib import Path
 from native_overall import rating as native_rating
 import ai_tactical_profiles as tactics
 
-REVISION = 'v17-division-library-v7-quality-and-type-bag'
+REVISION = 'v17-division-library-v8-payload-integrity'
 MARKER = '_studio_division_squad_v1'
 STYLES = ('possession', 'short_counter', 'long_counter', 'side_attack', 'long_ball', 'overload')
 # Native UI switch 0x35099f8 / table0xc3d935: the wire enum places
@@ -46,7 +46,15 @@ STOCK_AI_EXCLUDED_CARD_IDS = frozenset((
     89136418985307,89136418985314,89136418985306,89136418985308,
     89136418985311,89136418985310,89136418985313,89136418985302,
     89136418985303,89136418985312,89136418985315,88046312750111,
-    88046292734664,89136418985301))
+    88046292734664,89136418985301,
+    # V18/V19 built-in custom cards, including content-delta installations.
+    89136418985321,  # Lev Yashin (V18)
+    89136418985316,  # Mario Balotelli (V18)
+    89136418985320,  # P. E. Aubameyang (V18)
+    89136418985323,  # Kaka (V18)
+    89136418985324,  # Thomas Muller (V18)
+    89136418985322,  # James Rodriguez (V18)
+    89136418985325))  # Boaz Solossa (V19)
 _LOCK = threading.RLock()
 
 
@@ -121,6 +129,8 @@ def configuration(catalog, excluded, options=None):
     """Export only real coach payloads; no workstation files at game runtime."""
     enabled=(options or {}).get('enabled',True)
     if type(enabled) is not bool:raise ValueError('AI 随机组队开关无效')
+    include_diy=(options or {}).get('include_diy',True)
+    if type(include_diy) is not bool:raise ValueError('AI 阵容包含 DIY 球员开关无效')
     coaches = []
     for row in catalog.get('coaches', []):
         payload = row.get('raw_payload')
@@ -129,7 +139,7 @@ def configuration(catalog, excluded, options=None):
         p = copy.deepcopy(payload)
         p.update(row.get('tactics', {}))
         coaches.append({'payload': p, 'effects': row.get('effects', {})})
-    return {'enabled': enabled, 'revision': REVISION, 'minimum': 3200, 'top_minimum': 3300,
+    return {'enabled': enabled, 'include_diy':include_diy, 'revision': REVISION, 'minimum': 3200, 'top_minimum': 3300,
             'minimum_stars': 5, 'rating_method': 'v17-native-integer-lower-bound',
             'coach_minimum': MIN_COACH_PROFICIENCY, 'style_mode': 'shuffle_bag',
             'coaches': coaches, 'excluded_ids': sorted(map(str, excluded))}
@@ -218,7 +228,10 @@ class Generator:
     def cards(self, conn):
         document = self.document()
         bindings=personal_identities(document)
-        custom_ids={int(r['identity']['card_id'])for r in document.get('players',[])if isinstance(r.get('identity',{}).get('card_id'),int)}
+        custom_ids={int(cid) for row in document.get('players',[]) for cid in
+                    [row.get('identity',{}).get('card_id'),*((row.get('identity')or{}).get('previous_card_ids')or[])]
+                    if type(cid) is int and cid>0}
+        include_diy=document['division_squads'].get('include_diy',True)
         blocked = set(document['division_squads'].get('excluded_ids', []))
         if conn.execute("select 1 from sqlite_master where name='excluded_catalog_ids'").fetchone():
             blocked.update(str(r[0]) for r in conn.execute("select card_id from excluded_catalog_ids where reason != 'China edition'"))
@@ -226,11 +239,15 @@ class Generator:
         for cid, fingerprint, raw in conn.execute('select card_id,fingerprint,payload from managed_cards order by card_id'):
             if str(cid) in blocked:
                 continue
+            if not include_diy and int(cid) in custom_ids:continue
             if int(cid) in STOCK_AI_EXCLUDED_CARD_IDS and int(cid) not in custom_ids:
                 continue
             try:
                 p = json.loads(raw)
                 if not isinstance(p,dict):continue
+                # A previously installed DIY can outlive the current export's
+                # selected definitions. Its catalogue marker remains reliable.
+                if not include_diy and p.get('_personal_player_uuid'):continue
                 p.pop('_studio_squad_person_id',None)
                 if int(cid) in bindings:p['_studio_squad_person_id']=bindings[int(cid)]
                 if not isinstance(p, dict) or type(p.get('default_rarity')) is not int or not 4 <= p['default_rarity'] <= 255:
@@ -289,25 +306,27 @@ class Generator:
         key = (card['gameplayer_id']['id'], card['_studio_fingerprint'], proficiency,
                json.dumps(effects, sort_keys=True), self.document().get('revision'), position)
         if key not in self._ratings:
-            params = list(p['parameters'][:147])
-            boosts = {}
-            for bid in set(params[144:147]):
-                bonus = self.document().get('preview_boosters', {}).get(str(bid), {})
-                for i, n in bonus.get('effects', {}).items():
-                    amount = min(0, n) if bonus.get('conditional') else n
-                    boosts[int(i)] = boosts.get(int(i), 0) + amount
-            for i, amount in effects.items():
-                boosts[int(i)] = boosts.get(int(i), 0) + amount
-            factor = proficiency_factor(proficiency)
-            for i in range(14, 41):
-                if i == 33:
-                    continue
-                value = params[i]
-                params[i] = max(40, min(99, value + int(f32(f32(factor * f32(value)) - f32(value)))))
-            self._ratings[key] = native_rating(params, position, boosts)
+            self._ratings[key] = self.payload_rating(p['parameters'][:147],coach,style,position)
             if len(self._ratings)>80000:self._ratings.popitem(last=False)
         else:self._ratings.move_to_end(key)
         return self._ratings[key]
+
+    def payload_rating(self,parameters,coach,style,position=None):
+        """Rate the actual outgoing attributes, independent of saved UI caches."""
+        params=list(parameters)
+        if len(params)!=147:raise ValueError('AI 球员能力布局不完整')
+        boosts={}
+        for bid in set(params[144:147]):
+            bonus=self.document().get('preview_boosters',{}).get(str(bid),{})
+            for i,n in bonus.get('effects',{}).items():
+                boosts[int(i)]=boosts.get(int(i),0)+(min(0,n) if bonus.get('conditional') else n)
+        for i,amount in coach.get('effects',{}).items():boosts[int(i)]=boosts.get(int(i),0)+amount
+        factor=proficiency_factor(coach['payload'][style])
+        for i in range(14,41):
+            if i==33:continue
+            value=params[i]
+            params[i]=max(40,min(99,value+int(f32(f32(factor*f32(value))-f32(value)))))
+        return native_rating(params,position,boosts)
 
     def coaches(self, conn):
         config = self.document()['division_squads']
@@ -383,29 +402,61 @@ class Generator:
         return coords
 
     def repair_snapshot(self, conn, response):
-        """Repair only workshop v1 opponent snapshots, keeping match identity."""
+        """Validate private opponents on reuse too; never touch owned players."""
         marker = response.get(MARKER)
-        if not isinstance(marker, dict) or marker.get('revision') != 'v17-division-library-v1':
+        if not isinstance(marker, dict) or not str(marker.get('revision','')).startswith('v17-division-library-'):
             return False
         roster = response.get('player_list', [])
         if len(roster) != 23:
             raise ValueError('旧 AI 对手快照人数异常，已保留原数据')
+        changed=False
+        if marker.get('revision')=='v17-division-library-v1':
+            for player in roster:
+                params=list(player['parameters']);cid=str(player['gameplayer_id']['id'])
+                raw=conn.execute('select payload from managed_cards where card_id=?',(cid,)).fetchone()
+                if raw:
+                    original=json.loads(raw[0]).get('parameters',[])
+                    if len(original)>=14:params[1:14]=original[1:14]
+                params[APTITUDE_INDEX[params[0]]]=2;player['parameters']=params
+            coords=self.positions(roster)
+            for plan in response['squad_data']['squad_gameplan']['formation']:
+                plan['formation_offensive']=copy.deepcopy(coords);plan['formation_defensive']=copy.deepcopy(coords)
+            marker.update(revision=REVISION,formation_repaired_from='v17-division-library-v1');changed=True
+        style=marker.get('style')
+        if style not in STYLES:return changed
+        coach=next((c for c in self.coaches(conn) if c['payload']['coach_id']==response.get('coach_data',{}).get('coach_id')),None)
+        if coach is None:raise ValueError('AI 对手教练资料不完整，未下发异常总评')
+        if marker.get('card_ids')!=[p.get('gameplayer_id',{}).get('id') for p in roster]:
+            raise ValueError('AI 对手快照的球员身份不一致，未下发异常名单')
+        scores=[];repairs=[]
         for player in roster:
-            params = list(player['parameters'])
-            cid = str(player['gameplayer_id']['id'])
-            raw = conn.execute('select payload from managed_cards where card_id=?', (cid,)).fetchone()
-            if raw:
-                original = json.loads(raw[0]).get('parameters', [])
-                if len(original) >= 14:
-                    params[1:14] = original[1:14]
-            params[APTITUDE_INDEX[params[0]]] = 2
-            player['parameters'] = params
-        coords = self.positions(roster)
-        for plan in response['squad_data']['squad_gameplan']['formation']:
-            plan['formation_offensive'] = copy.deepcopy(coords)
-            plan['formation_defensive'] = copy.deepcopy(coords)
-        marker.update(revision=REVISION, formation_repaired_from='v17-division-library-v1')
-        return True
+            cid=player['gameplayer_id']['id'];params=player.get('parameters',[])
+            try:
+                if len(params) not in (147,149):raise ValueError('Invalid parameter layout')
+                score=self.payload_rating(params[:147],coach,style)
+            except (ValueError,KeyError,TypeError,OverflowError):score=40
+            if score<=40:
+                raw=conn.execute('select fingerprint,payload from managed_cards where card_id=?',(str(cid),)).fetchone()
+                if not raw:raise ValueError('AI 对手能力异常且原卡记录缺失，未下发总评 40 的球员')
+                card=json.loads(raw[1])
+                if card.get('gameplayer_id',{}).get('id')!=cid:raise ValueError('AI 原卡身份不匹配，未替换球员')
+                card['_studio_fingerprint']=raw[0] or hashlib.sha256(raw[1].encode()).hexdigest()
+                key=(int(cid),card['_studio_fingerprint']);self._trained.pop(key,None)
+                for k in tuple(self._prepared):
+                    if k[:2]==key:self._prepared.pop(k,None)
+                recovered=self.prepared(card)
+                score=self.payload_rating(recovered['parameters'][:147],coach,style)
+                if score<=40:raise ValueError('AI 原卡仍无法提供有效能力，未用虚构总评掩盖异常')
+                player['parameters']=list(recovered['parameters'][:147])+[0,0]
+                player['level_info']=copy.deepcopy(recovered['level_info'])
+                repairs.append({'id':cid,'kind':'parameters','from_rating':40,'to_rating':score});changed=True
+            if any(player.get(k)!=score for k in ('disp_overall','disp_max_overall')):
+                repairs.append({'id':cid,'kind':'display_cache','from_rating':player.get('disp_overall'),'to_rating':score})
+                player['disp_overall']=player['disp_max_overall']=score;changed=True
+            scores.append(score)
+        if repairs:marker.setdefault('payload_repairs',[]).extend(repairs)
+        marker['payload_validation']={'revision':REVISION,'players':len(scores),'minimum_actual_rating':min(scores),'max_actual_rating':max(scores)}
+        return changed
 
     @staticmethod
     def profiles():
@@ -860,6 +911,14 @@ def install(document, root, logic=None):
                         conn.execute('begin immediate')
                         active = entries.replace_active(conn,active,response,entry)
             result = previous(conn, response, request)
+            if generator.repair_snapshot(conn,result):
+                row=conn.execute("select value from meta where key='ai_division_active_match'").fetchone()
+                if row:
+                    with conn:
+                        saved=json.loads(row[0])
+                        conn.execute('insert or ignore into meta values(?,?)',('personal_ai_payload_backup_v2:'+str(saved.get('game_id','unknown')),row[0]))
+                        saved['opponent']=copy.deepcopy(result)
+                        conn.execute("update meta set value=? where key='ai_division_active_match'",(json.dumps(saved,ensure_ascii=False,separators=(',',':')),))
             report = result.pop(MARKER, None)
             if report:
                 report = dict(report, game_id=result.get('game_id'))
