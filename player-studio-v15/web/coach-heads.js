@@ -88,7 +88,7 @@ export class CoachHeads {
       this.message=result.personal?(result.head_model?.asset_id?'已显示你上传的教练头模。':'已显示这名教练的默认 / 继承头模。'):(result.replacement?'已显示当前保存的替换头模。':'已显示原版教练当前头模。');
     }catch(error){if(seq===this.sequence)this.message=error.message;}
     finally{if(seq===this.sequence){this.busy=false;this.paint();}}
-    if(seq===this.sequence)$('.coach-head-panel')?.scrollIntoView({block:'start',behavior:'smooth'});
+    if(seq===this.sequence)$('.coach-head-panel')?.scrollIntoView({block:'start',behavior:document.documentElement.hasAttribute('data-android')&&document.documentElement.dataset.reducePower==='true'?'instant':'smooth'});
   }
   async action(action){
     if(action==='close'){this.open=false;this.sequence++;this.busy=false;this.viewer?.update({model:{asset:null}});this.rerender();return;}

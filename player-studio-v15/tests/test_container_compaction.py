@@ -1,6 +1,7 @@
 """Real IoStore writes: repeated updates, indirect chunks, AES and shared blocks."""
 from pathlib import Path
 import hashlib,struct,sys,tempfile,unittest
+from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from native_iostore import Container,append_container,write_container,package_header,directory_index,aes
 
@@ -69,6 +70,23 @@ class ContainerCompactionTests(unittest.TestCase):
         target=append_container(Container(self.source),self.root/'clean.utoc',[],{},[])
         self.assertGreaterEqual(target.compaction_report['reclaimed_source_bytes'],4096)
         for index,value in enumerate(self.values):self.assertEqual(target.read_chunk(index+1),value)
+
+    def test_cached_compression_is_byte_identical_and_warm_exports_do_not_recompress(self):
+        from compile_cache import CompileCache
+        for encrypted in(False,True):
+            source=self.rewrite(self.source,True)if encrypted else Container(self.source)
+            cache=CompileCache(self.root/('cache-'+str(encrypted)),{})
+            def build(label,use_cache):
+                path=self.root/(label+'-'+str(encrypted)+'.utoc')
+                return append_container(source,path,[(self.ids[0],self.values[0])],{'Game/live.uasset':0},[self.packages[0]],{1},cache=use_cache)
+            expected=build('baseline',None);cold=build('cold',cache)
+            with patch('native_iostore.zlib.compress',side_effect=AssertionError('Warm export recompressed data')):
+                warm=build('warm',cache)
+            for suffix in('.utoc','.ucas'):
+                self.assertEqual(expected.path.with_suffix(suffix).read_bytes(),cold.path.with_suffix(suffix).read_bytes())
+                self.assertEqual(expected.path.with_suffix(suffix).read_bytes(),warm.path.with_suffix(suffix).read_bytes())
+            self.assertGreater(cache.stats['hits']['iostore'],0)
+            for i,value in enumerate(self.values):self.assertEqual(warm.read_chunk(i+1),value)
 
 
 if __name__=='__main__':unittest.main()

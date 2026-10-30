@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "movies": [
+    {
+      "label": "World Player of the Year 2026 · 0500/317",
+      "mini_names": [
+        "0500_317_f02",
+        "smi_585b07692ee8"
+      ],
+      "source_package": "/Game/Movies/PlayerCard/0500_317_f02_v",
+      "source_package_sha256": "d18e9140b98fd8415f13c31e4b35354226055501f266eb62515438177c7778ec",
+      "file": "card-mini-compat/0500-317-m02.usm",
+      "sha256": "61b1a15aeff504e10644cb3b3d976fd99e14cd79167fdcf40d59a3e902059eea",
+      "original_dimensions": [
+        480,
+        678
+      ],
+      "gameplay_acceptance": "pending user test",
+      "large_info": {
+        "width": 480,
+        "height": 678,
+        "frames": 217,
+        "duration": 7.233333333333333
+      },
+      "source_movie_sha256": "db2b3dc3f771ac3e80a0888f5a6232ac2532fa20f1e37e62c36490177f34a85c",
+      "repaired_package_sha256": [
+        "a76993b07bb028ec99033a8ff06266d80676e76b4a6b1ca81c3ea53f428a8dc1"
+      ]
+    },
+    {
+      "label": "World Player of the Year 2026 · 0500/322",
+      "mini_names": [
+        "0500_322_f02",
+        "smi_6b4d58ae62a8"
+      ],
+      "source_package": "/Game/Movies/PlayerCard/0500_322_f02_v",
+      "source_package_sha256": "c9ac79f22a9d4ac6cf1b16b85db3d389d44afc7bd1f8d5801ca9582d34e44118",
+      "file": "card-mini-compat/0500-322-m02.usm",
+      "mini_seed": "gold-card-0500-322-mini-compat-v1",
+      "original_dimensions": [
+        480,
+        678
+      ],
+      "gameplay_acceptance": "pending user test",
+      "sha256": "dd86727350d518ea07b9a7d04f3580c6e9ef2a6b0a4dbf535fca8470f37adad3",
+      "large_info": {
+        "width": 480,
+        "height": 678,
+        "frames": 217,
+        "duration": 7.233333333333333
+      },
+      "source_movie_sha256": "36927b831f70397da17be3caad1fbd08a0c6d2b6dec4e6fb3c03503e360a67b2",
+      "repaired_package_sha256": [
+        "c9ac79f22a9d4ac6cf1b16b85db3d389d44afc7bd1f8d5801ca9582d34e44118"
+      ]
+    }
+  ]
+}

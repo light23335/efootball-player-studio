@@ -1,9 +1,9 @@
 from pathlib import Path
 from types import SimpleNamespace
-import json,sys,tempfile,unittest,zipfile
+import hashlib,json,sys,tempfile,unittest,zipfile
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from apk_sources import resolve,MARKERS
+from apk_sources import resolve,MARKERS,WORKSHOP_DOCUMENT,installation_guidance,remember_mode
 from onboarding import Setup
 
 
@@ -57,6 +57,55 @@ class SourceSelectionTests(unittest.TestCase):
         old=resolve(self.library,self.store);self.assertIn('内容与导入记录不符',old['errors'][0])
         self.save(self.store.root/'active-game.json',{'database':'b'*24,'apk':game,'companion':resource})
         new=resolve(self.library,self.store);self.assertNotEqual(new['source_key'],old['source_key']);self.assertFalse(new['errors'])
+
+    def guidance_source(self,workshop=True):
+        path=self.apk('source.apk','apk')
+        if workshop:
+            with zipfile.ZipFile(path,'a')as z:z.writestr(WORKSHOP_DOCUMENT,b'{}')
+        certificate=self.store.root/'signing/personal-apk-signing-cert.der';certificate.parent.mkdir(exist_ok=True)
+        certificate.write_bytes(b'local certificate')
+        return path,hashlib.sha256(certificate.read_bytes()).hexdigest()
+
+    def test_local_noncoexist_workshop_is_recommended_for_update(self):
+        source,cert=self.guidance_source()
+        with patch('apk_installation.identity',return_value={'package':'com.efootball.revival.local','signers':[cert]}):
+            result=installation_guidance(source,self.store)
+        self.assertEqual(result['recommended_mode'],'update');self.assertEqual(result['basis'],'local_workshop')
+
+    def test_foreign_signed_workshop_is_recommended_for_coexist(self):
+        source,cert=self.guidance_source()
+        with patch('apk_installation.identity',return_value={'package':'com.efootball.revival.local','signers':['other']}):
+            result=installation_guidance(source,self.store)
+        self.assertEqual(result['recommended_mode'],'coexist');self.assertEqual(result['basis'],'foreign_signer')
+        self.assertFalse(result['signer_matches'])
+
+    def test_coexist_source_stays_coexist_even_when_local_signature_matches(self):
+        source,cert=self.guidance_source()
+        with patch('apk_installation.identity',return_value={'package':'com.efootball.revival.diyer','signers':[cert]}):
+            result=installation_guidance(source,self.store)
+        self.assertEqual(result['recommended_mode'],'coexist');self.assertEqual(result['basis'],'coexist_package')
+
+    def test_original_source_keeps_first_successful_mode_across_a_new_store_host(self):
+        source,cert=self.guidance_source(workshop=False)
+        with patch('apk_installation.identity',return_value={'package':'com.efootball.revival.local','signers':['author']}):
+            self.assertEqual(installation_guidance(source,self.store)['basis'],'original')
+            remember_mode(self.store,source,'update');remember_mode(self.store,source,'coexist')
+            result=installation_guidance(source,SimpleNamespace(root=self.store.root))
+            self.assertEqual(result['recommended_mode'],'update');self.assertEqual(result['basis'],'successful_export')
+
+    def test_replaced_source_or_changed_local_key_does_not_reuse_old_mode_history(self):
+        source,cert=self.guidance_source(workshop=False);remember_mode(self.store,source,'update')
+        with patch('apk_installation.identity',return_value={'package':'com.efootball.revival.local','signers':['author']}):
+            with zipfile.ZipFile(source,'a')as z:z.writestr('new-entry',b'new source')
+            self.assertEqual(installation_guidance(source,self.store)['basis'],'original')
+            remember_mode(self.store,source,'update')
+            (self.store.root/'signing/personal-apk-signing-cert.der').write_bytes(b'new certificate')
+            self.assertEqual(installation_guidance(source,self.store)['basis'],'original')
+
+    def test_unreadable_source_never_claims_cover_update_is_verified(self):
+        result=installation_guidance(str(self.root/'missing.apk'),self.store)
+        self.assertEqual(result['recommended_mode'],'coexist');self.assertFalse(result['signer_matches'])
+        self.assertEqual(result['basis'],'unreadable');self.assertTrue(result['key'])
 
 
 if __name__=='__main__':unittest.main()

@@ -100,7 +100,39 @@ def _size_error(items,estimate):
                       +str(estimate)+' 字节，仍超过约 4 GiB 上限'+label+'。请减少内容或拆分配套资源。')
 
 
-def replace_entries(source,output,replacements):
+class ContentDigester:
+    """APK-v2's three independently chunked regions, fed while writing."""
+    def __init__(self):self.pending=bytearray();self.chunks=[]
+    def _chunk(self,data):self.chunks.append(hashlib.sha256(b'\xa5'+struct.pack('<I',len(data))+data).digest())
+    def update(self,data):
+        data=memoryview(data);at=0;block=1024*1024
+        if self.pending:
+            count=min(block-len(self.pending),len(data));self.pending.extend(data[:count]);at=count
+            if len(self.pending)==block:self._chunk(self.pending);self.pending.clear()
+        while at+block<=len(data):self._chunk(data[at:at+block]);at+=block
+        self.pending.extend(data[at:])
+    def end_section(self):
+        if self.pending:self._chunk(self.pending);self.pending.clear()
+    def digest(self):
+        if self.pending:raise ValueError('APK digest section was not finalized')
+        return hashlib.sha256(b'\x5a'+struct.pack('<I',len(self.chunks))+b''.join(self.chunks)).digest()
+
+
+class DigestWriter:
+    def __init__(self,stream,digester):self.stream=stream;self.digester=digester
+    def write(self,data):
+        count=self.stream.write(data)
+        if count!=len(data):raise OSError('Incomplete APK write')
+        self.digester.update(data);return count
+    def tell(self):return self.stream.tell()
+
+
+def _file_identity(path):
+    stat=Path(path).stat()
+    return (stat.st_size,stat.st_mtime_ns,stat.st_ctime_ns,stat.st_ino)
+
+
+def replace_entries(source,output,replacements,*,store_ucas=False,prepare_signing=False):
     """Rewrite current ZIP records, reclaiming superseded local payloads.
 
     Unchanged compressed bytes are copied directly. Native libraries are
@@ -120,7 +152,7 @@ def replace_entries(source,output,replacements):
     entries.extend(zipfile.ZipInfo(name,(2026,1,1,0,0,0)) for name in replacements if name not in old)
     if len(entries)>=65535:raise ValueError('Too many APK entries for non-ZIP64 format')
     with contextlib.ExitStack() as stack,source.open('rb') as src:
-        plans=[];cursor=0
+        plans=[];cursor=0;stored=[]
         for item in entries:
             name=item.filename
             if name.startswith('/') or '\\' in name or '..' in name.split('/'):
@@ -132,6 +164,9 @@ def replace_entries(source,output,replacements):
             if name in replacements:
                 data=replacements[name];item.file_size=len(data);item.CRC=zlib.crc32(data)&0xffffffff
                 if item.file_size>=UINT32_LIMIT:raise _size_error(entries,item.file_size)
+                if store_ucas and name.lower().endswith('.ucas'):
+                    if item.compress_type!=zipfile.ZIP_STORED:stored.append({'name':name,'bytes':len(data)})
+                    item.compress_type=zipfile.ZIP_STORED
                 if item.compress_type==zipfile.ZIP_DEFLATED:
                     stream=stack.enter_context(tempfile.SpooledTemporaryFile(max_size=8*1024*1024,dir=output.parent))
                     encoder=zlib.compressobj(9,zlib.DEFLATED,-15)
@@ -155,19 +190,26 @@ def replace_entries(source,output,replacements):
         central_size=sum(46+len(i._encodeFilenameFlags()[0])+len(i.extra)+len(i.comment) for i in entries)
         estimate=central+central_size+22+len(comment)+SIGNING_RESERVE
         if estimate>=UINT32_LIMIT:raise _size_error(entries,estimate)
-        with output.open('xb') as dst:
+        digester=ContentDigester()if prepare_signing else None
+        with output.open('xb') as raw_dst:
+            dst=DigestWriter(raw_dst,digester)if digester else raw_dst
             for item,header,offset,stream,data in plans:
                 dst.write(header)
                 if stream is not None:copy_bytes(stream,dst,item.compress_size)
                 elif data is not None:dst.write(data)
                 else:src.seek(offset);copy_bytes(src,dst,item.compress_size)
             if dst.tell()!=central:raise ValueError('APK rewritten local records do not match preflight')
+            if digester:digester.end_section()
             for item in entries:
                 _write_central(dst,item)
+            if digester:digester.end_section()
             dst.write(struct.pack('<I4H2IH',0x06054b50,0,0,len(entries),len(entries),central_size,central,len(comment)))
             dst.write(comment)
+            if digester:digester.end_section()
     result=layout(output)
-    result['compaction']={'compact_rewrite':True,'source_bytes':meta['size'],'unsigned_bytes':result['size'],'entries':len(entries)}
+    if digester:result.update(content_digest=digester.digest().hex(),unsigned_identity=_file_identity(output))
+    result['compaction']={'compact_rewrite':True,'source_bytes':meta['size'],'unsigned_bytes':result['size'],'entries':len(entries),
+                          'stored_ucas':stored,'v2_digest_streamed':bool(digester)}
     return result
 
 
@@ -219,12 +261,15 @@ def local_signer(directory):
     return key,cert
 
 
-def sign_v2(unsigned,output,key,certificate):
+def sign_v2(unsigned,output,key,certificate,*,prepared=None,consume=False):
     unsigned=Path(unsigned);output=Path(output)
     if output.exists() or unsigned.absolute()==output.absolute():raise ValueError('Signed output must be a new file')
     meta=layout(unsigned)
     if meta['data_end']!=meta['central']:raise ValueError('Expected unsigned intermediate APK')
-    digest=content_digest(unsigned,meta)
+    reusable=(prepared is not None and prepared.get('unsigned_identity')==_file_identity(unsigned)
+              and all(prepared.get(k)==meta[k]for k in('size','data_end','central','central_size','end_record')))
+    digest=bytes.fromhex(prepared['content_digest'])if reusable else content_digest(unsigned,meta)
+    if len(digest)!=32:raise ValueError('Prepared APK digest is invalid')
     cert=certificate.public_bytes(serialization.Encoding.DER)
     public=key.public_key().public_bytes(serialization.Encoding.DER,serialization.PublicFormat.SubjectPublicKeyInfo)
     signed_data=lp(lp(struct.pack('<I',RSA_SHA256)+lp(digest)))+lp(lp(cert))+lp(b'')
@@ -240,10 +285,29 @@ def sign_v2(unsigned,output,key,certificate):
     if meta['central']+len(block)>=UINT32_LIMIT or meta['size']+len(block)>=UINT32_LIMIT:
         raise _size_error([],meta['size']+len(block))
     end=bytearray(meta['end_record']);struct.pack_into('<I',end,16,meta['central']+len(block))
-    with unsigned.open('rb') as src,output.open('xb') as dst:
-        copy_bytes(src,dst,meta['central']);dst.write(block)
-        copy_bytes(src,dst,meta['central_size']);dst.write(end)
-    return {'signer_sha256':hashlib.sha256(cert).hexdigest(),'content_digest':digest.hex(),'size':output.stat().st_size}
+    if consume:
+        # Only the caller-owned unsigned intermediate is consumed. Move the
+        # directory backwards in bounded buffers; never recopy the payload.
+        with unsigned.open('r+b')as stream:
+            remaining=meta['central_size']
+            while remaining:
+                count=min(4*1024*1024,remaining);start=meta['central']+remaining-count
+                stream.seek(start);data=stream.read(count)
+                if len(data)!=count:raise ValueError('APK central directory was truncated')
+                stream.seek(start+len(block));stream.write(data);remaining-=count
+            stream.seek(meta['central']);stream.write(block)
+            stream.seek(meta['central']+len(block)+meta['central_size']);stream.write(end)
+            stream.truncate();stream.flush()
+        # Reserve the destination exclusively, then publish our completed file.
+        with output.open('xb'):pass
+        try:os.replace(unsigned,output)
+        except Exception:output.unlink(missing_ok=True);raise
+    else:
+        with unsigned.open('rb') as src,output.open('xb') as dst:
+            copy_bytes(src,dst,meta['central']);dst.write(block)
+            copy_bytes(src,dst,meta['central_size']);dst.write(end)
+    return {'signer_sha256':hashlib.sha256(cert).hexdigest(),'content_digest':digest.hex(),'size':output.stat().st_size,
+            'digest_reused':reusable,'payload_recopy_avoided':bool(consume)}
 
 
 def verify_v2(path):

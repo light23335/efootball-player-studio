@@ -7,7 +7,10 @@ from native_models import person_keys
 BOOTS='common/etc/pesdb/Boots.bin'
 ASSIGNMENTS='common/etc/appearance/BootsList.bin'
 SLEEVES={'keep':None,'seasonal':0,'short':1,'long':2}
-SLEEVE_BIT=134
+# Native V17 appearance loader (6abcc08) skips the 8-byte identity. The
+# character decoder at 68d2048/68d2050 takes bits 62..63 of that payload:
+# season=0, short=1, long=2. Bit 134 is a different appearance flag.
+SLEEVE_BIT=126
 
 def validate(value):
     if not isinstance(value,dict):raise ValueError('比赛装备设置格式无效')

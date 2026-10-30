@@ -1,7 +1,7 @@
 from pathlib import Path
-import json,sys,tempfile,types,unittest
+import json,sys,tempfile,types,unittest,io,zipfile,hashlib
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from native_live import compile_template,verify_template,reserve_version
+from native_live import compile_template,verify_template,reserve_version,verify_apk
 from personal_runtime import patch_resource_checks
 
 class LiveDataTests(unittest.TestCase):
@@ -33,5 +33,24 @@ class LiveDataTests(unittest.TestCase):
         patch_resource_checks(module,doc)
         self.assertTrue(module.check(61384704,new));self.assertFalse(module.check(54509300,old));self.assertFalse(module.check(61384704,'bad'))
         self.assertEqual(module._R9_RESOURCE_CHECKS,[{'bytes':61384704,'sha256':new}])
+
+    def apk(self,download=b'actual-cpk',old_template=False,old_document=False,old_manifest=False):
+        cpk=b'actual-cpk';t=compile_template(self.template(),b'old'if old_template else cpk,2026101905)
+        report=verify_template(compile_template(self.template(),b'old'if old_document else cpk,2026101905),b'old'if old_document else cpk)
+        meta={'bytes':len(cpk),'sha256':hashlib.sha256(cpk).hexdigest()}
+        doc={'live_data':report,'resource_files':{'dt870_mobile_and.cpk':meta}}
+        values={'custom-resources/legends-v10/dt870_mobile_and.cpk':cpk,'livedata/dt870_mobile_and.cpk':download,
+                'work/templates/CMD_LOGIN_LIVEDATA.json':json.dumps(t).encode(),'custom-resources/personal-player-studio/players.json':json.dumps(doc).encode()}
+        manifest={'files':[{'path':k,'bytes':len(v),'sha256':hashlib.sha256(v).hexdigest()}for k,v in values.items()]}
+        if old_manifest:manifest['files'][0]['sha256']='old'
+        values['release-manifest.json']=json.dumps(manifest).encode();result=io.BytesIO()
+        with zipfile.ZipFile(result,'w')as z:
+            for k,v in values.items():z.writestr('assets/gateway-release/'+k,v)
+        result.seek(0);return result
+
+    def test_final_apk_checks_both_actual_copies_document_and_release_manifest(self):
+        self.assertTrue(verify_apk(self.apk())['active_download_copies_match'])
+        for change in ({'download':b'old'},{'old_template':True},{'old_document':True},{'old_manifest':True}):
+            with self.subTest(change=change),self.assertRaisesRegex(ValueError,'实时更新校验失败'):verify_apk(self.apk(**change))
 
 if __name__=='__main__':unittest.main()

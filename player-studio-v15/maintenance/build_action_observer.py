@@ -6,7 +6,7 @@ from skill_hook_ir import Hooks
 from action_observer import add_observer,add_shot_observation
 from action_trace import SCHEMA
 
-REVISION='v17-player-actions-v4-dribbling-and-shot-modes'
+REVISION='v17-player-actions-v5-native-gameactor-index'
 ENGINE_SHA='efd257d9e41b622d6ecb8f51f7b0a8ee8820113fd427c5572025df1c8eecc7b8'
 
 def build(engine,release=False,ai=False):

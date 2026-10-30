@@ -3,7 +3,7 @@ import copy,json
 from studio_resources import bundled_resources
 from action_trace import SCHEMA
 
-REVISION='v17-player-actions-v4-dribbling-and-shot-modes'
+REVISION='v17-player-actions-v5-native-gameactor-index'
 
 def hooks(engine,ai_enabled=False):
     data=json.loads((bundled_resources()/'native-action-trace.json').read_text('utf8'))

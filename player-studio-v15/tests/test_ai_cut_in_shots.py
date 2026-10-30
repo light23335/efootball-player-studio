@@ -714,14 +714,14 @@ class NativeAiCutInTests(unittest.TestCase):
                 self.assertAlmostEqual(value,.65 if power<=.5 else power,places=6)
                 self.assertEqual(bytes(vm.mem_read(a['control']+0xff8,4)),struct.pack('<I',0x12345678))
 
-    def test_probability_rejection_preserves_request_type_and_does_not_leave_a_style_ticket(self):
+    def test_shot_probability_rejection_preserves_shot_but_not_restored_203_candidate_policy(self):
         vm=self.setup_context(skills=(18,24,25),probability=False)
         out=0x42009000;data=struct.pack('<III3f',9,25,2,52.5,1.,0.)
         vm.mem_write(out,data);self.run_helper(vm,'studio_ai_prefer_curled_shot',out,self.ctx)
         self.assertEqual(bytes(vm.mem_read(out,len(data))),data)
         self.assertEqual(self.run_helper(vm,'studio_ai_style_ticket',self.model,7,0,0,0),0)
         self.candidates(vm,{0:{'kind':2},1:{'kind':3,'angle':135.}})
-        self.assertEqual(self.choose(vm),0)
+        self.assertEqual(self.choose(vm),1)
 
     def test_actual_probability_is_stable_within_a_decision_and_about_80_percent(self):
         vm=self.setup_context(probability=None);r=self.r;clock=[0]
@@ -739,12 +739,12 @@ class NativeAiCutInTests(unittest.TestCase):
             counts.append(passed);self.assertTrue(1500<passed<1700,passed)
         self.assertNotEqual(counts[0],counts[1])
 
-    def test_incisive_and_lone_wolf_candidate_changes_are_restricted_to_attacking_third(self):
+    def test_restored_203_incisive_and_lone_wolf_candidates_can_change_before_attacking_third(self):
         for side,slot in ((1,7),(-1,18)):
             for wolf in (False,True):
                 vm=self.setup_context(x=17.4*side,z=18.,side=side,index=slot,lone_wolf=wolf)
                 self.candidates(vm,{0:{'kind':2},1:{'kind':3,'angle':135. if side==1 else 225.}})
-                self.assertEqual(self.choose(vm),0)
+                self.assertEqual(self.choose(vm),1)
 
     def test_legacy_curler_request_also_keeps_native_type_before_attacking_third(self):
         vm=self.setup_context(skills=(17,),lone_wolf=True,x=17.4,z=12.)

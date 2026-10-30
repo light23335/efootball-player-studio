@@ -7,8 +7,8 @@ Signing uses the operator's existing private release key.
 from pathlib import Path
 import argparse,hashlib,io,json,re,struct,sys,zipfile
 ROOT=Path(__file__).resolve().parent
-VERSION='2.0.4-android.1'
-VERSION_CODE=200004
+VERSION='2.1-android.2'
+VERSION_CODE=201001
 RETIRED_CORE_MODULES={'team_workshop.py','team_cpk.py','team_workshop.pyc','team_cpk.pyc','draw_policy.py','draw_journal.py','draw_policy.pyc','draw_journal.pyc'}
 
 def compact_editor_apk(source,output,changes,removed=()):
@@ -85,6 +85,8 @@ def manifest_version(raw,code,name):
 def main():
     p=argparse.ArgumentParser();p.add_argument('--base',required=True);p.add_argument('--output',required=True);p.add_argument('--key',required=True);p.add_argument('--password-file',required=True);p.add_argument('--work',required=True);p.add_argument('--installed-games-dex');p.add_argument('--controller-dex');p.add_argument('--runtime-dex-dir');a=p.parse_args()
     core=ROOT/'core' if (ROOT/'core').is_dir() else ROOT.parent/'player-studio-v15';sys.path.insert(0,str(core))
+    from compile_cache import write_source_manifest
+    write_source_manifest(core)
     from apk_format import replace_entries,sign_v2,verify_v2
     from cryptography.hazmat.primitives.serialization.pkcs12 import load_key_and_certificates
     work=Path(a.work);work.mkdir(parents=True,exist_ok=True)

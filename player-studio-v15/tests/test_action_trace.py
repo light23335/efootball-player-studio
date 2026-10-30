@@ -181,13 +181,14 @@ class NativeObserverTests(unittest.TestCase):
             stubs.update({0x72c404c:players,0x68fb5fc:ret(23),0x72f2d04:entry,0x72f29e0:identity})
         vm=self.machine(stubs);vm.mem_map(0x49010000,0x100000)
         for address in (self.actor,self.root,self.info,self.state,self.ai,self.request,self.output,self.player_info):vm.mem_map(address,0x10000)
-        # Execute the real V17 actor getter and table accessor, rather than
-        # making a stub return the expected object for the wrong getter ABI.
+        # The root's first table contains AnimeInfo, not GameActor. Keep it
+        # deliberately unrelated and unmapped so no callback may read it as an entity.
         if slot<32:
-            vm.mem_write(self.root+0x3170+slot*0x50,struct.pack('<Q',self.actor))
+            vm.mem_write(self.root+0x3170+slot*0x50,struct.pack('<Q',0xdead1000))
             vm.mem_write(self.root+0x3b20+slot*0x50,struct.pack('<Q',self.player_info))
         vm.mem_write(self.actor+0x4620,struct.pack('<Q',self.root));vm.mem_write(self.actor+0x2a38,bytes([slot]))
         vm.mem_write(self.actor+0xad0,b'\x0a');vm.mem_write(self.player_info+0x4f4,struct.pack('<3f',20.,0.,15.))
+        vm.mem_write(self.actor+8,struct.pack('<3f',20.,0.,15.))
         vm.mem_write(self.ai+4,struct.pack('<II3f',25,1,52.5,0.,1.))
         vm.mem_write(self.state+0x394+0xc0,(1<<51).to_bytes(12,'little'))
         vm.mem_write(self.request+0x138,struct.pack('<Q',self.actor));vm.mem_write(self.request+0xc,struct.pack('<f',.55))
@@ -210,21 +211,24 @@ class NativeObserverTests(unittest.TestCase):
         self.assertEqual((rows[0]['slot'],rows[0]['action']['id'],rows[0]['request']['subtype']),(7,10,1))
         self.assertEqual(rows[0]['skills'],['弧线落叶射门'])
 
-    def test_physical_actor_and_player_info_are_distinct_native_tables(self):
+    def test_anime_info_is_not_mistaken_for_game_actor(self):
         vm=self.scene()
         self.assertNotEqual(self.invoke(vm,0x72c19f8,self.root,7),self.invoke(vm,0x72c1a14,self.root,7))
         self.invoke(vm,0x6d3d9dc,self.actor)
         row=self.reader.drain()[0]
         self.assertEqual(row['native_game_actor_key'],hex(self.actor))
         self.assertEqual(row['position'],[20.,0.,15.])
+        self.assertEqual(row['slot_source'],'native GameActor index')
+        self.assertFalse(row['match_membership_verified']);self.assertIsNone(row['player_id'])
         vm.mem_write(self.root+0x3170+7*0x50,bytes(8))
+        self.frame+=30
         self.invoke(vm,0x6d3d9dc,self.actor)
-        self.assertEqual(self.reader.drain()[0]['event'],'native_diagnostic')
+        self.assertEqual(self.reader.drain()[0]['event'],'movement_sample')
 
     def test_continuous_movement_is_sampled_without_mislabeling_raw_state_as_dribble(self):
         vm=self.scene();self.invoke(vm,0x6d3d9dc,self.actor);self.reader.drain()
         self.frame+=29;self.invoke(vm,0x6d3d9dc,self.actor);self.assertEqual(self.reader.drain(),[])
-        self.frame+=1;vm.mem_write(self.player_info+0x4f4,struct.pack('<3f',21.,0.,14.))
+        self.frame+=1;vm.mem_write(self.actor+8,struct.pack('<3f',21.,0.,14.))
         self.invoke(vm,0x6d3d9dc,self.actor)
         row=self.reader.drain()[0]
         self.assertEqual(row['event'],'movement_sample');self.assertEqual(row['position'],[21.,0.,14.])
@@ -234,21 +238,23 @@ class NativeObserverTests(unittest.TestCase):
         vm=self.scene(slot=255)
         self.invoke(vm,0x6d3d9dc,self.actor)
         counters=self.reader.diagnostics()['sources']['action_change']
-        self.assertEqual(counters['entered'],1);self.assertEqual(counters['actor_not_in_current_match'],1)
-        row=self.reader.drain()[0];self.assertEqual(row['diagnostic']['reason'],'actor_not_in_current_match')
+        self.assertEqual(counters['entered'],1);self.assertEqual(counters['invalid_slot'],1)
+        row=self.reader.drain()[0];self.assertEqual(row['diagnostic']['reason'],'invalid_slot')
         for field in ('player_id','position','skills','target'):self.assertIsNone(row[field])
         vm=self.scene(enabled=False);self.invoke(vm,0x6d3d9dc,self.actor)
         counters=self.reader.diagnostics()['sources']['action_change']
         self.assertEqual(counters['entered'],1);self.assertEqual(counters['disabled'],1)
         self.assertEqual(counters['published'],0)
 
-    def test_actor_membership_uses_original_table_even_if_unrelated_fields_disagree(self):
+    def test_native_index_is_required_without_trusting_owner_or_anime_info(self):
         vm=self.scene(slot=7,with_identity=True)
-        vm.mem_write(self.actor+0x2a38,b'\xff');vm.mem_write(self.actor+0x4620,struct.pack('<Q',0xdeadbeef))
+        vm.mem_write(self.actor+0x4620,struct.pack('<Q',0xdeadbeef))
         self.invoke(vm,0x6d3d9dc,self.actor)
         row=self.reader.drain()[0]
         self.assertEqual(row['event'],'action_change');self.assertEqual(row['slot'],7)
-        self.assertEqual(row['player_id'],self.card_id)
+        self.assertIsNone(row['player_id']);self.assertEqual(self.roster_calls,[])
+        vm.mem_write(self.actor+0x2a38,b'\xff');self.invoke(vm,0x6d3d9dc,self.actor)
+        self.assertEqual(self.reader.drain()[0]['diagnostic']['reason'],'invalid_slot')
 
     def test_context_slot_failure_is_distinct_from_actor_membership_failure(self):
         vm=self.scene();ctx=self.output
@@ -314,12 +320,27 @@ class NativeObserverTests(unittest.TestCase):
         self.assertEqual(self.reader.drain()[0]['team'],1)
 
     def test_card_and_serial_identity_follow_current_roster_after_substitution(self):
-        vm=self.scene(slot=17,with_identity=True);self.invoke(vm,0x6d3d9dc,self.actor)
+        vm=self.scene(slot=17,with_identity=True);ctx=self.output
+        vm.mem_write(ctx,struct.pack('<Q',ctx+0x1000));vm.mem_write(ctx+0x1000,struct.pack('<I',17))
+        vm.mem_write(ctx+0x18,struct.pack('<Q',self.root))
+        helper=self.helpers['shared_studio_trace_ai']
+        self.invoke(vm,helper,ctx,self.ai,1,0,0x1234)
         row=self.reader.drain()[0]
         self.assertEqual(row['player_id'],self.card_id);self.assertEqual(row['player_serial'],0xfffffffe)
         self.assertEqual(self.roster_calls,[('team',1),('slot',6)])
-        self.card_id+=1;self.invoke(vm,0x6d3d9dc,self.actor)
+        self.card_id+=1;self.invoke(vm,helper,ctx,self.ai,1,0,0x1234)
         self.assertEqual(self.reader.drain()[0]['player_id'],self.card_id)
+
+    def test_ai_events_copy_recent_state_without_dereferencing_entity_or_anime_info(self):
+        vm=self.scene();self.invoke(vm,0x6d3d9dc,self.actor);self.reader.drain()
+        vm.mem_unmap(self.actor,0x10000)
+        ctx=self.output;vm.mem_write(ctx,struct.pack('<Q',ctx+0x1000))
+        vm.mem_write(ctx+0x1000,struct.pack('<I',7));vm.mem_write(ctx+0x18,struct.pack('<Q',self.root))
+        helper=self.helpers['shared_studio_trace_ai']
+        self.invoke(vm,helper,ctx,self.ai,1,0,0x1234)
+        self.assertEqual(self.reader.drain()[0]['action']['id'],10)
+        self.frame+=31;self.invoke(vm,helper,ctx,self.ai,1,0,0x1234)
+        self.assertIsNone(self.reader.drain()[0]['action'])
 
     def test_full_native_motion_selector_return_and_output_are_preserved(self):
         results=[]

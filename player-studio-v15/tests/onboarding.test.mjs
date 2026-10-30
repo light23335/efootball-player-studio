@@ -12,6 +12,30 @@ test('pairing check is removed from both installation pages',()=>{
  }}finally{globalThis.document=old;}
 });
 
+test('installation guidance follows a changed source, preserves manual choice and waits for active exports',()=>{
+ const old=globalThis.document;const note={};const first={};const radios=['coexist','update'].map(value=>({value}));
+ globalThis.document={addEventListener:()=>{},querySelector:sel=>sel==='#installation-guidance'?note:sel==='[data-native-first]'?first:{},querySelectorAll:()=>radios};
+ try{const ui=new NativePackageUI({});
+  const own={key:'own',recommended_mode:'update',reason:'本机签名'};ui.applyGuidance(own);
+  assert.equal(ui.installationMode,'update');assert.match(note.textContent,/工坊更新模式/);
+  ui.installationMode='coexist';ui.applyGuidance(own);assert.equal(ui.installationMode,'coexist');
+  ui.applyGuidance(own,true);assert.equal(ui.installationMode,'update');
+  const other={key:'other',recommended_mode:'coexist',reason:'其他设备'};ui.state.phase='working';ui.applyGuidance(other);
+  assert.equal(ui.installationMode,'update');ui.state.phase='done';ui.applyGuidance(other);assert.equal(ui.installationMode,'coexist');
+  assert.equal(radios[0].checked,true);assert.match(note.textContent,/其他设备/);
+ }finally{globalThis.document=old;}
+});
+
+test('recommended-mode button restores the suggestion without starting an export',async()=>{
+ const old=globalThis.document;globalThis.document={addEventListener:()=>{},querySelector:()=>null};
+ try{let calls=0;const ui=new NativePackageUI({api:async()=>{calls++;}});
+  ui.applyGuidance({key:'one',recommended_mode:'coexist',reason:'共存来源'});ui.installationMode='update';
+  const button={dataset:{},hasAttribute:name=>name==='data-native-recommend'};
+  await ui.click({target:{closest:selector=>selector.includes('[data-native-recommend]')?button:null}});
+  assert.equal(ui.installationMode,'coexist');assert.equal(calls,0);
+ }finally{globalThis.document=old;}
+});
+
 test('export refresh uses imported paths, preserves manual picks and follows a changed database',()=>{
  const old=globalThis.document;globalThis.document={addEventListener:()=>{},querySelector:()=>null};
  try{const ui=new NativePackageUI({});

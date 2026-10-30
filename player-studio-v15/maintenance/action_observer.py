@@ -35,11 +35,28 @@ mov x19,x0
 mov x20,x2
 mov w22,w1
 mov w23,w3
+cmp w23,#1
+b.eq game_actor_index
+cmp w23,#4
+b.eq game_actor_index
+b info_root
+game_actor_index:
+mov x0,x19
+{call('actor_index')}
+mov w22,w0
+cmp w22,#22
+b.hs invalid_game_slot
+add w22,w22,#1
+info_root:
 {call('root')}
 mov x21,x0
 cbz x21,no_root
 cbz w22,cached
 sub w22,w22,#1
+cmp w23,#1
+b.eq validate_index
+cmp w23,#4
+b.eq validate_index
 mov x0,x21
 mov w1,w22
 bl resolve_actor
@@ -75,6 +92,17 @@ b.eq found
 add w22,w22,#1
 cmp w22,#22
 b.lo scan
+b absent
+validate_index:
+mov x0,x21
+mov w1,w22
+{call('actor')}
+cbnz x0,found
+b absent
+invalid_game_slot:
+mov x21,xzr
+mov w2,#3
+b missing
 absent:
 mov w2,#15
 b missing
@@ -100,7 +128,8 @@ b.eq physical_actor
 {jump('actor')}
 physical_actor:
 {jump('physical')}
-''',{'root':0x698f7e0,'actor':0x72c1a14,'physical':0x72c19f8},evidence=['Resolve only by the original global actor table; do not infer slot/root from actor+2a38/+4620',
+''',{'root':0x698f7e0,'actor':0x72c1a14,'physical':0x72c19f8,'actor_index':0x6d3ea38},evidence=['Typed GameActor callbacks use original native index getter 6d3ea38, never AnimeInfo pointer equality',
+        'AI contexts are checked against current PlayerInfo; GameActor index alone does not certify card identity',
         'cached addresses compared as values and verified by the current native getter'])
     b.helper('studio_trace_actor',f'''
 sub sp,sp,#352
@@ -154,6 +183,8 @@ mov w1,w7
 mov x2,x25
 mov w3,w20
 bl shared_studio_trace_resolve
+cmp w2,#3
+b.eq reject_invalid_slot
 cmp w2,#4
 b.eq reject_null_root
 cbnz w2,reject_actor_not_in_current_match
@@ -177,16 +208,36 @@ stp w8,w9,[sp,#152]
 str w26,[sp,#160]
 mov w8,#2
 str w8,[sp,#228]
-mov x0,x27
-mov w1,w26
-{call('physical')}
-str x0,[sp,#304]
-cbz x0,no_physical_state
-ldrb w8,[x0,#0xad0]
-b physical_state
-no_physical_state:
+cmp w20,#1
+b.eq actual_game_actor
+cmp w20,#4
+b.eq actual_game_actor
+// PlayerInfo is not GameActor. Copy a recent state VALUE only; never read
+// a retained entity pointer, nor interpret AnimeInfo as an entity.
+str xzr,[sp,#304]
 mov w8,#-1
-physical_state:
+add x9,x25,#64
+add x9,x9,x26,lsl #7
+ldr x10,[x9]
+cmp x10,x27
+b.ne have_actual_state
+ldr w10,[x9,#32]
+cbz w10,have_actual_state
+ldr w10,[x9,#36]
+ldr w11,[sp,#104]
+sub w10,w11,w10
+cmp w10,#30
+b.hi have_actual_state
+ldr x10,[x9,#8]
+str x10,[sp,#304]
+ldr w8,[x9,#16]
+b have_actual_state
+actual_game_actor:
+str x19,[sp,#304]
+mov w8,#4
+str w8,[sp,#228]
+ldrb w8,[x19,#0xad0]
+have_actual_state:
 str w8,[sp,#164]
 mov w0,w26
 {call('action')}
@@ -211,10 +262,19 @@ mov x0,x27
 mov w1,w26
 {call('player_info')}
 str x0,[sp,#312]
+cmp w20,#1
+b.eq actual_position
+cmp w20,#4
+b.eq actual_position
 cbz x0,no_position
 ldr w8,[x0,#0x4f4]
 ldr w9,[x0,#0x4f8]
 ldr w10,[x0,#0x4fc]
+b have_position
+actual_position:
+ldr w8,[x19,#8]
+ldr w9,[x19,#12]
+ldr w10,[x19,#16]
 b have_position
 no_position:
 mov w8,#0x7fc00000
@@ -261,6 +321,10 @@ b.ne power_type_done
 ldr w8,[sp,#172]
 stp w8,w8,[sp,#216]
 power_type_done:
+cmp w20,#1
+b.eq identity_done
+cmp w20,#4
+b.eq identity_done
 // First eleven native roster entries are current on-field slots, as in the
 // independently audited coaching observer. Preserve the native serial32 ABI.
 mov w8,#11

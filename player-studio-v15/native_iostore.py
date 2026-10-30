@@ -366,7 +366,7 @@ def read_package_header(raw, strict=True):
     return cid,result
 
 
-def append_container(source, output, additions, paths, packages, replace_indices=()):
+def append_container(source, output, additions, paths, packages, replace_indices=(),cache=None):
     """Add/replace packages and rebuild UCAS from the currently live blocks.
 
     Keep every indexed chunk and package dependency. Unchanged compressed or
@@ -436,19 +436,40 @@ def append_container(source, output, additions, paths, packages, replace_indices
             if len(value)!=length:raise ValueError('IoStore source block is truncated')
             blocks.append(f.tell().to_bytes(5,'little')+block[5:]);f.write(value);retained_bytes+=length
         for index,(chunk_id,raw) in [*zip(indices,additions),(header_index,(chunks[header_index],new_header))]:
-            compressed=False
             physical=f.tell()
             if encrypted and physical%16:
                 raise ValueError('Original encrypted UCAS is not aligned')
-            for start in range(0,len(raw),source.block):
-                value=raw[start:start+source.block]
-                encoded=zlib.compress(value,6)
-                compression=method
-                if len(encoded)>=len(value):encoded,compression=value,0
-                compressed|=bool(compression)
-                blocks.append(f.tell().to_bytes(5,'little')+len(encoded).to_bytes(3,'little')+len(value).to_bytes(3,'little')+bytes([compression]))
-                f.write(aes(encoded+b'\0'*((-len(encoded))%16),source.key,True) if encrypted else encoded)
-            item=(logical,len(raw));meta=hashlib.sha1(raw).digest()+b'\0'*12+bytes([int(compressed)])
+            def encode():
+                payload=bytearray();specs=[];compressed=False
+                for start in range(0,len(raw),source.block):
+                    value=raw[start:start+source.block];encoded=zlib.compress(value,6);compression=method
+                    if len(encoded)>=len(value):encoded,compression=value,0
+                    compressed|=bool(compression)
+                    stored=aes(encoded+b'\0'*((-len(encoded))%16),source.key,True)if encrypted else encoded
+                    specs.append((len(encoded),len(value),compression,len(stored)));payload.extend(stored)
+                return{'data':bytes(payload),'blocks':specs,'compressed':compressed,'sha1':hashlib.sha1(raw).digest()}
+            if cache:
+                packed,_=cache.run('iostore',{'raw':hashlib.sha256(raw).hexdigest(),'block':source.block,
+                    'method':method,'encrypted':encrypted,'key':hashlib.sha256(source.key).hexdigest()if encrypted else None,
+                    'zlib':zlib.ZLIB_RUNTIME_VERSION},encode,encoded=True)
+                cursor=0
+                for size,length,compression,stored in packed['blocks']:
+                    blocks.append(f.tell().to_bytes(5,'little')+size.to_bytes(3,'little')+length.to_bytes(3,'little')+bytes([compression]))
+                    f.write(memoryview(packed['data'])[cursor:cursor+stored]);cursor+=stored
+                if cursor!=len(packed['data']):raise ValueError('Encoded IoStore cache block range is invalid')
+                meta=packed['sha1']+b'\0'*12+bytes([int(packed['compressed'])])
+            else:
+                # Keep the original low-memory streaming path for callers
+                # which do not use the persistent export cache.
+                compressed=False
+                for start in range(0,len(raw),source.block):
+                    value=raw[start:start+source.block];encoded=zlib.compress(value,6);compression=method
+                    if len(encoded)>=len(value):encoded,compression=value,0
+                    compressed|=bool(compression)
+                    blocks.append(f.tell().to_bytes(5,'little')+len(encoded).to_bytes(3,'little')+len(value).to_bytes(3,'little')+bytes([compression]))
+                    f.write(aes(encoded+b'\0'*((-len(encoded))%16),source.key,True)if encrypted else encoded)
+                meta=hashlib.sha1(raw).digest()+b'\0'*12+bytes([int(compressed)])
+            item=(logical,len(raw))
             if index==len(chunks):chunks.append(chunk_id);ranges.append(item);metas.append(meta)
             elif index==header_index or index in replace_indices:ranges[index]=item;metas[index]=meta
             else:raise ValueError('Invalid appended chunk index')

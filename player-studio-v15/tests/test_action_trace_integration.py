@@ -101,7 +101,7 @@ class ShotObserverIntegrationTests(unittest.TestCase):
                 rows=[v for v in self.reader.drain()if v['event']=='ai_candidate_choice']
                 self.assertEqual(len(rows),2)
                 self.assertEqual(rows[0]['candidate']['original_name'],'传球')
-                self.assertEqual(rows[1]['candidate']['selected_name'],'盘带')
+                self.assertEqual(rows[1]['candidate']['selected_name'],'盘带候选')
                 self.assertEqual(rows[1]['candidate']['selected_id'],results[-1])
                 self.assertTrue(rows[1]['candidate']['changed'])
                 self.assertFalse(rows[1]['candidate']['motion_execution_confirmed'])

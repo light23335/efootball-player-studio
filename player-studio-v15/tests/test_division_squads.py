@@ -70,9 +70,10 @@ class DivisionSquadTests(unittest.TestCase):
         self.assertFalse(ids&ds.STOCK_AI_EXCLUDED_CARD_IDS);self.assertIn(copied,ids);self.assertIn(keeper,ids)
         self.assertEqual(self.db.execute('select count(*)from managed_cards').fetchone()[0],before+len(ds.STOCK_AI_EXCLUDED_CARD_IDS)+2)
 
-    def test_v18_v19_exact_cards_excluded_from_ai_without_removing_player_cards(self):
+    def test_v18_v19_v20_exact_cards_excluded_from_ai_without_removing_player_cards(self):
         excluded={89136418985321,89136418985316,89136418985320,89136418985323,
-                  89136418985324,89136418985322,89136418985325}
+                  89136418985324,89136418985322,89136418985325,
+                  89136418985332,89136418985335,89136418985333,89136418985336}
         self.assertTrue(excluded <= ds.STOCK_AI_EXCLUDED_CARD_IDS)
         for cid in excluded:
             p=card(cid,12);p['_content_package']='V18-V19';self.put_card(p)

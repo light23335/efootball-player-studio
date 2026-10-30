@@ -20,7 +20,7 @@ html[data-ui-shell=compact] .gauge{width:100px;height:100px}
 html[data-ui-shell=compact] .gauge b{font-size:42px}
 html[data-ui-shell=compact] .gauge small{bottom:17px}
 html[data-ui-shell=compact] .hub-hero{padding:32px 34px;min-height:360px}
-@media(max-height:600px){
+@media(max-height:600px) and (min-width:761px){
   .dock{top:10px;bottom:10px;transform:none;overflow-y:auto;scrollbar-width:none;justify-content:flex-start}
   .dock-logo{display:none}
   .dock hr{margin:2px 0}

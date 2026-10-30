@@ -4,7 +4,7 @@ import copy,json,sqlite3,sys,tempfile,unittest
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import app
-from workspace_tools import game_options,clear_exports,export_file
+from workspace_tools import game_options,clear_exports,export_file,clear_compiler_cache
 from project_sharing import export_selected
 from personal_runtime import apply_game_options
 
@@ -16,6 +16,14 @@ class WorkspaceTests(unittest.TestCase):
   server=SimpleNamespace(store=self.store,native_package=SimpleNamespace(status=lambda:{'phase':'idle'}),game_import=SimpleNamespace(status=lambda:{'phase':'idle'}))
   self.assertEqual(clear_exports(server)['deleted'],1);self.assertTrue((self.store.root/'keep.json').exists())
   with self.assertRaises(ValueError):export_file(self.store,'../keep.json')
+ def test_compiler_cache_cleanup_keeps_exports_assets_and_signatures_and_refuses_busy_job(self):
+  from compile_cache import CompileCache
+  cache=CompileCache(self.store.root/'compiler-cache',{});cache.run('face',{},lambda:b'mesh')
+  keep=self.store.root/'exports/keep.apk';keep.write_bytes(b'keep')
+  phase={'phase':'working'};server=SimpleNamespace(store=self.store,native_package=SimpleNamespace(status=lambda:phase),game_import=SimpleNamespace(status=lambda:{'phase':'idle'}))
+  with self.assertRaises(ValueError):clear_compiler_cache(server)
+  self.assertTrue(list(cache.root.glob('*.zip')));phase['phase']='idle'
+  self.assertEqual(clear_compiler_cache(server)['files'],1);self.assertEqual(keep.read_bytes(),b'keep')
  def test_multi_player_package_import_preserves_existing_slots_and_data(self):
   p=app.default_project();p['identity']['name']='First';p['identity']['shirt_name']='SHIRT';p['display_name']='Card';p['celebration']=123
   q=app.default_project();q['identity']['name']='Second';self.store.save_player(p);self.store.save_player(q)

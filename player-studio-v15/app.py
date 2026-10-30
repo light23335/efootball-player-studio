@@ -48,7 +48,7 @@ import editor_drafts
 from window_sessions import WindowSessions
 from booster_library import BoosterLibrary
 
-APP_VERSION = "2.0.4"
+APP_VERSION = "2.1"
 GAME_PLATFORM = "android"
 MAX_PERSONAL_PLAYERS = 10000
 BUNDLE = Path(getattr(sys, "_MEIPASS", Path(__file__).absolute().parent))
@@ -913,8 +913,9 @@ class Handler(BaseHTTPRequestHandler):
             elif path == '/api/native-apk/candidates':
                 result = self.server.native_package.candidates(normalize_project(body['project']))
             elif path == '/api/native-apk/sources':
-                from apk_sources import resolve as resolve_sources
+                from apk_sources import resolve as resolve_sources,installation_guidance
                 result = resolve_sources(self.server.library,self.server.store)
+                if body.get('apk'):result['installation']=installation_guidance(body['apk'],self.server.store)
             elif path == '/api/packs/list':
                 result = {'rows':packs.load(store),'banners':json.loads((RESOURCE/'native-pack-template.json').read_text(encoding='utf8'))['banners']}
             elif path == '/api/packs/save':
@@ -954,6 +955,9 @@ class Handler(BaseHTTPRequestHandler):
             elif path == '/api/exports/clear':
                 from workspace_tools import clear_exports
                 result=clear_exports(self.server)
+            elif path == '/api/compiler-cache/clear':
+                from workspace_tools import clear_compiler_cache
+                result=clear_compiler_cache(self.server)
             elif path == '/api/exports/open':
                 from workspace_tools import open_export
                 result=globals().get('open_export_action',open_export)(store,body['name'])

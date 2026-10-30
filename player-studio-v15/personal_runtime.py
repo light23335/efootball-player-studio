@@ -465,11 +465,41 @@ def apply_definitions(conn,document):
             apply_packs(conn,document.get('packs',[]))
             if document.get('revision'):conn.execute("insert into meta values('personal_pack_revision_v1',?) on conflict(key) do update set value=excluded.value",(document['revision'],))
         apply_catalogue_recycle(conn,document.get('catalogue_recycle_bin',[]))
+        sync_native_catalogue(conn,document)
         conn.execute('insert into meta values(?,?) on conflict(key) do update set value=excluded.value',(REGISTRY_KEY,compact(registry)))
         conn.commit()
     except BaseException:
         conn.rollback();raise
     return result
+
+
+def sync_native_catalogue(conn,document):
+    """Retire stale drawing definitions, not owned instances or their progress."""
+    from division_squads import native_card_ids,discard_invalid_snapshot
+    valid=native_card_ids(document)
+    if valid is None:return
+    definitions={d['identity']['package_id']:d['identity']['card_id']for d in document.get('players',[])}
+    members=bool(conn.execute("select 1 from sqlite_master where name='managed_members'").fetchone())
+    retired=[]
+    for cid,raw in list(conn.execute('select card_id,payload from managed_cards')):
+        if int(cid)in valid:continue
+        card=json.loads(raw);uid=card.get('_personal_player_uuid')
+        if not uid:continue
+        current=definitions.get(uid)
+        replacement=current if current in valid else None
+        key='personal_catalogue_retired_v1:'+str(cid)
+        conn.execute('insert or ignore into meta values(?,?)',(key,compact({'card_id':cid,'payload':card,'replacement':replacement})))
+        if members:
+            links=list(conn.execute('select agent_id,weight from managed_members where card_id=?',(str(cid),)))
+            if replacement is not None:
+                conn.executemany('insert or ignore into managed_members values(?,?,?)',[(aid,str(replacement),weight)for aid,weight in links])
+            conn.execute('delete from managed_members where card_id=?',(str(cid),))
+        conn.execute('delete from managed_cards where card_id=?',(str(cid),))
+        retired.append({'old_id':int(cid),'current_id':replacement})
+    discarded=discard_invalid_snapshot(conn,document)
+    conn.execute('insert into meta values(?,?) on conflict(key)do update set value=excluded.value',
+                 ('personal_native_catalogue_sync_v1',compact({'table_sha256':document['native_player_catalogue'].get('table_sha256'),
+                    'retired':retired,'invalid_opponent_discarded':discarded})))
 
 
 def apply_game_options(conn,options):

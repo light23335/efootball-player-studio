@@ -11,6 +11,15 @@ from native_movie import remux_usm
 def movie_packages(assets, name, raw):
     """Clone the inspected 30fps F02 source, including its private YUV textures."""
     _, info = remux_usm(raw)
+    return movie_metadata_packages(assets,name,info)
+
+
+def movie_metadata_packages(assets,name,info):
+    """Rebuild inspected movie metadata without transcoding the source video."""
+    if not __import__('re').fullmatch(r'[0-9a-z_]{14}',name):
+        raise ValueError('独立视频资源名称无效')
+    if any(type(info.get(key))is not int for key in('width','height','frames'))or not(1<=info['width']<=4096 and 1<=info['height']<=4096 and 1<=info['frames']<=1800):
+        raise ValueError('独立视频元数据无效')
     if info['duration'] != info['frames'] / 30:
         raise ValueError('独立卡面实验目前要求30fps')
     template = '0501_256_f02_v'
@@ -111,7 +120,7 @@ def write_movie_pak(path, movies):
         out.write(struct.pack('<IIQQ', 0x5a6f12e1, 3, offset, len(index)) + hashlib.sha1(index).digest())
 
 
-def read_movie_pak(raw):
+def read_movie_pak(raw,allow_native=False):
     from native_iostore import read_string
     if len(raw)<44:raise ValueError('独立动画包不完整')
     magic,version,offset,size=struct.unpack_from('<IIQQ',raw,len(raw)-44)
@@ -125,7 +134,9 @@ def read_movie_pak(raw):
     movies={}
     for _ in range(count):
         name,pos=read_string(index,pos)
-        if not __import__('re').fullmatch(r'PlayerCard/c[0-9a-f]{11}_v\.usm',name) or name in movies:raise ValueError('独立动画包文件名无效')
+        private=__import__('re').fullmatch(r'PlayerCard/c[0-9a-f]{11}_v\.usm',name)
+        native=allow_native and __import__('re').fullmatch(r'PlayerCard/[0-9]{4}_[0-9]{1,4}_[fm][0-9]{2}_v\.usm',name)
+        if not(private or native)or name in movies:raise ValueError('独立动画包文件名无效')
         off,size,unpacked,method=struct.unpack_from('<QQQI',index,pos)
         digest=index[pos+28:pos+48];flags,block=struct.unpack_from('<BI',index,pos+48);pos+=53
         if method or flags or block or size!=unpacked or off+53+size>offset:raise ValueError('独立动画包条目无效')

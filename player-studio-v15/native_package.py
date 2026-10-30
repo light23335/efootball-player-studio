@@ -37,7 +37,7 @@ from custom_boosters import issues as booster_issues,validate_projects as valida
 
 PREFIX='assets/gateway-release/'
 NATIVE='custom-resources/legends-v10/'
-COMPILER_REVISION='v17-draw203-shot-modes-dribble-2.0.4'
+COMPILER_REVISION='v17-resource-cache-stored-ucas-stream-signing-2.1'
 
 
 def compact(value):return json.dumps(value,ensure_ascii=False,separators=(',',':')).encode('utf8')
@@ -203,12 +203,13 @@ class NativePackage:
                 if 'assets/resource-bootstrap/resources.zip' not in z.namelist():raise ValueError('请选择原版离线资源 APK')
                 changes,installation=coexist_entries(z,installation_mode)
             work=self.store.root/'tmp'/('resource-signer-'+uuid.uuid4().hex);work.mkdir()
-            unsigned=work/'unsigned.apk';replace_entries(source,unsigned,changes)
+            unsigned=work/'unsigned.apk';apk_build=replace_entries(source,unsigned,changes,prepare_signing=True)
             key,cert=local_signer(self.store.root/'signing')
             output=self.store.root/'exports'/(('73efootball-工坊共存资源-' if installation_mode=='coexist' else '73efootball-离线资源-个人签名-')+time.strftime('%Y%m%d-%H%M%S-')+uuid.uuid4().hex[:4]+'.apk')
-            sign_v2(unsigned,output,key,cert);verified=verify_v2(output)
+            sign_v2(unsigned,output,key,cert,prepared=apk_build,consume=True);verified=verify_v2(output)
             from apk_installation import identity,remember_resource
             remember_resource(self.store,installation_mode,identity(output)['package'],verified['signer_sha256'])
+            self.remember_installation_mode(source,installation_mode)
             self.update(phase='done',message='同签名资源 APK 已生成；首次安装请与个人球员 APK 配套使用',
                         result={'kind':'companion','path':str(output),'url':'/exports/'+output.name,'size':output.stat().st_size,'signature':verified,'installation':installation})
         except Exception as exc:
@@ -324,15 +325,30 @@ class NativePackage:
                 self.update(message='编译个人卡图、脸模网格与原生材质')
                 reference=self.reference_model() if any(not (p.get('model',{}).get('native_source') or {}).get('path') for p in projects) else None
                 metadata=_export_data("资料文件",self.resources / 'native-face-template.json',"读取并解析 JSON",lambda: json.loads((self.resources/'native-face-template.json').read_text(encoding='utf8')))
-                art=[];bindings=[];art_reports=[];private_movie_files={}
+                art=[];bindings=[];art_reports=[];private_movie_files={};compile_cache=None;cache_warning=None
+                try:
+                    from compile_cache import CompileCache,source_context
+                    compile_cache=CompileCache(self.store.root/'compiler-cache',source_context(self.library,self.resources))
+                except (OSError,ValueError,TypeError,ImportError,AttributeError)as exc:
+                    cache_warning='编译缓存不可用，本次正常重新编译：'+str(exc)
                 for p,identity,rig in zip(projects,identities,rigs):
                     with export_context('球员',p,'编译卡图、脸模和自制动态背景'):
                         self.update(message='编译卡图与脸模：'+p['identity']['name'])
                         own=owners.get(p['package_id'],{}).get('aliases',set())
                         asset_key=reserve_asset_key(p['package_id'],{v&0xfffffff for v in records}-own,asset_registry)
-                        packages,binding,report=compile_art(p,identity,self.library,rig,reference,metadata,asset_key)
+                        packages,binding,report=compile_art(p,identity,self.library,rig,reference,metadata,asset_key,cache=compile_cache)
                         from private_card_motion import prepare as private_motion
-                        private_art,private_files,private_report=private_motion(p,binding,self.library)
+                        if compile_cache and(p.get('native_card')or{}).get('custom_motion'):
+                            from compile_cache import assets_in
+                            motion_inputs={'uuid':p['package_id'],'custom_motion':p['native_card']['custom_motion'],
+                                           'thumbnail_animation':p['appearance'].get('thumbnail_animation',True),'binding':binding}
+                            def movie_build():
+                                value=private_motion(p,binding,self.library)
+                                return(*value,copy.deepcopy(binding))
+                            value,movie_cache=compile_cache.run('animation',motion_inputs,movie_build,
+                                files=[self.store.root/'assets'/name for name in assets_in(motion_inputs)],encoded=True)
+                            private_art,private_files,private_report,binding=value;report['compile_cache']['animation']=movie_cache
+                        else:private_art,private_files,private_report=private_motion(p,binding,self.library)
                         packages.extend(private_art);private_movie_files.update(private_files)
                         if private_report:report['custom_motion']=private_report
                         art.extend(packages);bindings.append(binding);art_reports.append(report)
@@ -371,6 +387,9 @@ class NativePackage:
                     records,body['export_settings']['card_motion']['enabled'],self.profile_resources)
                 bindings=motion['bindings'];inherited_card_routes=motion['routes']
                 card_motion_report=motion['reports'];art.extend(motion['packages'])
+                for name,raw in motion.get('movie_files',{}).items():
+                    if name in private_movie_files and private_movie_files[name]!=raw:raise ValueError('小头像兼容视频与自制视频资源名冲突：'+name)
+                    private_movie_files[name]=raw
                 self.update(message='合并原生球员、外观、技能与增能资料表')
                 cpk,table_report=compile_tables(original,projects,definitions,self.resources,bindings,coach_resources,replace_ids,replace_boosters)
                 cpk=recycle_tables(cpk,self.store)
@@ -378,7 +397,7 @@ class NativePackage:
                 out=work/'pc3700_mobile_and.utoc'
                 from native_body import container_parts
                 additions,paths,packages=container_parts(art)
-                resource_build=append_container(src,out,additions,paths,packages,personal_source.owned_art_paths(src,selected_owners)|owned_paths(src,[c['id'] for c in old_coaches])|motion_replacements(src,motion['packages'])|head_replacements(src,head_art+coach_model_art))
+                resource_build=append_container(src,out,additions,paths,packages,personal_source.owned_art_paths(src,selected_owners)|owned_paths(src,[c['id'] for c in old_coaches])|motion_replacements(src,motion['packages'])|head_replacements(src,head_art+coach_model_art),cache=compile_cache)
                 replacements={PREFIX+NATIVE+'dt870_mobile_and.cpk':cpk,
                               PREFIX+'livedata/dt870_mobile_and.cpk':cpk}
                 replacements.update(recycle_seed(source,self.store))
@@ -386,21 +405,25 @@ class NativePackage:
                 self.update(message='替换原始教练模型容器并核对加载路径')
                 stock_head_replacements,stock_head_report=patch_stock_containers(source,self.library,head_art,coach_head_report,work)
                 replacements.update(stock_head_replacements)
-                if private_movie_files:
+                native_movie_files=motion.get('native_movie_files',{})
+                if private_movie_files or native_movie_files:
                     from private_card_motion import write_movie_pak,read_movie_pak
-                    private_pak=work/'cardstudio_100_P.pak'
                     member='assets/pc0000_mobile_and.pak';target_zip=work/'pc0000-movies.zip'
                     with (io.BytesIO(replacements[member]) if member in replacements else source.open(member)) as stream,zipfile.ZipFile(stream) as nested,zipfile.ZipFile(target_zip,'w') as dst:
-                        old_name='PesMobile/Content/Paks/cardstudio_100_P.pak'
-                        prior=read_movie_pak(nested.read(old_name)) if old_name in nested.namelist() else {}
-                        for name,raw in private_movie_files.items():
-                            if name in prior and prior[name]!=raw:raise ValueError('独立动画资源名冲突')
-                            prior[name]=raw
-                        write_movie_pak(private_pak,prior)
+                        updated={}
+                        for filename,movies,allow_native in(('cardstudio_100_P.pak',private_movie_files,False),
+                                                           ('cardstudio_content_100_P.pak',native_movie_files,True)):
+                            if not movies:continue
+                            old_name='PesMobile/Content/Paks/'+filename
+                            prior=read_movie_pak(nested.read(old_name),allow_native=allow_native)if old_name in nested.namelist()else{}
+                            for name,raw in movies.items():
+                                if name in prior and prior[name]!=raw:raise ValueError('独立动画资源名冲突：'+name)
+                                prior[name]=raw
+                            path=work/filename;write_movie_pak(path,prior);updated[old_name]=path
                         for entry in nested.infolist():
-                            if entry.filename==old_name:continue
+                            if entry.filename in updated:continue
                             with nested.open(entry) as inp,dst.open(copy.copy(entry),'w') as output:shutil.copyfileobj(inp,output,4*1024*1024)
-                        dst.write(private_pak,'PesMobile/Content/Paks/cardstudio_100_P.pak',compress_type=zipfile.ZIP_STORED)
+                        for name,path in updated.items():dst.write(path,name,compress_type=zipfile.ZIP_STORED)
                     replacements[member]=target_zip.read_bytes()
                 for suffix in ('.utoc','.ucas'):replacements[PREFIX+NATIVE+'pc3700_mobile_and'+suffix]=out.with_suffix(suffix).read_bytes()
                 # Original activation verifies all four files, including its empty PAK.
@@ -435,6 +458,9 @@ class NativePackage:
                           'card_series_by_id':card_series(cpk),
                           'preview_boosters':{str(b['id']):{'effects':b['effects'],'conditional':bool(b.get('conditional'))} for b in catalog['boosters']}}
                 document['players']=list(all_definitions.values())
+                native_players=unwrap(Cpk(cpk).read(PLAYER))
+                document['native_player_catalogue']={'version':1,'table_sha256':hashlib.sha256(native_players).hexdigest(),
+                    'card_ids':sorted(rows(native_players,400,8))}
                 document['content_catalogue']=content_catalogue
                 document['catalogue_recycle_bin']=recycle_policy(self.store)
                 document['catalogue_recycle_policy']='remove-owned-exact-cards; backup-save-before-removal; shared-art-retained'
@@ -469,6 +495,11 @@ class NativePackage:
                     from division_squads import configuration
                     from pack_catalogue import exclusions
                     document['division_squads']=configuration(catalog,exclusions(self.resources),export_settings['ai_division_squads'])
+                    from division_squads import random_booster_pool
+                    custom_ids=set(booster_registry.values())|set(inherited.get('editor_registries',{}).get('boosters',{}).values())
+                    document['division_squads']['random_boosters']=random_booster_pool(catalog,cpk,custom_ids)
+                    from division_squads import empty_booster_ids
+                    document['division_squads']['empty_booster_ids']=empty_booster_ids(cpk,custom_ids)
                     document['division_squads']['excluded_ids']=list(set(document['division_squads']['excluded_ids'])|set(recycled))
                     document['division_squads']['style_mode']=document['game_options'].get('style_mode','shuffle_bag')
                     if document['division_squads']['enabled']:
@@ -597,14 +628,20 @@ class NativePackage:
                 replacements[PREFIX+'release-manifest.json']=compact(release)
                 replacements.update(install_replacements)
             self.update(message='整理有效资源、回收旧导出数据并签名')
-            unsigned=work/'unsigned.apk';apk_build=replace_entries(apk,unsigned,replacements)
+            unsigned=work/'unsigned.apk';apk_build=replace_entries(apk,unsigned,replacements,store_ucas=True,prepare_signing=True)
             output=self.store.root/'exports'/('73efootball-'+self.library.profile.get('game_version','V14')+('-工坊共存-' if body.get('installation_mode')=='coexist' else '-个人球员-')+time.strftime('%Y%m%d-%H%M%S-')+uuid.uuid4().hex[:4]+'.apk')
             key,cert=local_signer(self.store.root/'signing')
-            sign_v2(unsigned,output,key,cert)
+            signing_performance=sign_v2(unsigned,output,key,cert,prepared=apk_build,consume=True)
             verified=verify_v2(output)
             with zipfile.ZipFile(output) as check:
                 for name,value in replacements.items():
                     if check.read(name)!=value:raise ValueError('生成的 APK 文件校验失败：'+name)
+            self.update(message='核对成品实时更新清单与两份球员资料')
+            from native_live import verify_apk as verify_live_apk
+            try:live_apk_report=verify_live_apk(output)
+            except Exception:
+                output.unlink(missing_ok=True)
+                raise
             self.update(message='保存永久编号注册表和导出报告')
             temp=registry_path.with_suffix('.tmp');temp.write_bytes(compact(registry));temp.replace(registry_path)
             temp=booster_path.with_suffix('.tmp');temp.write_bytes(compact(booster_registry));temp.replace(booster_path)
@@ -612,13 +649,16 @@ class NativePackage:
             temp=asset_path.with_suffix('.tmp');temp.write_bytes(compact(asset_registry));temp.replace(asset_path)
             temp=coach_path.with_suffix('.tmp');temp.write_bytes(compact(coach_registry));temp.replace(coach_path)
             report={'identities':identities,'native_art':art_reports,'packs':[{'uuid':p['uuid'],'agent_id':p['agent_id'],'name':p['name'],'members':len(p['members']),'skipped_members':p.get('skipped_members',[])} for p in packs],
-                    'native_tables':table_report,'signature':verified,'live_data':live_report,
+                    'native_tables':table_report,'signature':verified,'live_data':live_report,'live_apk_preflight':live_apk_report,
                     'apk_compaction':apk_build['compaction'],'resource_compaction':resource_build.compaction_report,
+                    'compiler_cache':compile_cache.report()if compile_cache else{'enabled':False,'warning':cache_warning},
+                    'signing_performance':signing_performance,
                     'native_binding_routes':len(document.get('native_binding',{}).get('routes',[])),'frame_rate':document['frame_rate'],'game_settings':export_settings,'render_preflight':document.get('render_preflight'),'card_motion_preflight':card_motion_report,'installation':installation,
                     'coaches':[{'uuid':c['uuid'],'id':c['id'],'name':c['payload']['name']} for c in coaches],'coach_portraits':coach_portrait_report,'coach_heads':coach_head_report,'coach_head_containers':stock_head_report,'coach_models':coach_model_report,'coach_model_loader':coach_model_loader,
                     'source_apk':str(apk),'output':str(output),'engine_profile':release['base_release_id'],'resource_release':release['release_id'],
                     'in_game_tested':False,'progress_policy':'first grant only; existing instance retains live XP, training and statistics'}
             report_path=output.with_suffix('.report.json');report_path.write_bytes(compact(report))
+            self.remember_installation_mode(apk,body.get('installation_mode','update'))
             self.update(phase='done',message='APK 已生成并通过签名与资源读回校验；待游戏内验收',
                         result={'path':str(output),'url':'/exports/'+output.name,'size':output.stat().st_size,
                                 'report':report,'report_path':str(report_path)})
@@ -628,6 +668,13 @@ class NativePackage:
             error=failure(exc,'游戏 APK',body.get('apk'),self.state.get('message') or '生成游戏 APK')
             self.update(phase='error',message=str(error),error_context=error.contexts,error_type=error.original_type)
         finally:self.cleanup_work(work,'native-')
+
+    def remember_installation_mode(self,source,mode):
+        from apk_sources import remember_mode
+        try:remember_mode(self.store,source,mode)
+        except OSError:
+            import logging
+            logging.exception('APK exported, but installation mode could not be remembered')
 
     def _booster_labels(self):
         path=self.resources/'catalog.json'

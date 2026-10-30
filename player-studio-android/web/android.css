@@ -18,3 +18,26 @@ input[type=checkbox],input[type=radio]{min-width:22px;min-height:22px}
 .panel,.ability-group{-webkit-backdrop-filter:none;backdrop-filter:none;background:linear-gradient(135deg,rgba(255,255,255,.09),rgba(255,255,255,.035))}
 dialog{max-width:96vw;max-height:92vh;max-height:92dvh}
 .native-row,.native-result,.note,.panel-description{overflow-wrap:anywhere}
+/* A long, live-updating backdrop layer can flash black in phone WebViews.
+   Keep the editing sheet opaque and outside backdrop compositing, even when
+   the optional power mode is off. The dock and other short glass layers stay. */
+html[data-android][data-ui-shell=phone] body.is-editor .editor-area{
+ -webkit-backdrop-filter:none;backdrop-filter:none;
+ background:linear-gradient(180deg,rgba(255,255,255,.07),transparent 420px),#101724;
+}
+/* Opt-in Android power mode stops interface effects, never media previews. */
+html[data-android][data-reduce-power="true"] .ambient i,
+html[data-android][data-reduce-power="true"] .card-stage,
+html[data-android][data-reduce-power="true"] .status-dot,
+html[data-android][data-reduce-power="true"] .live-dot,
+html[data-android][data-reduce-power="true"] .save-status.saving i{animation:none!important}
+html[data-android][data-reduce-power="true"] .card-stage{transform:none!important;translate:none!important;will-change:auto}
+html[data-android][data-reduce-power="true"] .card-holo,
+html[data-android][data-reduce-power="true"] .card-glare{display:none}
+html[data-android][data-reduce-power="true"],
+html[data-android][data-reduce-power="true"] *,
+html[data-android][data-reduce-power="true"] *::before,
+html[data-android][data-reduce-power="true"] *::after{
+ animation:none!important;transition:none!important;scroll-behavior:auto!important;
+ -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}

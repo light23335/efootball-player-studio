@@ -20,6 +20,8 @@ if native_deps.exists():
     os.environ['PYTHONPATH']=str(native_deps)+os.pathsep+os.environ.get('PYTHONPATH','')
 os.environ["PYINSTALLER_CONFIG_DIR"] = str(workspace / ".work" / "pyinstaller-cache")
 import PyInstaller.__main__
+from compile_cache import write_source_manifest
+write_source_manifest(root)
 
 PyInstaller.__main__.run([
     str(root / "app.py"), "--onefile", "--windowed", "--noupx", "--noconfirm",

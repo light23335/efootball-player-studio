@@ -73,8 +73,10 @@ def run(home,native_dir,fixtures):
         with tempfile.TemporaryDirectory() as tmp:
             folder=Path(tmp);source=folder/'source.apk';unsigned=folder/'unsigned.apk';output=folder/'signed.apk'
             with zipfile.ZipFile(source,'w') as z:z.writestr('assets/example',b'original data');z.writestr('lib/arm64-v8a/example.so',b'fixture'*10000)
-            apk_format.replace_entries(source,unsigned,{'assets/example':b'new data'})
-            key,cert=apk_format.local_signer(folder/'signing');sign_v2_in_place(unsigned,output,key,cert)
+            prepared=apk_format.replace_entries(source,unsigned,{'assets/example':b'new data'},prepare_signing=True)
+            key,cert=apk_format.local_signer(folder/'signing')
+            report=sign_v2_in_place(unsigned,output,key,cert,prepared=prepared,consume=True)
+            assert report['digest_reused'] and report['payload_recopy_avoided']
             result=apk_format.verify_v2(output);assert not unsigned.exists()
             with zipfile.ZipFile(output) as z:assert z.read('assets/example')==b'new data'
             return result

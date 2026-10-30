@@ -8,7 +8,7 @@ import struct
 from unittest.mock import patch
 
 sys.path.insert(0,str(Path(__file__).absolute().parents[1]))
-from apk_format import local_signer,sign_v2,verify_v2,replace_entries,layout
+from apk_format import local_signer,sign_v2,verify_v2,replace_entries,layout,content_digest
 
 
 class ApkFormatTests(unittest.TestCase):
@@ -88,6 +88,44 @@ class ApkFormatTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'最大文件.*players.cpk'):
                 replace_entries(self.raw,output,{'assets/players.cpk':bytes(100000)})
         self.assertFalse(output.exists())
+
+    def test_replaced_ucas_can_be_stored_with_identical_payload_and_alignment(self):
+        source=self.root/'compressed.apk'
+        with zipfile.ZipFile(source,'w',compression=zipfile.ZIP_DEFLATED)as z:
+            z.writestr('assets/test.ucas',b'old');z.writestr('assets/keep.txt',b'unchanged')
+        payload=bytes(range(256))*1000;output=self.root/'stored.apk'
+        report=replace_entries(source,output,{'assets/test.ucas':payload},store_ucas=True,prepare_signing=True)
+        with zipfile.ZipFile(output)as z,output.open('rb')as f:
+            item=z.getinfo('assets/test.ucas');self.assertEqual(item.compress_type,zipfile.ZIP_STORED)
+            self.assertEqual(z.read(item),payload);self.assertEqual(z.read('assets/keep.txt'),b'unchanged')
+            self.assertEqual(z.getinfo('assets/keep.txt').compress_type,zipfile.ZIP_DEFLATED)
+            f.seek(item.header_offset+26);n,e=struct.unpack('<HH',f.read(4))
+            self.assertEqual((item.header_offset+30+n+e)%4,0)
+        self.assertEqual(report['content_digest'],content_digest(output).hex())
+
+    def test_streamed_digest_and_consuming_signer_match_the_independent_signer(self):
+        for size in(0,1,1024*1024-1,1024*1024+1):
+            output=self.root/f'stream-{size}.apk'
+            prepared=replace_entries(self.raw,output,{'assets/players.cpk':b'x'*size},prepare_signing=True)
+            baseline=self.root/f'baseline-{size}.apk';sign_v2(output,baseline,self.key,self.cert)
+            signed=self.root/f'fast-{size}.apk'
+            with patch('apk_format.content_digest',side_effect=AssertionError('Repeated hash')),patch('apk_format.copy_bytes',side_effect=AssertionError('Payload recopy')):
+                report=sign_v2(output,signed,self.key,self.cert,prepared=prepared,consume=True)
+            self.assertFalse(output.exists());self.assertTrue(report['digest_reused']);self.assertTrue(report['payload_recopy_avoided'])
+            self.assertEqual(signed.read_bytes(),baseline.read_bytes());self.assertTrue(verify_v2(signed)['verified_v2'])
+
+    def test_changed_unsigned_file_invalidates_prepared_digest(self):
+        output=self.root/'changed.apk';prepared=replace_entries(self.raw,output,{},prepare_signing=True)
+        with output.open('r+b')as f:f.seek(80);value=f.read(1);f.seek(80);f.write(bytes([value[0]^1]))
+        signed=self.root/'changed-signed.apk'
+        report=sign_v2(output,signed,self.key,self.cert,prepared=prepared,consume=True)
+        self.assertFalse(report['digest_reused']);self.assertTrue(verify_v2(signed)['verified_v2'])
+
+    def test_consuming_signer_keeps_existing_destination_and_input_intact(self):
+        destination=self.root/'existing.apk';destination.write_bytes(b'keep')
+        before=self.raw.read_bytes()
+        with self.assertRaisesRegex(ValueError,'new file'):sign_v2(self.raw,destination,self.key,self.cert,consume=True)
+        self.assertEqual(destination.read_bytes(),b'keep');self.assertEqual(self.raw.read_bytes(),before)
 
 
 if __name__=='__main__':unittest.main()

@@ -63,12 +63,16 @@ class MiniTextures:
     lets either view detach the other's owner; sharing the movie file is safe.
     """
     BASE='/Game/Assets/ui/Data/Thumbnail/Player/'
-    def __init__(self,assets,alias):
+    def __init__(self,assets,alias,compatibility=None):
         self.assets=assets;self.alias=alias;self.art={};self.names={}
+        self.compatibility=compatibility
 
     def isolate(self,name):
         if not name:return ''
         if name in self.names:return self.names[name]
+        if self.compatibility:
+            target=self.compatibility.redirect(name)
+            if target:self.names[name]=target;return target
         if not isinstance(name,str) or not re.fullmatch('[0-9a-z_]{1,22}',name):raise ValueError('小头像原生动画名称无效')
         private=bool(re.fullmatch(r'smi_[0-9a-f]{12}',name))
         target=name if private else 'smi_'+hashlib.sha256(name.encode('ascii')).hexdigest()[:12]
@@ -107,20 +111,36 @@ def prepare(library,bindings,inherited_routes,records,enabled,resources=None):
         from thumbnail_mask import prepare as prepare_personal_mask
         art,mask_reports=prepare_personal_mask(library,art,bindings,routes,resources)
         reports.extend(mask_reports)
+    from mini_movie_compat import MiniMovieCompatibility
+    compatibility=MiniMovieCompatibility(assets)if getattr(library,'profile',{}).get('game_version')=='V17'else None
+    if compatibility:
+        movie_paths=getattr(library,'card_media',{}).get('movies',[])
+        def read_movie(name):
+            source=next(p for p in movie_paths if Path(p).stem==name)
+            path=library.converted/source
+            if not path.is_file():library.run([source],'raw')
+            return path.read_bytes()
+        compatibility.prepare_large(movie_paths,read_movie)
     import contextlib
     with contextlib.closing(library.db()) as db:
-        mini=MiniTextures(assets,lambda name:library._alias(db,name))
+        mini=MiniTextures(assets,lambda name:library._alias(db,name),compatibility)
         for row in [*bindings,*routes]:
             values=row.get('thumbnail_names')
+            if values is not None and row.get('private_movie_textures')and compatibility:
+                if len(values)!=6:raise ValueError('小头像原生图层数量无效')
+                row['thumbnail_names']=[(compatibility.redirect(v)or v)if i in(1,5)else v for i,v in enumerate(values)]
             if values is not None and not row.get('private_movie_textures'):
                 if len(values)!=6:raise ValueError('小头像原生图层数量无效')
                 row['thumbnail_names']=mini.values(values,(1,5))
         for row in stock:row['names']=mini.values(row['names'],(0,1))
     art.extend(mini.art.values())
+    if compatibility:art.extend(compatibility.art.values());reports.extend(compatibility.reports)
     reports.append({'mini_video_textures_isolated':len(set(mini.names.values())),
                     'new_packages':len(mini.art),'original_movie_sources_preserved':True,
                     'forced_tick_playback':False,'native_widget_cleanup_preserved':True})
-    return {'packages':art,'reports':reports,'bindings':bindings,'routes':routes,'stock_routes':stock}
+    return {'packages':art,'reports':reports,'bindings':bindings,'routes':routes,'stock_routes':stock,
+            'movie_files':compatibility.movies if compatibility else {},
+            'native_movie_files':compatibility.native_movies if compatibility else {}}
 
 
 def replacement_indices(container,art):

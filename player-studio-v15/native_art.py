@@ -147,22 +147,30 @@ def verify_portrait_locations(packages,binding):
 
 
 @exported('球员','编译卡面、脸模和材质',lambda project,*args,**kwargs: project)
-def compile_art(project,identity,library,rigged_path=None,reference_path=None,mesh_metadata=None,asset_key=None):
+def compile_art(project,identity,library,rigged_path=None,reference_path=None,mesh_metadata=None,asset_key=None,cache=None):
+    from compile_cache import assets_in
+    person=str(asset_key or identity['person_id'])
+    card_inputs={'appearance':project['appearance'],'native_card':project['native_card'],
+                 'native_art':project.get('native_art'),'identity':identity,'asset_key':person}
+    face_inputs={'model':project.get('model'),'source_player_id':(project.get('source_player')or{}).get('id'),
+                 'asset_key':person,'mesh_metadata':mesh_metadata}
+    def card():return _compile_card_art(project,identity,library,person)
+    def face():return _compile_face_art(project,identity,library,rigged_path,reference_path,mesh_metadata,person)
+    if cache:
+        cards,card_cache=cache.run('card',card_inputs,card,files=[library.store.root/'assets'/name for name in assets_in(card_inputs)])
+        files=[library.store.root/'assets'/name for name in assets_in(face_inputs)]
+        files.extend(Path(p)for p in(rigged_path,reference_path)if p)
+        head,face_cache=cache.run('face',face_inputs,face,files=files)
+    else:cards=card();head=face();card_cache=face_cache={'hit':False,'enabled':False}
+    packages,binding,report=cards;face_packages,face_report=head
+    report={**report,**face_report,'native_packages':len(packages)+len(face_packages),'compile_cache':{'card':card_cache,'face':face_cache}}
+    return packages+face_packages,binding,report
+
+
+def _compile_card_art(project,identity,library,person):
     from PIL import Image,ImageFont,ImageDraw
-    from native_glb import Glb,prove_binding
-    from native_mesh import replace_head
-    assets=Assets(library.containers);person=str(asset_key or identity['person_id']);cid=str(identity['card_id'])
-    result=[];report={};card=project['native_card'];appearance=project['appearance']
-    model=project.get('model') or {};native_face=None
-    if (model.get('native_source') or {}).get('path'):
-        path=model['native_source']['path']
-        try:
-            raw,meta,report['face_source']=assets.face(path)
-            raw,report['skin_tone']=original_face_skin(raw,model,library.resources,
-                                                      (project.get('source_player') or {}).get('id'))
-            native_face=(raw,meta,path)
-        except (ValueError,OSError) as exc:
-            raise ValueError(project['identity']['name']+'：'+str(exc)) from exc
+    assets=library.face_assets()if hasattr(library,'face_assets')else Assets(library.containers)
+    cid=str(identity['card_id']);result=[];report={};card=project['native_card'];appearance=project['appearance']
     portrait=appearance.get('portrait')
     if not portrait or appearance.get('hide_portrait'):raise ValueError('请先选择需要实装的球员卡图')
     base='/Game/Assets/ui/Data/Thumbnail/Player/'
@@ -236,6 +244,25 @@ def compile_art(project,identity,library,rigged_path=None,reference_path=None,me
     report['front_portrait']={'slot':'F07','name':person+'f','mini_isolated':True,
                               'legacy_filename_alias_independent':True}
     report['portrait_locations']=verify_portrait_locations(result,binding)
+    report.update(portrait_pixels=[512,512],card_aliases=len(aliases))
+    return result,binding,report
+
+
+def _compile_face_art(project,identity,library,rigged_path,reference_path,mesh_metadata,person):
+    from PIL import Image
+    from native_glb import Glb,prove_binding
+    from native_mesh import replace_head
+    assets=library.face_assets()if hasattr(library,'face_assets')else Assets(library.containers)
+    result=[];report={};model=project.get('model')or{};native_face=None
+    if (model.get('native_source') or {}).get('path'):
+        path=model['native_source']['path']
+        try:
+            raw,meta,report['face_source']=assets.face(path)
+            raw,report['skin_tone']=original_face_skin(raw,model,library.resources,
+                                                      (project.get('source_player') or {}).get('id'))
+            native_face=(raw,meta,path)
+        except (ValueError,OSError) as exc:
+            raise ValueError(project['identity']['name']+'：'+str(exc)) from exc
     if not model.get('asset'):raise ValueError('请先载入游戏原版脸模或已绑定 V13 骨架的自制 GLB')
     if native_face:
         raw,meta,path=native_face
@@ -250,7 +277,7 @@ def compile_art(project,identity,library,rigged_path=None,reference_path=None,me
         result.extend(body_packages)
         report.update(native_packages=len(result),model='original-game-face',source=path,
                       original_video_resources_preserved=True,in_game_tested=False)
-        return result,binding,report
+        return result,report
     static=Glb((library.store.root/'assets'/model['asset']).read_bytes())
     if not rigged_path:
         bound=static
@@ -288,7 +315,7 @@ def compile_art(project,identity,library,rigged_path=None,reference_path=None,me
         if name.startswith(face+'T_'+person+'_Face_'):
             raw=texture(raw,name,maps[name.rsplit('_',1)[-1]])[0]
         result.append((name,raw,meta))
-    report.update(native_packages=len(result),portrait_pixels=[512,512],card_aliases=len(aliases),
+    report.update(native_packages=len(result),
                   face_texture_pixels=list(maps['D'].size),face_materials='own diffuse and neutral normal/SRO',
                   original_video_resources_preserved=True,in_game_tested=False)
-    return result,binding,report
+    return result,report

@@ -1,10 +1,10 @@
-"""Strict UE4.26 PAK v11 and IoStore reader shared by Android conversion.
+"""UE4.26 PAK v11, workshop movie PAK v3 and IoStore conversion reader.
 
 Serialization reference: CUE4Parse FPakInfo/FPakEntry/PakFileReader (Apache-2.0).
 Only the original game's AES-ECB, uncompressed, zlib and gzip layouts apply.
 """
 from pathlib import Path
-import hashlib,struct,zlib
+import hashlib,re,struct,zlib
 from native_art import Assets
 from native_iostore import aes,read_string
 
@@ -26,6 +26,9 @@ class Pak:
         self.path=Path(path);self.key=key
         with self.path.open('rb') as f:
             f.seek(max(0,self.path.stat().st_size-4096));tail=f.read()
+        self.version=11
+        if len(tail)>=44 and struct.unpack_from('<II',tail,len(tail)-44)==(0x5a6f12e1,3):
+            self._movie_index(tail[-44:]);return
         at=tail.rfind(struct.pack('<I',0x5a6f12e1))
         if at<17 or len(tail)-at!=204:raise ValueError('未适配的原版 PAK 页脚：'+path.name)
         version,offset,size=struct.unpack_from('<IQQ',tail,at+4)
@@ -53,11 +56,45 @@ class Pak:
                 if location<0:raise ValueError('原版 PAK 条目不是已适配的编码格式')
                 self.files[self.mount+folder.lstrip('/')+name]=location
         if len(self.files)!=count:raise ValueError('原版 PAK 目录数量校验失败')
+    def _movie_index(self,footer):
+        """The exact unencrypted/uncompressed v3 format written by the workshop."""
+        _,_,offset,size=struct.unpack_from('<IIQQ',footer)
+        if not 0<size<=128*1024*1024 or offset+size!=self.path.stat().st_size-44:
+            raise ValueError('工坊动态卡面 PAK 索引范围无效：'+self.path.name)
+        self.version=3;self.encrypted=False
+        index=self._index(offset,size)
+        if hashlib.sha1(index).digest()!=footer[24:44]:raise ValueError('工坊动态卡面 PAK 索引校验失败')
+        cur=Cursor(index);self.mount=cur.string();count=cur.read('I')
+        if self.mount!='../../../PesMobile/Content/Movies/' or count>20000:
+            raise ValueError('工坊动态卡面 PAK 挂载路径或数量无效')
+        self.files={};ranges=[]
+        for _ in range(count):
+            name=cur.string();entry=cur.bytes(53)
+            private=re.fullmatch(r'PlayerCard/c[0-9a-f]{11}_v\.usm',name)
+            native=re.fullmatch(r'PlayerCard/[0-9]{4}_[0-9]{1,4}_[fm][0-9]{2}_v\.usm',name)
+            path=self.mount+name
+            if not(private or native)or path in self.files:raise ValueError('工坊动态卡面 PAK 文件名无效')
+            at,stored,decoded,method=struct.unpack_from('<QQQI',entry)
+            flags,block=struct.unpack_from('<BI',entry,48)
+            if method or flags or block or stored!=decoded or not 4<=stored<=128*1024*1024 or at+53+stored>offset:
+                raise ValueError('工坊动态卡面 PAK 条目范围或格式无效')
+            self.files[path]=(at,stored,entry);ranges.append((at,at+53+stored))
+        if cur.at!=len(index):raise ValueError('工坊动态卡面 PAK 索引尾部异常')
+        ranges.sort()
+        if any(a[1]>b[0]for a,b in zip(ranges,ranges[1:])):raise ValueError('工坊动态卡面 PAK 条目重叠')
     def _index(self,offset,size):
         if offset<0 or size<0 or offset+size>self.path.stat().st_size:raise ValueError('PAK 索引偏移越界')
         with self.path.open('rb') as f:f.seek(offset);value=f.read(size)
         return aes(value,self.key) if self.encrypted else value
     def read(self,path):
+        if self.version==3:
+            at,size,entry=self.files[path]
+            with self.path.open('rb')as f:
+                f.seek(at);header=f.read(53);value=f.read(size)
+            if header!=bytes(8)+entry[8:]:raise ValueError('工坊动态卡面 PAK 条目头不一致')
+            if len(value)!=size or value[:4]!=b'CRID' or hashlib.sha1(value).digest()!=entry[28:48]:
+                raise ValueError('工坊动态卡面 PAK 视频校验失败')
+            return value
         cur=Cursor(self.encoded,self.files[path]);flags=cur.read('I')
         block_size=cur.read('I') if flags&63==63 else (flags&63)<<11
         method=(flags>>23)&63;offset=cur.read('I' if flags&1<<31 else 'Q')
@@ -95,10 +132,11 @@ class PortableAssets(Assets):
         return path if path.startswith('../../../') else '../../../'+path
     def _prepare_paks(self):
         if self.paks is not None:return
-        key=(self.folder/'resource-key.bin').read_bytes();self.paks={}
+        key=(self.folder/'resource-key.bin').read_bytes();paks={}
         for path in sorted(self.folder.glob('*.pak'),key=lambda p:('_P' in p.stem,p.name)):
             pak=Pak(path,key)
-            for name in pak.files:self.paks[name]=pak
+            for name in pak.files:paks[name]=pak
+        self.paks=paks
     def raw_paths(self):
         self._prepare_paks();return [p.removeprefix('../../../') for p in self.paks]
     def raw(self,path):

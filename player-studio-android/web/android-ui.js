@@ -2,6 +2,7 @@
 // phone dock come from the shared shell.js.
 function setupAndroid(){
  document.documentElement.dataset.android='';
+ import('/android-power.js').then(m=>m.setupAndroidPower()).catch(()=>{});
  window.__studioLayout?.();
  const hints=()=>{
   document.querySelectorAll('.model-hint,.inline-tip').forEach(e=>{if(e.textContent.includes('左键'))e.textContent='单指旋转 · 双指缩放、平移';});

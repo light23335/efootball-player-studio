@@ -13,7 +13,7 @@ from ai_opportunity import add_opportunity_helpers, COMPARISON_WINDOW, PREFERENC
 from ai_selection import add_selection_helpers
 
 ENGINE_SHA='efd257d9e41b622d6ecb8f51f7b0a8ee8820113fd427c5572025df1c8eecc7b8'
-REVISION='v17-ai-cut-in-opportunity-v6-probability-native-shot-modes'
+REVISION='v17-ai-cut-in-opportunity-v7-203-selection-fixed-shot-modes'
 
 
 def add_ai_cut_in_shots(b):
@@ -215,7 +215,7 @@ def build(engine,release=False):
                               ('native_blitz_branch',0x6d68648,104),('native_shot_dispatch',0x70e5354,180),
                               ('selector_caller_layout',0x70e4bfc,20)]:
         probes.append({'name':name,'file_offset':address-0x4000,'expected_hex':engine[address-0x4000:address-0x4000+size].hex()})
-    return {'revision':REVISION,'production_ready':release,'experimental':True,'probability_gate':{'candidate':.8,'shot':.8,'candidate_zone':'attacking third','stable_window_native_ticks':30},'probes':probes,
+    return {'revision':REVISION,'production_ready':release,'experimental':True,'probability_gate':{'candidate':None,'candidate_policy':'2.0.3 restored','shot':.8,'stable_window_native_ticks':30},'probes':probes,
             'ordinary_switch_offset':ordinary_at,'engine_sha256':ENGINE_SHA,'hooks':b.rows,'helpers':b.helpers,'bundles':[bundle],
             'priority':['Blitz Curler','Long-range Curler','Long-range Shooting'],
             'qualification':{'ai_parameter':66,'ai_match_bit':4,'lone_wolf_match_bit':7,

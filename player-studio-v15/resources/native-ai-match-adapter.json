@@ -647,9 +647,9 @@
       "ai_match_channel.py": "02e6846bbcf632fb8d2f7ddbcfaad68d01c8b14df43114529e3e077cdf9cb9c8",
       "ai_tactical_profiles.py": "f73bbd3e88564bc7a1ff5269d7d09a4265133e0e9c1344e47d52a27471bb0f6a",
       "ai_division_sessions.py": "e8c4a520d5656f64dbd95d05fa8bb3802f4db94d212673c1ea2b941c0295184c",
-      "division_squads.py": "fbb8549fae4154f9884fcfe581c757dd7b45e94f0b448082dab2929e6d955ddc",
+      "division_squads.py": "5678fa30029377299b7385e2a9b717e305ead335f60b93bafd96b8cc76f049ce",
       "personal_binding.py": "77f683d120c08354ae81a8fe14f17846a1b28f484ff81f1427594938d713b57f",
-      "personal_runtime.py": "685556606188a875dafb86ef9773fe88ed403c0f5a8e45acc5caf6c2e09904c3"
+      "personal_runtime.py": "ecf106152d8490cf418dc8dd0da402574648f608eec8bdde406718b4675d87d5"
     },
     "original_engine_sha256": "efd257d9e41b622d6ecb8f51f7b0a8ee8820113fd427c5572025df1c8eecc7b8",
     "live_policy_evidence_sha256": "7db19a7ed1037ec330def0c4b9f6eb849ce48b43c5edcded05b9bfbf1308a2c6",
@@ -755,6 +755,42 @@
         "before": "93c57ee52cd458a21229250a41589c97ac8a8fdd567863fbf70e2055abeb1c0d",
         "after": "685556606188a875dafb86ef9773fe88ed403c0f5a8e45acc5caf6c2e09904c3",
         "game_acceptance": "pending"
+      },
+      "v20_ai_only_exclusions": {
+        "card_ids": [
+          89136418985332,
+          89136418985335,
+          89136418985333,
+          89136418985336
+        ],
+        "before_sha256": "fbb8549fae4154f9884fcfe581c757dd7b45e94f0b448082dab2929e6d955ddc",
+        "after_sha256": "1acc42173ae7abba11478bde3842426aad1711091d5d33a0631e11214cfb721b",
+        "generation_ast_unchanged_except_exclusions": true,
+        "owned_and_catalogue_unchanged": true,
+        "real_game_validation": false
+      },
+      "native_catalogue_and_random_booster_fix": {
+        "files": {
+          "division_squads.py": {
+            "before": "1acc42173ae7abba11478bde3842426aad1711091d5d33a0631e11214cfb721b",
+            "after": "b9b14ec4ecc59fe6bbe3118df19088642441d8e1df6ab0c972ffc54a6eabd460"
+          },
+          "personal_runtime.py": {
+            "before": "685556606188a875dafb86ef9773fe88ed403c0f5a8e45acc5caf6c2e09904c3",
+            "after": "ecf106152d8490cf418dc8dd0da402574648f608eec8bdde406718b4675d87d5"
+          }
+        },
+        "scope": "final native Player.bin identity allowlist; retire stale personal drawing definitions with exact backups; invalidate only broken private opponent snapshots; one role-matched original unconditional booster in an empty editable slot; ratings from final slot parameters",
+        "native_executor_unchanged": true,
+        "owned_progress_unchanged": true,
+        "game_acceptance": "pending user test"
+      },
+      "empty_booster_slots_21": {
+        "before": "b9b14ec4ecc59fe6bbe3118df19088642441d8e1df6ab0c972ffc54a6eabd460",
+        "after": "5678fa30029377299b7385e2a9b717e305ead335f60b93bafd96b8cc76f049ce",
+        "scope": "Identify empty booster slot records from the current native table: matching kind-4 fields and zero verified effects, excluding registered custom IDs. Not a fixed 136-only rule. Fill once per opponent card and refresh cached parameters and ratings; original conditionals preserved.",
+        "native_executor_unchanged": true,
+        "game_acceptance": "pending user test"
       }
     }
   },

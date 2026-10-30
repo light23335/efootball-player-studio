@@ -109,15 +109,19 @@ def decode_event(raw):
         record['native_control']={'word':word,'mode':(word>>16)&255,'stunning':bool(word&(1<<26))}
     if kind==6:
         before_kind,after_kind=struct.unpack_from('<II',raw,128)
-        names={1:'射门',2:'传球',3:'盘带'}
+        names={1:'射门',2:'传球',3:'盘带候选',10:'原生类别 10（待核对）'}
         record['candidate']={'original_id':original,'selected_id':selected,'original_kind':before_kind,'selected_kind':after_kind,
                              'original_name':names.get(before_kind,'原生类别 '+str(before_kind)),
                              'selected_name':names.get(after_kind,'原生类别 '+str(after_kind)),
-                             'changed':original!=selected,'motion_execution_confirmed':False}
+                             'changed':original!=selected,'no_executable_candidate':original==30 and selected==30,'motion_execution_confirmed':False}
+        if original==30:record['candidate']['original_name']='当前无可用候选'
+        if selected==30:record['candidate']['selected_name']='当前无可用候选'
     ai_flags=struct.unpack_from('<I',raw,148)[0]
     record['ai_styles']=[name for bit,name in ((4,'内切突破'),(7,'独狼'))if ai_flags&(1<<bit)]
     flags=struct.unpack_from('<I',raw,100)[0]
     record['identity_verified']=bool(flags&1)
+    record['slot_source']='native GameActor index'if flags&4 else 'current PlayerInfo table'if flags&2 else 'unverified'
+    record['match_membership_verified']=bool(flags&2)
     if kind==5:
         record.update(team=None,slot=None,team_slot=None,frame=None,phase=None,
                       player_id=None,player_serial=None,position=None,target=None,skills=None,

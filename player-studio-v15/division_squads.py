@@ -18,7 +18,7 @@ from pathlib import Path
 from native_overall import rating as native_rating
 import ai_tactical_profiles as tactics
 
-REVISION = 'v17-division-library-v8-payload-integrity'
+REVISION = 'v17-division-library-v10-placeholder-boosters'
 MARKER = '_studio_division_squad_v1'
 STYLES = ('possession', 'short_counter', 'long_counter', 'side_attack', 'long_ball', 'overload')
 # Native UI switch 0x35099f8 / table0xc3d935: the wire enum places
@@ -54,7 +54,12 @@ STOCK_AI_EXCLUDED_CARD_IDS = frozenset((
     89136418985323,  # Kaka (V18)
     89136418985324,  # Thomas Muller (V18)
     89136418985322,  # James Rodriguez (V18)
-    89136418985325))  # Boaz Solossa (V19)
+    89136418985325,  # Boaz Solossa (V19)
+    # Exact V20 era cards; other stock variants and copied DIY stay usable.
+    89136418985332,  # Cristiano Ronaldo / 2018
+    89136418985335,  # Robert Lewandowski / 2021
+    89136418985333,  # Lucio / 2002
+    89136418985336))  # Rafael Leao / 2023
 _LOCK = threading.RLock()
 
 
@@ -168,6 +173,87 @@ def personal_identities(document):
     return result
 
 
+def native_card_ids(document):
+    """Exact final Player.bin IDs, produced after all export table edits."""
+    index=document.get('native_player_catalogue')
+    if index is None:return None  # Legacy documents; the exporter always writes v1.
+    if index.get('version')!=1 or not isinstance(index.get('card_ids'),list):
+        raise ValueError('原生球员索引无效，未使用过期卡池')
+    if any(type(cid)is not int or not 0<cid<2**64 for cid in index['card_ids']):
+        raise ValueError('原生球员索引含无效编号')
+    return frozenset(index['card_ids'])
+
+
+def snapshot_missing_native(document,response):
+    valid=native_card_ids(document)
+    if valid is None or not response.get(MARKER):return []
+    return [p.get('gameplayer_id',{}).get('id')for p in response.get('player_list',[])
+            if p.get('gameplayer_id',{}).get('id')not in valid]
+
+
+def discard_invalid_snapshot(conn,document):
+    row=conn.execute("select value from meta where key='ai_division_active_match'").fetchone()
+    if not row:return False
+    active=json.loads(row[0]);missing=snapshot_missing_native(document,active.get('opponent',{}))
+    if not missing:return False
+    conn.execute('insert or ignore into meta values(?,?)',
+                 ('personal_ai_catalogue_snapshot_backup_v1:'+str(active.get('game_id','unknown')),row[0]))
+    conn.execute("delete from meta where key='ai_division_active_match'")
+    return True
+
+
+BOOSTER_ROLE_STATS=(
+    {16,29,30,31,32}, {15,23,24,25,26,35,39,40},
+    {15,21,22,24,26,34,37,40}, {15,21,22,24,26,34,37,40},
+    {15,21,24,25,26,35,40}, {17,18,19,21,22,25,36,40},
+    {17,19,21,22,28,34,37,40}, {17,19,21,22,28,34,37,40},
+    {14,17,18,19,20,21,28,36}, {14,17,19,20,28,34,37,38},
+    {14,17,19,20,28,34,37,38}, {14,17,18,20,21,35,37,38},
+    {14,18,20,23,35,37,38,39})
+
+# Native kind 4 is the empty crafting-slot marker. Both serialized kind
+# fields must agree and all 26 verified effect fields must be zero. IDs are
+# read from the actual table, not a fixed blacklist of known card/booster IDs.
+EMPTY_BOOSTER_KIND=4
+
+
+def empty_booster_ids(cpk,custom_ids=()):
+    from native_cpk import Cpk,unwrap
+    from native_tables import BOOSTERS
+    from custom_boosters import BOOSTER_BITS
+    raw=unwrap(Cpk(cpk).read(BOOSTERS));blocked=set(map(int,custom_ids))
+    if len(raw)%40:raise ValueError('原生增能表布局改变')
+    result=[]
+    for i in range(0,len(raw),40):
+        row=raw[i:i+40];value=int.from_bytes(row,'little');bid=(value>>112)&1023
+        if bid in blocked or int.from_bytes(row[8:12],'little')!=EMPTY_BOOSTER_KIND or row[37]&7!=EMPTY_BOOSTER_KIND:continue
+        if any((value>>bit)&31 for bit in BOOSTER_BITS.values()):continue
+        result.append(bid)
+    return sorted(result)
+
+
+def random_booster_pool(catalog,cpk,custom_ids=()):
+    """Only verified original constant effects; never custom/conditional IDs."""
+    from custom_boosters import BOOSTER_BITS
+    from native_cpk import Cpk,unwrap
+    from native_tables import BOOSTERS
+    raw=unwrap(Cpk(cpk).read(BOOSTERS))
+    if len(raw)%40:raise ValueError('原生增能表布局改变')
+    records={int.from_bytes(raw[i+14:i+16],'little')&1023:int.from_bytes(raw[i:i+40],'little')for i in range(0,len(raw),40)}
+    blocked=set(map(int,custom_ids));result=[]
+    for row in catalog.get('boosters',[]):
+        bid=row['id'];effects={str(k):v for k,v in row.get('effects',{}).items()if v}
+        if bid in blocked or not 0<bid<=1023 or row.get('conditional')or row.get('category')!=0 or not effects:continue
+        if bid not in records or any(k not in BOOSTER_BITS or type(v)is not int or v<=0 for k,v in effects.items()):continue
+        actual={k:(records[bid]>>bit)&31 for k,bit in BOOSTER_BITS.items()if(records[bid]>>bit)&31}
+        if effects!=actual:continue
+        keys=set(map(int,effects))
+        roles=[i for i,wanted in enumerate(BOOSTER_ROLE_STATS)
+               if len(keys&wanted)>=2 and len(keys&wanted)*2>=len(keys)]
+        if roles:result.append({'id':bid,'label':row.get('label',''),'effects':effects,'roles':roles})
+    return result
+
+
 class Generator:
     def __init__(self, document, developed, wire, caps, formation, teams, normalize, root=None):
         self.document = document
@@ -180,6 +266,7 @@ class Generator:
         self._trained = {}
         self._ratings = OrderedDict()
         self._prepared = {}
+        self._boosted_prepared = {}
         self._pool_cache = {}
         self.sampling = {}
         self.root = Path(root) if root is not None else None
@@ -227,6 +314,7 @@ class Generator:
 
     def cards(self, conn):
         document = self.document()
+        valid=native_card_ids(document)
         bindings=personal_identities(document)
         custom_ids={int(cid) for row in document.get('players',[]) for cid in
                     [row.get('identity',{}).get('card_id'),*((row.get('identity')or{}).get('previous_card_ids')or[])]
@@ -237,6 +325,7 @@ class Generator:
             blocked.update(str(r[0]) for r in conn.execute("select card_id from excluded_catalog_ids where reason != 'China edition'"))
         rows = []
         for cid, fingerprint, raw in conn.execute('select card_id,fingerprint,payload from managed_cards order by card_id'):
+            if valid is not None and int(cid)not in valid:continue
             if str(cid) in blocked:
                 continue
             if not include_diy and int(cid) in custom_ids:continue
@@ -276,6 +365,7 @@ class Generator:
             self._trained.pop(key,None)
         if key not in self._trained:
             p = copy.deepcopy(card)
+            p.pop('_studio_ai_booster',None)
             if cap and cap > (p.get('level_info', {}).get('level_limit') or 1):
                 p.setdefault('level_info', {})['level_limit'] = cap
             self._trained[key] = self.developed.developed(p, {})
@@ -288,7 +378,27 @@ class Generator:
         key = (int(card['gameplayer_id']['id']), card['_studio_fingerprint'], self.document().get('revision'))
         if key not in self._prepared:
             self._prepared[key] = self.wire(copy.deepcopy(self.trained(card)), 'list')
-        return self._prepared[key]
+        extra=card.get('_studio_ai_booster')
+        if not extra:return self._prepared[key]
+        boosted=key+(extra['slot'],extra['id'])
+        if boosted not in self._boosted_prepared:
+            p=copy.deepcopy(self._prepared[key]);p['parameters'][144+extra['slot']]=extra['id']
+            p['initial_booster_id_list']=list(p['parameters'][144:147])
+            self._boosted_prepared[boosted]=p
+        return self._boosted_prepared[boosted]
+
+    def fill_booster(self,card,rng):
+        slots=card['parameters'][144:146]
+        empty={0,*self.document()['division_squads'].get('empty_booster_ids',[])}
+        slot=next((i for i,bid in enumerate(slots)if bid in empty),None)
+        if slot is None:return card
+        role=card['parameters'][0]
+        choices=[b for b in self.document()['division_squads'].get('random_boosters',[])
+                 if role in b['roles']and b['id']not in card['parameters'][144:147]
+                 and(slot!=0 or b['id']<=255)]
+        if not choices:return card
+        b=rng.choice(choices)
+        return dict(card,_studio_ai_booster={'slot':slot,'id':b['id'],'role':role})
 
     def rating(self, card, coach, style, position=None):
         """Native lower bound: actual wire stats, native integer kernel, no fit loss.
@@ -304,7 +414,8 @@ class Generator:
         effects = coach.get('effects', {})
         proficiency = coach['payload'][style]
         key = (card['gameplayer_id']['id'], card['_studio_fingerprint'], proficiency,
-               json.dumps(effects, sort_keys=True), self.document().get('revision'), position)
+               json.dumps(effects, sort_keys=True), self.document().get('revision'), position,
+               json.dumps(card.get('_studio_ai_booster'),sort_keys=True))
         if key not in self._ratings:
             self._ratings[key] = self.payload_rating(p['parameters'][:147],coach,style,position)
             if len(self._ratings)>80000:self._ratings.popitem(last=False)
@@ -407,6 +518,7 @@ class Generator:
         if not isinstance(marker, dict) or not str(marker.get('revision','')).startswith('v17-division-library-'):
             return False
         roster = response.get('player_list', [])
+        if snapshot_missing_native(self.document(),response):raise ValueError('AI 对手快照含不存在的原生卡号，需重新准备对手')
         if len(roster) != 23:
             raise ValueError('旧 AI 对手快照人数异常，已保留原数据')
         changed=False
@@ -429,8 +541,16 @@ class Generator:
         if marker.get('card_ids')!=[p.get('gameplayer_id',{}).get('id') for p in roster]:
             raise ValueError('AI 对手快照的球员身份不一致，未下发异常名单')
         scores=[];repairs=[]
+        prior_added={r['card_id']for r in marker.get('random_boosters',[])}
         for player in roster:
             cid=player['gameplayer_id']['id'];params=player.get('parameters',[])
+            if cid not in prior_added and len(params)in(147,149):
+                filled=self.fill_booster(player,random.SystemRandom()).get('_studio_ai_booster')
+                if filled:
+                    params=list(params);params[144+filled['slot']]=filled['id'];player['parameters']=params
+                    player['initial_booster_id_list']=list(params[144:147])
+                    marker.setdefault('random_boosters',[]).append({'card_id':cid,**filled})
+                    repairs.append({'id':cid,'kind':'empty_booster','slot':filled['slot'],'booster_id':filled['id']});changed=True
             try:
                 if len(params) not in (147,149):raise ValueError('Invalid parameter layout')
                 score=self.payload_rating(params[:147],coach,style)
@@ -445,9 +565,13 @@ class Generator:
                 for k in tuple(self._prepared):
                     if k[:2]==key:self._prepared.pop(k,None)
                 recovered=self.prepared(card)
+                extra=next((r for r in marker.get('random_boosters',[])if r['card_id']==cid),None)
+                if extra and extra.get('slot')in(0,1)and any(b['id']==extra.get('id')for b in self.document()['division_squads'].get('random_boosters',[])):
+                    recovered=copy.deepcopy(recovered);recovered['parameters'][144+extra['slot']]=extra['id']
                 score=self.payload_rating(recovered['parameters'][:147],coach,style)
                 if score<=40:raise ValueError('AI 原卡仍无法提供有效能力，未用虚构总评掩盖异常')
                 player['parameters']=list(recovered['parameters'][:147])+[0,0]
+                player['initial_booster_id_list']=list(recovered['parameters'][144:147])
                 player['level_info']=copy.deepcopy(recovered['level_info'])
                 repairs.append({'id':cid,'kind':'parameters','from_rating':40,'to_rating':score});changed=True
             if any(player.get(k)!=score for k in ('disp_overall','disp_max_overall')):
@@ -455,6 +579,19 @@ class Generator:
                 player['disp_overall']=player['disp_max_overall']=score;changed=True
             scores.append(score)
         if repairs:marker.setdefault('payload_repairs',[]).extend(repairs)
+        if any(r['kind']in('empty_booster','parameters')for r in repairs):
+            attack=marker.get('attack_roles',[]);defence=marker.get('defence_roles',[])
+            ar=[];dr=[];spec=marker.get('tactical_spec',{})
+            for i,p in enumerate(roster):
+                params=p['parameters'][:147]
+                ar.append(self.payload_rating(params,coach,style,attack[i]if i<len(attack)else None))
+                dr.append(self.payload_rating(params,coach,style,defence[i]if i<len(defence)else None))
+                if i<len(spec.get('players',[])):
+                    spec['players'][i].update(parameters=list(params),bench_rating=scores[i],
+                        ratings=[self.payload_rating(params,coach,style,r)if params[APTITUDE_INDEX[r]]==2 else 0 for r in range(13)])
+            ratings=[min(a,d)for a,d in zip(ar,dr)]
+            marker.update(revision=REVISION,ratings=ratings,native_attack_strength=strength(ar),native_defence_strength=strength(dr),
+                          native_lower_bound_strength=strength(ratings),conservative_strength=strength(ratings))
         marker['payload_validation']={'revision':REVISION,'players':len(scores),'minimum_actual_rating':min(scores),'max_actual_rating':max(scores)}
         return changed
 
@@ -700,6 +837,8 @@ class Generator:
         rng = rng or random.SystemRandom()
         document = self.document()
         cards = self.cards(conn)
+        self._boosted_prepared.clear()
+        cards=[self.fill_booster(c,rng)for c in cards]
         minimum = 3300 if division <= 3 else 3200
         style = rng.choice(STYLES) if style is None else style
         if style not in STYLES: raise ValueError('Invalid AI team style')
@@ -817,6 +956,9 @@ class Generator:
                        'secondary_position_starters': sum(c['parameters'][0] != profile['attack'][i] for i, c in enumerate(selected[:11])),
                        'sampling': dict(self.sampling), 'coach_id': coach_payload['coach_id'], 'base_team_id': team_id,
                        'card_ids': [p['gameplayer_id']['id'] for p in roster], 'ratings': ratings}
+        out[MARKER]['random_boosters']=[{'card_id':int(c['gameplayer_id']['id']),**c['_studio_ai_booster']}
+                                       for c in selected if c.get('_studio_ai_booster')]
+        out[MARKER]['booster_rating_policy']='actual final slots; original constant additions; conditional bonuses require their native conditions'
         out[MARKER]['tactical_spec']=spec
         out[MARKER]['prepared_strategies']=copy.deepcopy(spec['prepared'])
         # Legacy catalogue copies can retain a display cache from before
@@ -876,6 +1018,7 @@ def install(document, root, logic=None):
                 return previous(conn,response,request)
             if conn.in_transaction:
                 raise ValueError('AI division requires a transaction boundary')
+            with conn:discard_invalid_snapshot(conn,document())
             active_row = conn.execute("select value from meta where key='ai_division_active_match'").fetchone()
             active = json.loads(active_row[0]) if active_row else None
             entries.recover_committed_entry(conn,active)

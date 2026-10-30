@@ -37,7 +37,9 @@ def export_list(store):
     folder=export_folder(store);rows=[]
     for p in sorted(folder.iterdir(),key=lambda p:p.stat().st_mtime,reverse=True):
         if p.is_file() and not p.is_symlink() and not p.is_junction():rows.append({'name':p.name,'bytes':p.stat().st_size,'apk':p.suffix.lower()=='.apk','url':'/exports/'+__import__('urllib.parse',fromlist=['quote']).quote(p.name)})
-    return {'rows':rows,'count':len(rows),'bytes':sum(r['bytes'] for r in rows)}
+    from compile_cache import summary
+    return {'rows':rows,'count':len(rows),'bytes':sum(r['bytes'] for r in rows),
+            'compiler_cache':summary(store.root/'compiler-cache')}
 
 def clear_exports(server):
     if server.native_package.status()['phase']=='working' or server.game_import.status()['phase']=='working':raise ValueError('请等待当前导出或导入任务完成')
@@ -45,6 +47,11 @@ def clear_exports(server):
         rows=export_list(server.store)['rows']
         for row in rows:export_file(server.store,row['name']).unlink()
     return {'deleted':len(rows),'bytes':sum(r['bytes'] for r in rows)}
+
+def clear_compiler_cache(server):
+    if server.native_package.status()['phase']=='working' or server.game_import.status()['phase']=='working':raise ValueError('请等待当前导出或导入任务完成')
+    from compile_cache import clear
+    with server.store.lock:return clear(server.store.root/'compiler-cache')
 
 def open_export(store,name):
     path=export_file(store,name)

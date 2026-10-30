@@ -29,6 +29,24 @@ class NewFeatures(unittest.TestCase):
             actual=int.from_bytes(patch_sleeves(raw,{'sleeves':name}),'little')
             self.assertEqual(actual&~mask,int.from_bytes(raw,'little')&~mask)
             self.assertEqual((actual>>SLEEVE_BIT)&3,value)
+
+    def test_boot_choices_remain_editable_per_player_and_reusable(self):
+        from native_equipment import compile_boots,BOOTS,ASSIGNMENTS
+        from native_cpk import wrap,unwrap
+        empty=struct.pack('<BBB5sII',255,0x21,0x83,b'WESYS',0,0)
+        class Source:
+            def read(self,name):
+                if name==ASSIGNMENTS:return wrap(struct.pack('<QQ',1,51),empty)
+                if name==BOOTS:return wrap(b''.join(struct.pack('<H',i)+bytes(302)for i in(51,52,53)),empty)
+                raise ValueError(name)
+        projects=[{'identity':{'name':str(i)},'native_card':{'source_id':'1'},'equipment':{'boots_id':52,'sleeves':'short'if i==0 else'long'}}for i in range(2)]
+        definitions=[{'identity':{'package_id':str(i),'person_id':9000100+i,'card_id':(0x51<<40)|9000100+i}}for i in range(2)]
+        bindings=[{'asset_key':str(8000100+i)}for i in range(2)]
+        first,_=compile_boots(Source(),projects,definitions,bindings);a=dict(struct.iter_unpack('<QQ',unwrap(first)))
+        self.assertEqual([a[d['identity']['card_id']]for d in definitions],[52,52])
+        projects[0]['equipment']['boots_id']=53
+        second,_=compile_boots(Source(),projects,definitions,bindings);b=dict(struct.iter_unpack('<QQ',unwrap(second)))
+        self.assertEqual([b[d['identity']['card_id']]for d in definitions],[53,52]);self.assertEqual(b[1],51)
     def test_opening_another_project_keeps_the_previous_slot(self):
         old=copy.deepcopy(self.store.project);old['identity']['name']='未保存的旧球员';self.store.save(old)
         other=app.Store(self.root/'other');new=copy.deepcopy(other.project);new['identity']['name']='导入的新球员'

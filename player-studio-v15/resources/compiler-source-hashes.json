@@ -1,0 +1,23 @@
+{
+  "files": {
+    "card_front": "cf16a1a2ebeb4ce7f7c869735e1c4e65170d3db3ed0c0d11a1c041b821f2259b",
+    "glb_import": "6b06b691670a0516187173c983d30314a505e4a0289affaba3dff284435a2944",
+    "native_appearance": "07e21188895c6c6ec443238f9c99b3fbd7d8add5f45a87f8bce2a404c02ba317",
+    "native_art": "bd941a35261cb75a5317585b9f5b100c9399e98674e18ce882196a21f49a4c71",
+    "native_body": "cc2fdee9c8d3f7784abedf374539495f689a359440c1e1ea3bf58dab3dff4634",
+    "native_glb": "721c0f71ae698ba8c34a27ada343cb23196452eb73279ff08e41b4e882228b6b",
+    "native_iostore": "094e7514656bdbee1453d5386753332946fe8531a4fbbd267e764716d422dc47",
+    "native_library": "106bba945b670f41c08f63d58b60f46a94f62e3abeb31b5abd903dab75b5b9bb",
+    "native_mesh": "8a901940c9fb4bb44d59f8321827558800d81c2517f343039a9e4eff6dfbd46e",
+    "native_models": "4b8ca7b8b247ad32085ce5a92ba4fd4645673606f5b21b3fc0091d309ffc9834",
+    "native_movie": "3d3cf103b9fc95f7bd16954dba3c2a3f4650132ce419b107f5751a0c2ee2c066",
+    "native_skeletal": "38a622b6a3c751536d1405714ff8765fafb20f88d249c8be803e00253f08e684",
+    "native_thumbnail": "a1d4ff467f3bed4fa234d16510b6e92315e93565f6dc82d0649b6a00aed82fdf",
+    "player_identity_binding": "5c6e55ff892272cf55754680ddea986d5b8ed0e3d824e01cba0d774ac588a9ad",
+    "private_card_motion": "67a2412d04b20ab796ecc8cd578db1e476c49584034beb8008e0517fdd2c9f77",
+    "rig_compatibility": "d253055faecb930d8cbe965e7c9c49a6720dfd3166f3bc3f2172d5ab60def72b",
+    "thumbnail_background": "3f7f8c0019a1df7e54b284a297b84e5c350c1990cf615aaf99ffd12372d6f29a",
+    "thumbnail_motion": "b7199a16f18fba705ed0d22626a1a0897d4d9e4391b53f94a18e1ffd7f42b961"
+  },
+  "revision": "v17-artifacts-and-blocks-2.0.6-v1"
+}

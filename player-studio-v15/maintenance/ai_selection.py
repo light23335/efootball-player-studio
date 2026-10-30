@@ -46,23 +46,6 @@ mov x0,x21
 mov x1,x23
 bl shared_studio_ai_opportunity_snapshot
 cbz w0,choice_done
-// Only a native on-ball candidate decision in the attacking third qualifies.
-ldr w8,[x23]
-add x9,x23,#32
-add x9,x9,w8,uxtw #4
-ldr s0,[x9]
-ldr s1,[x23,#8]
-fmul s0,s0,s1
-ldr s1,[x23,#12]
-fmov s2,#3.0
-fdiv s1,s1,s2
-fcmp s0,s1
-b.vs choice_done
-b.lt choice_done
-mov x0,x21
-mov w1,#0
-bl shared_studio_ai_probability_gate
-cbz w0,choice_done
 ldr w8,[sp,#1032]
 strb w8,[x23,#28]
 ldr w8,[x23,#28]

@@ -3,6 +3,22 @@ from pathlib import Path
 import hashlib,json,logging,os,secrets,shutil,sys,tempfile,threading,time
 
 _server=None
+_ui_lock=threading.RLock()
+
+def ui_options(store,body=None):
+    """Android-only, per-install UI preference; never enters a game APK."""
+    if body is not None and (not isinstance(body,dict) or set(body)-{'reduce_power'} or
+                            ('reduce_power'in body and type(body['reduce_power'])is not bool)):
+        raise ValueError('减少耗电设置格式无效')
+    with _ui_lock:
+        path=store.root/'android-ui-options.json';value={'reduce_power':True}
+        if path.is_file():
+            previous=json.loads(path.read_text('utf8'))
+            if isinstance(previous,dict)and type(previous.get('reduce_power'))is bool:value['reduce_power']=previous['reduce_power']
+        if body and'reduce_power'in body:
+            value['reduce_power']=body['reduce_power'];temporary=path.with_suffix('.tmp')
+            temporary.write_text(json.dumps(value),'utf8');temporary.replace(path)
+        return value
 
 def install_exported_apk(store,name,native_files,installed_games):
     """Open our generated APK without requiring an installed resource pair."""
@@ -72,10 +88,17 @@ def start(home,native_dir):
     class AndroidHandler(BaseHandler):
         def do_POST(self):
             from urllib.parse import urlsplit,unquote,quote
-            if urlsplit(self.path).path!='/api/android-export':return super().do_POST()
+            route=urlsplit(self.path).path
+            if route not in('/api/android-export','/api/android-ui-options'):return super().do_POST()
             if not self.authenticated():return self.send({'error':'会话无效'},403)
             origin=self.headers.get('Origin')
             if origin and origin!='http://127.0.0.1:'+str(self.server.server_port):return self.send({'error':'来源不匹配'},403)
+            if route=='/api/android-ui-options':
+                try:
+                    size=int(self.headers.get('Content-Length','0'))
+                    if not 0<size<=1024:raise ValueError('界面设置数据大小无效')
+                    return self.send(ui_options(self.server.store,json.loads(self.rfile.read(size))))
+                except (ValueError,OSError)as exc:return self.send({'error':str(exc)},400)
             temporary=None
             try:
                 size=int(self.headers.get('Content-Length','0'))

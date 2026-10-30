@@ -2,6 +2,7 @@
 // Navigation always goes through #compact-page-select (the control app.js wires
 // to navigate()); hub data comes from the existing read-only players/list API.
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const reducedInterfaceMotion=()=>document.documentElement.hasAttribute('data-android')&&document.documentElement.dataset.reducePower==='true';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const svg=paths=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
 const ICONS={
@@ -71,7 +72,10 @@ function placeThumb(animate=true){
  if(!animate)thumb.style.transition='none';
  thumb.style.left=current.offsetLeft+'px';thumb.style.width=current.offsetWidth+'px';
  if(!animate)requestAnimationFrame(()=>thumb.style.transition='');
- current.scrollIntoView({block:'nearest',inline:'center'});
+ // Keyboard resize and background nav refresh must never scroll the document.
+ // Only expose the selected tab inside its own horizontal strip.
+ const left=Math.max(0,current.offsetLeft-(tabs.clientWidth-current.offsetWidth)/2);
+ tabs.scrollTo({left,behavior:animate&&!reducedInterfaceMotion()?'smooth':'instant'});
 }
 dock.addEventListener('click',event=>{const button=event.target.closest('[data-section]');if(button&&!button.disabled)goSection(Number(button.dataset.section));});
 tabs.addEventListener('click',event=>{const button=event.target.closest('[data-go]');if(!button||button.disabled)return;
@@ -133,6 +137,7 @@ const stage=$('#stage'),tilt=$('#card-tilt');let dragging=false;
 cardCanvas.addEventListener('pointerdown',()=>{dragging=true;resetTilt();});
 addEventListener('pointerup',()=>dragging=false);addEventListener('pointercancel',()=>dragging=false);
 function tiltTowards(event){
+ if(root.hasAttribute('data-android')&&root.dataset.reducePower==='true')return;
  if(dragging||event.pointerType==='touch')return;
  const r=tilt.getBoundingClientRect();if(!r.width)return;
  const px=Math.min(1,Math.max(0,(event.clientX-r.left)/r.width)),py=Math.min(1,Math.max(0,(event.clientY-r.top)/r.height));
@@ -140,14 +145,15 @@ function tiltTowards(event){
  tilt.style.setProperty('--px',(px*100)+'%');tilt.style.setProperty('--py',(py*100)+'%');tilt.style.setProperty('--hyp',Math.min(1,Math.hypot(px-.5,py-.5)*1.7));
 }
 function resetTilt(){tilt.classList.remove('active');tilt.style.setProperty('--rx','0deg');tilt.style.setProperty('--ry','0deg');tilt.style.setProperty('--hyp',0);}
+addEventListener('studio-android-power',()=>{if(root.hasAttribute('data-android')&&root.dataset.reducePower==='true')resetTilt();});
 stage.addEventListener('pointermove',tiltTowards);
 stage.addEventListener('pointerleave',resetTilt);
 
 /* ---------- identity strip (editor pages) ---------- */
 const identity=$('#identity'),stageName=$('#stage-name');
 const clean=v=>String(v||'').replace(/\s*·\s*#\d+$/,'').trim();
-function countUp(el,to){const from=Number(el.textContent)||0;if(from===to)return;const start=performance.now(),d=900;
- const step=t=>{const p=Math.min(1,(t-start)/d),e=1-Math.pow(1-p,4);el.textContent=Math.round(from+(to-from)*e);if(p<1)requestAnimationFrame(step);};requestAnimationFrame(step);}
+function countUp(el,to){if(reducedInterfaceMotion()){el.textContent=to;return;}const from=Number(el.textContent)||0;if(from===to)return;const start=performance.now(),d=900;
+ const step=t=>{if(reducedInterfaceMotion()){el.textContent=to;return;}const p=Math.min(1,(t-start)/d),e=1-Math.pow(1-p,4);el.textContent=Math.round(from+(to-from)*e);if(p<1)requestAnimationFrame(step);};requestAnimationFrame(step);}
 function renderIdentity(fresh){
  const p=project(),sim=studio()?.simulation;
  const name=p?.identity?.name?.trim()||p?.display_name||'未命名球员';
@@ -202,7 +208,7 @@ function renderHub(){
  if(pageId()!=='home'){returnCard();hub.hidden=true;return;}
  returnCard(false);
  hub.hidden=false;
- const p=project(),ready=body.dataset.playerReady==='true',name=p?.identity?.name?.trim(),ovr=overall();
+ const p=project(),ready=Boolean(p&&body.dataset.playerReady==='true'),name=p?.identity?.name?.trim(),ovr=overall();
  const phase=libraryPhase(),libraryReady=phase==='ready',setup=SETUP_TILE[libraryReady?'ready':phase==='preparing'?'preparing':'missing'];
  hubPhase=phase;
  const featureTile=setup?`<button type="button" class="tile glass feature" data-setup-jump><i class="tile-icon">${phase==='preparing'?'<span class="spinner"></span>':svg(ICONS.apk)}</i><span class="tile-kicker">Setup</span><strong>${setup[0]}</strong><small>${setup[1]}</small></button>`:tile('native',{kicker:'Build',title:'生成游戏 APK',sub:'选择球员、教练与卡包，写入游戏安装包',cls:'feature'});
@@ -231,7 +237,7 @@ function jumpToSetup(){
  // the step's controls render after setup/status returns; the step panel itself is always there
  const step=$('#editor-content [data-setup-import]')?.closest('.panel')||$('#editor-content .beginner-steps .panel');
  if(!step){go('apk');return;}
- step.scrollIntoView({behavior:'smooth',block:'center'});
+ step.scrollIntoView({behavior:reducedInterfaceMotion()?'instant':'smooth',block:'center'});
  step.classList.remove('flash');void step.offsetWidth;step.classList.add('flash');
  setTimeout(()=>step.classList.remove('flash'),2200);
 }
