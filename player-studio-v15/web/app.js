@@ -460,7 +460,7 @@ async function boot(){
   libraryUI=new LibraryUI({api,commit,project:()=>project,catalog,toast,navigate,rerender:renderPage,beforeLoadPlayer:preparePlayerLoad,status:data.library,apk:data.default_apk,companion:data.default_companion});
   updateUI=new GameImportUI({api,toast,apk:data.default_apk,companion:data.default_companion,rerender:renderPage});
   nativePackageUI=new NativePackageUI({api,toast,platform:data.platform,project:()=>project,apk:data.default_apk,companion:data.default_companion,installationMode:setup.recommended_mode,resourcesNeeded:setup.resources_needed,rigged:data.default_rigged||''});
-  releaseUpdatesUI=new ReleaseUpdatesUI({api,toast});
+  releaseUpdatesUI=new ReleaseUpdatesUI({api,toast,prepareUpdate:async()=>{await editorAutosave?.flush();await flushSave();}});
   onboardingUI=new OnboardingUI({api,toast,flushSave,mode:()=>navigationMode,setMode:mode=>{navigationMode=mode;renderNavigation();renderPage();},setSources:(selected,mode)=>{for(const ui of [libraryUI,updateUI])for(const key of ['apk','companion'])if(selected[key])ui[key]=selected[key];}});
   toolsUI=new WorkspaceTools({api,toast,project:()=>project,flushSave,flushEditors:()=>editorAutosave?.flush()});
   boosterLibraryUI=new BoosterLibraryUI({api,toast,project:()=>project,flushSave,commit,rerender:renderPage});
@@ -477,6 +477,7 @@ async function boot(){
   viewer.onHeadSelection=key=>{const el=document.querySelector('[data-head-option="selected"]');if(el)el.value=key;};
   const badge=document.querySelector('.workspace-badge>span:last-child');if(badge)badge.textContent=(data.library.game_version||'V15')+' · '+data.version;document.querySelector('#help-dialog h2').textContent='球员工坊 '+(data.library.game_version||'V15')+' · '+data.version;
   viewer.attach($('#mini-model-stage'));renderPage();
+  if(data.platform==='pc')api('updates/confirm-start',{}).catch(()=>{});
   releaseUpdatesUI.poll();
   for(const path of ['native-apk/status','game-import/status','library/status'])api(path,{}).catch(()=>{});
   libraryUI.refreshLoaded();

@@ -903,6 +903,39 @@ class Handler(BaseHTTPRequestHandler):
                 url=self.server.updates.link()
                 action=globals().get('open_update_action',lambda value:webbrowser.open(value))
                 result={'opened':bool(action(url))}
+            elif path == '/api/updates/download':
+                result=self.server.updates.download()
+            elif path == '/api/updates/confirm-start':
+                if getattr(sys,'frozen',False) and os.name=='nt' and not (self.server.home/'.studio-update-recovery.json').exists():
+                    from update_package import cleanup_completed_updates
+                    timer=threading.Timer(3,cleanup_completed_updates,args=(store.root,APP_VERSION));timer.daemon=True;timer.start()
+                result={'accepted':True}
+            elif path == '/api/updates/install':
+                if not getattr(sys,'frozen',False) or os.name!='nt':raise ValueError('仅 Windows 打包版支持更新')
+                if self.server.game_import.status()['phase']=='working' or self.server.native_package.status()['phase']=='working' or self.server.library.state['phase']=='preparing':raise ValueError('请等待当前任务完成后更新')
+                with self.server.window_sessions.lock:
+                    if len(self.server.window_sessions.sessions)>1:raise ValueError('请先关闭其他工坊窗口并保存各窗口的工作')
+                title=body.get('window_title','')
+                if not re.fullmatch(r'StudioUpdateClose-[0-9a-f]{32}',title):raise ValueError('更新窗口标识无效')
+                user32=ctypes.windll.user32
+                user32.FindWindowW.argtypes=[wintypes.LPCWSTR,wintypes.LPCWSTR];user32.FindWindowW.restype=wintypes.HWND
+                user32.PostMessageW.argtypes=[wintypes.HWND,wintypes.UINT,wintypes.WPARAM,wintypes.LPARAM];user32.PostMessageW.restype=wintypes.BOOL
+                hwnd=user32.FindWindowW(None,title)
+                if not hwnd:raise ValueError('无法定位当前工坊窗口，请重新打开工坊后重试')
+                state=self.server.updates.status()
+                if state.get('phase')!='ready':raise ValueError('请先下载更新')
+                work=Path(state['work']);helper=work/'updater.exe'
+                shutil.copy2(sys.executable,helper)
+                env=os.environ.copy();env['PYINSTALLER_RESET_ENVIRONMENT']='1'
+                subprocess.Popen([str(helper),'--apply-studio-update',str(os.getpid()),str(self.server.home),str(work),str(os.getppid())],env=env,creationflags=subprocess.CREATE_NO_WINDOW)
+                def close_and_shutdown():
+                    if not user32.PostMessageW(hwnd,0x0010,0,0):
+                        logging.error('更新已取消：无法关闭工坊窗口')
+                        return
+                    time.sleep(1)
+                    self.server.shutdown()
+                timer=threading.Timer(0.5,close_and_shutdown);timer.daemon=True;timer.start()
+                result={'started':True}
             elif path == '/api/game-import/status':
                 result = self.server.game_import.status()
             elif path == '/api/game-import/install-adapter':
@@ -1013,6 +1046,14 @@ def main(argv=None):
     parser.add_argument("--no-idle-exit", action="store_true")
     args = parser.parse_args(argv)
     home = Path(sys.executable).absolute().parent if getattr(sys, "frozen", False) else Path(__file__).absolute().parent
+    journal = home / '.studio-update-recovery.json'
+    if getattr(sys, 'frozen', False) and os.name == 'nt' and journal.is_file():
+        recovery_dir = Path(tempfile.mkdtemp(prefix='studio-recover-'))
+        helper = recovery_dir / 'updater.exe'
+        shutil.copy2(sys.executable, helper)
+        env = os.environ.copy(); env['PYINSTALLER_RESET_ENVIRONMENT'] = '1'
+        subprocess.Popen([str(helper), '--apply-studio-update', str(os.getpid()), str(home), str(recovery_dir), str(os.getppid())], env=env, creationflags=subprocess.CREATE_NO_WINDOW)
+        return
     data = Path(args.data_dir).absolute() if args.data_dir else home / "data"
     runtime_path = data / "runtime.json"
     if runtime_path.is_file():
@@ -1062,7 +1103,11 @@ def main(argv=None):
 
 if __name__ == "__main__":
     try:
-        main()
+        if len(sys.argv) in (5,6) and sys.argv[1]=='--apply-studio-update':
+            from update_package import run_update_helper
+            run_update_helper(int(sys.argv[2]),Path(sys.argv[3]),Path(sys.argv[4]),int(sys.argv[5]) if len(sys.argv)==6 else 0)
+        else:
+            main()
     except Exception as error:
         if sys.stderr:
             raise
