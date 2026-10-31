@@ -647,9 +647,9 @@
       "ai_match_channel.py": "02e6846bbcf632fb8d2f7ddbcfaad68d01c8b14df43114529e3e077cdf9cb9c8",
       "ai_tactical_profiles.py": "f73bbd3e88564bc7a1ff5269d7d09a4265133e0e9c1344e47d52a27471bb0f6a",
       "ai_division_sessions.py": "e8c4a520d5656f64dbd95d05fa8bb3802f4db94d212673c1ea2b941c0295184c",
-      "division_squads.py": "5678fa30029377299b7385e2a9b717e305ead335f60b93bafd96b8cc76f049ce",
+      "division_squads.py": "c766766d6aa89ec69ba907cba0fbb92ab4c0d5adb7e5b8024d49cf8ec738c257",
       "personal_binding.py": "77f683d120c08354ae81a8fe14f17846a1b28f484ff81f1427594938d713b57f",
-      "personal_runtime.py": "ecf106152d8490cf418dc8dd0da402574648f608eec8bdde406718b4675d87d5"
+      "personal_runtime.py": "df4f58aa9064cd44b58b2a626bb508dd6c04743dff5d756a77e272f1d1c7a1e0"
     },
     "original_engine_sha256": "efd257d9e41b622d6ecb8f51f7b0a8ee8820113fd427c5572025df1c8eecc7b8",
     "live_policy_evidence_sha256": "7db19a7ed1037ec330def0c4b9f6eb849ce48b43c5edcded05b9bfbf1308a2c6",
@@ -791,6 +791,21 @@
         "scope": "Identify empty booster slot records from the current native table: matching kind-4 fields and zero verified effects, excluding registered custom IDs. Not a fixed 136-only rule. Fill once per opponent card and refresh cached parameters and ratings; original conditionals preserved.",
         "native_executor_unchanged": true,
         "game_acceptance": "pending user test"
+      },
+      "null_startup_211": {
+        "files": {
+          "division_squads.py": {
+            "before": "5678fa30029377299b7385e2a9b717e305ead335f60b93bafd96b8cc76f049ce",
+            "after": "c766766d6aa89ec69ba907cba0fbb92ab4c0d5adb7e5b8024d49cf8ec738c257"
+          },
+          "personal_runtime.py": {
+            "before": "ecf106152d8490cf418dc8dd0da402574648f608eec8bdde406718b4675d87d5",
+            "after": "df4f58aa9064cd44b58b2a626bb508dd6c04743dff5d756a77e272f1d1c7a1e0"
+          }
+        },
+        "scope": "Back up and retire empty/invalid private opponent snapshots and catalogue definitions before using mapping access; repair selected personal definitions without duplicate grants. Preserve valid native card allowlist checks, owned progress and normal snapshots.",
+        "native_executor_unchanged": true,
+        "game_acceptance": "pending feedback-device validation"
       }
     }
   },

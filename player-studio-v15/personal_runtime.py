@@ -451,7 +451,8 @@ def apply_definitions(conn,document):
             payload=compact(catalog)
             fingerprint=hashlib.sha256(payload.encode()).hexdigest()
             existing=conn.execute('select payload from managed_cards where card_id=?',(str(cid),)).fetchone()
-            if existing and json.loads(existing[0]).get('_personal_player_uuid')!=uid:
+            existing_card=read_catalogue_card(conn,cid,existing[0],repairing=True)if existing else None
+            if existing_card is not None and existing_card.get('_personal_player_uuid')!=uid:
                 raise ValueError('Personal catalogue ID collides with an original definition')
             conn.execute('insert into managed_cards(card_id,fingerprint,payload,card_type,subtype,evidence) values(?,?,?,?,?,?) '
                          'on conflict(card_id) do update set fingerprint=excluded.fingerprint,payload=excluded.payload,card_type=excluded.card_type,subtype=excluded.subtype,evidence=excluded.evidence',
@@ -473,6 +474,25 @@ def apply_definitions(conn,document):
     return result
 
 
+def read_catalogue_card(conn,cid,raw,*,repairing=False):
+    """Quarantine empty catalogue definitions, never owned cards or progress."""
+    try:card=json.loads(raw)
+    except (TypeError,ValueError):card=None
+    if isinstance(card,dict)and card:return card
+    backup={'card_id':str(cid),'raw_payload':raw.hex()if isinstance(raw,bytes)else raw,
+            'raw_type':type(raw).__name__,'reason':'empty_or_invalid_catalogue_payload'}
+    encoded=compact(backup)
+    key='personal_catalogue_invalid_v1:'+str(cid)+':'+hashlib.sha256(encoded.encode()).hexdigest()[:20]
+    conn.execute('insert or ignore into meta values(?,?)',(key,encoded))
+    # An already validated selected design will UPSERT this same ID below.
+    # Keep its existing pack references while replacing the broken definition.
+    if repairing:return None
+    if conn.execute("select 1 from sqlite_master where name='managed_members'").fetchone():
+        conn.execute('delete from managed_members where card_id=?',(str(cid),))
+    conn.execute('delete from managed_cards where card_id=?',(str(cid),))
+    return None
+
+
 def sync_native_catalogue(conn,document):
     """Retire stale drawing definitions, not owned instances or their progress."""
     from division_squads import native_card_ids,discard_invalid_snapshot
@@ -480,10 +500,12 @@ def sync_native_catalogue(conn,document):
     if valid is None:return
     definitions={d['identity']['package_id']:d['identity']['card_id']for d in document.get('players',[])}
     members=bool(conn.execute("select 1 from sqlite_master where name='managed_members'").fetchone())
-    retired=[]
+    retired=[];quarantined=[]
     for cid,raw in list(conn.execute('select card_id,payload from managed_cards')):
+        card=read_catalogue_card(conn,cid,raw)
+        if card is None:quarantined.append(str(cid));continue
         if int(cid)in valid:continue
-        card=json.loads(raw);uid=card.get('_personal_player_uuid')
+        uid=card.get('_personal_player_uuid')
         if not uid:continue
         current=definitions.get(uid)
         replacement=current if current in valid else None
@@ -499,7 +521,7 @@ def sync_native_catalogue(conn,document):
     discarded=discard_invalid_snapshot(conn,document)
     conn.execute('insert into meta values(?,?) on conflict(key)do update set value=excluded.value',
                  ('personal_native_catalogue_sync_v1',compact({'table_sha256':document['native_player_catalogue'].get('table_sha256'),
-                    'retired':retired,'invalid_opponent_discarded':discarded})))
+                    'retired':retired,'quarantined_invalid_cards':quarantined,'invalid_opponent_discarded':discarded})))
 
 
 def apply_game_options(conn,options):

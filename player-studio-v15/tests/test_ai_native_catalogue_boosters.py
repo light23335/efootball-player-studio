@@ -3,11 +3,96 @@ from pathlib import Path
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import division_squads as ds
-from personal_runtime import sync_native_catalogue
+from personal_runtime import sync_native_catalogue,apply_definitions
 from test_division_squads import DivisionSquadTests,card,template
 
 
 class NativeCatalogueTests(unittest.TestCase):
+    def test_empty_and_malformed_private_snapshots_are_backed_up_once_without_touching_progress(self):
+        values=(None,'null','{}','[]','{"opponent":null}','{"opponent":[]}','not json')
+        for raw in values:
+            with self.subTest(raw=raw):
+                db=sqlite3.connect(':memory:');db.execute('create table meta(key primary key,value)')
+                db.executemany('insert into meta values(?,?)',[('ai_division_active_match',raw),('ai_division_state','{"division":3,"points":1448}')])
+                doc={'native_player_catalogue':{'version':1,'card_ids':[1]}}
+                self.assertTrue(ds.discard_invalid_snapshot(db,doc))
+                self.assertIsNone(db.execute("select value from meta where key='ai_division_active_match'").fetchone())
+                backup=db.execute("select value from meta where key like 'personal_ai_catalogue_snapshot_backup_v1:%'").fetchall()
+                self.assertEqual(backup,[(raw if raw is not None else 'null',)])
+                self.assertFalse(ds.discard_invalid_snapshot(db,doc))
+                self.assertEqual(db.execute("select value from meta where key='ai_division_state'").fetchone()[0],'{"division":3,"points":1448}')
+                db.close()
+
+    def test_invalid_opponent_entries_and_repeated_game_ids_keep_each_original_backup(self):
+        db=sqlite3.connect(':memory:');db.execute('create table meta(key primary key,value)')
+        doc={'native_player_catalogue':{'version':1,'card_ids':[1]}}
+        for players in(None,[None],[{'gameplayer_id':None}]):
+            raw=json.dumps({'game_id':17,'opponent':{ds.MARKER:{'revision':ds.REVISION},'player_list':players}})
+            db.execute('insert or replace into meta values(?,?)',('ai_division_active_match',raw))
+            self.assertTrue(ds.discard_invalid_snapshot(db,doc))
+        backups=[r[0]for r in db.execute("select value from meta where key like 'personal_ai_catalogue_snapshot_backup_v1:%'")]
+        self.assertEqual(len(backups),3);self.assertEqual(len(set(backups)),3);db.close()
+
+    def test_valid_original_and_workshop_snapshots_are_not_discarded(self):
+        db=sqlite3.connect(':memory:');db.execute('create table meta(key primary key,value)')
+        doc={'native_player_catalogue':{'version':1,'card_ids':[1]}}
+        for opponent in({'player_list':[card(1,12)]},{ds.MARKER:{'revision':ds.REVISION},'player_list':[card(1,12)]}):
+            raw=json.dumps({'game_id':17,'opponent':opponent})
+            db.execute('insert or replace into meta values(?,?)',('ai_division_active_match',raw))
+            self.assertFalse(ds.discard_invalid_snapshot(db,doc))
+            self.assertEqual(db.execute("select value from meta where key='ai_division_active_match'").fetchone()[0],raw)
+        self.assertIsNone(ds.native_card_ids({}));self.assertIsNone(ds.native_card_ids({'native_player_catalogue':None}))
+        with self.assertRaises(ValueError):ds.native_card_ids({'native_player_catalogue':[]})
+        db.close()
+
+    def test_invalid_catalogue_payloads_are_quarantined_even_if_the_native_id_still_exists(self):
+        db=sqlite3.connect(':memory:')
+        db.executescript('create table meta(key primary key,value);create table managed_cards(card_id primary key,payload);'
+                        'create table managed_members(agent_id,card_id,weight);create table gameplayers(id,serial,json);')
+        bad=(None,'null','{}','[]','not json',b'null');normal=card(500,12)
+        db.execute('insert into managed_cards values(?,?)',('500',json.dumps(normal)))
+        db.execute('insert into gameplayers values(1,8,?)',('{"keep":"owned progress"}',))
+        before=list(db.execute('select *from gameplayers'))
+        for cid,raw in enumerate(bad,1):
+            db.execute('insert into managed_cards values(?,?)',(str(cid),raw));db.execute('insert into managed_members values(7,?,1)',(str(cid),))
+        doc={'native_player_catalogue':{'version':1,'card_ids':[500,*range(1,7)]},'players':[]}
+        with db:sync_native_catalogue(db,doc)
+        self.assertEqual(list(db.execute('select card_id from managed_cards')),[('500',)])
+        self.assertFalse(list(db.execute('select *from managed_members')))
+        self.assertEqual(list(db.execute('select *from gameplayers')),before)
+        backups=[json.loads(r[0])for r in db.execute("select value from meta where key like 'personal_catalogue_invalid_v1:%'")]
+        self.assertEqual(len(backups),len(bad));self.assertEqual(next(b for b in backups if b['card_id']=='6')['raw_payload'],b'null'.hex())
+        with db:sync_native_catalogue(db,doc)
+        self.assertEqual(db.execute("select count(*)from meta where key like 'personal_catalogue_invalid_v1:%'").fetchone()[0],len(bad))
+        self.assertEqual(list(db.execute('select *from gameplayers')),before);db.close()
+
+    def test_startup_reimport_repairs_selected_null_card_without_duplicate_owned_instances(self):
+        for raw in(None,'null'):
+            with self.subTest(raw=raw):
+                db=sqlite3.connect(':memory:')
+                db.executescript('''create table meta(key text primary key,value text);
+                create table gameplayers(id integer,serial integer unique,json text,source text,acquired_at text,primary key(id,serial));
+                create table careerplan(id integer,serial integer,category text,points integer,at text);
+                create table owned_identity_aliases(id integer,old_serial integer,new_serial integer,primary key(id,old_serial));
+                create table managed_cards(card_id text primary key,fingerprint text,payload text,card_type text,subtype text,evidence text);
+                create table managed_serials(card_id text primary key,next_serial integer);''')
+                cid=90000001;uid='startup-null-card'
+                owned={'gameplayer_id':{'id':cid,'serial':1},'parameters':[0]*147,'level_info':{'level':1,'level_limit':35,'exp_total':0},'_personal_player_uuid':uid,'_personal_design_revision':uid}
+                definition={'identity':{'package_id':uid,'card_id':cid,'previous_card_ids':[cid]},'owned':owned,'base_parameters':[0]*147,'allocation':{},'card_type':'Epic','card_series':'Epic'}
+                doc={'format':'personal-player-native-v1','revision':'same-revision','players':[definition],'training_groups':[],
+                     'native_player_catalogue':{'version':1,'card_ids':[cid]}}
+                apply_definitions(db,doc);before=list(db.execute('select *from gameplayers'))
+                db.execute('create table if not exists managed_members(agent_id,card_id,weight)')
+                db.execute('insert into managed_members values(7,?,3)',(str(cid),))
+                db.execute('update managed_cards set payload=?where card_id=?',(raw,str(cid)))
+                db.execute('insert or replace into meta values(?,?)',('ai_division_active_match','null'));db.commit()
+                apply_definitions(db,doc);apply_definitions(db,doc)
+                self.assertEqual(list(db.execute('select *from gameplayers')),before)
+                self.assertEqual(list(db.execute('select *from managed_members')),[(7,str(cid),3)])
+                self.assertEqual(json.loads(db.execute('select payload from managed_cards').fetchone()[0])['_personal_player_uuid'],uid)
+                self.assertEqual(db.execute("select count(*)from meta where key like 'personal_catalogue_invalid_v1:%'").fetchone()[0],1)
+                self.assertIsNone(db.execute("select value from meta where key='ai_division_active_match'").fetchone());db.close()
+
     def test_empty_slot_records_use_native_kind_and_zero_effects_not_a_fixed_id(self):
         raw=bytes.fromhex('00000000000000000400000000008800000000000000000000001000000000000000000000040000')
         # Another package may use a different number for the same native marker.

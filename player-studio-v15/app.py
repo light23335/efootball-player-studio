@@ -48,7 +48,7 @@ import editor_drafts
 from window_sessions import WindowSessions
 from booster_library import BoosterLibrary
 
-APP_VERSION = "2.1"
+APP_VERSION = "2.1.1"
 GAME_PLATFORM = "android"
 MAX_PERSONAL_PLAYERS = 10000
 BUNDLE = Path(getattr(sys, "_MEIPASS", Path(__file__).absolute().parent))

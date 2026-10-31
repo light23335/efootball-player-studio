@@ -177,7 +177,7 @@ def native_card_ids(document):
     """Exact final Player.bin IDs, produced after all export table edits."""
     index=document.get('native_player_catalogue')
     if index is None:return None  # Legacy documents; the exporter always writes v1.
-    if index.get('version')!=1 or not isinstance(index.get('card_ids'),list):
+    if not isinstance(index,dict)or index.get('version')!=1 or not isinstance(index.get('card_ids'),list):
         raise ValueError('原生球员索引无效，未使用过期卡池')
     if any(type(cid)is not int or not 0<cid<2**64 for cid in index['card_ids']):
         raise ValueError('原生球员索引含无效编号')
@@ -186,18 +186,39 @@ def native_card_ids(document):
 
 def snapshot_missing_native(document,response):
     valid=native_card_ids(document)
-    if valid is None or not response.get(MARKER):return []
-    return [p.get('gameplayer_id',{}).get('id')for p in response.get('player_list',[])
-            if p.get('gameplayer_id',{}).get('id')not in valid]
+    if valid is None or not isinstance(response,dict)or not response.get(MARKER):return []
+    players=response.get('player_list')
+    if not isinstance(players,list):return []
+    missing=[]
+    for player in players:
+        identity=player.get('gameplayer_id')if isinstance(player,dict)else None
+        cid=identity.get('id')if isinstance(identity,dict)else None
+        if type(cid)is not int or cid not in valid:missing.append(cid)
+    return missing
 
 
 def discard_invalid_snapshot(conn,document):
     row=conn.execute("select value from meta where key='ai_division_active_match'").fetchone()
     if not row:return False
-    active=json.loads(row[0]);missing=snapshot_missing_native(document,active.get('opponent',{}))
-    if not missing:return False
+    raw=row[0]
+    try:active=json.loads(raw)
+    except (TypeError,ValueError):active=None
+    invalid=not isinstance(active,dict)or not isinstance(active.get('opponent'),dict)
+    if not invalid:
+        opponent=active['opponent']
+        invalid=bool(opponent.get(MARKER))and not isinstance(opponent.get('player_list'),list)
+        if not invalid and not snapshot_missing_native(document,opponent):return False
+    # Empty/invalid private snapshots represent no playable current match.
+    # Keep their original storage value before retiring only this cache entry.
+    backup=raw if raw is not None else 'null'
+    if not isinstance(backup,(str,bytes)):backup=json.dumps(backup)
+    digest=hashlib.sha256((type(raw).__name__+':').encode()+(backup.encode()if isinstance(backup,str)else backup)).hexdigest()[:20]
+    game_id=active.get('game_id')if isinstance(active,dict)else None
+    key='personal_ai_catalogue_snapshot_backup_v1:'+str(game_id if isinstance(game_id,(str,int))else'empty-'+digest)
+    previous=conn.execute('select value from meta where key=?',(key,)).fetchone()
+    if previous and previous[0]!=backup:key+=':'+digest
     conn.execute('insert or ignore into meta values(?,?)',
-                 ('personal_ai_catalogue_snapshot_backup_v1:'+str(active.get('game_id','unknown')),row[0]))
+                 (key,backup))
     conn.execute("delete from meta where key='ai_division_active_match'")
     return True
 
