@@ -6,6 +6,35 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from updates import repository,version,release_result,UpdateChecker
 
 class UpdateTests(unittest.TestCase):
+ def test_download_progress_exposes_bytes_and_total(self):
+  with tempfile.TemporaryDirectory() as folder:
+   root=Path(folder);(root/'tmp').mkdir()
+   checker=UpdateChecker(SimpleNamespace(root=root),root,'1.9.4')
+   selected={'phase':'available','download_url':'https://example.test/update.zip','download_total':100,'sha256':'a'*64,'version':'v1.9.5'}
+   checker.state={**selected,'phase':'downloading'}
+   observed=[]
+   def fake_download(url,path,digest,progress):
+    progress(40);observed.append(checker.status())
+   with patch('update_package.download_package',side_effect=fake_download),patch('update_package.stage_package'):
+    checker._download(selected)
+   self.assertEqual(observed[0]['downloaded'],40)
+   self.assertEqual(observed[0]['download_total'],100)
+   self.assertEqual(checker.status()['phase'],'ready')
+
+ def test_release_exposes_valid_size(self):
+  data=self.release();data['assets'][1]['size']=12345
+  self.assertEqual(release_result(data,'1.9.4','light23335/efootball-player-studio','pc')['download_total'],12345)
+ def test_test_tag_and_single_unlabelled_zip(self):
+  data=self.release();data['tag_name']='v2.1.1.1test';data['html_url']='https://github.com/light23335/efootball-player-studio/releases/tag/v2.1.1.1test'
+  data['assets']=[{'name':'-V17-v2.1.1.1-.zip','browser_download_url':'https://github.com/light23335/efootball-player-studio/releases/download/v2.1.1.1test/test.zip'}]
+  result=release_result(data,'2.1.1','light23335/efootball-player-studio','pc')
+  self.assertEqual(result['asset'],'-V17-v2.1.1.1-.zip')
+ def test_release_exposes_only_valid_sha256(self):
+  data=self.release();data['assets'][1]['digest']='sha256:'+'a'*64
+  result=release_result(data,'1.9.4','light23335/efootball-player-studio','pc')
+  self.assertEqual(result['sha256'],'a'*64)
+  data['assets'][1]['digest']='sha256:bad'
+  self.assertNotIn('sha256',release_result(data,'1.9.4','light23335/efootball-player-studio','pc'))
  def release(self):return {'tag_name':'v1.9.5','html_url':'https://github.com/light23335/efootball-player-studio/releases/tag/v1.9.5','body':'optional','assets':[{'name':'球员工坊-V16-安卓版.apk','browser_download_url':'https://github.com/light23335/efootball-player-studio/releases/download/v1.9.5/android.apk'},{'name':'球员工坊-V16-免安装分享版.zip','browser_download_url':'https://github.com/light23335/efootball-player-studio/releases/download/v1.9.5/windows.zip'}],'mandatory':True}
  def test_repository_is_public_github_identity_not_arbitrary_url_or_credential(self):
   self.assertEqual(repository('https://github.com/light23335/efootball-player-studio'),'light23335/efootball-player-studio')
