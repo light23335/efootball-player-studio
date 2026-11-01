@@ -5,6 +5,37 @@ files and their numeric TOC cells. Other container formats fail closed.
 """
 import struct
 import zlib
+from collections import OrderedDict
+from contextlib import contextmanager
+from contextvars import ContextVar
+from functools import wraps
+import sys,time
+
+_DECODE_SESSION=ContextVar('studio_cpk_decode_session',default=None)
+
+
+@contextmanager
+def decode_session(limit=None):
+    """Per-export immutable results only; no cross-source/global table cache."""
+    state={'cache':OrderedDict(),'bytes':0,'limit':limit if limit is not None else(96 if sys.platform=='win32'else 64)*1024**2,
+           'hits':0,'misses':0,'fresh_reads':0,'decode_seconds':0.0,'peak_bytes':0}
+    token=_DECODE_SESSION.set(state)
+    try:yield state
+    finally:
+        state['cache'].clear();state['bytes']=0
+        _DECODE_SESSION.reset(token)
+
+
+def cached_export(function):
+    @wraps(function)
+    def run(*args,**kwargs):
+        with decode_session():return function(*args,**kwargs)
+    return run
+
+
+def decode_statistics():
+    state=_DECODE_SESSION.get()
+    return {k:v for k,v in state.items()if k not in('cache','bytes')}if state else{}
 
 
 def utf_xor(raw):
@@ -128,13 +159,31 @@ def wesys_crypt(data,key,size,original):
     return bytes(out)
 
 
-def unwrap(raw):
+def _unwrap(raw):
     if raw[:1]!=b'\xff' or raw[3:8]!=b'WESYS':raise ValueError('Unsupported V13 WESYS wrapper')
     size,original=struct.unpack_from('<II',raw,8)
     if len(raw)!=16+size:raise ValueError('WESYS size mismatch')
     if not size:return b''
     decoded=zlib.decompress(wesys_crypt(raw[16:],raw[1]&15,size,original))
     if len(decoded)!=original:raise ValueError('WESYS decoded size mismatch')
+    return decoded
+
+
+def unwrap(raw,*,fresh=False):
+    raw=bytes(raw);state=_DECODE_SESSION.get()
+    if state is None:return _unwrap(raw)
+    if not fresh and raw in state['cache']:
+        state['hits']+=1;state['cache'].move_to_end(raw);return state['cache'][raw]
+    started=time.perf_counter();decoded=_unwrap(raw)
+    state['decode_seconds']+=time.perf_counter()-started
+    state['fresh_reads'if fresh else'misses']+=1
+    # Fresh final-table checks bypass both lookup and insertion.
+    cost=len(raw)+len(decoded)
+    if not fresh and cost<=state['limit']:
+        while state['bytes']+cost>state['limit']:
+            key,value=state['cache'].popitem(last=False);state['bytes']-=len(key)+len(value)
+        state['cache'][raw]=decoded;state['bytes']+=cost
+        state['peak_bytes']=max(state['peak_bytes'],state['bytes'])
     return decoded
 
 

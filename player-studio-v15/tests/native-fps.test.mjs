@@ -7,7 +7,7 @@ test('export links to editable render and controller settings and preserves the 
  globalThis.document={addEventListener:(name,handler)=>handlers[name]=handler,querySelector:()=>null};
  try{
   const requests=[];const ui=new NativePackageUI({api:async(path,body)=>{requests.push({path,body});return{phase:'done'};},project:()=>({package_id:'sample'}),toast:()=>{}});
-  ui.update=()=>{};ui.poll=()=>{};
+  ui.update=()=>{};ui.poll=()=>{};ui.apk="game.apk";ui.writeSource={token:"verified"};
   assert.match(ui.render(),/设置分辨率、帧率与手柄键位/);
   await ui.click({target:{closest:()=>({disabled:false,dataset:{},hasAttribute:name=>name==='data-native-build'})}});
   assert.equal(requests.at(-1).body.force_fps160,false);

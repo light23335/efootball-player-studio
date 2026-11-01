@@ -216,7 +216,7 @@ class StudioTests(unittest.TestCase):
             player=library.player(pid);self.assertEqual(player['name'],'C. Ronaldo');self.assertIsNotNone(player['auto_model'])
         self.assertTrue(library.assets({'kind':'model','query':'43133'})['rows'])
         neuer=library.player('33185');p=copy.deepcopy(self.store.project);p['base_abilities']={k:neuer['payload']['parameters'][int(k)] for k in app.CATALOG['ABILITIES']};p['max_level']=77;p['initial_level']=61
-        normalized=app.normalize_project(p);self.assertEqual(normalized['base_abilities']['14'],38);self.assertEqual(normalized['max_level'],77);self.assertEqual(normalized['initial_level'],61)
+        normalized=app.normalize_project(p);self.assertEqual(normalized['base_abilities']['14'],40);self.assertEqual(normalized['max_level'],77);self.assertEqual(normalized['initial_level'],61)
 
     def test_original_front_card_keeps_back_and_mobile_layers_out(self):
         library=app.NativeLibrary(app.RESOURCE,Path(__file__).absolute().parents[2]/'球员工坊-V14',self.store)

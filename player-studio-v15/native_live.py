@@ -81,7 +81,7 @@ def verify_template(template,cpk):
         raise ValueError('实时更新清单与实际球员 CPK 不一致，未发布安装包')
     return {'version':info['version'],'bytes':len(cpk),'sha256':info['dt870Hash'],'verified':True}
 
-def verify_apk(path):
+def verify_apk(path,replacements=None):
     """Check the signed APK's actual download/active copies and live contract."""
     import zipfile
     prefix='assets/gateway-release/'
@@ -90,26 +90,42 @@ def verify_apk(path):
     template_path='work/templates/CMD_LOGIN_LIVEDATA.json'
     document_path='custom-resources/personal-player-studio/players.json'
     with zipfile.ZipFile(path) as archive:
+        # Both checks consume the same actual post-signing reads. Expected
+        # input metadata never stands in for an observed output digest.
+        from export_payload import verify_replacements
+        control=(template_path,document_path,'release-manifest.json')
+        observed=verify_replacements(archive,replacements,capture={prefix+n for n in control})if replacements is not None else{'digests':{},'captured':{}}
+        cache=observed['digests'];captured=observed['captured'];reads=0;hits=0
         def digest(name):
+            nonlocal reads,hits
+            full=prefix+name
+            if full in cache:hits+=1;return cache[full]
             h=hashlib.sha256();size=0
-            with archive.open(prefix+name) as stream:
+            with archive.open(full) as stream:
                 for chunk in iter(lambda:stream.read(1024*1024),b''):h.update(chunk);size+=len(chunk)
-            return {'bytes':size,'sha256':h.hexdigest()}
+            reads+=1;cache[full]={'bytes':size,'sha256':h.hexdigest()};return cache[full]
+        def read_json(name):
+            full=prefix+name
+            return json.loads(captured[full]if full in captured else archive.read(full))
         actual=digest(active)
         if digest(download)!=actual:raise ValueError('实时更新校验失败：下载用与游戏激活用的球员 CPK 副本不同')
-        template=json.loads(archive.read(prefix+template_path));info=version_info(template)
+        template=read_json(template_path);info=version_info(template)
         rows=[r for r in template['livedata_list'] if r.get('name')=='dt870_mobile_and.cpk']
         if len(rows)!=1 or rows[0]['size']!=actual['bytes'] or info['dt870FileSize']!=actual['bytes'] or info['dt870Hash']!=actual['sha256']:
             raise ValueError('实时更新校验失败：版本清单与 APK 内实际球员 CPK 不一致')
-        document=json.loads(archive.read(prefix+document_path));report=document.get('live_data',{})
+        document=read_json(document_path);report=document.get('live_data',{})
+        from art_registry import verify_content
+        content_bindings=verify_content(document)
         if report.get('version')!=info['version'] or any(report.get(k)!=v for k,v in actual.items()):
             raise ValueError('实时更新校验失败：个人球员配置中的版本、大小或哈希未同步')
         if document.get('resource_files',{}).get('dt870_mobile_and.cpk')!=actual:
             raise ValueError('实时更新校验失败：激活资源校验记录未同步')
-        manifest=json.loads(archive.read(prefix+'release-manifest.json'))
+        manifest=read_json('release-manifest.json')
         listed={r['path']:r for r in manifest['files']}
         for name in (active,download,template_path,document_path):
             meta=actual if name in(active,download) else digest(name)
             row=listed.get(name,{})
             if any(row.get(k)!=v for k,v in meta.items()):raise ValueError('实时更新校验失败：发布清单未同步 '+name)
-    return {'version':info['version'],**actual,'verified':True,'active_download_copies_match':True,'manifest_matches':True}
+    return {'version':info['version'],**actual,'verified':True,'active_download_copies_match':True,'manifest_matches':True,
+            'shared_actual_digests':hits,'additional_digest_reads':reads,'content_bindings':content_bindings,
+            'replacement_entries_verified':len(observed['digests'])if replacements is not None else 0}

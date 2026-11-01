@@ -7,6 +7,8 @@ import {ReleaseUpdatesUI} from './release-updates.js';
 import {AndroidSidebarResize} from './sidebar-layout.js';
 import {WindowSession} from './window-session.js';
 import {EditorAutosave,saveTarget,saveLabels} from './editor-autosave.js';
+import {activeHistory,historyShortcut} from './editor-history.js';
+import {normalizeBaseAbility} from './base-abilities.js';
 import {BoosterLibraryUI} from './booster-library-ui.js';
 import {WorkspaceNavigation,editorPages,playerReady} from './navigation-ui.js';
 import {choosePlayerAction,playerLoadChoices} from './player-prompts.js';
@@ -88,9 +90,10 @@ async function api(path,body){
 function toast(message,error=false){const el=document.createElement('div');el.className='toast'+(error?' error':'');el.textContent=message;$('#toasts').append(el);while($('#toasts').children.length>3)$('#toasts').firstElementChild.remove();setTimeout(()=>el.remove(),error?8500:4200);}
 function get(path){return path.split('.').reduce((v,k)=>v?.[k],project);}
 function set(path,value){const keys=path.split('.');let target=project;for(const key of keys.slice(0,-1))target=target[key]??=( {});target[keys.at(-1)]=value;if(path==='model.skin_tone')project.model.skin_tone_edited=true;if(path==='model.torso_length')project.model.physique.leg_length=14-value;if(path==='model.physique.leg_length')project.model.torso_length=14-value;if(path==='model.torso_length'||path==='model.physique.leg_length'){for(const k of ['model.torso_length','model.physique.leg_length'])$$(`[data-bind="${k}"]`).forEach(el=>el.value=get(k));}}
-function commit(mutator,key='action'){
-  const now=performance.now();if(key!==lastChangeKey||now-lastChangeTime>600){past.push(clone(project));if(past.length>60)past.shift();}
-  lastChangeKey=key;lastChangeTime=now;future=[];mutator();version++;scheduleSave();updateLive();updateUndo();libraryUI?.scheduleCardInfo();
+function commit(mutator,key=null){
+  const before=clone(project),now=performance.now();try{mutator();}catch(error){project=before;throw error;}if(JSON.stringify(before)===JSON.stringify(project))return;
+  if(!past.length||!key||key!==lastChangeKey||now-lastChangeTime>600){past.push(before);if(past.length>60)past.shift();}
+  lastChangeKey=key;lastChangeTime=now;future=[];version++;scheduleSave();updateLive();updateUndo();libraryUI?.scheduleCardInfo();
 }
 function scheduleSave(){clearTimeout(saveTimer);$('#save-status').className='save-status saving';$('#save-status').innerHTML='<i class="status-dot"></i>正在保存';saveTimer=setTimeout(()=>flushSave().catch(()=>{}),650);}
 async function flushSave(manual=false){
@@ -106,9 +109,14 @@ async function flushSave(manual=false){
   await savePromise;
   if(savedVersion<version)return flushSave();
 }
-function updateUndo(){$('#undo-button').disabled=!past.length;$('#redo-button').disabled=!future.length;}
-function undo(){if(!past.length)return;future.push(clone(project));project=past.pop();lastChangeKey='';version++;scheduleSave();renderPage();}
-function redo(){if(!future.length)return;past.push(clone(project));project=future.pop();lastChangeKey='';version++;scheduleSave();renderPage();}
+const playerHistory={get canUndo(){return !!past.length;},get canRedo(){return !!future.length;},
+  undo(){if(!past.length)return;future.push(clone(project));project=past.pop();lastChangeKey='';version++;scheduleSave();renderPage();},
+  redo(){if(!future.length)return;past.push(clone(project));project=future.pop();lastChangeKey='';version++;scheduleSave();renderPage();}};
+function currentHistory(){return activeHistory(currentPage,{pack:packUI?.editing?packUI.history:null,coach:coachUI?.editing?coachUI.history:null,player:playerHistory});}
+function updateUndo(){const h=currentHistory();for(const [id,enabled]of [['undo-button',h?.canUndo],['redo-button',h?.canRedo]]){const button=$('#'+id);if(button)button.disabled=!enabled;$$(`[data-proxy="${id}"]`).forEach(b=>b.disabled=!enabled);}}
+function undo(){currentHistory()?.undo();}
+function redo(){currentHistory()?.redo();}
+function editorHistoryChanged(){updateUndo();editorAutosave?.capture();}
 function bindInput(path,label,type='text',options={}){
   const val=get(path),extra=`${options.min!==undefined?' min="'+options.min+'"':''}${options.max!==undefined?' max="'+options.max+'"':''}${options.step?' step="'+options.step+'"':''}`;
   const input=options.choices?`<select data-bind="${path}" ${options.numeric?'data-number="1"':''}>${options.choices.map(([v,t])=>`<option value="${esc(v)}" ${String(v)===String(val)?'selected':''}>${esc(t)}</option>`).join('')}</select>`:
@@ -130,7 +138,7 @@ function renderProfile(){
 }
 
 function renderAbilities(){
-  return `<div class="ability-toolbar"><div class="filter-tabs">${[['all','全部 26 项'],...statGroups.map((g,i)=>[String(i),g.name])].map(([key,name])=>`<button class="${abilityFilter===key?'active':''}" data-ability-filter="${key}">${name}</button>`).join('')}</div><button class="button secondary" data-action="preset">${icon('spark')}载入前锋参考模板</button></div><p class="inline-tip ability-tip">拖动或输入 1 级基础能力（1–105）；右侧为计入培养、增能与教练后的最终值。</p><div class="ability-groups">${statGroups.map((group,i)=>[group,i]).filter(([,i])=>abilityFilter==='all'||abilityFilter===String(i)).map(([group,i])=>`<section class="ability-group panel"><header><h2>${group.name}</h2><b class="num" data-group-avg="${i}"></b></header>${group.indices.map(index=>`<div class="stat-row"><label for="ability-${index}">${esc(catalog.ABILITIES[index])}</label><input type="range" aria-label="${esc(catalog.ABILITIES[index])}滑杆" data-bind="base_abilities.${index}" min="1" max="105" value="${project.base_abilities[index]}"><input id="ability-${index}" aria-label="${esc(catalog.ABILITIES[index])}" class="input" type="number" min="1" max="105" data-bind="base_abilities.${index}" value="${project.base_abilities[index]}"><div class="stat-final num" data-stat-final="${index}"></div></div>`).join('')}</section>`).join('')}</div>`;
+  return `<div class="ability-toolbar"><div class="filter-tabs">${[['all','全部 26 项'],...statGroups.map((g,i)=>[String(i),g.name])].map(([key,name])=>`<button class="${abilityFilter===key?'active':''}" data-ability-filter="${key}">${name}</button>`).join('')}</div><button class="button secondary" data-action="preset">${icon('spark')}载入前锋参考模板</button></div><p class="inline-tip ability-tip">拖动或输入 1 级基础能力（40–103）；右侧为计入培养、增能与教练后的最终值。</p><div class="ability-groups">${statGroups.map((group,i)=>[group,i]).filter(([,i])=>abilityFilter==='all'||abilityFilter===String(i)).map(([group,i])=>`<section class="ability-group panel"><header><h2>${group.name}</h2><b class="num" data-group-avg="${i}"></b></header>${group.indices.map(index=>`<div class="stat-row"><label for="ability-${index}">${esc(catalog.ABILITIES[index])}</label><input type="range" aria-label="${esc(catalog.ABILITIES[index])}滑杆" data-bind="base_abilities.${index}" min="40" max="103" step="1" value="${project.base_abilities[index]}"><input id="ability-${index}" aria-label="${esc(catalog.ABILITIES[index])}" class="input" type="number" min="40" max="103" step="1" data-bind="base_abilities.${index}" value="${project.base_abilities[index]}"><div class="stat-final num" data-stat-final="${index}"></div></div>`).join('')}</section>`).join('')}</div>`;
 }
 
 function boosterLabel(b){if(!b.label.includes('�'))return b.label;const entries=Object.entries(b.effects);return entries.length===26?'全能力 '+(entries[0][1]>=0?'+':'')+entries[0][1]:entries.map(([i,v])=>catalog.ABILITIES[i]+(v>=0?'+':'')+v).join(' / ')||'无常驻效果';}
@@ -344,7 +352,7 @@ function handleInput(event){
   }else if(el.dataset.bind){
     let value=el.type==='checkbox'?el.checked:el.value;
     if(['number','range'].includes(el.type)||el.dataset.number){if(el.value===''){if(el.dataset.bind==='celebration'){commit(()=>project.celebration=null,'celebration');scheduleSave();}return;}value=Number(el.value);if(!Number.isFinite(value))return;if(el.hasAttribute('min'))value=Math.max(Number(el.min),value);if(el.hasAttribute('max'))value=Math.min(Number(el.max),value);}
-    const path=el.dataset.bind;
+    const path=el.dataset.bind;if(path.startsWith('base_abilities.'))value=normalizeBaseAbility(value);
     if(path==='appearance.thumbnail_mode'){commit(()=>set(path,value),path);renderPage();return;}
     if(path==='card_series'){commit(()=>selectCardSeries(project,value),path);renderPage();return;}
     commit(()=>{set(path,value);if(path==='max_level'){project.initial_level=Math.min(project.initial_level,value);project.max_level_known=true;}if(el.dataset.identityKind){const kind=el.dataset.identityKind,exact=identityOptions[kind].find(r=>r.name+' · #'+r.id===value),matches=identityOptions[kind].filter(r=>r.name===value||r.name_en===value),row=exact||(matches.length===1?matches[0]:null);project.identity[kind==='nation'?'nation_id':'team_id']=row?.id??null;if(row){value=row.name;set(path,value);el.value=value;}}},path);
@@ -427,7 +435,8 @@ async function initializeEditorAutosave(){
    coachUI.draftRows=[...(coachUI.draftRows||[]).filter(r=>r.uuid!==value.uuid),value];
    if(result.coach){const row=result.coach;coachUI.custom=[...coachUI.custom.filter(r=>r.id!==row.id),row];
     if(coachUI.editing?.uuid===row.uuid&&!coachUI.editing.head_model&&row.head_model)coachUI.editing.head_model=structuredClone(row.head_model);
-    commit(()=>{project.custom_coaches??=[];project.custom_coaches=[...project.custom_coaches.filter(r=>r.id!==row.id),row];},'autosave-coach-reference');}
+    // Persist the latest coach reference without creating an unrelated player undo step.
+    project.custom_coaches??=[];project.custom_coaches=[...project.custom_coaches.filter(r=>r.id!==row.id),row];version++;scheduleSave();}
   }
   if(category==='pack'){packUI.draftRows=[...(packUI.draftRows||[]).filter(r=>r.uuid!==value.uuid),value];if(result.rows)packUI.rows=result.rows;if(currentPage==='packs'&&!packUI.editing)packUI.list();}
   if(category==='coach'&&currentPage==='coaches'&&!coachUI.editing)coachUI.renderResults();
@@ -436,8 +445,13 @@ async function initializeEditorAutosave(){
 $('#card-motion-toggle').onclick=event=>{nativeCard.setMotion(!nativeCard.motion);event.currentTarget.textContent=nativeCard.motion?'暂停原版动画':'播放原版动画';};
 document.addEventListener('keydown',event=>{
   if(event.ctrlKey&&event.key.toLowerCase()==='s'){event.preventDefault();saveCurrent().catch(error=>toast(error.message,true));}
-  if(event.ctrlKey&&event.key.toLowerCase()==='z'&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){event.preventDefault();event.shiftKey?redo():undo();}
+  const action=historyShortcut(event);if(action&&currentHistory()){event.preventDefault();action==='undo'?undo():redo();}
 });
+document.addEventListener('change',event=>{
+  const el=event.target,path=el.dataset.bind;
+  if(path?.startsWith('base_abilities.'))el.value=normalizeBaseAbility(get(path));
+});
+document.addEventListener('focusout',()=>{lastChangeKey='';packUI?._history?.endGroup();coachUI?._history?.endGroup();});
 let drag=null;
 $('#player-card').addEventListener('pointerdown',event=>{if(!project?.appearance.portrait)return;drag={x:event.clientX,y:event.clientY,px:project.appearance.photo_x,py:project.appearance.photo_y};event.target.setPointerCapture(event.pointerId);});
 $('#player-card').addEventListener('pointermove',event=>{if(!drag)return;const scale=600/event.target.clientWidth;commit(()=>{project.appearance.photo_x=Math.max(-180,Math.min(180,Math.round(drag.px+(event.clientX-drag.x)*scale)));project.appearance.photo_y=Math.max(-180,Math.min(180,Math.round(drag.py+(event.clientY-drag.y)*scale)));},'photo-drag');for(const key of ['photo_x','photo_y']){$$(`[data-bind="appearance.${key}"]`).forEach(n=>n.value=project.appearance[key]);}});
@@ -464,10 +478,10 @@ async function boot(){
   onboardingUI=new OnboardingUI({api,toast,flushSave,mode:()=>navigationMode,setMode:mode=>{navigationMode=mode;renderNavigation();renderPage();},setSources:(selected,mode)=>{for(const ui of [libraryUI,updateUI])for(const key of ['apk','companion'])if(selected[key])ui[key]=selected[key];}});
   toolsUI=new WorkspaceTools({api,toast,project:()=>project,flushSave,flushEditors:()=>editorAutosave?.flush()});
   boosterLibraryUI=new BoosterLibraryUI({api,toast,project:()=>project,flushSave,commit,rerender:renderPage});
-  packUI=new PackUI({api,toast,rerender:renderPage});
+  packUI=new PackUI({api,toast,rerender:renderPage,onHistoryChange:editorHistoryChanged,flushEditors:()=>editorAutosave?.flush()});
   motionUI=new MotionUI({api,toast,project:()=>project,commit,rerender:renderPage});
   personalUI=new PersonalUI({api,toast,beforeOpenPlayer:async()=>{if(await choosePlayerAction('读取已保存球员','将切换当前编辑内容。当前工程会先备份；切换到其他球员时会保存当前球员。若要创建另一名球员，请使用新建独立槽位。',[{id:'open',label:'备份并读取球员',primary:true}])!=='open')return false;await api('project/checkpoint',{project});return true;},project:()=>project,flushSave,navigate,rerender:renderPage,onPlayerDeleted:id=>{if(packUI.editing)packUI.editing.members=packUI.editing.members.filter(m=>m.kind!=='custom'||m.id!==id);},replaceProject:p=>{past=[];future=[];project=p;version++;savedVersion=version;}});
-  coachUI=new CoachUI({api,toast,catalog,flushEditors:()=>editorAutosave?.flush(),onCoachDeleted:uuid=>nativePackageUI?.coachIds.delete(uuid),replaceProject:p=>{past=[];future=[];project=p;version++;savedVersion=version;lastChangeKey='';},identities:()=>identityOptions,project:()=>project,commit,flushSave,navigate,rerender:renderPage,resourceKey:()=>libraryUI.status.cache_directory+':'+libraryUI.status.phase,custom:data.custom_coaches?.rows||[]});
+  coachUI=new CoachUI({api,toast,catalog,onHistoryChange:editorHistoryChanged,flushEditors:()=>editorAutosave?.flush(),onCoachDeleted:uuid=>nativePackageUI?.coachIds.delete(uuid),replaceProject:p=>{past=[];future=[];project=p;version++;savedVersion=version;lastChangeKey='';},identities:()=>identityOptions,project:()=>project,commit,flushSave,navigate,rerender:renderPage,resourceKey:()=>libraryUI.status.cache_directory+':'+libraryUI.status.phase,custom:data.custom_coaches?.rows||[]});
   await initializeEditorAutosave();
   presetsUI=new CardPresetsUI({api,toast,project:()=>project,commit,rerender:renderPage});
   nativeCard=new NativeCardRenderer($('#player-card'),state=>{$('#native-card-status').textContent=`原版图层 ${state.layers} · 动画 ${state.videos} · 资料素材 ${state.ui||0}${state.missing?' · '+state.missing+' 项未读取':''}`;$('#card-motion-toggle').hidden=!state.videos;},catalog);

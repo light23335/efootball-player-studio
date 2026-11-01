@@ -18,12 +18,14 @@ import time
 import uuid
 import zipfile
 
-from native_cpk import Cpk,unwrap
+from native_cpk import Cpk,unwrap,cached_export,decode_statistics
 from native_tables import PLAYER,rows,compile_tables
 from native_player import reserve_identity,compile_player
 from native_art import compile_art
 from native_iostore import Container,append_container
 from apk_format import replace_entries,local_signer,sign_v2,verify_v2
+from export_payload import FilePayload,measure,metadata as payload_metadata,verified_engine,verify_replacements
+from export_timing import ExportTimings
 from packs import load as load_packs,compile_packs
 from native_live import reserve_shared,compile_template,verify_template
 from personal_binding import reserve_asset_key,compose,fingerprint
@@ -37,7 +39,7 @@ from custom_boosters import issues as booster_issues,validate_projects as valida
 
 PREFIX='assets/gateway-release/'
 NATIVE='custom-resources/legends-v10/'
-COMPILER_REVISION='v17-resource-cache-stored-ucas-stream-signing-2.1.1'
+COMPILER_REVISION='v17-source-aware-selection-2.1.6'
 
 
 def compact(value):return json.dumps(value,ensure_ascii=False,separators=(',',':')).encode('utf8')
@@ -156,6 +158,43 @@ class NativePackage:
         for c in current.get('custom_coaches',[]):rows[c['uuid']]=c
         return list(rows.values())
 
+    def write_candidates(self,current,writing='full',apk=None):
+        from write_modes import mode,source,statuses,design,requirements
+        mode(writing);doc,summary=source(apk,requirements(self.library))if apk else({},None)
+        result=self.candidates(current)
+        projects={r['package_id']:self.store.saved_player(r['package_id'])['project']for r in self.store.list_players()['rows']}
+        projects[current['package_id']]=current
+        local={'players':list(projects.values()),'coaches':self.coach_candidates(current),'packs':load_packs(self.store)}
+        fields={'players':'package_id','coaches':'uuid','packs':'uuid'};positive={}
+        for kind,field in fields.items():
+            states=statuses(kind,local[kind],doc,self.store)
+            positive[kind]={v[field]:design(kind,v,self.store)for v in local[kind]if states[v[field]]=='unchanged'}
+            rows=result['rows'if kind=='players'else kind]
+            for row in rows:
+                row['write_state']=states.get(row[field],'new')
+                if kind=='players'and row['write_state']=='unchanged':
+                    row['model_error']='';row['model_warning']='未修改，直接复用来源包现有卡面与脸模'
+            if writing=='full':
+                seen={r[field]for r in rows}
+                for old in doc.get(kind,[]):
+                    uid=old['identity']['package_id']if kind=='players'else old['uuid']
+                    if uid in seen:continue
+                    if kind=='players':
+                        payload=old['owned'];rows.append({'package_id':uid,'name':payload.get('name','来源包球员'),'card_type':old['card_type'],
+                            'current':False,'max_level':payload.get('level_info',{}).get('level_limit',1),
+                            'maximum_overall':old.get('maximum_development',{}).get('overall',0),'model_warning':'来自来源包，保留其现有卡面与脸模',
+                            'source_only':True,'write_state':'source_only'})
+                    elif kind=='coaches':rows.append({'uuid':uid,'name':old['payload']['name'],'has_model':any(m['uuid']==uid for m in doc.get('coach_models',[])),'source_only':True,'write_state':'source_only'})
+                    else:rows.append({'uuid':uid,'name':old['name'],'enabled':old['enabled'],'member_count':len(old['members']),'source_only':True,'write_state':'source_only'})
+        result['hidden_unchanged']=0
+        if writing=='incremental':
+            result['hidden_unchanged']=sum(r['write_state']=='unchanged'for r in result['rows'])
+            result['rows']=[r for r in result['rows']if r['write_state']!='unchanged']
+        result['write_source']=summary
+        if summary:
+            with self.lock:self._write_positive=(summary['token'],positive)
+        return result
+
     @exported('APK','实装前检查',lambda self,body: body.get('apk') or body.get('companion') or '生成所选内容')
     def start(self,body):
         with self.lock:
@@ -171,13 +210,39 @@ class NativePackage:
             current=body['project'];ids=body.get('selected_ids',[current['package_id']])
             if type(body.get('force_fps160',False)) is not bool:raise ValueError('160 帧开关无效')
             if not isinstance(ids,list) or len(ids)!=len(set(ids)) or len(ids)>10000:raise ValueError('球员选择无效')
-            projects=[copy.deepcopy(current) if uid==current['package_id'] else export_call('球员',uid,'读取已保存工程',self.store.saved_player,uid)['project'] for uid in ids]
+            from write_modes import mode,source,statuses,designs,requirements
+            writing=mode(body.get('write_mode','full'))
+            source_doc,source_summary=source(body.get('apk'),requirements(self.library))
+            if body.get('write_source_token')and body['write_source_token']!=source_summary['token']:raise ValueError('来源 APK 已发生变化，请重新读取写入列表后生成')
+            old_ids={p['identity']['package_id']for p in source_doc.get('players',[])}
+            source_only=set(body.get('source_only_ids',[]))
+            if not source_only<=old_ids or not source_only<=set(ids):raise ValueError('来源包球员选择无效，请重新读取列表')
+            selected_projects=[copy.deepcopy(current) if uid==current['package_id'] else export_call('球员',uid,'读取已保存工程',self.store.saved_player,uid)['project'] for uid in ids if uid not in source_only]
+            player_states=statuses('players',selected_projects,source_doc,self.store)
+            projects=[p for p in selected_projects if player_states[p['package_id']]!='unchanged']
             from project_resource_migration import prepare as prepare_project
             projects=[export_call('球员',p,'迁移原版卡面与脸模引用',prepare_project,p,self.resources,self.library.face_assets())[0] for p in projects]
-            pack_ids=body.get('pack_ids',[]);packs=[p for p in load_packs(self.store) if p['uuid'] in pack_ids]
-            coach_ids=body.get('coach_ids',[]);coaches=[c for c in self.coach_candidates(current) if c['uuid'] in coach_ids]
-            if len(coaches)!=len(set(coach_ids)):raise ValueError('所选教练不存在')
-            if len(packs)!=len(set(pack_ids)):raise ValueError('所选卡包不存在')
+            pack_ids=body.get('pack_ids',[]);selected_packs=[p for p in load_packs(self.store) if p['uuid'] in pack_ids]
+            coach_ids=body.get('coach_ids',[]);selected_coaches=[c for c in self.coach_candidates(current) if c['uuid'] in coach_ids]
+            if not set(coach_ids)<={c['uuid']for c in selected_coaches}|{c['uuid']for c in source_doc.get('coaches',[])}:raise ValueError('所选教练不存在')
+            if not set(pack_ids)<={p['uuid']for p in selected_packs}|{p['uuid']for p in source_doc.get('packs',[])}:raise ValueError('所选卡包不存在')
+            if len(pack_ids)!=len(set(pack_ids))or len(coach_ids)!=len(set(coach_ids)):raise ValueError('教练或卡包选择重复')
+            if writing=='full':
+                existing_members={str(cid):p['identity']['package_id']for p in source_doc.get('players',[])for cid in {p['identity']['card_id'],*p['identity'].get('previous_card_ids',[])}}
+                local_pack_ids={p['uuid']for p in selected_packs}
+                inspect_packs=selected_packs+[p for p in source_doc.get('packs',[])if p['uuid']in pack_ids and p['uuid']not in local_pack_ids]
+                for pack in inspect_packs:
+                    for member in pack['members']:
+                        uid=member.get('id')if member.get('kind')=='custom'else existing_members.get(str(member.get('card_id')))
+                        if uid and uid not in ids:raise ValueError(pack['name']+'：全量模式请同时勾选卡包引用的自建球员')
+            coach_states=statuses('coaches',selected_coaches,source_doc,self.store);pack_states=statuses('packs',selected_packs,source_doc,self.store)
+            coaches=[c for c in selected_coaches if coach_states[c['uuid']]!='unchanged']
+            packs=[p for p in selected_packs if pack_states[p['uuid']]!='unchanged']
+            design_rows=designs(selected_projects,selected_coaches,selected_packs,self.store)
+            if getattr(self,'_write_positive',(None,))[0]==source_summary['token']:
+                for kind,values in self._write_positive[1].items():design_rows[kind]={**values,**design_rows[kind]}
+            body=dict(body,write_mode=writing,write_source_token=source_summary['token'],write_designs=design_rows,
+                write_selected={'players':ids,'coaches':coach_ids,'packs':pack_ids})
             for pack in packs:
                 if not pack['members']:raise ValueError(pack['name']+'：卡包是空草稿，请先添加球员后再生成 APK')
             from workspace_tools import game_options
@@ -188,7 +253,7 @@ class NativePackage:
             if 'frame_rate' in body:option_settings['frame_rate']=body['frame_rate']
             option_settings=normalize_game_settings(option_settings)
             body=dict(body,export_settings=option_settings)
-            if not projects and not packs and not coaches and not head_rows and not game_options(self.store).get('enabled') and not body.get('force_fps160') and not any(v['enabled'] for v in option_settings.values()):raise ValueError('请选择球员、教练、头模或卡包，或启用游戏设置')
+            if not projects and not packs and not coaches and not head_rows and not source_doc and not game_options(self.store).get('enabled') and not body.get('force_fps160') and not any(v['enabled'] for v in option_settings.values()):raise ValueError('请选择球员、教练、头模或卡包，或启用游戏设置')
             validate_boosters(projects,self._booster_labels())
             self.state={'phase':'working','message':'核对当前游戏原包与所选球员','players':len(projects)}
         threading.Thread(target=self._worker,args=(dict(body,projects=projects,packs=packs,coaches=coaches,coach_heads=head_rows),),daemon=True).start()
@@ -219,8 +284,9 @@ class NativePackage:
             self.update(phase='error',message=str(error),error_context=error.contexts,error_type=error.original_type)
         finally:self.cleanup_work(work,'resource-signer-')
 
+    @cached_export
     def _worker(self,body):
-        work=None
+        work=None;compile_cache=None;timings=ExportTimings()
         try:
             work=self.store.root/'tmp'/('native-'+uuid.uuid4().hex);work.mkdir()
             projects=body['projects'];apk=Path(body['apk']).absolute()
@@ -230,6 +296,7 @@ class NativePackage:
                 with export_context('球员',p,'校验脸模绑定'):
                     try:rigs.append(self.model_binding(p))
                     except (ValueError,OSError) as exc:raise ValueError(p['identity']['name']+'：'+str(exc)) from exc
+            timings.mark('input_and_rig_validation')
             registry_path=self.store.root/'native-player-registry.json'
             registry=_export_data("资料文件",registry_path,"读取并解析 JSON",lambda: json.loads(registry_path.read_text(encoding='utf8'))) if registry_path.exists() else {}
             booster_path=self.store.root/'native-booster-registry.json'
@@ -239,20 +306,33 @@ class NativePackage:
             coach_path=self.store.root/'native-coach-registry.json'
             coach_registry=_export_data("资料文件",coach_path,"读取并解析 JSON",lambda: json.loads(coach_path.read_text(encoding='utf8'))) if coach_path.exists() else {}
             with zipfile.ZipFile(apk) as source:
+                if body.get('write_source_token'):
+                    from write_modes import source as inspect_write_source,requirements
+                    if inspect_write_source(apk,requirements(self.library))[1]['token']!=body['write_source_token']:raise ValueError('生成前来源 APK 已变化，请重新读取列表')
                 from apk_installation import coexist_entries
                 install_replacements,installation=coexist_entries(source,body.get('installation_mode','update'))
                 release=_export_data("资料文件",PREFIX + 'release-manifest.json',"读取并解析 JSON",lambda: json.loads(source.read(PREFIX+'release-manifest.json')))
-                if release['release_id']!=self.library.profile['release_id']:
-                    raise ValueError('请选择当前数据库对应的 APK；更换主包请先在 APK 数据更新页导入')
+                from write_modes import compatible,requirements
+                compatible(source,release,requirements(self.library))
+                from content_autofill import synchronize
+                source,content_replacements,content_sync_report=synchronize(source,self.library,work,self.update)
+                release=json.loads(source.read(PREFIX+'release-manifest.json'))
                 from native_tables import BOOSTERS
-                booster_data=unwrap(Cpk(source.read(PREFIX+NATIVE+'dt870_mobile_and.cpk')).read(BOOSTERS))
+                source_cpk=source.read(PREFIX+NATIVE+'dt870_mobile_and.cpk')
+                booster_data=unwrap(Cpk(source_cpk).read(BOOSTERS))
                 if len(booster_data)%40:raise ValueError('原生增能表结构改变')
                 occupied_boosters={int.from_bytes(booster_data[i+14:i+16],'little')&1023 for i in range(0,len(booster_data),40)}
                 inherited=personal_source.read(source,release)
+                from write_modes import mode,retained,removals,refresh_packs,prune_tables,source_container,final_designs
+                writing=mode(body.get('write_mode','full'))
+                compiled={'players':{p['package_id']for p in projects},'coaches':{c['uuid']for c in body.get('coaches',[])},'packs':{p['uuid']for p in body.get('packs',[])}}
+                selected={k:set(v)for k,v in body.get('write_selected',compiled).items()}
+                kept=retained(inherited,writing,selected,compiled)
                 from content_delta import read_catalogue
                 content_catalogue=read_catalogue(source)
                 owners=personal_source.seed(inherited,registry,asset_registry)
-                selected_owners=[owners[p['package_id']] for p in projects if p['package_id'] in owners]
+                kept_owner_ids={p['identity']['package_id']for p in kept.get('players',[])}-compiled['players']
+                selected_owners=[owner for uid,owner in owners.items()if uid in compiled['players']or writing=='full'and uid not in kept_owner_ids]
                 replace_ids=set().union(*(p['aliases'] for p in selected_owners)) if selected_owners else set()
                 inherited_boosters={b for p in owners.values() for b in p['boosters']}
                 replace_boosters=set().union(*(p['boosters'] for p in selected_owners)) if selected_owners else set()
@@ -271,26 +351,27 @@ class NativePackage:
                                     assigned=reserve_booster(uid,booster_registry,occupied_boosters|inherited_boosters,prior,first_slot=booster['id']==p['booster_ids'][0],prior_alias=prior_alias)
                                 except ValueError as exc:raise ValueError(booster_context(p,booster)+'：'+str(exc)) from exc
                                 # A shared source booster cannot change an unselected player.
-                                shared=[row for row in inherited.get('players',[]) if row['identity']['package_id'] not in selected_uuids and assigned in row['base_parameters'][144:147]]
+                                shared=[row for row in kept.get('players',[]) if row['identity']['package_id'] not in selected_uuids and assigned in row['base_parameters'][144:147]]
                                 if shared:
                                     before=inherited.get('preview_boosters',{}).get(str(assigned))
                                     effects={str(k):v for k,v in booster['effects'].items() if v}
                                     if not before or {str(k):v for k,v in before['effects'].items() if v}!=effects:raise ValueError(booster_context(p,booster)+'：个人包内未选中的其他球员仍使用此增能；请同时选择相关球员，或新建独立增能')
                                 remap[booster['id']]=assigned;booster['id']=assigned
                     p['booster_ids']=[remap.get(v,v) for v in p['booster_ids']];p['custom_boosters']=active
-                with source.open('lib/arm64-v8a/libUE4.so') as lib:
+                self.update(message='一次解压并完整校验引擎，供所有接口检查复用')
+                timings.mark('source_registry_and_booster_setup')
+                engine_file=verified_engine(source,work,self.library.profile['native_engine_sha256'])
+                with engine_file.open() as lib:
                     lib.seek(self.library.profile['resource_key_offset']);engine_key=lib.read(32)
                 if hashlib.sha256(engine_key).hexdigest()!=self.library.profile['resource_key_sha256']:
                     raise ValueError('此 APK 的原生引擎与 V14 模板不同')
-                with source.open('lib/arm64-v8a/libUE4.so') as lib:
-                    digest=hashlib.file_digest(lib,'sha256').hexdigest()
-                if digest!=self.library.profile['native_engine_sha256']:
-                    raise ValueError('此 APK 的完整引擎指纹与已验证 V14 不同，未生成安装包')
-                original=source.read(PREFIX+NATIVE+'dt870_mobile_and.cpk')
+                timings.mark('engine_extract_hash_and_key')
+                original=source_cpk
                 from catalogue_trash import patch_tables as recycle_tables,active as recycle_items,policy as recycle_policy,patch_seed as recycle_seed
                 original=recycle_tables(original,self.store,restore_only=True)
                 recycled=recycle_items(self.store)
-                records=rows(unwrap(Cpk(original).read(PLAYER)),400,8)
+                original_cpk=Cpk(original)
+                records=rows(unwrap(original_cpk.read(PLAYER)),400,8)
                 occupied=set(records)|{k&0xfffffff for k in records}
                 catalog=_export_data("资料文件",self.resources / 'catalog.json',"读取并解析 JSON",lambda: json.loads((self.resources/'catalog.json').read_text(encoding='utf8')))
                 from skill_localization import apply_labels
@@ -317,12 +398,13 @@ class NativePackage:
                             definitions.append(compile_player(p,catalog,costs,identity,template,int(nation),int(team),source_record,game_version=self.library.profile.get('game_version','V14')))
                 from pack_covers import compile_covers
                 cover_files,cover_bindings,cover_routes=compile_covers(body['packs'],self.store)
-                all_definitions={d['identity']['package_id']:d for d in inherited.get('players',[])}
+                all_definitions={d['identity']['package_id']:d for d in kept.get('players',[])}
                 all_definitions.update({d['identity']['package_id']:d for d in definitions})
                 from pack_catalogue import from_archive
                 blocked={**from_archive(source),**{cid:{'name':row['name'],'reason':'回收站'}for cid,row in recycled.items()}}
                 packs=compile_packs(body['packs'],list(all_definitions.values()),self.resources,cover_bindings,blocked)
                 self.update(message='编译个人卡图、脸模网格与原生材质')
+                timings.mark('player_and_pack_definitions')
                 reference=self.reference_model() if any(not (p.get('model',{}).get('native_source') or {}).get('path') for p in projects) else None
                 metadata=_export_data("资料文件",self.resources / 'native-face-template.json',"读取并解析 JSON",lambda: json.loads((self.resources/'native-face-template.json').read_text(encoding='utf8')))
                 art=[];bindings=[];art_reports=[];private_movie_files={};compile_cache=None;cache_warning=None
@@ -352,25 +434,27 @@ class NativePackage:
                         packages.extend(private_art);private_movie_files.update(private_files)
                         if private_report:report['custom_motion']=private_report
                         art.extend(packages);bindings.append(binding);art_reports.append(report)
+                timings.mark('player_art_and_private_animation')
                 self.update(message='写入原生球员表、卡面索引及增能效果')
                 coach_catalog=_export_data("资料文件",self.resources / 'coaches.json',"读取并解析 JSON",lambda: json.loads((self.resources/'coaches.json').read_text(encoding='utf8')))['coaches']
                 selected_coach_ids={c['uuid'] for c in body.get('coaches',[])}
                 old_coaches=[c for c in inherited.get('coaches',[]) if c['uuid'] in selected_coach_ids]
+                retired_coaches=[c for c in inherited.get('coaches',[])if writing=='full'and c['uuid']not in selected['coaches']]
                 coach_registry.setdefault('coaches',{}).update({c['uuid']:c['id'] for c in old_coaches})
                 coach_registry.setdefault('boosters',{}).update(inherited.get('editor_registries',{}).get('coach_boosters',{}))
                 coach_registry.setdefault('links',{}).update(inherited.get('editor_registries',{}).get('coach_links',{}))
                 from native_coach_links import compile_links,schema as link_schema
                 selected_coaches=copy.deepcopy(body.get('coaches',[]))
-                link_resources,link_ids,new_link_routes=compile_links(Cpk(original),selected_coaches,coach_registry,link_schema(self.profile_resources))
+                link_resources,link_ids,new_link_routes=compile_links(original_cpk,selected_coaches,coach_registry,link_schema(self.profile_resources))
                 for coach in selected_coaches:coach['_compiled_link_ids']=link_ids[coach['uuid']]
-                coach_resources,coaches=compile_coaches(Cpk(original),selected_coaches,coach_catalog,coach_registry,
+                coach_resources,coaches=compile_coaches(original_cpk,selected_coaches,coach_catalog,coach_registry,
                     {c['id'] for c in old_coaches},{b for c in old_coaches for b in c['payload'].get('ability_id',[])[:2] if b})
                 coach_resources.update(link_resources)
                 from coach_models import compile_models as compile_coach_models,verify_loader as verify_coach_model_loader
                 coach_model_art,coach_model_report=compile_coach_models(self.library,selected_coaches,coaches,{c['id'] for c in old_coaches})
                 coach_model_loader=None
-                if coach_model_art:
-                    with source.open('lib/arm64-v8a/libUE4.so') as engine:coach_model_loader=verify_coach_model_loader(engine,self.profile_resources)
+                if coach_model_art or kept.get('coach_models'):
+                    with engine_file.open() as engine:coach_model_loader=verify_coach_model_loader(engine,self.profile_resources)
                 art.extend(coach_model_art)
                 from coach_portraits import compile_portraits,owned_paths
                 coach_art,coach_portrait_report=compile_portraits(body.get('coaches',[]),coaches,self.library)
@@ -380,7 +464,9 @@ class NativePackage:
                 head_art,coach_head_report=compile_heads(self.library,body.get('coach_heads',[]))
                 art.extend(head_art)
                 from card_presentation import repair_routes
-                prior_card_routes=repair_routes(copy.deepcopy(inherited.get('native_binding',{}).get('routes',[])),inherited.get('players',[]),records)
+                carried_aliases=set().union(*(owners[p['identity']['package_id']]['aliases']for p in kept.get('players',[])))if kept.get('players')else set()
+                carried_routes=[r for r in inherited.get('native_binding',{}).get('routes',[])if int(r['cardId'])in carried_aliases]
+                prior_card_routes=repair_routes(copy.deepcopy(carried_routes),kept.get('players',[]),records)
                 from card_motion import prepare as prepare_card_motion,replacement_indices as motion_replacements
                 self.update(message='编译大小头像的动态背景与材质')
                 motion=prepare_card_motion(self.library,bindings,prior_card_routes,
@@ -391,49 +477,48 @@ class NativePackage:
                     if name in private_movie_files and private_movie_files[name]!=raw:raise ValueError('小头像兼容视频与自制视频资源名冲突：'+name)
                     private_movie_files[name]=raw
                 self.update(message='合并原生球员、外观、技能与增能资料表')
-                cpk,table_report=compile_tables(original,projects,definitions,self.resources,bindings,coach_resources,replace_ids,replace_boosters)
+                timings.mark('coach_and_card_motion')
+                cpk,table_report=compile_tables(original,projects,definitions,self.resources,bindings,coach_resources,replace_ids,replace_boosters,source_cpk=original_cpk)
+                removed_aliases=set().union(*(p['aliases']for uid,p in owners.items()if writing=='full'and uid not in selected['players']))if owners else set()
+                cpk=prune_tables(cpk,removed_aliases,{c['id']for c in retired_coaches})
                 cpk=recycle_tables(cpk,self.store)
-                src=Container(self.library.containers/'pc3700_mobile_and_10_P.utoc',engine_key)
+                timings.mark('cpk_tables_and_text')
+                src=source_container(source,work,engine_key)
                 out=work/'pc3700_mobile_and.utoc'
                 from native_body import container_parts
                 additions,paths,packages=container_parts(art)
-                resource_build=append_container(src,out,additions,paths,packages,personal_source.owned_art_paths(src,selected_owners)|owned_paths(src,[c['id'] for c in old_coaches])|motion_replacements(src,motion['packages'])|head_replacements(src,head_art+coach_model_art),cache=compile_cache)
-                replacements={PREFIX+NATIVE+'dt870_mobile_and.cpk':cpk,
+                removed_coach_ids={c['id']for c in retired_coaches}
+                retired_prefixes=tuple(prefix+str(cid)+'_'for cid in removed_coach_ids for prefix in ('SK_','MI_','T_'))
+                retired_model_paths={index for path,index in src.paths.items()if retired_prefixes and '/character/RealFace/'in path and path.rsplit('/',1)[-1].startswith(retired_prefixes)}
+                owned_replacements=personal_source.owned_art_paths(src,selected_owners)|owned_paths(src,[c['id'] for c in old_coaches+retired_coaches])|retired_model_paths
+                resource_build=append_container(src,out,additions,paths,packages,owned_replacements|motion_replacements(src,motion['packages'])|head_replacements(src,head_art+coach_model_art),cache=compile_cache,remove_indices=owned_replacements)
+                timings.mark('iostore_build')
+                replacements={**content_replacements,PREFIX+NATIVE+'dt870_mobile_and.cpk':cpk,
                               PREFIX+'livedata/dt870_mobile_and.cpk':cpk}
                 replacements.update(recycle_seed(source,self.store))
                 from coach_heads import patch_stock_containers
                 self.update(message='替换原始教练模型容器并核对加载路径')
                 stock_head_replacements,stock_head_report=patch_stock_containers(source,self.library,head_art,coach_head_report,work)
                 replacements.update(stock_head_replacements)
+                timings.mark('coach_stock_containers')
                 native_movie_files=motion.get('native_movie_files',{})
+                movie_package_report=None
                 if private_movie_files or native_movie_files:
-                    from private_card_motion import write_movie_pak,read_movie_pak
-                    member='assets/pc0000_mobile_and.pak';target_zip=work/'pc0000-movies.zip'
-                    with (io.BytesIO(replacements[member]) if member in replacements else source.open(member)) as stream,zipfile.ZipFile(stream) as nested,zipfile.ZipFile(target_zip,'w') as dst:
-                        updated={}
-                        for filename,movies,allow_native in(('cardstudio_100_P.pak',private_movie_files,False),
-                                                           ('cardstudio_content_100_P.pak',native_movie_files,True)):
-                            if not movies:continue
-                            old_name='PesMobile/Content/Paks/'+filename
-                            prior=read_movie_pak(nested.read(old_name),allow_native=allow_native)if old_name in nested.namelist()else{}
-                            for name,raw in movies.items():
-                                if name in prior and prior[name]!=raw:raise ValueError('独立动画资源名冲突：'+name)
-                                prior[name]=raw
-                            path=work/filename;write_movie_pak(path,prior);updated[old_name]=path
-                        for entry in nested.infolist():
-                            if entry.filename in updated:continue
-                            with nested.open(entry) as inp,dst.open(copy.copy(entry),'w') as output:shutil.copyfileobj(inp,output,4*1024*1024)
-                        for name,path in updated.items():dst.write(path,name,compress_type=zipfile.ZIP_STORED)
-                    replacements[member]=target_zip.read_bytes()
-                for suffix in ('.utoc','.ucas'):replacements[PREFIX+NATIVE+'pc3700_mobile_and'+suffix]=out.with_suffix(suffix).read_bytes()
+                    from movie_package import merge,MEMBER
+                    self.update(message='核对动态卡面视频包缓存并合并新增视频')
+                    replacements[MEMBER],movie_package_report=merge(source,replacements.get(MEMBER),private_movie_files,native_movie_files,work,compile_cache)
+                timings.mark('movie_package')
+                for suffix in ('.utoc','.ucas'):replacements[PREFIX+NATIVE+'pc3700_mobile_and'+suffix]=FilePayload.from_path(out.with_suffix(suffix))
                 # Original activation verifies all four files, including its empty PAK.
                 resource_files={};original_resource_files={}
                 for name in ('dt870_mobile_and.cpk','pc3700_mobile_and.pak','pc3700_mobile_and.utoc','pc3700_mobile_and.ucas'):
-                    baseline=original if name=='dt870_mobile_and.cpk' else source.read(PREFIX+NATIVE+name)
-                    original_resource_files[name]={'bytes':len(baseline),'sha256':hashlib.sha256(baseline).hexdigest()}
+                    if name=='dt870_mobile_and.cpk':original_resource_files[name]=payload_metadata(original)
+                    else:
+                        with source.open(PREFIX+NATIVE+name)as stream:info=measure(stream)
+                        original_resource_files[name]={k:info[k]for k in('bytes','sha256')}
                     value=replacements.get(PREFIX+NATIVE+name)
-                    if value is None:value=baseline
-                    resource_files[name]={'bytes':len(value),'sha256':hashlib.sha256(value).hexdigest()}
+                    resource_files[name]=original_resource_files[name]if value is None else payload_metadata(value)
+                timings.mark('resource_hashes_and_payloads')
                 template_path=PREFIX+'work/templates/CMD_LOGIN_LIVEDATA.json'
                 live_template=_export_data("资料文件",template_path,"读取并解析 JSON",lambda: json.loads(source.read(template_path)))
                 live_registry_path=self.store.root/'native-live-versions.json'
@@ -458,7 +543,7 @@ class NativePackage:
                           'card_series_by_id':card_series(cpk),
                           'preview_boosters':{str(b['id']):{'effects':b['effects'],'conditional':bool(b.get('conditional'))} for b in catalog['boosters']}}
                 document['players']=list(all_definitions.values())
-                native_players=unwrap(Cpk(cpk).read(PLAYER))
+                native_players=unwrap(Cpk(cpk).read(PLAYER),fresh=True)
                 document['native_player_catalogue']={'version':1,'table_sha256':hashlib.sha256(native_players).hexdigest(),
                     'card_ids':sorted(rows(native_players,400,8))}
                 document['content_catalogue']=content_catalogue
@@ -466,7 +551,7 @@ class NativePackage:
                 document['catalogue_recycle_policy']='remove-owned-exact-cards; backup-save-before-removal; shared-art-retained'
                 document['coach_heads']=coach_head_report
                 document['coach_head_containers']=stock_head_report
-                document['coach_models']=personal_source.merge(inherited.get('coach_models',[]),coach_model_report,'uuid')
+                document['coach_models']=personal_source.merge(kept.get('coach_models',[]),coach_model_report,'uuid')
                 document['coach_model_loader']=coach_model_loader
                 document['pack_policy']={'allow_china_edition':True}
                 from workspace_tools import game_options
@@ -478,19 +563,25 @@ class NativePackage:
                 document['installation']=installation
                 if export_settings['display']['enabled'] or export_settings['frame_rate']['enabled']:
                     from native_display import verify_display
-                    with source.open('lib/arm64-v8a/libUE4.so') as render_engine:
+                    with engine_file.open() as render_engine:
                         document['render_preflight']=verify_display(render_engine,self.profile_resources)
                 if document['frame_rate']['enabled']:
                     from native_fps import verify_fps160
-                    with source.open('lib/arm64-v8a/libUE4.so') as fps_engine:
+                    with engine_file.open() as fps_engine:
                         document['frame_rate']['preflight']=verify_fps160(apk,fps_engine,document['frame_rate']['target'])
                 from pack_catalogue import REFERENCE
                 excluded=_export_data("资料文件",REFERENCE,"读取并解析 JSON",lambda: json.loads(source.read(REFERENCE))) if REFERENCE in source.namelist() else {}
                 excluded={cid:row for cid,row in excluded.items() if row.get('type')not in ('China edition','Workshop recycle bin')}
                 excluded.update({cid:{'name':row['name'],'type':'Workshop recycle bin'}for cid,row in recycled.items()})
                 replacements[REFERENCE]=compact(excluded)
-                document['packs']=personal_source.merge(inherited.get('packs',[]),packs,'uuid')
-                document['coaches']=personal_source.merge(inherited.get('coaches',[]),coaches,'uuid')
+                document['packs']=refresh_packs(personal_source.merge(kept.get('packs',[]),packs,'uuid'),inherited.get('players',[]),document['players'])
+                document['coaches']=personal_source.merge(kept.get('coaches',[]),coaches,'uuid')
+                document['write_selection']={'mode':writing,'removed':removals(inherited,document),'source_players':len(inherited.get('players',[])),
+                    'selected_players':len(selected['players']),'compiled_players':len(projects),'retained_players':len(document['players'])-len(projects),
+                    'final_players':len(document['players']),'final_coaches':len(document['coaches']),'final_packs':len(document['packs'])}
+                fallback=next((c for c in coach_catalog if c.get('raw_payload')and c.get('raw_payload_verified',True)),None)
+                if fallback:document['write_selection']['fallback_coach']=copy.deepcopy(fallback['raw_payload'])
+                document['write_designs']=final_designs(inherited.get('write_designs',{}),body.get('write_designs',{}),document)
                 if document['game_version']=='V17':
                     from division_squads import configuration
                     from pack_catalogue import exclusions
@@ -504,15 +595,15 @@ class NativePackage:
                     document['division_squads']['style_mode']=document['game_options'].get('style_mode','shuffle_bag')
                     if document['division_squads']['enabled']:
                         from native_overall import verify_engine as verify_rating_engine
-                        with source.open('lib/arm64-v8a/libUE4.so') as rating_engine:
+                        with engine_file.open() as rating_engine:
                             document['division_squads']['native_rating_preflight']=verify_rating_engine(rating_engine)
-                document['preview_boosters']={**inherited.get('preview_boosters',{}),**document['preview_boosters']}
+                document['preview_boosters']={**kept.get('preview_boosters',{}),**document['preview_boosters']}
                 for p in projects:
                     with export_context('球员',p,'分配和编译自定义增能'):
                         for b in p.get('custom_boosters',[]):document['preview_boosters'][str(b['id'])]={'effects':b['effects'],'conditional':bool(b.get('conditional'))}
-                document['pack_covers']={**inherited.get('pack_covers',{}),**cover_routes}
+                document['pack_covers']={**kept.get('pack_covers',{}),**cover_routes}
                 document['editor_registries']={'boosters':booster_registry,'coach_boosters':coach_registry.get('boosters',{}),'coach_links':coach_registry.get('links',{})}
-                document['coach_links']=list({r['id']:r for r in [*inherited.get('coach_links',[]),*new_link_routes]}.values())
+                document['coach_links']=list({r['id']:r for r in [*kept.get('coach_links',[]),*new_link_routes]}.values())
                 for relative,content in cover_files.items():replacements[PREFIX+relative]=content
                 if identities or inherited.get('native_binding') or content_catalogue['routes'] or document['coach_links'] or export_settings['controller']['enabled'] or export_settings['card_motion']['enabled'] or (document['game_version']=='V17' and (export_settings['ai_cut_in_shots']['enabled'] or export_settings['action_trace']['enabled'] or document.get('division_squads',{}).get('enabled'))):
                     profile=_export_data("资料文件",self.resources / 'native-route-templates.json',"读取并解析 JSON",lambda: json.loads((self.resources/'native-route-templates.json').read_text(encoding='utf8')))
@@ -533,7 +624,7 @@ class NativePackage:
                     profile['thumbnail_hook']['stock_routes']=motion['stock_routes']
                     self.update(message='核对并写入技能、手柄与 AI 游戏适配资料')
                     from native_extensions import link_hooks
-                    with source.open('lib/arm64-v8a/libUE4.so') as engine:
+                    with engine_file.open() as engine:
                         profile['native_hooks']=export_call('游戏资料','native-coach-links.json','编译教练心有灵犀适配',lambda:link_hooks(document['coach_links'],engine,link_schema(self.profile_resources)))
                         from game_settings import controller_hooks
                         profile['native_hooks']+=export_call('游戏资料','native-controller.json','编译手柄键位',controller_hooks,export_settings['controller'],engine,self.profile_resources)
@@ -563,7 +654,7 @@ class NativePackage:
                             profile['native_hooks']+=export_call('游戏资料','native-skill-capacity.json','编译技能数量与显示扩展',capacity_hooks,engine)
                             document['skill_capacity']={'innate':100,'additional':100,'display':'native-lists',
                                                         'revision':SKILL_CAPACITY_REVISION}
-                    with source.open('lib/arm64-v8a/libUE4.so') as engine:
+                    with engine_file.open() as engine:
                         for name in ('position_hook','acquisition_hook','overall_hook','thumbnail_hook'):
                             h=profile[name];engine.seek(h['file_offset'])
                             if engine.read(64).hex()!=h['expected_hex']:raise ValueError('此版本的小头像动画接口不同' if name=='thumbnail_hook' else '此版本的抽卡显示接口不同')
@@ -575,12 +666,12 @@ class NativePackage:
                     if booster_routes:
                         profile['boosters']=list(booster_routes.values())
                         profile['text_hooks']=_export_data("资料文件",self.resources / 'native-text-hooks.json',"读取并解析 JSON",lambda: json.loads((self.resources/'native-text-hooks.json').read_text(encoding='utf8')))
-                        with source.open('lib/arm64-v8a/libUE4.so') as engine:
+                        with engine_file.open() as engine:
                             for kind in ('name','description'):
                                 hook=profile['text_hooks'][kind];engine.seek(hook['file_offset'])
                                 if engine.read(64).hex()!=hook['expected_hex']:raise ValueError('此版本的增能文字接口不同')
                     from native_binding_source import read_installer
-                    original_binding,installer_code=read_installer(apk)
+                    original_binding,installer_code=read_installer(apk,content_catalogue=content_catalogue)
                     routes=[r for r in inherited_card_routes if int(r['cardId']) not in replace_ids]
                     for identity,binding,definition in zip(identities,bindings,definitions):
                         for cid in sorted({identity['card_id'],*owned_person_aliases(identity),int(binding['asset_key']),*identity['previous_card_ids']}):
@@ -607,7 +698,11 @@ class NativePackage:
                     # leave the desktop compiler as a successful APK.
                     from native_binding_source import verify_installer
                     document['native_binding_preflight']=verify_installer(installer_code,document['native_binding'])
+                from art_registry import verify_content
+                document['content_binding_preflight']=verify_content(document)
                 document['revision']=hashlib.sha256(compact(document)).hexdigest()
+                from write_modes import patch_seed as patch_write_seed
+                patch_write_seed(source,replacements,document)
                 replacements[PREFIX+'custom-resources/personal-player-studio/players.json']=compact(document)
                 replacements['assets/chaquopy/app.imy']=hook_archive(source.read('assets/chaquopy/app.imy'),self.runtime_source,
                     binding_source,division_source,rating_source,helper_sources)
@@ -622,40 +717,49 @@ class NativePackage:
                 listed={row['path']:row for row in release['files']}
                 for name,value in replacements.items():
                     if not name.startswith(PREFIX):continue
-                    rel=name[len(PREFIX):];row={'path':rel,'bytes':len(value),'sha256':hashlib.sha256(value).hexdigest()}
+                    rel=name[len(PREFIX):];row={'path':rel,**payload_metadata(value)}
                     if rel in listed:listed[rel].update(row)
                     else:release['files'].append(row)
                 replacements[PREFIX+'release-manifest.json']=compact(release)
                 replacements.update(install_replacements)
+                timings.mark('runtime_hooks_and_manifests')
             self.update(message='整理有效资源、回收旧导出数据并签名')
             unsigned=work/'unsigned.apk';apk_build=replace_entries(apk,unsigned,replacements,store_ucas=True,prepare_signing=True)
+            timings.mark('apk_write_and_compress')
             output=self.store.root/'exports'/('73efootball-'+self.library.profile.get('game_version','V14')+('-工坊共存-' if body.get('installation_mode')=='coexist' else '-个人球员-')+time.strftime('%Y%m%d-%H%M%S-')+uuid.uuid4().hex[:4]+'.apk')
             key,cert=local_signer(self.store.root/'signing')
             signing_performance=sign_v2(unsigned,output,key,cert,prepared=apk_build,consume=True)
+            timings.mark('signing')
             verified=verify_v2(output)
-            with zipfile.ZipFile(output) as check:
-                for name,value in replacements.items():
-                    if check.read(name)!=value:raise ValueError('生成的 APK 文件校验失败：'+name)
+            timings.mark('independent_signature_verification')
             self.update(message='核对成品实时更新清单与两份球员资料')
             from native_live import verify_apk as verify_live_apk
-            try:live_apk_report=verify_live_apk(output)
+            try:live_apk_report=verify_live_apk(output,replacements)
             except Exception:
                 output.unlink(missing_ok=True)
                 raise
+            timings.mark('readback_and_live_verification')
             self.update(message='保存永久编号注册表和导出报告')
             temp=registry_path.with_suffix('.tmp');temp.write_bytes(compact(registry));temp.replace(registry_path)
             temp=booster_path.with_suffix('.tmp');temp.write_bytes(compact(booster_registry));temp.replace(booster_path)
             temp=live_registry_path.with_suffix('.tmp');temp.write_bytes(compact(live_registry));temp.replace(live_registry_path)
             temp=asset_path.with_suffix('.tmp');temp.write_bytes(compact(asset_registry));temp.replace(asset_path)
             temp=coach_path.with_suffix('.tmp');temp.write_bytes(compact(coach_registry));temp.replace(coach_path)
+            timings.mark('registry_saving')
             report={'identities':identities,'native_art':art_reports,'packs':[{'uuid':p['uuid'],'agent_id':p['agent_id'],'name':p['name'],'members':len(p['members']),'skipped_members':p.get('skipped_members',[])} for p in packs],
-                    'native_tables':table_report,'signature':verified,'live_data':live_report,'live_apk_preflight':live_apk_report,
+                    'native_tables':table_report,'signature':verified,'live_data':live_report,'live_apk_preflight':live_apk_report,'content_binding_preflight':document['content_binding_preflight'],
                     'apk_compaction':apk_build['compaction'],'resource_compaction':resource_build.compaction_report,
                     'compiler_cache':compile_cache.report()if compile_cache else{'enabled':False,'warning':cache_warning},
                     'signing_performance':signing_performance,
+                    'export_io':{'revision':'2.1.3','engine_full_hash_verified':True,'engine_extractions':1,
+                                 'engine_bytes':engine_file.bytes,'engine_sha256':engine_file.sha256,
+                                 'file_payloads':sum(isinstance(v,FilePayload)for v in replacements.values()),
+                                 'file_payload_bytes':sum(v.bytes for v in replacements.values()if isinstance(v,FilePayload)),
+                                 'movie_package':movie_package_report,'replacement_verification':'streamed-sha256-size-and-zip-crc'},
+                    'timings':timings.snapshot(),'cpk_decode':decode_statistics(),
                     'native_binding_routes':len(document.get('native_binding',{}).get('routes',[])),'frame_rate':document['frame_rate'],'game_settings':export_settings,'render_preflight':document.get('render_preflight'),'card_motion_preflight':card_motion_report,'installation':installation,
                     'coaches':[{'uuid':c['uuid'],'id':c['id'],'name':c['payload']['name']} for c in coaches],'coach_portraits':coach_portrait_report,'coach_heads':coach_head_report,'coach_head_containers':stock_head_report,'coach_models':coach_model_report,'coach_model_loader':coach_model_loader,
-                    'source_apk':str(apk),'output':str(output),'engine_profile':release['base_release_id'],'resource_release':release['release_id'],
+                    'write_selection':document['write_selection'],'content_autofill':content_sync_report,'source_apk':str(apk),'output':str(output),'engine_profile':release['base_release_id'],'resource_release':release['release_id'],
                     'in_game_tested':False,'progress_policy':'first grant only; existing instance retains live XP, training and statistics'}
             report_path=output.with_suffix('.report.json');report_path.write_bytes(compact(report))
             self.remember_installation_mode(apk,body.get('installation_mode','update'))
@@ -667,7 +771,9 @@ class NativePackage:
             logging.exception('Native APK compilation failed')
             error=failure(exc,'游戏 APK',body.get('apk'),self.state.get('message') or '生成游戏 APK')
             self.update(phase='error',message=str(error),error_context=error.contexts,error_type=error.original_type)
-        finally:self.cleanup_work(work,'native-')
+        finally:
+            if compile_cache is not None:compile_cache.close()
+            self.cleanup_work(work,'native-')
 
     def remember_installation_mode(self,source,mode):
         from apk_sources import remember_mode

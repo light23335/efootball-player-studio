@@ -42,9 +42,10 @@ def read_string(data, offset):
 
 
 class Container:
-    def __init__(self, path, key=None):
+    def __init__(self, path, key=None, *, data=None):
         self.path = Path(path)
         self.key = key
+        self.data = data
         b = self.path.read_bytes()
         if b[:16] != MAGIC or b[16] != 2:
             raise ValueError('Only the inspected V13 IoStore v2 layout is supported')
@@ -114,11 +115,18 @@ class Container:
                 stack.append((child, prefix + strings[dirs[child][0]] + '/'))
                 child = dirs[child][2]
 
+    def open_data(self):
+        return self.data.open()if self.data is not None else self.path.with_suffix('.ucas').open('rb')
+
+    @property
+    def data_bytes(self):
+        return self.data.bytes if self.data is not None else self.path.with_suffix('.ucas').stat().st_size
+
     def read_chunk(self, index):
         start, size = self.ranges[index]
         first, last = start // self.block, (start+size-1) // self.block
         out = bytearray()
-        with self.path.with_suffix('.ucas').open('rb') as f:
+        with self.open_data() as f:
             for i in range(first, last+1):
                 b = self.blocks[i]
                 at = int.from_bytes(b[:5], 'little')
@@ -366,7 +374,7 @@ def read_package_header(raw, strict=True):
     return cid,result
 
 
-def append_container(source, output, additions, paths, packages, replace_indices=(),cache=None):
+def append_container(source, output, additions, paths, packages, replace_indices=(),cache=None,remove_indices=()):
     """Add/replace packages and rebuild UCAS from the currently live blocks.
 
     Keep every indexed chunk and package dependency. Unchanged compressed or
@@ -383,12 +391,21 @@ def append_container(source, output, additions, paths, packages, replace_indices
     if cid!=source.container_id:
         raise ValueError('Container ID mismatch')
     replace_indices=set(replace_indices)
+    remove_indices=set(remove_indices)
+    if header_index in remove_indices or any(not 0<=i<len(source.chunk_ids)for i in remove_indices):raise ValueError('Invalid removable package index')
+    removed_packages={struct.unpack_from('<Q',source.chunk_ids[i])[0]for i in remove_indices}
+    addition_ids={chunk_id for chunk_id,_ in additions}
+    removed={i for i,c in enumerate(source.chunk_ids)if struct.unpack_from('<Q',c)[0]in removed_packages and c not in addition_ids}
+    removed.discard(header_index)
     allowed_ids={struct.unpack_from('<Q',source.chunk_ids[i])[0] for i in replace_indices}
     ids={p['id'] for p in old_packages}
     if any(p['id'] in ids and p['id'] not in allowed_ids for p in packages):
         raise ValueError('Personal resource package collides with an original package')
     replacements={p['id']:p for p in packages}
-    new_header=package_header(cid,[replacements.get(p['id'],p) for p in old_packages]+[p for p in packages if p['id'] not in ids])
+    final_packages=[replacements.get(p['id'],p)for p in old_packages if p['id']not in removed_packages or p['id']in replacements]+[p for p in packages if p['id']not in ids]
+    deleted_ids=removed_packages-set(replacements)
+    if any(deleted_ids.intersection(p.get('imports',[]))for p in final_packages):raise ValueError('移除的个人资源仍被其他资源引用，未生成不完整资源包')
+    new_header=package_header(cid,final_packages)
     chunks=list(source.chunk_ids)
     ranges=list(source.ranges)
     blocks=[]
@@ -400,14 +417,14 @@ def append_container(source, output, additions, paths, packages, replace_indices
         if chunk_id in source.by_id:indices.append(source.by_id[chunk_id])
         else:indices.append(next_index);next_index+=1
     if len(set(indices))!=len(indices):raise ValueError('Duplicate personal resource chunk')
-    all_paths={p.removeprefix('../../../'):i for p,i in source.paths.items()}
+    all_paths={p.removeprefix('../../../'):i for p,i in source.paths.items()if i not in removed}
     if any(p in all_paths and (all_paths[p] not in replace_indices or all_paths[p]!=indices[i]) for p,i in paths.items()):
         raise ValueError('Personal resource path collides with an original resource')
     all_paths.update({p:indices[i] for p,i in paths.items()})
     encrypted=bool(source.flags&2)
     method=source.methods.index('Zlib')+1
     if not 0<source.block<=4*1024*1024:raise ValueError('Unsupported IoStore block size')
-    overwritten={header_index}|{i for i in indices if i<len(source.chunk_ids)}
+    overwritten={header_index}|removed|{i for i in indices if i<len(source.chunk_ids)}
     live=set()
     for index,(start,size) in enumerate(source.ranges):
         if index in overwritten or size==0:continue
@@ -425,9 +442,9 @@ def append_container(source, output, additions, paths, packages, replace_indices
         ranges[index]=(remap[first]*source.block+start%source.block,size)
     logical=len(live)*source.block
     output.parent.mkdir(parents=True,exist_ok=True)
-    source_file=source.path.with_suffix('.ucas');source_bytes=source_file.stat().st_size
+    source_bytes=source.data_bytes
     retained_bytes=0
-    with source_file.open('rb') as original,output.with_suffix('.ucas').open('xb') as f:
+    with source.open_data() as original,output.with_suffix('.ucas').open('xb') as f:
         for index in sorted(live):
             block=source.blocks[index];physical=int.from_bytes(block[:5],'little');stored=int.from_bytes(block[5:8],'little')
             length=stored+(-stored)%16 if encrypted else stored
@@ -474,6 +491,10 @@ def append_container(source, output, additions, paths, packages, replace_indices
             elif index==header_index or index in replace_indices:ranges[index]=item;metas[index]=meta
             else:raise ValueError('Invalid appended chunk index')
             logical+=((len(raw)+source.block-1)//source.block)*source.block
+    kept_indices=[i for i in range(len(chunks))if i not in removed]
+    new_indices={old:new for new,old in enumerate(kept_indices)}
+    chunks=[chunks[i]for i in kept_indices];ranges=[ranges[i]for i in kept_indices];metas=[metas[i]for i in kept_indices]
+    all_paths={p:new_indices[i]for p,i in all_paths.items()}
     directory=directory_index(all_paths)
     if encrypted:directory=aes(directory+b'\0'*((-len(directory))%16),source.key,True)
     h=bytearray(source.header)
@@ -483,9 +504,9 @@ def append_container(source, output, additions, paths, packages, replace_indices
     output.write_bytes(bytes(h)+b''.join(chunks)+ranges_raw+b''.join(blocks)+methods+directory+b''.join(metas))
     check=Container(output,source.key)
     for i,(_,raw) in zip(indices,additions):
-        if check.read_chunk(i)!=raw:raise ValueError('Appended native package failed read-back')
-    if check.read_chunk(header_index)!=new_header:raise ValueError('New package store failed read-back')
+        if check.read_chunk(new_indices[i])!=raw:raise ValueError('Appended native package failed read-back')
+    if check.read_chunk(new_indices[header_index])!=new_header:raise ValueError('New package store failed read-back')
     check.compaction_report={'compacted':True,'source_ucas_bytes':source_bytes,'retained_source_bytes':retained_bytes,
         'reclaimed_source_bytes':source_bytes-retained_bytes,'output_ucas_bytes':output.with_suffix('.ucas').stat().st_size,
-        'source_blocks':len(source.blocks),'retained_blocks':len(live),'output_blocks':len(blocks)}
+        'source_blocks':len(source.blocks),'retained_blocks':len(live),'output_blocks':len(blocks),'removed_chunks':len(removed)}
     return check

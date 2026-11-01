@@ -343,7 +343,10 @@ class GameImport:
                 counts['assets']=index_assets(library)
                 from content_delta import finish_catalogue
                 content=finish_catalogue(apk,staging)
-                if content:counts['content_delta']=content
+                if content:
+                    counts['content_delta']=content
+                    from content_autofill import retain_materials
+                    retain_materials(apk,library)
                 report={'format':'player-studio-apk-database-v1','import_revision':IMPORT_REVISION,'apk':str(apk),'apk_sha256':apk_hash,'companion':str(companion),'release_id':release,'engine_sha256':engine,'counts':counts,'personal_data_preserved':True,'in_game_tested':False}
                 (staging/'import-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8');staging.rename(destination);staging=None
             self.server.use_resources(destination)

@@ -370,11 +370,13 @@ def apply_definitions(conn,document):
     if document.get('format')!='personal-player-native-v1':raise ValueError('Unknown personal player format')
     if conn.in_transaction:raise ValueError('Personal import requires a transaction boundary')
     backup_recycled_owned(conn,document.get('catalogue_recycle_bin',[]))
+    backup_write_selection(conn,document)
     row=conn.execute('select value from meta where key=?',(REGISTRY_KEY,)).fetchone()
     registry=json.loads(row[0]) if row else {}
     result=[]
     try:
         conn.execute('BEGIN IMMEDIATE')
+        apply_write_selection(conn,document,registry)
         apply_content_catalogue(conn,document.get('content_catalogue',{}))
         apply_game_options(conn,document.get('game_options',{}))
         policy_changed=False
@@ -473,6 +475,77 @@ def apply_definitions(conn,document):
         conn.rollback();raise
     return result
 
+
+def backup_write_selection(conn,document):
+    removed=document.get('write_selection',{}).get('removed',{})
+    if not any(removed.values()):return
+    tables={r[0]for r in conn.execute("select name from sqlite_master where type='table'")}
+    affected=False
+    for key,table,column in [('player_ids','gameplayers','id'),('coach_ids','coaches','coach_id'),('pack_ids','managed_agents','agent_id')]:
+        if table in tables and any(conn.execute('select 1 from '+table+' where '+column+'=? limit 1',(int(cid),)).fetchone()for cid in removed.get(key,[])):affected=True;break
+    if not affected:return
+    filename=next((r[2]for r in conn.execute('pragma database_list')if r[1]=='main'),None)
+    if not filename:return
+    import sqlite3
+    folder=Path(filename).parent/'studio-write-backups';folder.mkdir(exist_ok=True)
+    target=folder/(hashlib.sha256(compact(removed).encode()).hexdigest()[:24]+'.sqlite3')
+    if target.is_file():return
+    temp=target.with_suffix('.tmp');backup=sqlite3.connect(temp)
+    try:
+        conn.backup(backup)
+        if backup.execute('pragma quick_check').fetchone()[0]!='ok':raise ValueError('全量写入的存档备份校验失败，未移除旧内容')
+    finally:backup.close()
+    temp.replace(target)
+
+def apply_write_selection(conn,document,registry):
+    """Remove only source-proven omissions, within the normal import transaction."""
+    removed=document.get('write_selection',{}).get('removed',{})
+    live={int(p['identity']['card_id'])for p in document.get('players',[])}
+    ids={str(int(v))for v in removed.get('player_ids',[])if int(v)not in live}
+    tables={r[0]for r in conn.execute("select name from sqlite_master where type='table'")}
+    if ids:
+        remove_recycled_owned(conn,ids)
+        for cid in ids:
+            for table,column in [('managed_members','card_id'),('managed_cards','card_id')]:
+                if table in tables:conn.execute('delete from '+table+' where '+column+'=?',(cid,))
+        for uid in list(registry):
+            if str(registry[uid].get('card_id'))in ids:del registry[uid]
+    coach_ids=set(map(int,removed.get('coach_ids',[])))-{int(c['id'])for c in document.get('coaches',[])}
+    if coach_ids and 'coaches'in tables:
+        conn.executemany('delete from coaches where coach_id=?',[(v,)for v in coach_ids])
+        row=conn.execute("select value from meta where key='personal_coaches_v1'").fetchone()
+        coaches=json.loads(row[0])if row else{}
+        coaches={uid:v for uid,v in coaches.items()if int(v['id'])not in coach_ids}
+        conn.execute("insert into meta values('personal_coaches_v1',?) on conflict(key)do update set value=excluded.value",(compact(coaches),))
+        fallback=conn.execute('select coach_id,serial from coaches order by coach_id,serial limit 1').fetchone()
+        if not fallback and document.get('write_selection',{}).get('fallback_coach'):
+            data=copy.deepcopy(document['write_selection']['fallback_coach']);cid=int(data['coach_id']['id']);serial=1
+            data['coach_id']={'id':cid,'serial':serial};conn.execute('insert into coaches values(?,?,?)',(cid,serial,compact(data)));fallback=(cid,serial)
+        if 'squads'in tables:
+            def replace(value):
+                if isinstance(value,list):return[replace(v)for v in value]
+                if not isinstance(value,dict):return value
+                result={k:replace(v)for k,v in value.items()}
+                coach=result.get('coach_id')
+                if isinstance(coach,dict)and coach.get('id')in coach_ids:
+                    if not fallback:raise ValueError('全量移除后没有可用教练，请至少勾选一名教练')
+                    result['coach_id']={'id':fallback[0],'serial':fallback[1]}
+                return result
+            for sid,raw in list(conn.execute('select squad_id,json from squads')):
+                value=replace(json.loads(raw));updated=compact(value)
+                if updated!=raw:conn.execute('update squads set json=? where squad_id=?',(updated,sid))
+    pack_ids=set(map(int,removed.get('pack_ids',[])))-{int(p['agent_id'])for p in document.get('packs',[])}
+    if pack_ids:
+        for table in ('managed_members','managed_agents','agents'):
+            if table in tables:conn.executemany('delete from '+table+' where agent_id=?',[(v,)for v in pack_ids])
+        for key in ('agent_price_list','league_position_agent_ids','personal_pack_registry_v1'):
+            row=conn.execute('select value from meta where key=?',(key,)).fetchone()
+            if not row:continue
+            data=json.loads(row[0])
+            if key=='personal_pack_registry_v1':data={k:v for k,v in data.items()if int(v)not in pack_ids}
+            elif key=='agent_price_list':data=[v for v in data if int(v['agent_id'])not in pack_ids]
+            else:data=[v for v in data if int(v)not in pack_ids]
+            conn.execute('update meta set value=? where key=?',(compact(data),key))
 
 def read_catalogue_card(conn,cid,raw,*,repairing=False):
     """Quarantine empty catalogue definitions, never owned cards or progress."""

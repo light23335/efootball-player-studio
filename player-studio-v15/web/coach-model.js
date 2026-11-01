@@ -58,12 +58,14 @@ export class CoachModelEditor {
   async action(action){
     const row=this.row();if(!row?.head_model)return;
     if(action==='preview'){await this.load();return;}
-    if(action==='reset'){row.head_model={template_path:row.head_model.template_path};await this.load();return;}
+    if(action==='reset'){this.change(()=>row.head_model={template_path:row.head_model.template_path});await this.load();return;}
     if(action==='upload'){
       const f=await this.api('dialog',{category:'model'});if(!f.path||this.row()!==row)return;
       const a=await this.api('assets/import',{path:f.path,category:'model'});if(!a.id.endsWith('.glb'))throw Error('请使用内嵌贴图的 GLB 文件');
-      if(this.row()!==row)return;const old=structuredClone(row.head_model);row.head_model={template_path:old.template_path,asset_id:a.id};
-      try{await this.load();}catch(error){row.head_model=old;this.paint();throw error;}return;
+      if(this.row()!==row)return;const head={template_path:row.head_model.template_path,asset_id:a.id};
+      // Validate first, so a rejected file cannot enter autosave or undo history.
+      const result=await this.api('coaches/model/preview',{head_model:head});if(this.row()!==row)return;
+      this.change(()=>row.head_model=head);this.result=result;this.message='自制教练头模已载入，可撤销或继续调整。';this.paint();return;
     }
     if(action==='export-template'){
       const result=await this.api('coaches/model/preview',{head_model:{template_path:row.head_model.template_path}});

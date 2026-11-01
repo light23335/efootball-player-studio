@@ -88,5 +88,23 @@ class ContainerCompactionTests(unittest.TestCase):
             self.assertGreater(cache.stats['hits']['iostore'],0)
             for i,value in enumerate(self.values):self.assertEqual(warm.read_chunk(i+1),value)
 
+    def test_removal_rebuilds_header_paths_indices_and_keeps_other_bytes(self):
+        from native_iostore import read_package_header
+        for encrypted in (False,True):
+            src=self.rewrite(self.source,True)if encrypted else Container(self.source)
+            result=append_container(src,self.root/('removed-'+str(encrypted)+'.utoc'),[],{},[],remove_indices={1})
+            self.assertNotIn(self.ids[0],result.chunk_ids)
+            self.assertNotIn('../../../Game/live.uasset',result.paths)
+            self.assertEqual(result.read_chunk(result.by_id[self.ids[1]]),self.values[1])
+            _,packages=read_package_header(result.read_chunk(next(i for i,c in enumerate(result.chunk_ids)if c[11]==10)))
+            self.assertEqual([p['id']for p in packages],[201,202])
+            self.assertEqual(result.compaction_report['removed_chunks'],1)
+    def test_remove_and_replace_keeps_new_version_of_selected_package(self):
+        src=Container(self.source)
+        result=append_container(src,self.root/'replace-and-remove.utoc',[(self.ids[0],b'new version')],{'Game/live.uasset':0},[self.packages[0]],{1},remove_indices={1,2})
+        self.assertEqual(result.read_chunk(result.by_id[self.ids[0]]),b'new version')
+        self.assertNotIn(self.ids[1],result.chunk_ids)
+        self.assertEqual(result.read_chunk(result.by_id[self.ids[2]]),self.values[2])
+
 
 if __name__=='__main__':unittest.main()

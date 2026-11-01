@@ -54,6 +54,36 @@ class CompileCacheTests(unittest.TestCase):
         self.assertGreater(cache.stats['evicted_bytes'],0)
         sentinel=cache.root/'project.json';sentinel.write_bytes(b'keep');result=clear(cache.root)
         self.assertGreater(result['files'],0);self.assertEqual(sentinel.read_bytes(),b'keep')
+    def test_many_writes_share_one_inventory_and_do_not_sort_below_budget(self):
+        cache=CompileCache(self.root/'many',{},limit=16*1024**2)
+        for i in range(160):cache.run('iostore',{'id':i},lambda:b'compressed-block',encoded=True)
+        self.assertEqual(cache.stats['inventory_scans'],1)
+        self.assertEqual(cache.stats['prune_passes'],0)
+        self.assertEqual(cache.index.total,sum(p.stat().st_size for p in cache.root.glob('*.zip')))
+        self.assertGreater(cache.report()['timings_seconds']['iostore']['write'],0)
+        cache.close();self.assertEqual(cache.stats['inventory_scans'],1)
+    def test_active_exports_share_accounting_and_clear_updates_the_ledger(self):
+        a=CompileCache(self.root/'shared',{},limit=15000)
+        b=CompileCache(self.root/'shared',{},limit=15000)
+        for i in range(10):
+            (a if i%2 else b).run('iostore',{'id':i},lambda:os.urandom(3000),encoded=True)
+        self.assertIs(a.index,b.index)
+        self.assertLessEqual(a.index.total,15000)
+        self.assertEqual(a.index.total,sum(p.stat().st_size for p in a.root.glob('*.zip')))
+        self.assertEqual(a.stats['inventory_scans']+b.stats['inventory_scans'],1)
+        clear(a.root);self.assertEqual(a.index.total,0)
+        a.run('iostore',{'id':'next'},lambda:b'valid',encoded=True)
+        self.assertEqual(a.index.total,sum(p.stat().st_size for p in a.root.glob('*.zip')))
+    def test_corrupt_cache_replacement_does_not_double_count_and_hit_refreshes_lru(self):
+        cache=CompileCache(self.root/'bookkeeping',{})
+        _,info=cache.run('card',{},lambda:b'old')
+        path=cache.root/('card-'+info['key']+'.zip');path.write_bytes(b'broken')
+        cache.run('card',{},lambda:b'new')
+        self.assertEqual(cache.stats['corrupt'],1)
+        self.assertEqual(cache.index.total,path.stat().st_size)
+        previous=cache.index.entries[path][0]
+        cache.run('card',{},lambda:None)
+        self.assertGreaterEqual(cache.index.entries[path][0],previous)
     def test_android_source_manifest_fallback_invalidates_after_a_compiler_update(self):
         import json
         manifest=self.root/'compiler-source-hashes.json'

@@ -15,6 +15,7 @@ import struct
 import tempfile
 import zipfile
 import zlib
+from export_payload import FilePayload,payload
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
@@ -40,7 +41,7 @@ def read_lp(data,at=0):
 
 
 def layout(path):
-    with open(path,'rb') as f:
+    with (path.open()if isinstance(path,FilePayload)else open(path,'rb')) as f:
         f.seek(0,2);size=f.tell();f.seek(max(0,size-65557));tail=f.read()
         at=tail.rfind(b'PK\x05\x06')
         if at<0 or at+22>len(tail):raise ValueError('APK end record not found')
@@ -139,10 +140,12 @@ def replace_entries(source,output,replacements,*,store_ucas=False,prepare_signin
     16-KiB aligned and other stored entries 4-byte aligned. A complete size
     preflight runs before writing the output, with room for APK v2 signing.
     """
-    source=Path(source);output=Path(output)
-    if output.exists() or source.absolute()==output.absolute():raise ValueError('Output APK must be a new file')
+    source=source if isinstance(source,FilePayload)else Path(source);output=Path(output)
+    source_path=source.path if isinstance(source,FilePayload)else source
+    if output.exists() or source_path.absolute()==output.absolute():raise ValueError('Output APK must be a new file')
+    replacements={name:payload(value)for name,value in replacements.items()}
     meta=layout(source)
-    with zipfile.ZipFile(source) as z:
+    with (source.open()if isinstance(source,FilePayload)else source.open('rb'))as raw_source,zipfile.ZipFile(raw_source) as z:
         old={i.filename:i for i in z.infolist()}
         if len(old)!=len(z.infolist()):raise ValueError('Source APK has duplicate ZIP entries')
         entries=[copy.copy(i) for i in z.infolist()]
@@ -151,8 +154,8 @@ def replace_entries(source,output,replacements,*,store_ucas=False,prepare_signin
         raise ValueError('Invalid replacement path')
     entries.extend(zipfile.ZipInfo(name,(2026,1,1,0,0,0)) for name in replacements if name not in old)
     if len(entries)>=65535:raise ValueError('Too many APK entries for non-ZIP64 format')
-    with contextlib.ExitStack() as stack,source.open('rb') as src:
-        plans=[];cursor=0;stored=[]
+    with contextlib.ExitStack() as stack,(source.open()if isinstance(source,FilePayload)else source.open('rb')) as src:
+        plans=[];cursor=0;stored=[];encoded={};deflate_unique=deflate_reused=deflate_saved_bytes=0
         for item in entries:
             name=item.filename
             if name.startswith('/') or '\\' in name or '..' in name.split('/'):
@@ -162,18 +165,35 @@ def replace_entries(source,output,replacements,*,store_ucas=False,prepare_signin
             item.flag_bits&=~8
             stream=None;data=None;offset=None
             if name in replacements:
-                data=replacements[name];item.file_size=len(data);item.CRC=zlib.crc32(data)&0xffffffff
+                data=replacements[name]
+                item.file_size=data.bytes if isinstance(data,FilePayload)else len(data)
+                item.CRC=data.crc32 if isinstance(data,FilePayload)else zlib.crc32(data)&0xffffffff
                 if item.file_size>=UINT32_LIMIT:raise _size_error(entries,item.file_size)
                 if store_ucas and name.lower().endswith('.ucas'):
-                    if item.compress_type!=zipfile.ZIP_STORED:stored.append({'name':name,'bytes':len(data)})
+                    if item.compress_type!=zipfile.ZIP_STORED:stored.append({'name':name,'bytes':item.file_size})
                     item.compress_type=zipfile.ZIP_STORED
                 if item.compress_type==zipfile.ZIP_DEFLATED:
-                    stream=stack.enter_context(tempfile.SpooledTemporaryFile(max_size=8*1024*1024,dir=output.parent))
-                    encoder=zlib.compressobj(9,zlib.DEFLATED,-15)
-                    view=memoryview(data)
-                    for at in range(0,len(view),4*1024*1024):stream.write(encoder.compress(view[at:at+4*1024*1024]))
-                    stream.write(encoder.flush());item.compress_size=stream.tell();stream.seek(0);data=None
-                elif item.compress_type==zipfile.ZIP_STORED:item.compress_size=len(data)
+                    digest=data.sha256 if isinstance(data,FilePayload)else hashlib.sha256(data).hexdigest()
+                    compression_key=(digest,item.file_size,item.CRC,zipfile.ZIP_DEFLATED,9,-15)
+                    if compression_key in encoded:
+                        if isinstance(data,FilePayload):
+                            with data.open():pass
+                        stream,item.compress_size=encoded[compression_key]
+                        deflate_reused+=1;deflate_saved_bytes+=item.file_size
+                    else:
+                        stream=stack.enter_context(tempfile.SpooledTemporaryFile(max_size=8*1024*1024,dir=output.parent))
+                        encoder=zlib.compressobj(9,zlib.DEFLATED,-15)
+                        if isinstance(data,FilePayload):
+                            class Compressor:
+                                def write(self,block):stream.write(encoder.compress(block));return len(block)
+                            data.copy_to(Compressor())
+                        else:
+                            view=memoryview(data)
+                            for at in range(0,len(view),4*1024*1024):stream.write(encoder.compress(view[at:at+4*1024*1024]))
+                        stream.write(encoder.flush());item.compress_size=stream.tell()
+                        encoded[compression_key]=(stream,item.compress_size);deflate_unique+=1
+                    stream.seek(0);data=None
+                elif item.compress_type==zipfile.ZIP_STORED:item.compress_size=item.file_size
                 else:raise ValueError('Unsupported APK entry compression')
             else:
                 previous=old[name];src.seek(previous.header_offset);header=src.read(30)
@@ -195,7 +215,8 @@ def replace_entries(source,output,replacements,*,store_ucas=False,prepare_signin
             dst=DigestWriter(raw_dst,digester)if digester else raw_dst
             for item,header,offset,stream,data in plans:
                 dst.write(header)
-                if stream is not None:copy_bytes(stream,dst,item.compress_size)
+                if stream is not None:stream.seek(0);copy_bytes(stream,dst,item.compress_size)
+                elif isinstance(data,FilePayload):data.copy_to(dst)
                 elif data is not None:dst.write(data)
                 else:src.seek(offset);copy_bytes(src,dst,item.compress_size)
             if dst.tell()!=central:raise ValueError('APK rewritten local records do not match preflight')
@@ -209,7 +230,8 @@ def replace_entries(source,output,replacements,*,store_ucas=False,prepare_signin
     result=layout(output)
     if digester:result.update(content_digest=digester.digest().hex(),unsigned_identity=_file_identity(output))
     result['compaction']={'compact_rewrite':True,'source_bytes':meta['size'],'unsigned_bytes':result['size'],'entries':len(entries),
-                          'stored_ucas':stored,'v2_digest_streamed':bool(digester)}
+                          'stored_ucas':stored,'v2_digest_streamed':bool(digester),
+                          'deflate_reuse':{'unique_encodes':deflate_unique,'reused_entries':deflate_reused,'uncompressed_bytes_not_reencoded':deflate_saved_bytes}}
     return result
 
 

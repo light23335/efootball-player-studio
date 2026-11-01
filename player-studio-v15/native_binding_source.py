@@ -2,7 +2,7 @@
 import marshal,types
 from apk_literals import module_reader,literal_assignments
 
-def read_installer(apk):
+def read_installer(apk, *, content_catalogue=None):
     reader=module_reader(apk);root=reader('legends_v10');pending=[root];found=[];count=0
     while pending:
         code=pending.pop();count+=1
@@ -33,13 +33,17 @@ def read_installer(apk):
         # the inspected V17 composer; never copy native code from the ZIP.
         import zipfile
         from content_delta import read_catalogue
-        with zipfile.ZipFile(apk) as archive:extra=read_catalogue(archive).get('routes',[])
+        if content_catalogue is None:
+            with zipfile.ZipFile(apk) as archive:content_catalogue=read_catalogue(archive)
+        extra=content_catalogue.get('routes',[])
         from art_registry import prepare_registry
         effective,installer=prepare_registry(code,outer[0],payload,layers,extra,sites,templates,allocators[0])
         from native_diy_binding import code_fingerprint,V17_COMPOSE
         composer=next(c for c in reader('diy_routes').co_consts if isinstance(c,types.CodeType)and c.co_name=='compose')
         installer.proof['interface_family']='V17'if code_fingerprint(composer)==V17_COMPOSE else'V16'
         return effective,installer
+    if content_catalogue and content_catalogue.get('routes'):
+        raise ValueError('此原生接口不支持内容增量美术注册，未忽略新增绑定')
     return payload,code
 
 def installer_metadata(installer):return getattr(installer,'proof',None)

@@ -271,6 +271,7 @@ def patch_stock_containers(archive,library,packages,reports,work):
     Companion-only faces are still supplied by the main player patch container.
     """
     import zipfile,shutil
+    from export_payload import FilePayload
     from native_art import logical_package
     from native_iostore import Container,append_container,read_package_header,package_header
     from native_body import container_parts
@@ -313,7 +314,7 @@ def patch_stock_containers(archive,library,packages,reports,work):
             # Check the exact overridden bytes, not just that the new paths exist.
             for name,data,_ in selected:
                 if rebuilt.read('../../../PesMobile/Content/'+name[6:]+'.uasset')!=data:raise ValueError('教练原始容器替换读回失败')
-            changes[member]=output.read_bytes();changes[ucas]=output.with_suffix('.ucas').read_bytes()
+            changes[member]=FilePayload.from_path(output);changes[ucas]=FilePayload.from_path(output.with_suffix('.ucas'))
             patched.append({'archive':label,'container':member,'packages':[p[0] for p in selected]})
         return changes
 
@@ -330,8 +331,9 @@ def patch_stock_containers(archive,library,packages,reports,work):
                 with zipfile.ZipFile(output,'w',allowZip64=True) as dest:
                     dest.comment=nested.comment
                     for entry in nested.infolist():
-                        if entry.filename in changes:dest.writestr(copy.copy(entry),changes[entry.filename])
+                        if entry.filename in changes:
+                            with dest.open(copy.copy(entry),'w',force_zip64=changes[entry.filename].bytes>=2**31)as dst:changes[entry.filename].copy_to(dst)
                         else:
                             with nested.open(entry) as src,dest.open(copy.copy(entry),'w') as dst:shutil.copyfileobj(src,dst,4*1024*1024)
-                replacements[member]=output.read_bytes()
+                replacements[member]=FilePayload.from_path(output)
     return replacements,patched

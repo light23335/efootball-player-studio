@@ -1,6 +1,7 @@
 """Offline Windows player design studio. All traffic stays on 127.0.0.1."""
 from __future__ import annotations
 from export_errors import export_context, exported
+from base_abilities import normalize as normalize_base_ability
 
 import argparse
 import base64
@@ -48,7 +49,7 @@ import editor_drafts
 from window_sessions import WindowSessions
 from booster_library import BoosterLibrary
 
-APP_VERSION = "2.1.1"
+APP_VERSION = "2.1.7"
 GAME_PLATFORM = "android"
 MAX_PERSONAL_PLAYERS = 10000
 BUNDLE = Path(getattr(sys, "_MEIPASS", Path(__file__).absolute().parent))
@@ -137,7 +138,7 @@ def normalize_project(value):
     if not isinstance(abilities, dict):
         raise ValueError("基础能力格式不正确")
     for key in CATALOG["ABILITIES"]:
-        abilities[key] = int(number(abilities.get(key), 1, 105, 65))
+        abilities[key] = normalize_base_ability(abilities.get(key))
     for key in ("innate_skills", "additional_skills"):
         values = p.get(key) or []
         if not isinstance(values, list):
@@ -911,7 +912,13 @@ class Handler(BaseHTTPRequestHandler):
                 if self.server.game_import.status()['phase']=='working':raise ValueError('正在切换游戏数据库，请等待导入完成')
                 result = self.server.native_package.start(body if body.get('operation')=='companion' else {**body,'project':normalize_project(body['project'])})
             elif path == '/api/native-apk/candidates':
-                result = self.server.native_package.candidates(normalize_project(body['project']))
+                result = self.server.native_package.write_candidates(normalize_project(body['project']),body.get('write_mode','full'),body.get('apk'))
+            elif path == '/api/native-apk/write-sources':
+                from write_modes import latest_export,requirements
+                if globals().get('PLATFORM','pc')=='android':
+                    installed=self.server.setup.status(bool(body.get('refresh')))
+                    result={'platform':'android','rows':[r for r in installed['rows']if r.get('installed')and r['kind']=='game'],'errors':installed['errors'],'latest':None}
+                else:result={'platform':'pc','rows':[],'errors':[],'latest':latest_export(store,requirements(self.server.library))}
             elif path == '/api/native-apk/sources':
                 from apk_sources import resolve as resolve_sources,installation_guidance
                 result = resolve_sources(self.server.library,self.server.store)

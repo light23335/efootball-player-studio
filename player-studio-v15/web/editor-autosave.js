@@ -9,10 +9,11 @@ export class EditorAutosave{
  capture(){
   for(const [category,value] of Object.entries(this.read())){
    if(!value)continue;const key=this.key(category,value),json=JSON.stringify(value);
-   if(this.pending.get(key)?.json===json||this.inflight.get(key)?.json===json||!this.pending.has(key)&&!this.inflight.has(key)&&this.saved.get(key)===json)continue;
+   if(this.pending.get(key)?.json===json)continue;
+   if(this.inflight.get(key)?.json===json||!this.inflight.has(key)&&this.saved.get(key)===json){this.pending.delete(key);continue;}
    this.pending.set(key,{category,value:structuredClone(value),json});this.onState(category,'pending');
   }
-  if(this.pending.size||this.inflight.size)try{this.storage?.setItem('studio-pending-drafts',JSON.stringify(this.closeRows()));}catch{}
+  try{if(this.pending.size||this.inflight.size)this.storage?.setItem('studio-pending-drafts',JSON.stringify(this.closeRows()));else this.storage?.removeItem('studio-pending-drafts');}catch{}
  }
  closeRows(){const rows=new Map(this.inflight);for(const [k,v] of this.pending)rows.set(k,v);return [...rows.values()];}
  async drain(){

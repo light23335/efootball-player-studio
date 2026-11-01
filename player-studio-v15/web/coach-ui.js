@@ -2,6 +2,7 @@ import {renderLinkups,updateLinkup,linkupText} from './coach-links.js';
 import {CoachHeads} from './coach-heads.js';
 import {CoachModelEditor} from './coach-model.js';
 import {coachIdentity,identityField,identityLabel,identityMatches} from './coach-identities.js';
+import {DraftHistory} from './editor-history.js';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $=s=>document.querySelector(s);
 export const tactics=[['possession','控球游戏'],['short_counter','快速反击'],['long_counter','长传反击'],['side_attack','外侧进攻'],['long_ball','长传战术'],['overload','压上进攻']];
@@ -9,44 +10,50 @@ export const tactics=[['possession','控球游戏'],['short_counter','快速反�
 export class CoachUI {
   constructor(context){
     this.heads=new CoachHeads({...context,lookupCoach:id=>this.rows().find(row=>row.id===id)});
-    this.modelEditor=new CoachModelEditor({...context,row:()=>this.editing});
+    this.modelEditor=new CoachModelEditor({...context,row:()=>this.editing,change:(mutator,key)=>this.change(mutator,key)});
     Object.assign(this,context);this.query='';this.editing=null;this.custom=this.custom||[];this.previewOpen=false;this.previewQuery='';this.page=0;this.pageSize=24;this.originalPortraits=new Map();this.pendingPortraits=new Set();this.identityOpen=null;this.identityQueries={nation:'',team:''};
     document.addEventListener('input',e=>{
       const el=e.target;
       if(el.dataset.coachIdentityQuery&&this.editing){const kind=el.dataset.coachIdentityQuery;this.identityQueries[kind]=el.value;this.renderIdentityResults(kind);}
-      if(this.editing&&updateLinkup(this.editing,el,this.catalog.COACH_LINK_TYPES||[])==='render')$('#coach-link-editor').innerHTML=renderLinkups(this.editing,this.catalog);
+      if(this.editing&&el.dataset.linkSlot!==undefined){let result;this.change(()=>result=updateLinkup(this.editing,el,this.catalog.COACH_LINK_TYPES||[]));if(result==='render')$('#coach-link-editor').innerHTML=renderLinkups(this.editing,this.catalog);}
       if(el.id==='coach-query'){this.query=el.value;this.page=0;this.renderResults();}
       if(el.id==='coach-custom-only'){this.customOnly=el.checked;this.page=0;this.renderResults();}
       if(el.id==='coach-model-only'){this.modelOnly=el.checked;this.page=0;this.renderResults();}
       if(el.id==='preview-coach-query'){this.previewQuery=el.value;this.renderPreviewResults();}
-      if(el.dataset.coachPortrait&&this.editing?.portrait){this.editing.portrait[el.dataset.coachPortrait]=Number(el.value);this.portraitPreview();}
+      if(el.dataset.coachPortrait&&this.editing?.portrait){this.change(()=>this.editing.portrait[el.dataset.coachPortrait]=Number(el.value),'portrait:'+el.dataset.coachPortrait);this.portraitPreview();}
       if(el.dataset.coachField&&this.editing){
         const [group,key]=el.dataset.coachField.split('.');
         const value=el.type==='number'?Math.max(Number(el.min),Math.min(Number(el.max),Math.round(Number(el.value)))):el.value;
-        if(group==='tactics'||group==='effects')this.editing[group][key]=value;
-        else this.editing[group]=value;
+        this.change(()=>{if(group==='tactics'||group==='effects')this.editing[group][key]=value;
+        else this.editing[group]=value;},'field:'+el.dataset.coachField);
       }
     });
     document.addEventListener('change',e=>{if(e.target.id==='preview-coach'){this.choose(e.target.value);}if(e.target.id==='preview-team-style'){this.commit(()=>this.project().preview.team_style=e.target.value,'preview-team-style');this.rerender();}});
     document.addEventListener('click',e=>{
       const toggle=e.target.closest('[data-coach-identity-toggle]');if(toggle&&this.editing){const kind=toggle.dataset.coachIdentityToggle;this.identityOpen=this.identityOpen===kind?null:kind;this.updateIdentityPickers();if(this.identityOpen)$('#coach-identity-query-'+kind)?.focus();return;}
-      const option=e.target.closest('[data-coach-identity-option]');if(option&&this.editing){const kind=option.dataset.coachIdentityKind;this.editing[identityField(kind)]=Number(option.dataset.coachIdentityOption);if(kind==='team')this.editing.team_source='custom';this.identityOpen=null;this.identityQueries[kind]='';this.updateIdentityPickers();$('#coach-identity-toggle-'+kind)?.focus();return;}
+      const option=e.target.closest('[data-coach-identity-option]');if(option&&this.editing){const kind=option.dataset.coachIdentityKind;this.change(()=>{this.editing[identityField(kind)]=Number(option.dataset.coachIdentityOption);if(kind==='team')this.editing.team_source='custom';});this.identityOpen=null;this.identityQueries[kind]='';this.updateIdentityPickers();$('#coach-identity-toggle-'+kind)?.focus();return;}
       const page=e.target.closest('[data-coach-page]');if(page&&!page.disabled){this.page+=Number(page.dataset.coachPage);this.renderResults();$('#coach-results')?.scrollIntoView({block:'start'});return;}
       if(e.target.closest('[data-coach-picker]')){this.previewOpen=!this.previewOpen;this.renderPreview();if(this.previewOpen)$('#preview-coach-query')?.focus();return;}
       const preview=e.target.closest('[data-preview-coach]');if(preview){this.previewOpen=false;this.previewQuery='';this.choose(preview.dataset.previewCoach);return;}
       if(e.target.closest('[data-new-coach]'))this.edit();
-      if(e.target.closest('[data-cancel-coach]')){this.editing=null;this.rerender();}
+      if(e.target.closest('[data-cancel-coach]'))this.back().catch(error=>this.toast(error.message,true));
       if(e.target.closest('[data-save-coach]'))this.save().catch(e=>this.toast(e.message,true));
       const remove=e.target.closest('[data-delete-coach]');if(remove){this.deletePending=remove.dataset.deleteCoach;this.renderResults();}
       if(e.target.closest('[data-cancel-delete-coach]')){this.deletePending=null;this.renderResults();}
       if(e.target.closest('[data-confirm-delete-coach]'))this.remove(this.deletePending).catch(e=>this.toast(e.message,true));
       if(e.target.closest('[data-upload-coach-portrait]'))this.uploadPortrait().catch(e=>this.toast(e.message,true));
-      if(e.target.closest('[data-clear-coach-portrait]')&&this.editing){this.editing.portrait=null;this.rerender();}
+      if(e.target.closest('[data-clear-coach-portrait]')&&this.editing){this.change(()=>this.editing.portrait=null);this.rerender();}
       const use=e.target.closest('[data-use-coach]');if(use){this.choose(use.dataset.useCoach);this.heads.openFor(use.dataset.useCoach).catch(error=>this.toast(error.message,true));}
       const edit=e.target.closest('[data-edit-coach]');if(edit)this.edit(edit.dataset.editCoach);
     });
     document.addEventListener('keydown',e=>{if(e.target.dataset.coachIdentityQuery){const kind=e.target.dataset.coachIdentityQuery;if(e.key==='Escape'){this.identityOpen=null;this.updateIdentityPickers();$('#coach-identity-toggle-'+kind)?.focus();}if(e.key==='Enter'){e.preventDefault();$('#coach-identity-results-'+kind+' [data-coach-identity-option]')?.click();}return;}if(e.target.id!=='preview-coach-query')return;if(e.key==='Escape'){this.previewOpen=false;this.renderPreview();$('#preview-coach-picker')?.focus();}if(e.key==='Enter'){e.preventDefault();$('#preview-coach-results [data-preview-coach]')?.click();}});
   }
+  get history(){return this._history??=new DraftHistory({read:()=>this.editing,write:value=>{
+    if(JSON.stringify(this.editing?.head_model)!==JSON.stringify(value.head_model))this.modelEditor.reset();
+    this.editing=value;this.identityOpen=null;this.rerender();
+  },onChange:()=>this.onHistoryChange?.()});}
+  change(mutator,key=null){return this.history.commit(mutator,key);}
+  async back(){await this.flushEditors?.();this.editing=null;this.rerender();}
   rows(){const rows=new Map([...(this.catalog.coaches||[]),...this.custom,...(this.project().custom_coaches||[]),...(this.draftRows||[])].map(c=>[c.id,c]));return [...rows.values()];}
   effectText(row){return Object.entries(row.effects||{}).filter(([,v])=>v).map(([index,value])=>`${this.catalog.ABILITIES[index]} ${value>0?'+':''}${value}`).join(' · ')||'无已映射的能力加成';}
   identityText(row){const options=this.identities?.()||{};return `国籍：${identityLabel(row,'nation',options)} · 俱乐部：${identityLabel(row,'team',options)}`;}
@@ -69,7 +76,7 @@ export class CoachUI {
   pagination(result){return `<div class="coach-pagination"><p class="note">共 ${result.total} 名教练 · 第 ${this.page+1} / ${result.pages} 页 · 每页 ${this.pageSize} 名</p><div class="welcome-actions"><button class="button secondary" data-coach-page="-1" ${this.page?'':'disabled'}>上一页</button><button class="button secondary" data-coach-page="1" ${this.page+1<result.pages?'':'disabled'}>下一页</button></div></div>`;}
   portraitControls(row){return `<div class="coach-portrait-editor"><h3>教练头像</h3><div class="portrait-actions"><button class="button secondary" data-upload-coach-portrait>${row.portrait?'更换头像':'上传头像'}</button>${row.portrait?'<button class="button subtle" data-clear-coach-portrait>移除头像</button>':''}</div>${this.portraitImage(row,true)}${row.portrait?`<div class="field-grid three">${[['zoom','缩放',1,4,.01],['x','水平取景',-100,100,1],['y','垂直取景',-100,100,1]].map(([k,label,min,max,step])=>`<label class="field"><span>${label}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${row.portrait[k]}" data-coach-portrait="${k}"></label>`).join('')}</div>`:''}<p class="note">支持 PNG、JPG 和 WebP。头像与教练一起保存、随工程分享；生成 APK 时勾选此教练即可写入游戏。</p></div>`;}
   portraitPreview(){const c=this.editing?.portrait,img=$('#coach-portrait-image');if(!c||!img)return;img.style.objectPosition=`${50+c.x/2}% ${50+c.y/2}%`;img.style.transformOrigin=img.style.objectPosition;img.style.transform=`scale(${c.zoom})`;}
-  async uploadPortrait(){const row=this.editing,file=await this.api('dialog',{category:'image'});if(!row||!file.path||this.editing!==row)return;const asset=await this.api('assets/import',{path:file.path,category:'image'});if(this.editing!==row)return;row.portrait={asset_id:asset.id,zoom:1,x:0,y:0};this.rerender();this.toast('头像已载入，调整取景后保存教练');}
+  async uploadPortrait(){const row=this.editing,file=await this.api('dialog',{category:'image'});if(!row||!file.path||this.editing!==row)return;const asset=await this.api('assets/import',{path:file.path,category:'image'});if(this.editing!==row)return;this.change(()=>row.portrait={asset_id:asset.id,zoom:1,x:0,y:0});this.rerender();this.toast('头像已载入，调整取景后保存教练');}
   renderPreview(){
     this.syncPortraitScope();
     const selected=this.project().preview?.coach_id||'',rows=this.rows(),coach=rows.find(r=>r.id===selected),style=this.project().preview?.team_style||Object.entries(coach?.tactics||{}).sort((a,b)=>b[1]-a[1])[0]?.[0];
@@ -106,6 +113,7 @@ export class CoachUI {
     Object.assign(this.editing,coachIdentity(row));this.identityOpen=null;this.identityQueries={nation:'',team:''};
     if(!this.editing.portrait&&this.originalPortraits.get(String(id))?.asset_id)this.editing.portrait=structuredClone(this.originalPortraits.get(String(id)));
     delete this.editing.raw_payload;delete this.editing.unmapped_abilities;delete this.editing.ability_ids;
+    this.history.reset();
     this.navigate('coaches');
   }
   render(){return this.heads.render()+this.renderCoach();}

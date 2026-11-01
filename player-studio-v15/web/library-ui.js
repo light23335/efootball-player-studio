@@ -1,5 +1,6 @@
 import {cardTypes,cardTypeName} from './domain.js';
 import {choosePlayerAction} from './player-prompts.js';
+import {normalizeBaseAbility} from './base-abilities.js';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $=s=>document.querySelector(s);
 export class LibraryUI {
@@ -80,7 +81,7 @@ export class LibraryUI {
       p.traits={weak_foot_usage:['低','普通','高','极高'][params[45]]||'普通',weak_foot_accuracy:['低','普通','高','极高'][params[33]]||'普通',form:['不稳定','普通','稳定'][params[41]]||'普通',injury:['低','普通','高'][params[42]]||'普通'};
       p.card_type=row.card_type;p.card_series=payload._studio_card_label?.startsWith('Show Time')?'ShowTime':p.card_type;
       p.max_level=Math.max(1,Math.min(100,row.level_limit||35));p.max_level_known=Boolean(row.level_limit);p.initial_level=1;
-      p.base_abilities=Object.fromEntries(Object.keys(this.catalog.ABILITIES).map(i=>[i,params[i]]));
+      p.base_abilities=Object.fromEntries(Object.keys(this.catalog.ABILITIES).map(i=>[i,normalizeBaseAbility(params[i])]));
       const visibleSkills=values=>[...new Set(values.map(i=>[51,68].includes(i)?52:i))].filter(i=>!this.catalog.SKILL_LABELS[i]?.includes('预留'));
       const customAdditional=new Set((payload.additional_skill_id||[]).filter(i=>(this.catalog.CUSTOM_SKILL_IDS||[]).includes(i)));
       p.innate_skills=visibleSkills(payload._studio_skill_ids||Object.entries(this.catalog.PARAMETER_BY_SKILL).filter(([i,index])=>params[index]===1).map(([i])=>Number(i))).filter(i=>!customAdditional.has(i));

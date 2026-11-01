@@ -8,3 +8,6 @@
 #native-file-apk,#native-file-companion{overflow-wrap:anywhere;flex:1}
 
 .pack-cover-editor{margin:18px 0}.pack-cover-preview{width:100%;max-width:720px;aspect-ratio:5/2;overflow:hidden;background:#101a2c;border:1px solid #344458;border-radius:10px;margin:16px 0}.pack-cover-preview img{display:block;width:100%;height:100%;object-fit:cover}.pack-cover-editor .field-grid{margin-top:12px}
+.pack-custom-filters{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px}.pack-custom-filters .field{min-width:180px;flex:1;margin:0}.pack-custom-filters button{min-height:48px}.pack-custom-picker [data-pack-custom]{min-height:44px;white-space:normal;text-align:left}.pack-custom-picker .library-pagination{margin-block:12px}
+@media(max-width:620px){.pack-custom-filters .field{flex-basis:100%}.pack-custom-filters>button{width:100%}.pack-custom-picker [data-pack-custom]{flex:1 1 140px}}
+.pack-pool-panel>.panel-title{flex-wrap:wrap;gap:12px}.pack-pool-panel>.panel-title .portrait-actions{flex-wrap:wrap}.pack-pool-panel [data-pack-pool-toggle]{min-height:44px;min-width:120px}#pack-members[hidden]{display:none!important}

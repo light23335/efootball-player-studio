@@ -60,19 +60,28 @@ def booster_rows(projects,abilities):
     return texts,routes
 
 def merge(raw,texts,replace_ids=()):
-    groups=read(unwrap(raw));group=next((g for g in groups if g['name']=='Any3W'),None)
-    if group is None:group={'name':'Any3W','id':1142,'items':{}};groups.append(group)
-    if group['id']!=1142 or (group['items'].keys()&texts.keys())-set(replace_ids):raise ValueError('自建增能文字占用了原版条目')
-    group['items'].update(texts)
-    return wrap(write(groups))
+    return merge_all(raw,texts,replace_ids)
 
 def merge_groups(raw,updates):
-    groups=read(unwrap(raw))
+    return merge_all(raw,updates=updates)
+
+
+def merge_all(raw,texts=None,replace_ids=(),updates=()):
+    """Parse once; preserve exact padding/compression when nothing changes."""
+    groups=read(unwrap(raw));changed=False
+    if texts:
+        group=next((g for g in groups if g['name']=='Any3W'),None)
+        if group is None:
+            group={'name':'Any3W','id':1142,'items':{}};groups.append(group);changed=True
+        if group['id']!=1142 or (group['items'].keys()&texts.keys())-set(replace_ids):raise ValueError('自建增能文字占用了原版条目')
+        changed=changed or any(key not in group['items']or group['items'][key]!=value for key,value in texts.items())
+        group['items'].update(texts)
     for update in updates:
         group=next((g for g in groups if g['id']==update['id']),None)
         if group is None:
             if any(g['name']==update['name'] for g in groups):raise ValueError('技能文字组编号改变')
-            group={'name':update['name'],'id':update['id'],'items':{}};groups.append(group)
+            group={'name':update['name'],'id':update['id'],'items':{}};groups.append(group);changed=True
         if group['name']!=update['name']:raise ValueError('技能文字组名称改变')
+        changed=changed or any(key not in group['items']or group['items'][key]!=value for key,value in update['items'].items())
         group['items'].update(update['items'])
-    return wrap(write(groups))
+    return wrap(write(groups))if changed else raw

@@ -99,7 +99,7 @@ class CoachHeadTests(unittest.TestCase):
                 changes,report=patch_stock_containers(z,SimpleNamespace(containers=cache),new,[{'target':A}],root)
                 self.assertEqual(z.read('assets/pc0000_mobile_and.pak'),nested.getvalue())
             self.assertEqual(len(report),1)
-            with zipfile.ZipFile(io.BytesIO(changes['assets/pc0000_mobile_and.pak'])) as z:
+            with changes['assets/pc0000_mobile_and.pak'].open()as stream,zipfile.ZipFile(stream) as z:
                 self.assertEqual(z.read('keep.txt'),b'unchanged')
                 target=root/'verified.utoc';target.write_bytes(z.read('Paks/pakchunk0.utoc'));target.with_suffix('.ucas').write_bytes(z.read('Paks/pakchunk0.ucas'))
             c=Container(target)

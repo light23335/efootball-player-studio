@@ -11,6 +11,19 @@ def merged_routes(stock,content):
     return [result[k]for k in sorted(result)]
 
 
+def verify_content(document):
+    """The final document must register every route from its effective catalogue."""
+    expected=merged_routes([],document.get('content_catalogue',{}).get('routes',[]))
+    registry=document.get('native_binding',{}).get('source',{}).get('registry',{})
+    actual=merged_routes([],registry.get('content_routes',[]))
+    if expected!=actual:
+        required={r['cardId']:r for r in expected};registered={r['cardId']:r for r in actual}
+        wrong=sorted(cid for cid in required.keys()|registered.keys()if required.get(cid)!=registered.get(cid))
+        raise ValueError('内容增量美术绑定与生效清单不一致：应注册 '+str(len(expected))+' 条，实际 '+str(len(actual))+' 条；球员编号 '+', '.join(map(str,wrong[:12])))
+    return {'verified':True,'expected_routes':len(expected),'registered_routes':len(actual),
+            'card_ids':[r['cardId']for r in expected]}
+
+
 def prepare_registry(raw_code,outer,raw_payload,layers,content,sites,templates,allocator_code):
     from native_diy_binding import compose,PreparedInstaller
     from personal_binding import fingerprint,code_fingerprint

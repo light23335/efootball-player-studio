@@ -133,8 +133,9 @@ def weekly_table(data,projects,definitions,bindings=None,replace_ids=()):
     return data+b''.join(extra),len(extra)
 
 
-def compile_tables(original,projects,definitions,resources,bindings,extra=None,replace_ids=(),replace_boosters=()):
-    cpk=Cpk(original)
+def compile_tables(original,projects,definitions,resources,bindings,extra=None,replace_ids=(),replace_boosters=(),*,source_cpk=None):
+    cpk=source_cpk if source_cpk is not None else Cpk(original)
+    if source_cpk is not None and cpk.raw!=original:raise ValueError('资料表解码来源与当前 CPK 不一致')
     wrapped={n:cpk.read(n) for n in (PLAYER,APPEARANCE,VARIATION,ALIASES,BOOSTERS)}
     raw={n:unwrap(value) for n,value in wrapped.items()}
     players=rows(raw[PLAYER],400,8);appearances=rows(raw[APPEARANCE],64);variants=rows(raw[VARIATION],168,require_sorted=False)
@@ -196,12 +197,15 @@ def compile_tables(original,projects,definitions,resources,bindings,extra=None,r
     abilities=_export_data("资料文件",resources / 'catalog.json',"读取并解析 JSON",lambda: json.loads((resources/'catalog.json').read_text(encoding='utf8')))['ABILITIES']
     texts,text_routes=booster_rows(projects,abilities)
     from native_skill_effects import text_groups
-    from native_strings import merge_groups
+    from native_strings import merge_all
+    unchanged_strings=0
     for name in cpk.files:
         if name.endswith('/string/all_diff.str'):
             content=cpk.read(name)
-            if texts:content=merge_strings(content,texts,{text_key(bid)+j for bid in replace_boosters for j in (0,1)})
-            replacements[name]=merge_groups(content,text_groups(resources,name.split('/')[0]))
+            updated_text=merge_all(content,texts,{text_key(bid)+j for bid in replace_boosters for j in (0,1)},
+                                   text_groups(resources,name.split('/')[0]))
+            if updated_text==content:unchanged_strings+=1
+            else:replacements[name]=updated_text
     weekly,weekly_added=weekly_table(unwrap(cpk.read(WEEKLY)),projects,definitions,bindings,replace_ids)
     replacements[WEEKLY]=wrap(weekly,cpk.read(WEEKLY))
     replacements[BOOT_ASSIGNMENTS],equipment_report=compile_boots(cpk,projects,definitions,bindings,replace_ids)
@@ -211,7 +215,7 @@ def compile_tables(original,projects,definitions,resources,bindings,extra=None,r
     return result,{'players_added':len(players)-len(original_players),'original_player_records_preserved':len(original_players),
                    'original_appearance_records_preserved':len(original_appearances),'personal_cards':len(projects),
                    'native_person_aliases':{d['identity']['package_id']:owned_person_aliases(d['identity']) for d in definitions},
-                   'equipment':equipment_report,'personal_booster_text_routes':text_routes,
+                   'equipment':equipment_report,'personal_booster_text_routes':text_routes,'unchanged_text_files_reused':unchanged_strings,
                    'fixed_B_weekly_records_added':weekly_added,
                    'personal_weekly_states':{d['identity']['package_id']:p.get('weekly_condition','auto') for p,d in zip(projects,definitions)},
                    'innate_skills_written_via_owned_protocol_only':server_only}

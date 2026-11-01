@@ -63,7 +63,7 @@ test('home shows cache cleanup and tutorial search keeps relevant entries',()=>{
 test('first coexist action queues game after resource and uses one consistent mode',async()=>{
  const old=globalThis.document;globalThis.document={addEventListener:()=>{}};
  try{
-  const calls=[];const ui=new NativePackageUI({api:async(path,body)=>{calls.push(body);return{phase:'working'};},project:()=>({package_id:'x'}),installationMode:'coexist',toast:()=>{}});ui.update=()=>{};ui.poll=()=>{};
+  const calls=[];const ui=new NativePackageUI({api:async(path,body)=>{calls.push(body);return{phase:'working'};},project:()=>({package_id:'x'}),installationMode:'coexist',toast:()=>{}});ui.update=()=>{};ui.poll=()=>{};ui.apk="game.apk";ui.writeSource={token:"verified"};
   await ui.click({target:{closest:()=>({dataset:{},hasAttribute:name=>name==='data-native-first'})}});
   assert.equal(calls[0].operation,'companion');assert.equal(calls[0].installation_mode,'coexist');assert.equal(ui.queue.length,1);assert.equal(ui.queue[0].installation_mode,'coexist');assert.equal(ui.queue[0].project.package_id,'x');
  }finally{globalThis.document=old;}

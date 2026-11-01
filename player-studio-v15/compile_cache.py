@@ -1,14 +1,33 @@
 """Bounded, verified local compiler artifacts. No pickle or executable cache."""
 from pathlib import Path
-import contextlib,copy,hashlib,importlib,json,marshal,os,re,sys,threading,types,uuid,zipfile
+import contextlib,copy,hashlib,importlib,json,marshal,os,re,sys,threading,time,types,uuid,weakref,zipfile
 
-REVISION='v17-artifacts-and-blocks-2.0.6-v1'
+REVISION='v17-artifacts-direct-movie-and-cpk-2.1.3-v1'
 _LOCK=threading.RLock()
+_PINS={}
 _CODE={}
+_INDEXES=weakref.WeakValueDictionary()
+
+class _CacheIndex:
+    """Shared by active exports, with one disk inventory and incremental accounting."""
+    def __init__(self,root):
+        self.root=root;self.entries=None;self.total=0;self.movies=0;self.stamp=None
+    def record(self,path,stat):
+        self.forget(path)
+        self.entries[path]=(max(stat.st_mtime_ns,stat.st_atime_ns),stat.st_size)
+        self.total+=stat.st_size
+        if path.name.startswith('movie-package-'):self.movies+=stat.st_size
+    def forget(self,path):
+        old=self.entries.pop(path,None)if self.entries is not None else None
+        if old:
+            self.total-=old[1]
+            if path.name.startswith('movie-package-'):self.movies-=old[1]
+    def mark(self):self.stamp=self.root.stat().st_mtime_ns
 MODULES=('native_art','native_mesh','native_skeletal','native_glb','native_appearance','native_body',
          'native_models','native_iostore','native_thumbnail','thumbnail_background','thumbnail_motion',
          'card_front','private_card_motion','rig_compatibility','glb_import','native_movie',
-         'native_library','player_identity_binding')
+         'native_library','player_identity_binding','movie_package','export_payload','apk_format',
+         'native_cpk','native_tables','native_strings')
 
 def digest_file(path):
     h=hashlib.sha256()
@@ -76,8 +95,51 @@ class CompileCache:
         self.root=Path(root);self.context=context
         self.limit=limit if limit is not None else(4 if sys.platform=='win32'else 1)*1024**3
         self.stats={'hits':{},'misses':{},'corrupt':0,'write_failures':0,'evicted_bytes':0}
+        self.stats.update(inventory_scans=0,prune_passes=0,timings_seconds={})
+        self.maintenance_seconds=0
+        self.leases={}
         if self.root.is_symlink()or self.root.is_junction():raise ValueError('编译缓存目录不能是外部链接')
         self.root.mkdir(parents=True,exist_ok=True)
+        self.root=self.root.resolve()
+        with _LOCK:
+            key=os.path.normcase(str(self.root))
+            self.index=_INDEXES.get(key)
+            if self.index is None:self.index=_CacheIndex(self.root);_INDEXES[key]=self.index
+
+    @contextlib.contextmanager
+    def _timed(self,kind,stage):
+        start=time.perf_counter();maintenance=self.maintenance_seconds
+        try:yield
+        finally:
+            # Cache write excludes the separately measured inventory/eviction work.
+            elapsed=time.perf_counter()-start
+            if stage=='write':elapsed-=self.maintenance_seconds-maintenance
+            phases=self.stats['timings_seconds'].setdefault(kind,{})
+            phases[stage]=phases.get(stage,0)+max(0,elapsed)
+
+    def _inventory(self,refresh=False):
+        if self.index.entries is not None and not refresh:return
+        start=time.perf_counter();self.stats['inventory_scans']+=1
+        self.index.entries={};self.index.total=0;self.index.movies=0
+        for path in self.root.glob('*.zip'):
+            if path.is_symlink()or path.is_junction()or not re.fullmatch(r'[a-z-]+-[a-f0-9]{64}\.zip',path.name):continue
+            try:
+                if path.is_file():self.index.record(path,path.stat())
+            except OSError:pass
+        self.index.mark();elapsed=time.perf_counter()-start;self.maintenance_seconds+=elapsed
+        phases=self.stats['timings_seconds'].setdefault('maintenance',{})
+        phases['inventory']=phases.get('inventory',0)+elapsed
+
+    def _published(self,path):
+        with _LOCK:
+            self._inventory();self.index.record(path,path.stat());self.index.mark();self.prune()
+
+    def _touch(self,path):
+        with _LOCK:
+            if self.index.entries is not None:self.index.record(path,path.stat())
+
+    def _forget(self,path):
+        with _LOCK:self.index.forget(path);self.index.mark()
 
     def key(self,kind,inputs,files=()):
         values=[]
@@ -128,7 +190,7 @@ class CompileCache:
                 archive.writestr('manifest.json',json.dumps({'schema':1,'key':key,'result':encode(result)},ensure_ascii=False,separators=(',',':'),allow_nan=False))
             if temporary.stat().st_size>self.limit:return
             temporary.replace(path)
-            self.prune()
+            self._published(path)
         finally:temporary.unlink(missing_ok=True)
 
     def run(self,kind,inputs,producer,files=(),encoded=False):
@@ -136,30 +198,116 @@ class CompileCache:
         key=self.key(kind,inputs,files);path=self.root/(kind+'-'+key+'.zip')
         if path.is_file()and not path.is_symlink():
             try:
-                result=self._read(path,key);os.utime(path,None)
+                with self._timed(kind,'read'):result=self._read(path,key);os.utime(path,None);self._touch(path)
                 self.stats['hits'][kind]=self.stats['hits'].get(kind,0)+1
                 return result,{'hit':True,'key':key,'kind':kind}
             except (OSError,ValueError,KeyError,TypeError,zipfile.BadZipFile,RuntimeError):
                 self.stats['corrupt']+=1
-                with contextlib.suppress(OSError):path.unlink()
+                with contextlib.suppress(OSError):path.unlink();self._forget(path)
         self.stats['misses'][kind]=self.stats['misses'].get(kind,0)+1
-        result=producer()
-        try:self._write(path,key,result,encoded)
+        with self._timed(kind,'encode'):result=producer()
+        try:
+            with self._timed(kind,'write'):self._write(path,key,result,encoded)
         except (OSError,ValueError,TypeError,RuntimeError):self.stats['write_failures']+=1
+        return result,{'hit':False,'key':key,'kind':kind}
+
+    def _lease(self,path):
+        from export_payload import FileLease
+        path=path.resolve()
+        with _LOCK:
+            if path not in self.leases:
+                self.leases[path]=FileLease(path);_PINS[path]=_PINS.get(path,0)+1
+            return self.leases[path]
+
+    def _release(self,path):
+        path=path.resolve()
+        with _LOCK:
+            lease=self.leases.pop(path,None)
+            if lease:
+                lease.close();_PINS[path]-=1
+                if not _PINS[path]:del _PINS[path]
+
+    def close(self):
+        for path in list(self.leases):self._release(path)
+        with _LOCK:
+            # Another process may have changed the directory while this export ran.
+            # Ordinary writes by this process update the stamp and need no rescan.
+            if self.index.entries is not None and self.index.stamp!=self.root.stat().st_mtime_ns:self._inventory(refresh=True)
+            self.prune()
+
+    def run_file(self,kind,inputs,producer,output,*,direct=False):
+        """Cache a large artifact without loading either the ZIP or blob into RAM."""
+        from export_payload import FilePayload,extract
+        if not re.fullmatch(r'[a-z-]+',kind):raise ValueError('Invalid compiler cache category')
+        output=Path(output)
+        if output.exists():raise ValueError('File cache output must be a new file')
+        key=self.key(kind,inputs);path=self.root/(kind+'-'+key+'.zip')
+        if path.is_file()and not path.is_symlink():
+            try:
+                with self._timed(kind,'read'),zipfile.ZipFile(path)as archive:
+                    if archive.getinfo('manifest.json').file_size>65536:raise ValueError('File cache manifest too large')
+                    manifest=json.loads(archive.read('manifest.json'))
+                    if manifest.get('schema')!=2 or manifest.get('key')!=key:raise ValueError('File cache identity differs')
+                    if archive.getinfo('payload').file_size>self.limit:raise ValueError('File cache exceeds its budget')
+                    if direct:
+                        if archive.getinfo('payload').compress_type!=zipfile.ZIP_STORED:raise ValueError('File cache payload must be stored')
+                        result=FilePayload.from_zip(archive,'payload',lease=self._lease(path))
+                    else:result=extract(archive,'payload',output)
+                    if manifest.get('payload')!={'bytes':result.bytes,'sha256':result.sha256,'crc32':result.crc32}:
+                        raise ValueError('File cache checksum differs')
+                # Refresh LRU access without changing a pinned payload's mtime.
+                stamp=path.stat();os.utime(path,ns=(__import__('time').time_ns(),stamp.st_mtime_ns))
+                self._touch(path)
+                self.stats['hits'][kind]=self.stats['hits'].get(kind,0)+1
+                return result,{'hit':True,'key':key,'kind':kind}
+            except (OSError,ValueError,KeyError,TypeError,zipfile.BadZipFile,RuntimeError):
+                self.stats['corrupt']+=1
+                self._release(path)
+                with contextlib.suppress(OSError):output.unlink(missing_ok=True);path.unlink(missing_ok=True);self._forget(path)
+        self.stats['misses'][kind]=self.stats['misses'].get(kind,0)+1
+        with self._timed(kind,'encode'):result=producer(output)
+        if result is None:result=FilePayload.from_path(output)
+        if not isinstance(result,FilePayload):raise ValueError('File cache producer output differs')
+        if direct and result.path!=output and not output.exists():
+            return result,{'hit':False,'key':key,'kind':kind,'source_reused':True}
+        if result.path!=output:raise ValueError('File cache producer output differs')
+        temporary=self.root/('writing-'+uuid.uuid4().hex+'.tmp')
+        try:
+            budget=self.limit//2 if kind=='movie-package'else self.limit
+            if result.bytes+4096<=budget:
+                with self._timed(kind,'write'),zipfile.ZipFile(temporary,'x',compression=zipfile.ZIP_STORED)as archive:
+                    with archive.open('payload','w',force_zip64=result.bytes>=2**31)as destination:result.copy_to(destination)
+                    archive.writestr('manifest.json',json.dumps({'schema':2,'key':key,'payload':{
+                        'bytes':result.bytes,'sha256':result.sha256,'crc32':result.crc32}},separators=(',',':')))
+                temporary.replace(path);self._published(path)
+        except (OSError,ValueError,TypeError,RuntimeError):self.stats['write_failures']+=1
+        finally:temporary.unlink(missing_ok=True)
         return result,{'hit':False,'key':key,'kind':kind}
 
     def prune(self):
         with _LOCK:
-            files=[]
-            for path in self.root.glob('*.zip'):
-                if path.is_symlink()or not re.fullmatch(r'[a-z-]+-[a-f0-9]{64}\.zip',path.name):continue
-                try:stat=path.stat();files.append((stat.st_mtime_ns,path,stat.st_size))
+            self._inventory()
+            if self.index.total<=self.limit and self.index.movies<=self.limit//2:return
+            start=time.perf_counter();self.stats['prune_passes']+=1
+            # Evict in batches, leaving headroom instead of sorting again on each new entry.
+            target=self.limit*9//10;movie_target=self.limit*45//100
+            files=sorted((stamp,path,size)for path,(stamp,size)in self.index.entries.items())
+            # Leave half of the common budget available to card/mesh/block
+            # artifacts, instead of two giant movies evicting all artwork.
+            for _,path,size in files:
+                if self.index.movies<=movie_target:break
+                if not path.name.startswith('movie-package-')or path.resolve()in _PINS:continue
+                try:path.unlink(missing_ok=True);self.index.forget(path);self.stats['evicted_bytes']+=size
                 except OSError:pass
-            total=sum(size for _,_,size in files)
-            for _,path,size in sorted(files):
-                if total<=self.limit:break
-                try:path.unlink();total-=size;self.stats['evicted_bytes']+=size
+            for _,path,size in files:
+                if self.index.total<=target:break
+                if path not in self.index.entries:continue
+                if path.resolve()in _PINS:continue
+                try:path.unlink(missing_ok=True);self.index.forget(path);self.stats['evicted_bytes']+=size
                 except OSError:pass
+            self.index.mark();elapsed=time.perf_counter()-start;self.maintenance_seconds+=elapsed
+            phases=self.stats['timings_seconds'].setdefault('maintenance',{})
+            phases['eviction']=phases.get('eviction',0)+elapsed
 
     def report(self):return{**copy.deepcopy(self.stats),'limit_bytes':self.limit,'directory':str(self.root)}
 
@@ -168,9 +316,13 @@ def clear(root):
     if not root.exists():return{'files':0,'bytes':0}
     if root.is_symlink()or root.is_junction():raise ValueError('编译缓存目录不能是外部链接')
     count=size=0
-    for path in root.glob('*.zip'):
-        if path.is_symlink()or not re.fullmatch(r'[a-z-]+-[a-f0-9]{64}\.zip',path.name):continue
-        length=path.stat().st_size;path.unlink();count+=1;size+=length
+    with _LOCK:
+        for path in root.glob('*.zip'):
+            if path.is_symlink()or not re.fullmatch(r'[a-z-]+-[a-f0-9]{64}\.zip',path.name):continue
+            if path.resolve()in _PINS:continue
+            length=path.stat().st_size;path.unlink();count+=1;size+=length
+            index=_INDEXES.get(os.path.normcase(str(root.resolve())))
+            if index is not None:index.forget(path.resolve());index.mark()
     return{'files':count,'bytes':size}
 
 def summary(root):

@@ -297,6 +297,8 @@ class NativeSkillV2Tests(unittest.TestCase):
         from test_v193_binding import V17BindingTests
         from personal_binding import capture, prepare
         from native_worker_sim import run
+        original_apk=V17BindingTests.original_apk
+        self.addCleanup(setattr,V17BindingTests,'original_apk',original_apk)
         V17BindingTests.original_apk=APK
         V17BindingTests.setUpClass()
         case = V17BindingTests()

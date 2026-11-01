@@ -46,6 +46,8 @@ def hooks(engine,resources=None):
                 raise ValueError('此版本的比赛技能接口发生变化，未写入新增技能效果')
         for key in ('assembly','code','functions','constants','helper_entries','deferred_shared_refs','writable'):
             hook.pop(key,None)
+    from native_ai_style_ui import hooks as ai_style_ui_hooks
+    result.extend(ai_style_ui_hooks(engine))
     return result
 
 def text_groups(resources=None,locale='zha'):
