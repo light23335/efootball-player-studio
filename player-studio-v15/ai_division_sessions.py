@@ -18,7 +18,97 @@ MARKER = '_studio_division_squad_v1'
 # Original V17 GateLogic explicitly serves these menu/list flows outside the
 # match. Do not include keep-alive, roster views, history or quality requests.
 EXIT_COMMANDS = frozenset(('CMD_GET_MAINMENU_INFO','CMD_GET_MYCLUB_MAINMENU_INFO',
-                          'CMD_GET_MAINMENU_MATCH_CREATIVE_INFO','CMD_GET_LEAGUE_COM_INFO'))
+                          'CMD_GET_MAINMENU_MATCH_CREATIVE_INFO','CMD_GET_LEAGUE_COM_INFO',
+                          'CMD_GET_MYCLUB_MAIN_MENU','CMD_GET_MYCLUB_HOME',
+                          'CMD_GET_EVENT_LIST_AND_LOG','CMD_GET_EVENT_LIST_AND_INFO'))
+OPPONENT_COMMANDS=frozenset(('CMD_GET_VSCOM_OPPONENT','CMD_GET_MYCLUB_VSCOM_OPPONENT'))
+CALLBACK_COMMANDS=frozenset(('CMD_START_GAME','CMD_GET_VSCOM_GAME_RESULT'))
+TOURNAMENT_CONTEXT='player_studio_tournament_v1:context'
+
+
+class Routing:
+    """One live gateway's selected mode; saved competitions are not sessions."""
+    def __init__(self):
+        self.mode=None
+        self.tournament=None
+        self.selection=None
+
+    def clear(self):
+        self.mode=None;self.tournament=None;self.selection=None
+
+    def division(self):
+        self.clear();self.mode='division'
+
+    def select_tournament(self,definition,current,entered=False):
+        self.selection=definition['uuid']
+        if entered:
+            self.mode='tournament'
+            self.tournament=(definition['uuid'],current['run_id'],definition['player_team_id'])
+        else:self.mode=None;self.tournament=None
+
+    def matches(self,definition,current):
+        return self.mode=='tournament'and self.tournament==(
+            definition['uuid'],current['run_id'],current['definition']['player_team_id'])
+
+
+def routing(logic):
+    value=getattr(logic,'_studio_match_routing',None)
+    if value is None:
+        value=Routing();logic._studio_match_routing=value
+    return value
+
+
+def game_id(request):
+    """Native results nest the ID; reject conflicting top-level identities."""
+    values=[]
+    nested=request.get('match_result')
+    for value in(request.get('game_id'),nested.get('game_id')if isinstance(nested,dict)else None):
+        if value is not None and str(value)not in('','0'):values.append(value)
+    if len({str(v)for v in values})>1:raise ValueError('比赛编号互相冲突，请重新进入对应模式')
+    return values[-1]if values else None
+
+
+def event_ids(request):
+    return [request[key]for key in('event_id','compe_unit_id')
+            if request.get(key)is not None and str(request[key])not in('','0')]
+
+
+def is_division(request):return str(request.get('match_category')or'').startswith('LEAGUE_COM')
+
+
+def match_owner(conn,gid):
+    """Resolve explicit callback IDs without consulting either selected mode."""
+    if gid is None:return None
+    owners=set();active=read(conn,'ai_division_active_match',{})or{}
+    if str(active.get('game_id'))==str(gid)or read(conn,'ai_division_result_'+str(gid)):
+        owners.add('division')
+    exists=conn.execute("select 1 from sqlite_master where name='personal_ai_entries'").fetchone()
+    if exists and conn.execute('select 1 from personal_ai_entries where game_id=?',(str(gid),)).fetchone():
+        owners.add('division')
+    prefix='player_studio_tournament_v1:'
+    # Archived editions can hold thousands of full simulation snapshots.
+    # They never own a live route; filter their keys before fetching/decoding
+    # the large values. Exact historical receipts are resolved separately.
+    for key,raw in conn.execute('select key,value from meta where key like ? and key not like ? and key not like ?',
+                                (prefix+'%','%:history:%','%:backup:%')):
+        try:value=json.loads(raw)
+        except(ValueError,TypeError):continue
+        if not isinstance(value,dict)or not isinstance(value.get('definition'),dict):continue
+        uid=value['definition'].get('uuid')
+        if key!=prefix+str(uid):continue  # Backups/history never become live routes.
+        if str((value.get('active')or{}).get('game_id'))==str(gid)or str(gid)in value.get('receipts',{}):
+            owners.add('tournament')
+    if len(owners)>1:raise ValueError('比赛编号同时属于两个模式，未更改任何赛程')
+    return next(iter(owners),None)
+
+
+def clear_tournament_context(conn):
+    with conn:
+        conn.execute('update meta set value=? where key=?',('null',TOURNAMENT_CONTEXT))
+
+
+def invalid_reply(command,request,error):
+    return {'msgid':command,'rqid':request.get('rqid'),'result':'ERR_INVALID_PARAM','studio_error':str(error)}
 
 
 def read(conn,key,default=None):
@@ -172,12 +262,27 @@ class Entries:
         return True
 
     def stale_callback(self,conn,request):
-        game_id=request.get('game_id')
-        if game_id is None:return False
+        identifier=game_id(request)
+        if identifier is None:return False
+        if read(conn,'ai_division_result_'+str(identifier)):return False
         entry=self.current(conn)
-        if str(game_id)==str(entry.get('game_id')):return bool(entry.get('closed'))
+        active=read(conn,'ai_division_active_match',{})or{}
+        if str(identifier)==str(entry.get('game_id')):
+            issued=str(active.get('game_id'))==str(identifier)and bool(active.get('started')or active.get('start_reply'))
+            return bool(entry.get('closed'))and not issued
         exists=conn.execute("select 1 from sqlite_master where name='personal_ai_entries'").fetchone()
-        return bool(exists and conn.execute('select 1 from personal_ai_entries where game_id=?',(str(game_id),)).fetchone())
+        return bool(exists and conn.execute('select 1 from personal_ai_entries where game_id=?',(str(identifier),)).fetchone())
+
+    def resume_issued(self,conn):
+        """Rebind an issued snapshot after navigation/restart without redrawing."""
+        active=read(conn,'ai_division_active_match',{})or{}
+        if not(active.get('started')or active.get('start_reply')):return False
+        entry=self.current(conn);marker=active.get('opponent',{}).get(MARKER,{})
+        if not entry or str(entry.get('game_id'))!=str(active.get('game_id'))or marker.get('entry_id')!=entry.get('entry_id'):return False
+        if not entry.get('closed')and entry.get('process_id')==self.process_id:return True
+        entry.update(closed=False,process_id=self.process_id,started=True)
+        with conn:write(conn,ENTRY_KEY,entry)
+        return True
 
 
 def bridge(logic,entries,lock,invalidate=None,enabled=None):
@@ -186,12 +291,40 @@ def bridge(logic,entries,lock,invalidate=None,enabled=None):
     if getattr(original,'_studio_ai_entries',False):return
     def handle(self,command,request):
         with lock:
-            if enabled is not None and not enabled():return original(self,command,request)
-            if command in ('CMD_START_GAME','CMD_GET_VSCOM_GAME_RESULT') and entries.stale_callback(self.conn,request):
-                return {'msgid':command,'rqid':request.get('rqid'),'result':'ERR_INVALID_PARAM'}
-            response=original(self,command,request)
+            feature_enabled=enabled is None or enabled();session=routing(self)
+            try:
+                gid=game_id(request);owner=match_owner(self.conn,gid)if gid is not None else None
+                division=is_division(request)
+                if owner=='tournament'and division:raise ValueError('锦标赛比赛编号不能用于 AI 组别')
+                category=request.get('match_category')
+                if owner=='division'and(category and not division or event_ids(request)):
+                    raise ValueError('AI 组别比赛编号与赛事或模式不符')
+                if command in CALLBACK_COMMANDS and feature_enabled and owner!='tournament'and entries.stale_callback(self.conn,request):
+                    raise ValueError('AI 组别回调已关闭或已被另一场替换')
+                selected=owner=='division'or(division and owner is None)or(
+                    owner is None and not category and not event_ids(request)and session.mode=='division')
+                if selected and command in CALLBACK_COMMANDS:
+                    active=read(self.conn,'ai_division_active_match',{})or{}
+                    receipt=read(self.conn,'ai_division_result_'+str(gid))if gid is not None and command=='CMD_GET_VSCOM_GAME_RESULT'else None
+                    if gid is None or not receipt and str(active.get('game_id'))!=str(gid):
+                        raise ValueError('开赛或结算没有对应的 AI 组别比赛')
+                if selected and command in OPPONENT_COMMANDS and gid is not None:
+                    active=read(self.conn,'ai_division_active_match',{})or{}
+                    if str(active.get('game_id'))!=str(gid):raise ValueError('这场 AI 组别比赛已关闭，请重新进入')
+                forwarded=request
+                if selected and command in OPPONENT_COMMANDS|CALLBACK_COMMANDS:
+                    forwarded=dict(request,match_category=category or'LEAGUE_COM_CUSTOM')
+                    if feature_enabled and command in OPPONENT_COMMANDS:entries.resume_issued(self.conn)
+            except(ValueError,TypeError,KeyError)as exc:return invalid_reply(command,request,exc)
+            response=original(self,command,forwarded)
+            if isinstance(response,dict)and response.get('result')=='NOERR'and session.mode is None and session.selection is None:
+                clear_tournament_context(self.conn)
             if isinstance(response,dict) and response.get('result')=='NOERR' and command in EXIT_COMMANDS:
-                if entries.leave(self.conn,command) and invalidate:invalidate()
+                clear_tournament_context(self.conn)
+                session.division()if command=='CMD_GET_LEAGUE_COM_INFO'else session.clear()
+                if feature_enabled and entries.leave(self.conn,command) and invalidate:invalidate()
+            elif isinstance(response,dict)and response.get('result')=='NOERR'and selected and command in OPPONENT_COMMANDS|{'CMD_START_GAME'}:
+                clear_tournament_context(self.conn);session.division()
             return response
     handle._studio_ai_entries=True
     cls.handle=handle

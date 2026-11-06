@@ -15,6 +15,73 @@ LAYOUT=json.loads((RESOURCE/'native-ai-match-adapter.json').read_text('utf8'))['
 
 
 class RuntimeTests(unittest.TestCase):
+    def test_fresh_transition_is_classified_before_timeout_and_preserves_ownership(self):
+        def decoder(spec,raw):
+            state=self.decoder(spec,raw)
+            if raw['phase']==3:
+                state.update(phase='transition',execution_allowed=False,trusted_transition=True,
+                             safe_to_change=False,safe_to_queue=False,native_formation_window=False)
+            return state
+        bridge=self.channel(dict.fromkeys(runtime.REQUIRED_PROOFS,True),decoder)
+        self.snapshot(bridge);bridge.step()
+        pending=copy.deepcopy(bridge.manager.state['pending']);command=bridge.read(LAYOUT['command'],440)
+        start=bridge.last_valid_state_at
+        with patch('ai_match_runtime.time.monotonic',return_value=start+3):
+            self.snapshot(bridge,4)
+            bridge.write(LAYOUT['snapshot']+LAYOUT['snapshot.phase'],struct.pack('<I',3))
+            bridge.step()
+        bridge.word('ownership_state',4)
+        with patch('ai_match_runtime.time.monotonic',return_value=start+30):bridge.step()
+        self.assertTrue(bridge.state_is_healthy)
+        self.assertEqual(bridge.manager.state['pending']['id'],pending['id'])
+        self.assertEqual(bridge.read(LAYOUT['command'],440),command)
+        events=[json.loads(line)for p in (self.root/'outputs/efootball/ai-coaching').glob('*.jsonl')for line in p.read_text('utf8').splitlines()]
+        self.assertFalse(any(r['event']=='takeover_health'and not r['healthy']for r in events))
+        self.assertTrue(any(r['event']=='state_classification'and r['reason']=='trusted_transition_execution_suspended'for r in events))
+
+    def test_fresh_play_state_after_slow_worker_step_does_not_release_first(self):
+        bridge=self.channel(dict.fromkeys(runtime.REQUIRED_PROOFS,True),self.decoder)
+        self.snapshot(bridge);bridge.step();start=bridge.last_valid_state_at
+        with patch('ai_match_runtime.time.monotonic',return_value=start+3):
+            self.snapshot(bridge,4);bridge.step()
+        self.assertTrue(bridge.state_is_healthy)
+
+    def test_real_decoder_transition_tolerates_one_torn_read_but_releases_on_sustained_unreadability(self):
+        bridge=self.channel(dict.fromkeys(runtime.REQUIRED_PROOFS,True),runtime.decode_match)
+        self.snapshot(bridge,minute=30)
+        bridge.write(LAYOUT['snapshot']+LAYOUT['snapshot.phase'],struct.pack('<I',3))
+        bridge.step();self.assertTrue(bridge.state_is_healthy)
+        start=bridge.last_valid_state_at
+        with patch('ai_match_runtime.time.monotonic',return_value=start+30):bridge.step()
+        bridge.write(LAYOUT['snapshot'],struct.pack('<I',3))  # in-flight/torn publication
+        with patch('ai_match_runtime.time.monotonic',return_value=start+30.1):bridge.step()
+        self.assertTrue(bridge.state_is_healthy)
+        with patch('ai_match_runtime.time.monotonic',return_value=start+33):bridge.step()
+        self.assertFalse(bridge.state_is_healthy)
+
+
+    def test_unreadable_state_releases_health_and_waits_for_native_ack_before_recovery(self):
+        ready=dict.fromkeys(runtime.REQUIRED_PROOFS,True)
+        bridge=self.channel(ready,self.decoder);self.snapshot(bridge);bridge.step()
+        self.assertEqual(int.from_bytes(bridge.read(LAYOUT['state_healthy'],4),'little'),1)
+        bridge.word('ownership_state',4)
+        with patch('ai_match_runtime.time.monotonic',return_value=bridge.last_valid_state_at+3):
+            bridge.step()
+        self.assertEqual(int.from_bytes(bridge.read(LAYOUT['state_healthy'],4),'little'),0)
+        self.assertIsNone(bridge.manager.state['pending'])
+        self.snapshot(bridge,sequence=4);bridge.step()
+        self.assertEqual(int.from_bytes(bridge.read(LAYOUT['state_healthy'],4),'little'),0)
+        bridge.word('ownership_state',0);self.snapshot(bridge,sequence=6);bridge.step()
+        self.assertEqual(int.from_bytes(bridge.read(LAYOUT['state_healthy'],4),'little'),1)
+
+    def test_failed_same_entry_can_reconfigure_with_fresh_epoch_without_replaying_request(self):
+        ready=dict.fromkeys(runtime.REQUIRED_PROOFS,True)
+        bridge=self.channel(ready,self.decoder);self.snapshot(bridge);bridge.step();epoch=bridge.epoch
+        bridge.failed='injected worker exception';bridge.state_health(False,'worker failed')
+        self.assertTrue(bridge.configure(self.spec,self.root));self.assertNotEqual(bridge.epoch,epoch)
+        self.assertEqual(bridge.read(LAYOUT['command'],440),bytes(440))
+        self.assertEqual(int.from_bytes(bridge.read(LAYOUT['state_healthy'],4),'little'),0)
+
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
         self.root=Path(self.temp.name);self.buffer=bytearray(b'G'*16+bytes(32768)+b'G'*16)
@@ -58,6 +125,21 @@ class RuntimeTests(unittest.TestCase):
             self.snapshot(bridge);self.assertIsNotNone(bridge.step())
             self.assertEqual(bridge.read(LAYOUT['command'],440),bytes(440))
         self.assertEqual(self.buffer[:16],b'G'*16);self.assertEqual(self.buffer[-16:],b'G'*16)
+
+    def test_level_request_has_its_own_transport_and_receipt(self):
+        self.policy.update(score=[0,2],minute=30,current_attack_level=2)
+        def decoder(spec,raw):
+            state=self.decoder(spec,raw);state.update(score=[0,2],minute=30,current_attack_level=2)
+            return state
+        bridge=self.channel(dict.fromkeys(runtime.REQUIRED_PROOFS,True),decoder)
+        self.snapshot(bridge);bridge.step()
+        attack=bridge.read(LAYOUT['attack_command'],440)
+        self.assertEqual(struct.unpack_from('<I',attack,LAYOUT['command.kind'])[0],4)
+        self.assertEqual(struct.unpack_from('<I',attack,LAYOUT['command.attack_level'])[0],3)
+        shape=bridge.read(LAYOUT['command'],440)
+        self.assertNotEqual(shape,attack)
+        self.assertEqual(struct.unpack_from('<I',attack,LAYOUT['command.placement_count'])[0],0)
+        self.assertEqual(struct.unpack_from('<I',attack,LAYOUT['command.sub_count'])[0],0)
 
     def test_same_entry_retry_after_json_roundtrip_does_not_reset_native_epoch(self):
         self.spec['prepared']={'chase':{'mapping':{2:3,10:4}}}
@@ -135,7 +217,7 @@ class RuntimeTests(unittest.TestCase):
         self.assertIsNone(bridge.step())
         logs=list((self.root/'outputs/efootball/ai-coaching').glob('*.jsonl'))
         records=[json.loads(line)for line in logs[0].read_text('utf8').splitlines()]
-        self.assertEqual([r['event']for r in records],['configured','native_snapshot'])
+        self.assertEqual([r['event']for r in records],['configured','scope_diagnostic','native_snapshot'])
         self.assertIn('native_flag_4202',records[-1]['live'][0]);self.assertNotIn('red_card',records[-1]['live'][0])
         self.assertNotIn('raw_plan',records[-1]);self.assertIn('attack_grid',records[-1]['live'][1])
 
@@ -230,6 +312,22 @@ class RuntimeTests(unittest.TestCase):
             with self.assertLogs('ai_match_runtime',level='ERROR'):bridge.run()
         self.assertIn('storage full',bridge.failed)
         self.assertEqual(bridge.read(LAYOUT['command'],440),bytes(440))
+
+    def test_tournament_difficulty_is_opt_in_and_independent_of_automatic_coaching(self):
+        rules=dict(two_leg=False,first_leg=False,second_leg=False,extra_time=False,
+                   penalties=True,away_goals=False,away_goals_extra_time=False,prior_goals=[0,0])
+        self.spec.update(tournament_rules=rules,tournament_difficulty='HARDEST',auto_coaching=False)
+        bridge=self.channel(dict.fromkeys(runtime.REQUIRED_PROOFS,True),self.decoder)
+        self.assertFalse(bridge.execute)
+        self.assertEqual(struct.unpack('<I',bridge.read(LAYOUT['difficulty_enabled'],4))[0],1)
+        self.assertEqual(struct.unpack('<I',bridge.read(LAYOUT['difficulty_requested'],4))[0],5)
+        self.spec.pop('tournament_difficulty');self.spec.pop('tournament_rules')
+        bridge.configure(self.spec,self.root)
+        self.assertEqual(bridge.read(LAYOUT['difficulty_enabled'],4),bytes(4))
+        before=bytes(self.buffer);bad=copy.deepcopy(self.spec)
+        bad.update(tournament_rules=rules,tournament_difficulty='UNKNOWN')
+        with self.assertRaises(ValueError):bridge.configure(bad,self.root)
+        self.assertEqual(bytes(self.buffer),before)
 
 
 if __name__=='__main__':unittest.main()

@@ -1,15 +1,18 @@
 import {exportStep} from './export-errors.js';
+import {expressionPanel,expressionSpec,previewModel,applyExpressionTest} from './coach-expression.js';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $=s=>document.querySelector(s);
 
 export class CoachModelEditor {
   constructor(context){
-    Object.assign(this,context);this.sequence=0;this.scope=null;
+    Object.assign(this,context);this.sequence=0;this.scope=null;this.expressionTest={jaw:0,blink:0};
     document.addEventListener('click',e=>{const b=e.target.closest('[data-personal-coach-model]');if(b&&!this.busy){const run=()=>this.action(b.dataset.personalCoachModel);(b.dataset.personalCoachModel==='export-template'?exportStep(this.row()?.name,'导出教练 GLB 模板',run):run()).catch(error=>{this.message=error.message;this.paint();this.toast(error.message,true);});}});
     document.addEventListener('change',e=>{if(e.target.dataset.personalCoachOption)this.viewer?.setOption(e.target.dataset.personalCoachOption,e.target.checked);});
+    document.addEventListener('input',e=>{if(e.target.dataset.coachExpressionTest!=='personal')return;this.expressionTest[e.target.dataset.expressionKind]=Number(e.target.value);this.applyTest();});
+    document.addEventListener('change',e=>{if(e.target.dataset.coachExpression!=='personal'||this.busy)return;const row=this.row();if(!row?.head_model)return;this.change(()=>row.head_model.preserve_expression=e.target.checked);this.load().catch(error=>{this.message=error.message;this.paint();this.toast(error.message,true);});});
   }
   render(){return '<section class="personal-coach-model"><h3>这名自建教练的独立三维头模</h3><div id="personal-coach-model-body"><p class="note">正在读取原版头模模板…</p></div></section>';}
-  reset(){this.scope=null;this.sequence++;this.data=null;this.result=null;this.message='';this.busy=false;this.viewer?.update({model:{asset:null}});}
+  reset(){this.scope=null;this.sequence++;this.data=null;this.result=null;this.message='';this.busy=false;this.expressionTest={jaw:0,blink:0};this.viewer?.update({model:{asset:null}});}
   async activate(page){
     const row=this.row();if(page!=='coaches'||!row)return;
     const scope=row.uuid+':'+(this.resourceKey?.()||'');
@@ -33,6 +36,7 @@ export class CoachModelEditor {
       <div><h3>${head.asset_id?'已导入自制 GLB':'沿用原版头模'}</h3><p class="note">建议先导出此教练的原版 GLB，在原坐标和骨架上修改后导入。兼容的骨骼权重可以继续驱动原版表情；不同骨架只能使用头颈中性绑定，不能自动获得眨眼、张嘴等表情。</p>
       <div class="portrait-actions"><button class="button secondary" data-personal-coach-model="export-template" ${disabled}>导出原版 GLB 模板</button><button class="button primary" data-personal-coach-model="upload" ${disabled}>导入我的 GLB 脸模</button></div>
       <div class="portrait-actions"><button class="button secondary" data-personal-coach-model="preview" ${disabled}>预览当前头模</button><button class="button subtle" data-personal-coach-model="reset" ${disabled}>恢复原版头模</button></div>
+      ${expressionPanel('personal',!!head.asset_id,head.preserve_expression===true,this.expressionTest,this.busy)}
       <p class="note">导入后点击本页底部“保存教练”，再去“APK 实装”勾选这名教练，头模会随教练一起写入。</p></div></div>
       <p class="migration-status" role="status">${esc(this.busy?'正在解码、绑定并检查教练头模…':this.message||'头模将独立绑定到当前自建教练。')}</p>`;
     this.attach().catch(error=>this.toast(error.message,true));
@@ -41,10 +45,11 @@ export class CoachModelEditor {
     const stage=$('#personal-coach-model-stage');if(!stage)return;
     if(!this.module)this.module=import('./model-viewer.js');const {ModelViewer}=await this.module;
     if(!stage.isConnected||stage!==$('#personal-coach-model-stage'))return;
-    if(!this.viewer){this.viewer=new ModelViewer(meta=>{if(meta.error)this.toast(meta.error,true);});this.viewer.scene.traverse(light=>{if(light.isDirectionalLight&&light.shadow){light.shadow.bias=-.0005;light.shadow.normalBias=.02;}});}
+    if(!this.viewer){this.viewer=new ModelViewer(meta=>{if(meta.error)this.toast(meta.error,true);},()=>Promise.resolve(expressionSpec(this.result)));this.viewer.scene.traverse(light=>{if(light.isDirectionalLight&&light.shadow){light.shadow.bias=-.0005;light.shadow.normalBias=.02;}});}
     this.viewer.attach(stage);
-    if(this.result)await this.viewer.update({model:{asset:this.result.asset_id,native_source:this.result.report?.mode==='custom'?null:{path:this.result.path},scale:1,rotation:0,morphs:{}}});
+    if(this.result){await this.viewer.update(previewModel(this.result,this.row()?.head_model?.preserve_expression===true));this.applyTest();}
   }
+  applyTest(){applyExpressionTest(this.viewer,this.expressionTest,$('[data-coach-expression-notice="personal"]'));}
   async load(){
     const row=this.row();if(!row?.head_model)return;const seq=++this.sequence;
     this.busy=true;this.paint();
@@ -58,11 +63,11 @@ export class CoachModelEditor {
   async action(action){
     const row=this.row();if(!row?.head_model)return;
     if(action==='preview'){await this.load();return;}
-    if(action==='reset'){this.change(()=>row.head_model={template_path:row.head_model.template_path});await this.load();return;}
+    if(action==='reset'){this.expressionTest={jaw:0,blink:0};this.change(()=>row.head_model={template_path:row.head_model.template_path});await this.load();return;}
     if(action==='upload'){
       const f=await this.api('dialog',{category:'model'});if(!f.path||this.row()!==row)return;
       const a=await this.api('assets/import',{path:f.path,category:'model'});if(!a.id.endsWith('.glb'))throw Error('请使用内嵌贴图的 GLB 文件');
-      if(this.row()!==row)return;const head={template_path:row.head_model.template_path,asset_id:a.id};
+      if(this.row()!==row)return;const head={template_path:row.head_model.template_path,asset_id:a.id,preserve_expression:row.head_model.preserve_expression??true};
       // Validate first, so a rejected file cannot enter autosave or undo history.
       const result=await this.api('coaches/model/preview',{head_model:head});if(this.row()!==row)return;
       this.change(()=>row.head_model=head);this.result=result;this.message='自制教练头模已载入，可撤销或继续调整。';this.paint();return;

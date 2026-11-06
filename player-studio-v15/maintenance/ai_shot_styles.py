@@ -123,55 +123,82 @@ ldp x21,x30,[sp,#16]
 ldp x19,x20,[sp],#48
 ret
 ''',{'root':0x698f7e0,'game_info':0x72c3e80,'clock':0x6a4bd08})
-    b.helper('studio_ai_outside_penalty_area',f'''
+    # Shared, explicit zone result: unknown=0, inside=1, outside=2. The old
+    # boolean helper below stays fail-closed for Heavy Shot callers.
+    b.helper('studio_ai_penalty_area_zone',f'''
 stp x19,x20,[sp,#-48]!
 stp x21,x30,[sp,#16]
 mov x19,x0
-cbz x19,inside_or_unknown
-ldr x8,[x19]
-cbz x8,inside_or_unknown
-ldr w1,[x8]
+cbz x19,box_unknown
 cmp w1,#22
-b.hs inside_or_unknown
-ldr x20,[x19,#0x18]
-cbz x20,inside_or_unknown
-mov x0,x20
+b.hs box_unknown
 {call('player_info')}
-cbz x0,inside_or_unknown
+cbz x0,box_unknown
 ldr w8,[x0,#0x4f4]
 ldr w9,[x0,#0x4fc]
+mov w10,#0x7f80
+lsl w10,w10,#16
+and w11,w8,#0x7f800000
+cmp w11,w10
+b.eq box_unknown
+and w11,w9,#0x7f800000
+cmp w11,w10
+b.eq box_unknown
 stp w8,w9,[sp,#32]
-mov x0,x20
+mov x0,x19
 {call('pitch')}
-cbz x0,inside_or_unknown
+cbz x0,box_unknown
 ldr s0,[x0]
-fcmp s0,#0.0
-b.vs inside_or_unknown
-b.le inside_or_unknown
+ldr s1,min_half_length
+fcmp s0,s1
+b.vs box_unknown
+b.lt box_unknown
+ldr s1,max_half_length
+fcmp s0,s1
+b.gt box_unknown
 ldr s1,box_depth
 fsub s0,s0,s1
 ldr s1,[sp,#32]
 fabs s1,s1
 fcmp s1,s0
-b.vs inside_or_unknown
+b.vs box_unknown
 b.lt outside
 ldr s1,[sp,#36]
 fabs s1,s1
 ldr s0,box_half_width
 fcmp s1,s0
-b.vs inside_or_unknown
+b.vs box_unknown
 b.gt outside
-inside_or_unknown:
-mov w0,#0
+mov w0,#1
 b box_done
 outside:
-mov w0,#1
+mov w0,#2
+b box_done
+box_unknown:
+mov w0,#0
 box_done:
 ldp x21,x30,[sp,#16]
 ldp x19,x20,[sp],#48
 ret
-''',{'player_info':0x72c408c,'pitch':0x72c3e6c},{'box_depth':16.5,'box_half_width':20.16},
-      ['native pitch half-length and current player position; preserve native type inside either penalty area or on unknown geometry'])
+''',{'player_info':0x72c408c,'pitch':0x72c3e6c},
+      {'box_depth':16.5,'box_half_width':20.16,'min_half_length':32.,'max_half_length':70.},
+      ['native pitch half-length and finite current player X/Z; both penalty areas, line included; unknown distinct from inside'])
+    b.helper('studio_ai_outside_penalty_area','''
+cbz x0,not_outside
+ldr x8,[x0]
+cbz x8,not_outside
+ldr w1,[x8]
+ldr x0,[x0,#0x18]
+stp x29,x30,[sp,#-16]!
+bl shared_studio_ai_penalty_area_zone
+cmp w0,#2
+cset w0,eq
+ldp x29,x30,[sp],#16
+ret
+not_outside:
+mov w0,#0
+ret
+''',evidence=['Heavy Shot remains enabled only on known outside-area geometry'])
     b.helper('studio_ai_preferred_shot_style',f'''
 sub sp,sp,#480
 stp x19,x20,[sp]
@@ -217,6 +244,9 @@ mov x0,x22
 mov w1,#74
 {call('skill')}
 tbz w0,#0,snapshot
+mov x0,x19
+bl shared_studio_ai_outside_penalty_area
+cbz w0,snapshot
 orr w23,w23,#8
 snapshot:
 cbz w23,done
@@ -258,6 +288,18 @@ add x0,sp,#64
 mov w1,w23
 mov w2,#2
 mov x3,x20
+str w1,[sp,#48]
+str x3,[sp,#56]
+mov x0,x20
+{call('game_info')}
+cbz x0,none
+{call('clock')}
+mov w9,#30
+udiv w4,w0,w9
+ldr w1,[sp,#48]
+ldr x3,[sp,#56]
+add x0,sp,#64
+mov w2,#2
 bl shared_studio_ai_equal_action_draw
 mov w23,w0
 b done
@@ -280,9 +322,10 @@ ldp x19,x20,[sp]
 add sp,sp,#480
 ret
 ''',{'player_state':0x72c40b0,'abilities':0x7301ef8,'skill':0x72b39c4,
-      'game_info':0x72c3e80,'phase':0x697b60c,'player_info':0x72c408c},
+      'game_info':0x72c3e80,'phase':0x697b60c,'player_info':0x72c408c,'clock':0x6a4bd08},
       evidence=['effective match skills 51 Blitz / 58 Low Screamer / 74 Heavy Shot',
-                'one equal ticket per available skill style, separate RNG domain 2',
+                'one equal ticket per currently eligible skill style; Heavy requires known outside-box geometry before the draw',
+                'separate RNG domain 2 and current 30-tick decision window; repeated getters remain stable',
                 'single style needs no geometry snapshot; multiple styles hash only the acting player',
                 'only a native shot request is modified; no pass/dribble selection changes'])
 
@@ -391,7 +434,11 @@ b.gt done
 ldrb w8,[x20,#0xffa]
 cmp w26,#3
 b.eq heavy_power
+ldr w9,[x20,#0xff8]
+tbnz w9,#26,done
 cmp w26,#1
+b.eq controlled_type
+cmp w26,#4
 b.eq controlled_type
 cbnz w24,done
 cmp w26,#2
@@ -430,12 +477,37 @@ cmp w8,#2
 b.ne done
 mov w1,#51
 {call('skill')}
+tbnz w0,#0,controlled_zone
+cmp w26,#4
+b.ne done
+mov x0,x23
+mov w1,#7
+{call('skill')}
 tbz w0,#0,done
-ldr s0,controlled_floor
+controlled_zone:
+mov x0,x22
+mov w1,w21
+bl shared_studio_ai_penalty_area_zone
+cbz w0,done
+cmp w0,#2
+b.eq controlled_outside
+ldr s0,controlled_inside_floor
+ldr s1,controlled_inside_ceiling
+b controlled_clamp
+controlled_outside:
+ldr s0,controlled_outside_floor
+ldr s1,controlled_outside_ceiling
+controlled_clamp:
 fmax s8,s8,s0
+fmin s8,s8,s1
 str s8,[x20,#0xe7c]
 b done
 heavy_power:
+cmp w24,#3
+b.ne done
+cbnz w8,done
+ldr w9,[x20,#0xff8]
+tbz w9,#26,done
 fmov s0,#0.5
 fcmp s8,s0
 b.gt done
@@ -456,10 +528,12 @@ ret
 ''',{'game_info':0x72c3e80,'phase':0x697b60c,'action':0x72d7dc8,
       'player_state':0x72c40b0,'abilities':0x7301ef8,'skill':0x72b39c4,
       'clock':0x6a4bd08,'root':0x698f7e0,'actor':0x72c19f8},
-      {'low_ceiling':.49,'controlled_floor':.55,'heavy_floor':.65},
+      {'low_ceiling':.49,'controlled_inside_floor':.30,'controlled_inside_ceiling':.60,
+       'controlled_outside_floor':.50,'controlled_outside_ceiling':.70,'heavy_floor':.65},
       ['run after the entire original native AI behavior 25 power handler',
        'native final control mode must match the registered request subtype',
-       'selected-style ticket: low <50%, Blitz >=50%, heavy only lifts original <=50% to 65%; native mode flags unchanged'])
+       'selected-style ticket: controlled power inside30-60%, outside50-70%, keep native within range; unknown position unchanged',
+       'low <50%; heavy only lifts original <=50% to65%; native final mode flags unchanged'])
 
     b.add('studio_ai_shot_style_power',0x71a27f0,'''
 stp x19,x20,[sp,#-80]!

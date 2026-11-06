@@ -20,7 +20,8 @@ function disposeObject(root) {
 }
 
 export class ModelViewer {
-  constructor(onStatus) {
+  constructor(onStatus,previewApi=null) {
+    this.previewApi=previewApi;
     this.onStatus = onStatus;
     this.wrapper = document.createElement('div');
     this.wrapper.style.cssText = 'width:100%;height:100%;position:relative';

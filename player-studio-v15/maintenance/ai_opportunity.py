@@ -24,12 +24,18 @@ str d10,[sp,#80]
 mov x19,x0
 mov x20,x1
 mov w25,#0
+mov w16,#1
+str w16,[sp,#88]
 cbz x19,snapshot_done
 ldr x8,[x19]
 ldr x21,[x19,#0x18]
+mov w16,#2
+str w16,[sp,#88]
 cbz x8,snapshot_done
 cbz x21,snapshot_done
 ldr w22,[x8]
+mov w16,#3
+str w16,[sp,#88]
 cmp w22,#22
 b.hs snapshot_done
 str w22,[x20]
@@ -39,16 +45,26 @@ str w23,[x20,#4]
 mov x0,x21
 {call('game_info')}
 mov x24,x0
+mov w16,#4
+str w16,[sp,#88]
 cbz x24,snapshot_done
 mov x0,x24
 {call('phase')}
+mov w16,#5
+str w16,[sp,#88]
 cmp w0,#1
 b.ne snapshot_done
 mov x0,x21
 {call('pitch')}
+mov w16,#6
+str w16,[sp,#88]
 cbz x0,snapshot_done
 ldr s8,[x0]
-ldr s9,[x0,#8]
+// Native Pitch starts with half-length, half-width, goal-half-width.
+// +8 is3.66 (the goal), not the34.06-metre field half-width at+4.
+ldr s9,[x0,#4]
+mov w16,#7
+str w16,[sp,#88]
 ldr s0,min_half_length
 fcmp s8,s0
 b.vs snapshot_done
@@ -67,8 +83,12 @@ stp s8,s9,[x20,#12]
 mov x0,x21
 mov w1,w23
 {call('team_data')}
+mov w16,#8
+str w16,[sp,#88]
 cbz x0,snapshot_done
 ldrsb w8,[x0,#0x28c]
+mov w16,#9
+str w16,[sp,#88]
 cmp w8,#1
 b.eq snapshot_side
 cmn w8,#1
@@ -94,17 +114,34 @@ cbnz w0,snapshot_next
 mov x0,x21
 mov w1,w22
 {call('player_info')}
+mov w16,#10
+str w16,[sp,#88]
 cbz x0,snapshot_done
 ldr s0,[x0,#0x4f4]
 ldr s1,[x0,#0x4fc]
+// Active players may run beyond a touchline. Retain their real finite
+// positions for clearance/defensive-line estimates, without invalidating
+// the acting player's entire decision. Unknown coordinates still fail.
+fsub s4,s0,s0
+fsub s5,s1,s1
+mov w16,#11
+str w16,[sp,#88]
+fcmp s4,s5
+b.vs snapshot_done
+ldr w8,[x20]
+cmp w22,w8
+b.ne snapshot_position_valid
 fabs s2,s0
 fabs s3,s1
+mov w16,#12
+str w16,[sp,#88]
 fcmp s2,s8
 b.vs snapshot_done
 b.gt snapshot_done
 fcmp s3,s9
 b.vs snapshot_done
 b.gt snapshot_done
+snapshot_position_valid:
 str s0,[x23]
 ldr w8,[x0,#0x4ec]
 str w8,[x23,#4]
@@ -122,6 +159,8 @@ add w22,w22,#1
 cmp w22,#22
 b.lo snapshot_loop
 ldp w8,w9,[x20,#20]
+mov w16,#13
+str w16,[sp,#88]
 cmp w8,#7
 b.lo snapshot_done
 cmp w9,#7
@@ -130,10 +169,14 @@ ldr w8,[x20]
 add x9,x20,#32
 add x9,x9,w8,uxtw #4
 ldr w25,[x9,#12]
+mov w16,#14
+str w16,[sp,#88]
 cbz w25,snapshot_done
 mov x0,x21
 mov w1,w8
 {call('player_state')}
+mov w16,#15
+str w16,[sp,#88]
 cbz x0,snapshot_invalid
 {call('abilities')}
 cbz x0,snapshot_invalid
@@ -149,11 +192,13 @@ orr w9,w9,w8,lsl #10
 orr w9,w9,#0x800
 snapshot_flags:
 str w9,[x20,#28]
+str wzr,[sp,#88]
 b snapshot_done
 snapshot_invalid:
 mov w25,#0
 snapshot_done:
 mov w0,w25
+ldr w1,[sp,#88]
 ldr d10,[sp,#80]
 ldp d8,d9,[sp,#64]
 ldp x25,x30,[sp,#48]
@@ -254,6 +299,7 @@ ret
 ''', constants={'far_distance_sq':65536.})
 
     # A separate private random stream, cached per actor/domain/situation.
+    # Domain2 additionally includes the current shooting decision window.
     # It never consumes native RNG. Classes, not number of candidates, get
     # equal tickets. No qualification or native pointer is reused as data.
     b.helper('studio_ai_equal_action_draw', '''
@@ -306,6 +352,14 @@ cmp x12,x3
 b.ne draw_seed
 cmp x13,x11
 b.ne draw_next
+// Domain2 receives a shooting-decision window in w4. Keep the window as
+// a separate cache field so it cannot alias a geometry-hash change.
+cmp w2,#2
+b.ne draw_cached
+ldr w12,[x10,#24]
+cmp w12,w4
+b.ne draw_next
+draw_cached:
 ldr w0,[x10,#20]
 mov w12,#1
 lsl w12,w12,w0
@@ -364,6 +418,9 @@ draw_save:
 stp x3,x11,[x10]
 str w12,[x10,#16]
 str w0,[x10,#20]
+cmp w2,#2
+b.ne draw_return
+str w4,[x10,#24]
 draw_return:
 ret
 draw_empty:
@@ -371,7 +428,7 @@ mov w0,#0
 ret
 ''',constants={'heading_quantum':1./20.},writable={'draw_state':66*32},
       evidence=['actor/domain-separated xorshift stream, multiply-high bounded class draw',
-                'stable when quantized situation and candidate classes are unchanged; no native RNG'])
+                'candidate domains retain situation stability; shot-style domain also expires per decision window; no native RNG'])
 
     # Estimate a controllable open-body stance, using the audited native yaw
     # convention and strong-foot side. Never overwrite a body transform or
@@ -527,6 +584,16 @@ ldr w8,[x9,#12]
 cbz w8,evaluate_done
 ldr s10,[x9]
 ldr s11,[x9,#8]
+// A receiver outside the field is not a protected passing opportunity.
+// Other known off-field actors may still participate in the snapshot.
+fabs s0,s10
+ldr s1,[x19,#12]
+fcmp s0,s1
+b.gt evaluate_done
+fabs s0,s11
+ldr s1,[x19,#16]
+fcmp s0,s1
+b.gt evaluate_done
 fsub s0,s10,s8
 fsub s1,s11,s9
 fmul s0,s0,s0

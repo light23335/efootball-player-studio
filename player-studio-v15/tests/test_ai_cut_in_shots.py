@@ -31,24 +31,30 @@ class NativeAiCutInTests(unittest.TestCase):
         cls.segments=[(s['p_vaddr'],s['p_offset'],s['p_filesz'],s['p_memsz'])for s in elf.iter_segments()if s['p_type']=='PT_LOAD']
         cls.candidate=build(cls.engine)
 
-    def setup_context(self,skills=(17,),incisive=True,x=27.,z=18.,side=1,phase=1,index=7,game_word=0,patched=True,lone_wolf=False,heading=None,foot=0,fixed_class='eligible',probability=True):
+    def setup_context(self,skills=(17,),incisive=True,x=27.,z=18.,side=1,phase=1,index=7,game_word=0,patched=True,lone_wolf=False,heading=None,foot=0,fixed_class='eligible',probability=True,style_roll=0):
         self.info=0x42010100;self.root=0x42010200;self.model=0x43000000
         self.states=0x44000000;self.players=0x45000000
         slot=index if 0<=index<22 else 0
         self.ability=self.states+slot*0x2000+0x394;self.player=self.players+slot*0x1000
         self.team=0x42013000;self.pitch=0x42014000;self.game=0x42015000;self.ai=0x42001000
-        self.veto=set();self.veto_calls=[]
+        self.veto=set();self.veto_calls=[];self.on_veto=None;self.possession_draws=[]
         r=self.r
         def singleton(vm):vm.reg_write(r.UC_ARM64_REG_X0,self.model)
         def veto(vm):
             self.assertEqual(vm.reg_read(r.UC_ARM64_REG_X1),self.ctx)
-            n=vm.reg_read(r.UC_ARM64_REG_W2);self.veto_calls.append(n);vm.reg_write(r.UC_ARM64_REG_W0,int(n in self.veto))
+            n=vm.reg_read(r.UC_ARM64_REG_W2);self.veto_calls.append(n)
+            if self.on_veto:self.on_veto(vm,n)
+            vm.reg_write(r.UC_ARM64_REG_W0,int(n in self.veto))
         def fmodf(vm):
             values=[struct.unpack('<f',struct.pack('<I',vm.reg_read(reg)))[0]for reg in (r.UC_ARM64_REG_S0,r.UC_ARM64_REG_S1)]
             vm.reg_write(r.UC_ARM64_REG_S0,struct.unpack('<I',struct.pack('<f',math.fmod(*values)))[0])
         stubs={0x698f7e0:singleton,0x70e72a0:veto,0x8c211f0:fmodf}
         vm=self.machine(stubs);vm.mem_map(0x42000000,0x20000)
         vm.mem_map(self.model,0x10000);vm.mem_map(self.states,0x30000);vm.mem_map(self.players,0x20000)
+        self.ball_manager=0x47000000;vm.mem_map(self.ball_manager,0x30000)
+        vm.mem_write(self.root+0x10,struct.pack('<Q',self.ball_manager))
+        vm.mem_write(self.root+0x30,struct.pack('<Q',self.model))
+        vm.mem_write(self.ball_manager+0x28780,struct.pack('<I',slot))
         vm.mem_write(self.model+0x4d0,struct.pack('<Q',self.game))
         vm.mem_write(self.model+0x5b60,struct.pack('<Q',self.pitch))
         for team in range(2):vm.mem_write(self.model+0x3030+team*0x50,struct.pack('<Q',self.team))
@@ -65,7 +71,7 @@ class NativeAiCutInTests(unittest.TestCase):
         vm.reg_write(r.UC_ARM64_REG_SP,sp);vm.reg_write(r.UC_ARM64_REG_X29,fp)
         vm.mem_write(self.ctx,struct.pack('<Q',self.info));vm.mem_write(self.ctx+0x18,struct.pack('<Q',self.root))
         vm.mem_write(self.info,struct.pack('<I',index));vm.mem_write(fp-0x68,struct.pack('<Q',self.game))
-        vm.mem_write(self.pitch,struct.pack('<3f',52.5,0.,34.));vm.mem_write(self.team+0x28c,struct.pack('<b',side))
+        vm.mem_write(self.pitch,struct.pack('<3f',52.5,34.,3.66));vm.mem_write(self.team+0x28c,struct.pack('<b',side))
         if heading is None:heading=(math.degrees(math.atan2(52.5*side-x,-z))+(-25. if foot==0 else 25.))%360 if math.isfinite(x)and math.isfinite(z)else 0.
         self.set_slot(vm,slot,skills,incisive,x,z,lone_wolf,heading,foot)
         self.receiver=(slot//11)*11+(slot+1)%11
@@ -75,6 +81,14 @@ class NativeAiCutInTests(unittest.TestCase):
         vm.emu_start(0x70e4bfc,0x70e4c0c,count=100)
         self.selector=vm.reg_read(r.UC_ARM64_REG_X0)
         self.helpers=self.install_all(vm)if patched else {}
+        if patched and 'shared_studio_ai_possession_draw'in self.helpers:
+            def possession_draw(uc,at,size,_):
+                if at!=self.helpers['shared_studio_ai_possession_draw']:return
+                self.possession_draws.append((uc.reg_read(r.UC_ARM64_REG_W1),uc.reg_read(r.UC_ARM64_REG_W2)))
+                if style_roll is not None:
+                    uc.reg_write(r.UC_ARM64_REG_W0,style_roll)
+                    uc.reg_write(r.UC_ARM64_REG_PC,uc.reg_read(r.UC_ARM64_REG_X30))
+            vm.hook_add(self.u.UC_HOOK_CODE,possession_draw)
         # Controlled random input for focused eligibility/geometry tests.
         # Distribution/cache tests below set fixed_class=None and execute the
         # actual private PRNG. No selector or opportunity result is stubbed.
@@ -157,7 +171,7 @@ class NativeAiCutInTests(unittest.TestCase):
 
     def test_current_qualified_player_not_lost_to_unqualified_other_slot(self):
         vm=self.setup_context(index=7,x=29.,z=12.)
-        self.candidates(vm,{0:{'kind':2},1:{'kind':1}})
+        self.candidates(vm,{0:{'kind':2},1:{'kind':3,'angle':135.}})
         self.assertEqual(self.choose(vm),1)
 
     def test_other_qualified_player_cannot_grant_current_player_eligibility(self):
@@ -174,20 +188,20 @@ class NativeAiCutInTests(unittest.TestCase):
                     vm=self.setup_context(index=index,skills=(17,)if qualified else (),incisive=qualified,
                                           x=29.,z=12.,game_word=decoy)
                     self.set_slot(vm,decoy,()if qualified else (18,),not qualified,-30.,28.)
-                    self.candidates(vm,{0:{'kind':2},1:{'kind':1}})
+                    self.candidates(vm,{0:{'kind':2},1:{'kind':3,'angle':135.}})
                     self.assertEqual(self.choose(vm),int(qualified))
 
     def test_position_is_read_from_current_player_even_if_both_have_skills(self):
-        for current_x,other_x,expected in [(29.,-29.,1),(-29.,29.,0)]:
+        for current_x,other_x,expected in [(29.,53.,1),(53.,29.,0)]:
             vm=self.setup_context(index=7,x=current_x,z=12.)
             self.set_slot(vm,0,(17,),True,other_x,12.)
-            self.candidates(vm,{0:{'kind':2},1:{'kind':1}})
+            self.candidates(vm,{0:{'kind':2},1:{'kind':3,'angle':135.}})
             self.assertEqual(self.choose(vm),expected)
 
     def test_disabled_original_selector_and_enabled_select_same_world(self):
         for patched,expected in [(False,0),(True,1)]:
             vm=self.setup_context(index=7,x=29.,z=12.,patched=patched)
-            self.candidates(vm,{0:{'kind':2},1:{'kind':1}})
+            self.candidates(vm,{0:{'kind':2},1:{'kind':3,'angle':135.}})
             self.assertEqual(self.choose(vm),expected)
 
     def test_native_geometry_heading_convention(self):
@@ -253,18 +267,7 @@ class NativeAiCutInTests(unittest.TestCase):
             self.candidates(vm,{0:{'kind':2},1:{'kind':3,'mode':mode,'angle':angle}})
             self.assertEqual(self.run_helper(vm,'studio_ai_select_cut_in_candidate',self.selector,0),0)
 
-    def test_existing_shot_promoted_inside_sensible_angle_and_distance(self):
-        vm=self.setup_context(x=29.,z=12.)
-        self.candidates(vm,{0:{'kind':2},1:{'kind':1}})
-        self.assertEqual(self.run_helper(vm,'studio_ai_select_cut_in_candidate',self.selector,0),1)
 
-    def test_shot_veto_target_distance_angle_and_chip_preserved(self):
-        for row,x,z,veto in [({'kind':1},29.,12.,True),({'kind':1,'target':(0.,0.,0.)},29.,12.,False),
-                              ({'kind':1,'mode':2},29.,12.,False),({'kind':1},20.,12.,False),
-                              ({'kind':1},40.,12.,False),({'kind':1},29.,25.,False)]:
-            vm=self.setup_context(x=x,z=z);self.veto={1}if veto else set()
-            self.candidates(vm,{0:{'kind':2},1:row})
-            self.assertEqual(self.run_helper(vm,'studio_ai_select_cut_in_candidate',self.selector,0),0)
 
     def test_only_current_native_priority_list_is_searched(self):
         vm=self.setup_context(x=29.,z=12.)
@@ -305,7 +308,7 @@ class NativeAiCutInTests(unittest.TestCase):
     def test_choice_wrapper_runs_original_selector_and_preserves_abi(self):
         for incisive,expected in [(True,1),(False,0)]:
             vm=self.setup_context(incisive=incisive,x=29.,z=12.)
-            self.candidates(vm,{0:{'kind':2},1:{'kind':1}})
+            self.candidates(vm,{0:{'kind':2},1:{'kind':3,'angle':135.}})
             r=self.r;sp=vm.reg_read(r.UC_ARM64_REG_SP)
             for n in range(19,30):vm.reg_write(getattr(r,'UC_ARM64_REG_X'+str(n)),0x12340000+n)
             vm.reg_write(r.UC_ARM64_REG_X0,self.selector);stop=0x2003f000
@@ -320,6 +323,76 @@ class NativeAiCutInTests(unittest.TestCase):
         vm=self.setup_context(x=29.,z=12.);self.candidates(vm,{0:{'kind':2}})
         vm.mem_write(self.ai+0x48a8,struct.pack('<I',31))
         self.assertEqual(self.run_helper(vm,'studio_ai_select_cut_in_candidate',self.selector,0),0)
+
+    def selection_result(self,vm,original=0):
+        from action_trace import decode_event
+        selected=self.run_helper(vm,'studio_ai_select_cut_in_candidate',self.selector,original)
+        summary=[vm.reg_read(getattr(self.r,'UC_ARM64_REG_W'+str(i)))for i in range(1,10)]
+        raw=bytearray(192);struct.pack_into('<Q',raw,0,1)
+        struct.pack_into('<4I',raw,84,6,original,selected,6)
+        struct.pack_into('<3I',raw,136,*summary[:3]);struct.pack_into('<6I',raw,152,*summary[3:])
+        return selected,decode_event(raw)['candidate']['selection']
+
+
+    def test_original_pitch_layout_keeps_field_width_separate_from_goal_width(self):
+        # Values read from the user's live native Pitch object. Native
+        # 6cb3378 also consumes its first TWO floats with LDP S0,S1.
+        vm=self.setup_context();snapshot=0x4200a000
+        vm.mem_write(self.pitch,struct.pack('<8f',52.56,34.06,3.66,2.44,47.06,9.16,36.14,20.12))
+        self.assertEqual(self.run_helper(vm,'studio_ai_opportunity_snapshot',self.ctx,snapshot),1)
+        length,width=struct.unpack('<2f',vm.mem_read(snapshot+12,8))
+        self.assertAlmostEqual(length,52.56,places=4);self.assertAlmostEqual(width,34.06,places=4)
+        self.candidates(vm,{0:{'kind':2},1:{'kind':3,'angle':135.}})
+        selected,result=self.selection_result(vm)
+        self.assertEqual((selected,result['reason']),(1,'forced_incisive_route'))
+
+
+
+    def test_lone_wolf_diagnostics_include_shot_route_kept_native_and_no_usable_case(self):
+        vm=self.setup_context(skills=(),incisive=False,lone_wolf=True)
+        self.candidates(vm,{0:{'kind':2},1:{'kind':1}})
+        selected,result=self.selection_result(vm)
+        self.assertEqual((selected,result['reason']),(1,'lone_wolf_shot'))
+        self.assertTrue(result['lone_wolf_branch']);self.assertFalse(result['incisive_branch'])
+        vm=self.setup_context(skills=(18,),incisive=False,lone_wolf=True,x=25.,z=0.,heading=240.)
+        self.candidates(vm,{0:{'kind':2},1:{'kind':1},2:{'kind':3,'angle':75.}})
+        self.assertEqual(self.selection_result(vm)[1]['reason'],'lone_wolf_route')
+        vm=self.setup_context(skills=(),incisive=False,lone_wolf=True)
+        self.candidates(vm,{0:{'kind':1}})
+        self.assertEqual(self.selection_result(vm)[1]['reason'],'lone_wolf_kept_native')
+        vm=self.setup_context(skills=(18,),lone_wolf=True,x=29.,z=12.,heading=240.)
+        self.set_slot(vm,11,(),False,30.,12.)
+        self.candidates(vm,{0:{'kind':2},1:{'kind':1},2:{'kind':3,'angle':90.}});self.veto={1,2}
+        self.assertEqual(self.selection_result(vm)[1]['reason'],'lone_wolf_no_usable_route_or_shot')
+
+    def observed_context(self,**kwargs):
+        from build_action_observer import build
+        import action_trace
+        original=self.candidate;machine=self.machine;combined=build(self.engine,False,True)
+        def expanded(stubs):
+            vm=machine(stubs);vm.mem_map(0x49010000,0x100000);return vm
+        self.candidate=combined;self.machine=expanded
+        try:vm=self.setup_context(**kwargs)
+        finally:self.candidate=original;self.machine=machine
+        self.simulation_clock(vm,[100])
+        bundle=combined['bundles'][0];index=bundle['action_trace_writable_index']
+        ring=0x49000000+sum((size+15)//16*16 for _,size in bundle['writable_fixups'][:index])
+        vm.mem_write(ring,struct.pack('<II',action_trace.MAGIC,1))
+        reader=action_trace.RingReader(lambda at,size:bytes(vm.mem_read(ring+at,size)))
+        return vm,reader
+
+    def test_combined_candidate_wrapper_logs_actual_reason_and_keeps_return_and_frame(self):
+        for wolf,expected in ((False,'forced_incisive_route'),(True,'lone_wolf_shot')):
+            vm,reader=self.observed_context(skills=(17,),incisive=True,lone_wolf=wolf)
+            self.candidates(vm,{0:{'kind':2},1:{'kind':1}if wolf else {'kind':3,'angle':135.}});sp=vm.reg_read(self.r.UC_ARM64_REG_SP)
+            self.assertEqual(self.choose(vm),1);self.assertEqual(vm.reg_read(self.r.UC_ARM64_REG_SP),sp)
+            rows=[r for r in reader.drain()if r['event']=='ai_candidate_choice']
+            self.assertEqual(len(rows),2)
+            self.assertNotIn('selection',rows[0]['candidate'])
+            result=rows[1]['candidate']['selection']
+            self.assertEqual(result['reason'],expected);self.assertEqual(result['candidate_count'],2)
+            self.assertEqual(result['lone_wolf_branch'],wolf)
+            self.assertEqual(rows[1]['candidate']['selected_id'],1)
 
     def test_original_match_table_and_ai_decoder_agree(self):
         pairs=dict(struct.iter_unpack('<II',self.engine[0xc7fec0:0xc7fec0+0x250]))
@@ -375,40 +448,14 @@ class NativeAiCutInTests(unittest.TestCase):
         self.assertEqual(self.estimate(vm,0)[1]&2,2)
         self.assertEqual(self.choose(vm),0)
 
-    def test_large_opportunity_gap_keeps_native_choice_even_when_shot_estimate_is_higher(self):
-        vm=self.setup_context(x=29.,z=12.)
-        self.set_slot(vm,self.receiver,(),False,1.,10.)
-        self.candidates(vm,{0:{'kind':2},1:{'kind':1}})
-        a,af=self.estimate(vm,0);b,bf=self.estimate(vm,1)
-        self.assertEqual((af&7,bf&7),(1,5));self.assertGreater(b-a,8.)
-        self.assertEqual(self.choose(vm),0)
 
-    def test_same_candidate_ranks_do_not_mean_same_opportunity(self):
-        for receiver_x,expected in [(27.5,1),(1.,0)]:
-            vm=self.setup_context(x=29.,z=12.)
-            self.set_slot(vm,self.receiver,(),False,receiver_x,10.)
-            self.candidates(vm,{0:{'kind':2},1:{'kind':1}},[0,1])
-            self.assertEqual(self.choose(vm),expected)
 
     def test_close_opportunity_can_be_later_in_list_without_rank_as_score(self):
         vm=self.setup_context(x=29.,z=12.)
-        self.candidates(vm,{0:{'kind':2},1:{'kind':1},2:{'kind':4}},[0,2,1])
+        self.candidates(vm,{0:{'kind':2},1:{'kind':3,'angle':135.},2:{'kind':4}},[0,2,1])
         self.assertEqual(self.choose(vm),1)
 
-    def test_shot_preparation_pressure_and_nearby_blocker_preserve_pass(self):
-        for x,z in [(30.,12.),(34.,10.)]:
-            vm=self.setup_context(x=29.,z=12.)
-            self.set_slot(vm,11,(),False,x,z)
-            self.candidates(vm,{0:{'kind':2},1:{'kind':1}})
-            self.assertEqual(self.estimate(vm,1)[1],0)
-            self.assertEqual(self.choose(vm),0)
 
-    def test_inward_dribble_with_blocked_path_is_not_promoted(self):
-        vm=self.setup_context()
-        self.set_slot(vm,11,(),False,29.8,15.2)
-        self.candidates(vm,{0:{'kind':2},1:{'kind':3,'angle':135.}})
-        self.assertEqual(self.estimate(vm,1)[1],0)
-        self.assertEqual(self.choose(vm),0)
 
     def test_invalid_opponent_geometry_or_incomplete_team_keeps_native(self):
         for incomplete in [False,True]:
@@ -424,14 +471,80 @@ class NativeAiCutInTests(unittest.TestCase):
             vm=self.setup_context(x=29.,z=12.)
             self.set_slot(vm,11,(),False,30.,12.)
             vm.mem_write(self.game+field+11,b'\0'if field==0x4202 else b'\1')
-            self.candidates(vm,{0:{'kind':2},1:{'kind':1}})
+            self.candidates(vm,{0:{'kind':2},1:{'kind':3,'angle':135.}})
             self.assertEqual(self.choose(vm),1)
+
+    def native_selection_scene(self,**kw):
+        """Execute the original continuation predicate with explicit scene inputs."""
+        machine=self.machine
+        def native_machine(stubs):
+            stubs=dict(stubs);stubs.pop(0x70e72a0,None)
+            stubs[0x72c4068]=lambda v:v.reg_write(self.r.UC_ARM64_REG_X0,self.player)
+            stubs[0x6acd5a8]=lambda v:v.reg_write(self.r.UC_ARM64_REG_W0,0)
+            return machine(stubs)
+        self.machine=native_machine
+        try:vm=self.setup_context(**kw)
+        finally:self.machine=machine
+        self.native_predicate_calls=[]
+        def watch(v,pc,size,data):
+            if pc==0x70e72a0:self.native_predicate_calls.append(v.reg_read(self.r.UC_ARM64_REG_W2))
+        vm.hook_add(self.u.UC_HOOK_CODE,watch)
+        return vm
+
+    def test_native_vetoed_protected_pass_cannot_suppress_an_available_shot(self):
+        vm=self.native_selection_scene(skills=(17,),lone_wolf=True,incisive=True,x=29.,z=12.,fixed_class=None,probability=None)
+        vm.mem_write(self.ai+0x5478,struct.pack('<I',3));vm.mem_write(self.ai+0x5478+0x3a,b'\1')
+        self.set_slot(vm,6,(),False,44.,4.)
+        self.candidates(vm,{20:{'kind':2},0:{'kind':1}})
+        for heading in range(0,360,20):
+            vm.mem_write(self.player+0x4ec,struct.pack('<f',heading))
+            if self.choose(vm)==0:break
+        self.assertEqual(self.choose(vm),0)
+        self.candidates(vm,{20:{'kind':2},0:{'kind':1},13:{'kind':2,'recipient':6}})
+        self.assertTrue(self.estimate(vm,13)[1]&2)
+        self.native_predicate_calls=[]
+        self.assertEqual(self.choose(vm),0)
+        self.assertNotIn(13,self.native_predicate_calls)
+
+    def test_active_style_does_not_evaluate_protected_passing_alternatives(self):
+        vm=self.native_selection_scene(skills=(17,),lone_wolf=True,x=29.,z=12.)
+        self.set_slot(vm,6,(),False,44.,4.)
+        self.candidates(vm,{20:{'kind':2},0:{'kind':1},13:{'kind':2,'recipient':6}})
+        self.assertTrue(self.estimate(vm,13)[1]&2)
+        self.assertEqual(self.choose(vm),0)
+        self.assertNotIn(13,self.native_predicate_calls)
+
+    def test_unrelated_finite_offfield_actor_keeps_snapshot_and_both_styles_active(self):
+        for wolf in (False,True):
+            for slot,x,z in ((6,-15.,34.1),(21,-15.,-34.1),(21,-52.6,20.)):
+                vm=self.native_selection_scene(skills=(17,),incisive=True,lone_wolf=wolf,x=29.,z=12.)
+                self.candidates(vm,{20:{'kind':2},0:{'kind':1}})
+                self.set_slot(vm,slot,(),False,x,z)
+                snapshot=0x4200a000
+                self.assertEqual(self.run_helper(vm,'studio_ai_opportunity_snapshot',self.ctx,snapshot),1)
+                row=struct.unpack('<3fI',vm.mem_read(snapshot+32+slot*16,16))
+                self.assertAlmostEqual(row[0],x,places=4);self.assertAlmostEqual(row[2],z,places=4)
+                self.assertEqual(row[3],1)
+                self.assertEqual(struct.unpack('<II',vm.mem_read(snapshot+20,8)),(11,11))
+                self.assertEqual(self.choose(vm),0 if wolf else 20)
+
+    def test_unknown_positions_and_offfield_acting_player_still_keep_native(self):
+        for slot,x,z in ((21,float('nan'),12.),(21,float('inf'),12.),(7,29.,34.1)):
+            vm=self.setup_context();self.set_slot(vm,slot,(),True,x,z)
+            self.assertEqual(self.run_helper(vm,'studio_ai_opportunity_snapshot',self.ctx,0x4200a000),0)
+
+    def test_offfield_receiver_is_not_a_protected_pass(self):
+        vm=self.setup_context(skills=(17,),lone_wolf=True,x=29.,z=12.)
+        self.set_slot(vm,6,(),False,52.6,4.)
+        self.candidates(vm,{20:{'kind':2},0:{'kind':1},13:{'kind':2,'recipient':6}})
+        self.assertEqual(self.estimate(vm,13)[1],0)
+        self.assertEqual(self.choose(vm),0)
 
     def test_snapshot_and_unique_candidates_evaluated_once_without_reentering_native_actions(self):
         vm=self.setup_context(x=29.,z=12.)
-        self.candidates(vm,{0:{'kind':2},1:{'kind':1}},[0,1,1,0])
+        self.candidates(vm,{0:{'kind':2},1:{'kind':3,'angle':135.}},[0,1,1,0])
         counts={'snapshot':0,'evaluate':0}
-        watched={self.helpers['shared_studio_ai_opportunity_'+k]:k for k in counts}
+        watched={self.helpers['shared_studio_ai_opportunity_snapshot']:'snapshot',self.helpers['shared_studio_ai_forced_style_evaluate']:'evaluate'}
         def observe(vm,address,size,data):
             if address in watched:counts[watched[address]]+=1
             self.assertNotIn(address,[0x70ea37c,0x7108a7c,0x71319ac,0x71328c8,0x68d83cc])
@@ -439,23 +552,23 @@ class NativeAiCutInTests(unittest.TestCase):
         self.assertEqual(self.choose(vm),1)
         self.assertEqual(counts,{'snapshot':1,'evaluate':2})
 
-    def test_estimates_do_not_leak_between_decisions(self):
+    def test_native_veto_is_rechecked_during_the_same_possession(self):
         vm=self.setup_context(x=29.,z=12.)
-        self.candidates(vm,{0:{'kind':2},1:{'kind':1}})
+        self.candidates(vm,{0:{'kind':2},1:{'kind':3,'angle':135.}})
         self.assertEqual(self.choose(vm),1)
-        self.set_slot(vm,11,(),False,34.,10.)
+        self.veto={1}
         self.assertEqual(self.choose(vm),0)
 
-    def test_equal_estimates_use_first_native_alternative_not_last(self):
-        vm=self.setup_context(x=29.,z=12.)
+    def test_equal_style_scores_keep_first_native_alternative_not_last(self):
+        vm=self.setup_context(lone_wolf=True,x=29.,z=12.)
         self.candidates(vm,{0:{'kind':2},1:{'kind':1},2:{'kind':1}},[0,1,2])
         self.assertEqual(self.choose(vm),1)
 
     def test_decision_is_read_only_for_native_match_records(self):
         vm=self.setup_context(x=29.,z=12.)
-        self.candidates(vm,{0:{'kind':2},1:{'kind':1}})
+        self.candidates(vm,{0:{'kind':2},1:{'kind':3,'angle':135.}})
         regions=[(self.ai,0x6000),(self.game,0x5000),(self.model,0x10000),
-                 (self.states,0x30000),(self.players,0x20000)]
+                 (self.states,0x30000),(self.players,0x20000),(self.ball_manager,0x30000)]
         before=[bytes(vm.mem_read(p,n))for p,n in regions]
         self.assertEqual(self.choose(vm),1)
         self.assertEqual([bytes(vm.mem_read(p,n))for p,n in regions],before)
@@ -510,13 +623,41 @@ class NativeAiCutInTests(unittest.TestCase):
             vm=self.setup_context(skills=(18,),incisive=False,x=25.*side,z=0.,side=side)
             self.assertEqual(self.run_helper(vm,'studio_ai_cut_in_profile',self.ctx),3)
             self.candidates(vm,{0:{'kind':2},1:{'kind':1,'target':(52.5*side,0.,0.)}})
-            self.assertEqual(self.choose(vm),1)
+            self.assertEqual(self.choose(vm),0)
 
     def test_lone_wolf_can_prefer_normal_long_shot_without_special_shooting_skills(self):
         vm=self.setup_context(skills=(),incisive=False,lone_wolf=True,x=29.,z=12.)
         self.candidates(vm,{0:{'kind':2},1:{'kind':1}})
         self.assertEqual(self.run_helper(vm,'studio_ai_cut_in_profile',self.ctx),1)
         self.assertEqual(self.choose(vm),1)
+
+    def test_authored_card_transport_enables_real_lone_wolf_selection_without_native_ai_flags(self):
+        from build_skill_effects_v2 import build as build_skills
+        from native_skill_effects import bind_lone_wolf_cards
+        cid=90159685099299
+        self.candidate=copy.deepcopy(type(self).candidate)
+        skill=build_skills(self.engine)['bundles'][0]
+        skill=bind_lone_wolf_cards(skill,[{'identity':{'card_id':cid},'ai_playing_styles':['lone_wolf']}])
+        self.candidate['bundles'].append(skill)
+        vm=self.setup_context(skills=(),incisive=False,lone_wolf=False,x=29.,z=12.)
+        self.candidates(vm,{0:{'kind':2},1:{'kind':1}})
+        self.assertEqual(self.run_helper(vm,'studio_ai_cut_in_profile',self.ctx),0)
+        source,key=0x41001000,0x123456789ab
+        vm.mem_write(source+0x38,struct.pack('<I',0xfffffffd))
+        vm.mem_write(source+0x40,struct.pack('<Q',cid^key))
+        def native_identity_secret(uc,at,size,_):
+            if at==0x6774740:
+                uc.reg_write(self.r.UC_ARM64_REG_X0,key)
+                uc.reg_write(self.r.UC_ARM64_REG_PC,uc.reg_read(self.r.UC_ARM64_REG_X30))
+        vm.hook_add(self.u.UC_HOOK_CODE,native_identity_secret)
+        vm.reg_write(self.r.UC_ARM64_REG_X19,self.ability)
+        vm.reg_write(self.r.UC_ARM64_REG_X20,source)
+        vm.emu_start(0x6a74f08,0x6a74f0c,count=10000)
+        self.assertEqual(struct.unpack('<I',vm.mem_read(self.ability+0xd4,4))[0],0x80)
+        chosen,diagnostic=self.selection_result(vm)
+        self.assertEqual(chosen,1)
+        self.assertTrue(diagnostic['lone_wolf_branch'])
+        self.assertEqual(diagnostic['reason'],'lone_wolf_shot')
 
     def test_lone_wolf_prioritises_ready_shot_over_protected_pass(self):
         vm=self.setup_context(skills=(18,),lone_wolf=True,x=29.,z=12.)
@@ -549,6 +690,7 @@ class NativeAiCutInTests(unittest.TestCase):
         vm=self.setup_context(skills=(18,),lone_wolf=True,x=29.,z=12.,heading=240.)
         self.set_slot(vm,11,(),False,30.,12.)
         self.candidates(vm,{0:{'kind':2},1:{'kind':1},2:{'kind':3,'angle':90.}})
+        self.veto={1,2}
         self.assertEqual(self.choose(vm),0)
 
     def test_already_chosen_blitz_shot_prefers_controlled_at_any_heading(self):
@@ -629,7 +771,7 @@ class NativeAiCutInTests(unittest.TestCase):
             self.assertEqual(struct.unpack('<I',vm.mem_read(out+8,4))[0],expected)
             self.assertEqual(bytes(vm.mem_read(out+12,12)),data[12:])
 
-    def power_fixture(self,subtype=0,skills=(51,58,74),distance=20.,patched=True,phase_value=1):
+    def power_fixture(self,subtype=0,skills=(51,58,74),distance=20.,patched=True,phase_value=1,x=29.,z=12.,half_length=52.5):
         """Run the WHOLE native behavior 25; only world/scene inputs stubbed."""
         r=self.r;control,info,model=0x42000000,0x42010000,0x43000000
         phase,pitch,team,player,ball,ai,action,rng=[0x42011000+n*0x1000 for n in range(8)]
@@ -650,6 +792,8 @@ class NativeAiCutInTests(unittest.TestCase):
         vm.mem_write(info+4,struct.pack('<I',7));vm.mem_write(info+0x30,struct.pack('<Q',model))
         vm.mem_write(team+0x28c,b'\1');vm.mem_write(action+4,struct.pack('<II3f',25,subtype,52.5,0.,1.))
         vm.mem_write(rng,struct.pack('<I',1));vm.mem_write(model+0x228e8,struct.pack('<f',distance))
+        vm.mem_write(pitch,struct.pack('<3f',half_length,34.,3.66))
+        vm.mem_write(player+0x4f4,struct.pack('<3f',x,0.,z))
         vm.mem_write(state+0x394+0xc0,sum(1<<n for n in skills).to_bytes(12,'little'))
         vm.mem_write(actor+0x2a38,b'\7');vm.mem_write(actor+0x4620,struct.pack('<Q',model))
         self.helpers=self.install_all(vm)if patched else {}
@@ -661,7 +805,7 @@ class NativeAiCutInTests(unittest.TestCase):
                 vm.reg_write(getattr(r,'UC_ARM64_REG_X'+str(n)),v)
             vm.reg_write(r.UC_ARM64_REG_X30,0x2003f000)
             vm.emu_start(self.helpers['shared_studio_ai_style_ticket'],0x2003f000,count=10000)
-        self.power_addresses=dict(control=control,info=info,model=model,phase=phase,state=state,actor=actor,action=action)
+        self.power_addresses=dict(control=control,info=info,model=model,phase=phase,state=state,actor=actor,action=action,player=player,pitch=pitch)
         return vm
 
     def native_power(self,vm):
@@ -680,8 +824,64 @@ class NativeAiCutInTests(unittest.TestCase):
                 self.assertEqual(before[:0xe7c],after[:0xe7c]);self.assertEqual(before[0xe80:],after[0xe80:])
                 self.assertEqual((return0,q0),(return1,q1))
                 base=struct.unpack_from('<f',before,0xe7c)[0];value=struct.unpack_from('<f',after,0xe7c)[0]
-                expected=min(base,.49)if subtype==0 else max(base,.55)if subtype==1 else (.65 if base<=.5 else base)if subtype==3 else base
+                expected=min(base,.49)if subtype==0 else min(max(base,.50),.70)if subtype==1 else (.65 if base<=.5 else base)if subtype==3 else base
                 self.assertAlmostEqual(value,expected,places=6,msg=(distance,subtype))
+
+    def test_controlled_power_clamps_both_penalty_areas_and_inclusive_lines(self):
+        cases=[(45.,3.,52.5,.30,.60),(-45.,-3.,52.5,.30,.60),
+               (36.,20.16,52.5,.30,.60),(-36.,-20.16,52.5,.30,.60),
+               (35.99,3.,52.5,.50,.70),(-35.99,3.,52.5,.50,.70),
+               (45.,20.17,52.5,.50,.70),(-45.,-20.17,52.5,.50,.70),
+               (43.5,3.,60.,.30,.60),(43.49,3.,60.,.50,.70)]
+        for x,z,length,low,high in cases:
+            vm=self.power_fixture(1,x=x,z=z,half_length=length);a=self.power_addresses
+            vm.mem_write(a['control']+0xff8,struct.pack('<I',2<<16))
+            for power in (.01,.29,.30,.49,.50,.55,.60,.61,.70,.71,1.):
+                vm.mem_write(a['control']+0xe7c,struct.pack('<f',power))
+                before=bytes(vm.mem_read(a['control'],0x1100))
+                self.run_helper(vm,'studio_ai_bound_shot_power',a['info'],a['control'])
+                after=bytes(vm.mem_read(a['control'],0x1100))
+                self.assertAlmostEqual(struct.unpack_from('<f',after,0xe7c)[0],min(max(power,low),high),places=6,msg=(x,z,length,power))
+                self.assertEqual(before[:0xe7c],after[:0xe7c]);self.assertEqual(before[0xe80:],after[0xe80:])
+
+    def test_controlled_power_unknown_geometry_keeps_native(self):
+        for x,z,length in ((float('nan'),3.,52.5),(29.,float('nan'),52.5),
+                           (float('inf'),3.,52.5),(29.,float('inf'),52.5),
+                           (45.,3.,0.),(45.,3.,float('nan')),(45.,3.,float('inf')),
+                           (45.,3.,31.),(45.,3.,71.)):
+            vm=self.power_fixture(1,x=x,z=z,half_length=length);a=self.power_addresses
+            vm.mem_write(a['control']+0xff8,struct.pack('<I',2<<16))
+            vm.mem_write(a['control']+0xe7c,struct.pack('<f',.9))
+            before=bytes(vm.mem_read(a['control'],0x1100))
+            self.run_helper(vm,'studio_ai_bound_shot_power',a['info'],a['control'])
+            self.assertEqual(bytes(vm.mem_read(a['control'],0x1100)),before,(x,z,length))
+
+    def test_controlled_power_requires_fresh_ticket_and_final_native_control_mode(self):
+        for subtype,flags,ticket,clock,skills in ((1,0,1,100,(51,)),(1,(2<<16)|(1<<26),1,100,(51,)),
+                (0,0,1,100,(51,)),(2,3<<16,1,100,(51,)),(3,1<<26,1,100,(51,)),
+                (4,1<<16,1,100,(51,)),(1,2<<16,0,100,(51,)),(1,2<<16,1,103,(51,)),
+                (1,2<<16,4,100,()),(1,2<<16,1,100,(7,))):
+            vm=self.power_fixture(subtype,skills);a=self.power_addresses
+            self.run_helper(vm,'studio_ai_style_ticket',a['model'],7,1,ticket,100);self.power_clock=clock
+            vm.mem_write(a['control']+0xff8,struct.pack('<I',flags));vm.mem_write(a['control']+0xe7c,struct.pack('<f',.9))
+            before=bytes(vm.mem_read(a['control'],0x1100))
+            self.run_helper(vm,'studio_ai_bound_shot_power',a['info'],a['control'])
+            self.assertEqual(bytes(vm.mem_read(a['control'],0x1100)),before,(subtype,flags,ticket,clock,skills))
+
+    def test_legacy_curler_rewrite_also_carries_controlled_zone_power_permission(self):
+        vm=self.setup_context(skills=(17,),x=29.,z=12.);r=self.r;self.simulation_clock(vm,[100])
+        self.assertEqual(self.style_request(vm,0),1)
+        self.assertEqual(self.run_helper(vm,'studio_ai_style_ticket',self.model,7,0,0,100),4)
+        info,control,action=0x4201b000,0x42018000,0x4201c000
+        vm.mem_write(info+4,struct.pack('<I',7));vm.mem_write(info+0x30,struct.pack('<Q',self.model))
+        vm.mem_write(action+4,struct.pack('<II',25,1));vm.mem_write(control+0xff8,struct.pack('<I',2<<16))
+        vm.mem_write(control+0xe7c,struct.pack('<f',.9))
+        def current_action(v,at,size,_):
+            if at==0x72d7dc8:
+                v.reg_write(r.UC_ARM64_REG_X0,action);v.reg_write(r.UC_ARM64_REG_PC,v.reg_read(r.UC_ARM64_REG_X30))
+        vm.hook_add(self.u.UC_HOOK_CODE,current_action)
+        self.run_helper(vm,'studio_ai_bound_shot_power',info,control)
+        self.assertAlmostEqual(struct.unpack('<f',vm.mem_read(control+0xe7c,4))[0],.70,places=6)
 
     def test_original_engine_subtype_dispatch_separates_chip_and_stunning(self):
         # Execute the complete UNPATCHED behavior-25 handler. Its low rodata
@@ -708,11 +908,94 @@ class NativeAiCutInTests(unittest.TestCase):
                 vm=self.power_fixture(subtype);a=self.power_addresses
                 self.run_helper(vm,'studio_ai_style_ticket',a['model'],7,1,3,100)
                 vm.mem_write(a['control']+0xe7c,struct.pack('<f',power))
-                vm.mem_write(a['control']+0xff8,struct.pack('<I',0x12345678))
+                flags=(1<<26) if subtype==3 else 0
+                vm.mem_write(a['control']+0xff8,struct.pack('<I',flags))
                 self.run_helper(vm,'studio_ai_bound_shot_power',a['info'],a['control'])
                 value=struct.unpack('<f',vm.mem_read(a['control']+0xe7c,4))[0]
-                self.assertAlmostEqual(value,.65 if power<=.5 else power,places=6)
-                self.assertEqual(bytes(vm.mem_read(a['control']+0xff8,4)),struct.pack('<I',0x12345678))
+                self.assertAlmostEqual(value,.65 if subtype==3 and power<=.5 else power,places=6)
+                self.assertEqual(bytes(vm.mem_read(a['control']+0xff8,4)),struct.pack('<I',flags))
+
+    def simulation_clock(self,vm,clock):
+        def tick(v,address,size,data):
+            if address==0x6a4bd08:
+                v.reg_write(self.r.UC_ARM64_REG_W0,clock[0])
+                v.reg_write(self.r.UC_ARM64_REG_PC,v.reg_read(self.r.UC_ARM64_REG_X30))
+        vm.hook_add(self.u.UC_HOOK_CODE,tick)
+
+    def style_request(self,vm,original=2):
+        out=0x42009000;data=struct.pack('<III3f',9,25,original,52.5,1.,0.)
+        vm.mem_write(out,data);self.run_helper(vm,'studio_ai_prefer_curled_shot',out,self.ctx)
+        self.assertEqual(bytes(vm.mem_read(out+12,12)),data[12:])
+        return struct.unpack('<I',vm.mem_read(out+8,4))[0]
+
+    def test_same_actor_geometry_rerolls_styles_across_windows_and_holds_within_one(self):
+        vm=self.setup_context(skills=(18,24,25),fixed_class=None,probability=None)
+        clock=[0];self.simulation_clock(vm,clock);counts={0:0,1:0,2:0,3:0}
+        passed=0
+        for n in range(2000):
+            clock[0]=n*30
+            gate=self.run_helper(vm,'studio_ai_probability_gate',self.ctx,1);passed+=gate
+            value=self.style_request(vm);counts[value]+=1
+            self.assertEqual(self.style_request(vm),value)
+        self.assertEqual(passed,1604)  # Existing 80% stream is unchanged.
+        self.assertEqual(counts[2],2000-passed)
+        for kind in (0,1,3):self.assertTrue(400<counts[kind]<650,counts)
+
+    def test_heavy_is_removed_before_inside_box_draw_without_losing_other_styles(self):
+        results=[]
+        for skills in ((18,24),(18,24,25)):
+            vm=self.setup_context(skills=skills,x=45.,z=3.,fixed_class=None)
+            clock=[0];self.simulation_clock(vm,clock);counts={0:0,1:0}
+            sequence=[]
+            for n in range(600):
+                clock[0]=n*30;value=self.style_request(vm)
+                self.assertIn(value,(0,1));counts[value]+=1;sequence.append(value)
+            for count in counts.values():self.assertTrue(220<count<380,counts)
+            results.append(sequence)
+        self.assertEqual(results[0],results[1],'An ineligible Heavy skill must not occupy a ticket')
+
+    def test_cancelled_heavy_clears_old_ticket_and_preserves_full_native_power(self):
+        for subtype in (0,1,2,4):
+            vm=self.power_fixture(subtype,skills=(74,),distance=10.);a=self.power_addresses
+            ctx,info=0x42028000,0x42028100
+            vm.mem_write(ctx,struct.pack('<Q',info));vm.mem_write(ctx+0x18,struct.pack('<Q',a['model']))
+            vm.mem_write(info,struct.pack('<I',7))
+            vm.mem_write(0x42014000+0x4f4,struct.pack('<3f',45.,0.,3.))
+            vm.mem_write(0x42012000,struct.pack('<3f',52.5,34.,3.66))
+            while not self.run_helper(vm,'studio_ai_probability_gate',ctx,1):self.power_clock+=30
+            self.run_helper(vm,'studio_ai_style_ticket',a['model'],7,1,0,self.power_clock)
+            before=self.native_power(vm)
+            self.run_helper(vm,'studio_ai_style_ticket',a['model'],7,1,3,self.power_clock)
+            self.run_helper(vm,'studio_ai_prefer_curled_shot',a['action'],ctx)
+            self.assertEqual(struct.unpack('<I',vm.mem_read(a['action']+8,4))[0],subtype)
+            self.assertEqual(self.run_helper(vm,'studio_ai_style_ticket',a['model'],7,0,0,self.power_clock),0)
+            vm.mem_write(0x42018000,struct.pack('<I',1))
+            self.assertEqual(self.native_power(vm),before,'Cancelled conversion must preserve every native output')
+            for power in (.3,.5,.501):
+                vm.mem_write(a['control']+0xe7c,struct.pack('<f',power))
+                self.run_helper(vm,'studio_ai_bound_shot_power',a['info'],a['control'])
+                self.assertAlmostEqual(struct.unpack('<f',vm.mem_read(a['control']+0xe7c,4))[0],power,places=6)
+
+    def test_stale_heavy_ticket_cannot_change_nonstunning_final_control(self):
+        for subtype,flags in ((0,0),(1,2<<16),(2,3<<16),(4,1<<16),(3,0),(3,(1<<26)|(2<<16))):
+            vm=self.power_fixture(subtype);a=self.power_addresses
+            self.run_helper(vm,'studio_ai_style_ticket',a['model'],7,1,3,100)
+            vm.mem_write(a['control']+0xff8,struct.pack('<I',flags))
+            vm.mem_write(a['control']+0xe7c,struct.pack('<f',.3))
+            before=bytes(vm.mem_read(a['control'],0x1100))
+            self.run_helper(vm,'studio_ai_bound_shot_power',a['info'],a['control'])
+            self.assertEqual(bytes(vm.mem_read(a['control'],0x1100)),before,(subtype,flags))
+
+    def test_unknown_heavy_geometry_keeps_other_eligible_skill_and_no_heavy_ticket(self):
+        vm=self.setup_context(skills=(18,25),x=float('nan'),fixed_class=None)
+        self.assertEqual(self.style_request(vm),1)
+
+    def test_nonshot_request_invalidates_a_prior_style_ticket(self):
+        vm=self.setup_context(skills=(25,));out=0x42009000
+        self.run_helper(vm,'studio_ai_style_ticket',self.model,7,1,3,0)
+        vm.mem_write(out,struct.pack('<III3f',9,22,0,52.5,1.,0.))
+        self.run_helper(vm,'studio_ai_prefer_curled_shot',out,self.ctx)
+        self.assertEqual(self.run_helper(vm,'studio_ai_style_ticket',self.model,7,0,0,0),0)
 
     def test_shot_probability_rejection_preserves_shot_but_not_restored_203_candidate_policy(self):
         vm=self.setup_context(skills=(18,24,25),probability=False)
@@ -817,7 +1100,8 @@ class AiCutInIntegrationTests(unittest.TestCase):
         resource=SOURCE/'resources/native-ai-cut-in-shots.json'
         if not resource.is_file():self.skipTest('candidate resource not promoted yet')
         data=json.loads(resource.read_text('utf8'));self.assertEqual(data['revision'],module.REVISION)
-        self.assertTrue(data['experimental']);self.assertEqual(len(data['hooks']),4)
+        self.assertTrue(data['experimental']);self.assertEqual(len(data['hooks']),5)
+        self.assertIn(0x6acd550,{h['address'] for h in data['hooks']})
         with self.assertRaisesRegex(ValueError,'接口不同'):module.hooks(io.BytesIO(b'not an engine'))
 
 

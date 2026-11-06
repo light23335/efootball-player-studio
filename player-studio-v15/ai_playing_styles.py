@@ -29,6 +29,17 @@ def validate(values):
  return [k for k in OPTIONS if k in values]
 
 
+def definition_value(definition):
+ """Current definitions and pre-extension shared/incremental definitions.
+
+ An explicit empty top-level list is an edit, and must not resurrect owned
+ flags. Old definitions may legitimately carry the list only in owned data.
+ """
+ values=definition.get('ai_playing_styles')
+ if values is None:values=(definition.get('owned') or {}).get('ai_playing_styles',[])
+ return validate(values)
+
+
 def from_record(row):
  if len(row)!=400:raise ValueError('AI 比赛风格的原生球员记录长度不兼容')
  bits=int.from_bytes(row,'little')

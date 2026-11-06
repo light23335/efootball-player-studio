@@ -2,7 +2,7 @@
 import io,struct,sys,unittest
 from pathlib import Path
 sys.path[:0]=[str(Path(__file__).resolve().parents[1]),str(Path(__file__).parent)]
-from native_equipment import patch_sleeves
+from native_equipment import patch_sleeves,validate
 ENGINE=Path(__file__).resolve().parents[2]/'.work/xi-v17-gameplay-compare/v17-engine.so'
 
 @unittest.skipUnless(ENGINE.is_file(),'requires audited original V17 engine')
@@ -39,6 +39,24 @@ class NativeEquipmentTests(unittest.TestCase):
   wrong=(int.from_bytes(short,'little')|(2<<134)).to_bytes(64,'little')
   self.assertEqual(self.decode(wrong,0)[0],0)
   self.assertEqual(self.decode(patch_sleeves(wrong,{'sleeves':'long'}),0)[0],1)
+
+ def test_original_decoder_observes_socks_without_changing_sleeves_or_other_bits(self):
+  row=bytes(range(64))
+  for sock,want in [('standard',0),('long',1),('short',2)]:
+   for sleeve in ('keep','seasonal','short','long'):
+    result=patch_sleeves(row,{'socks':sock,'sleeves':sleeve})
+    changed=int.from_bytes(row,'little')^int.from_bytes(result,'little')
+    self.assertEqual(changed&~((3<<130)|(3<<126)),0)
+    vm=self.machine({});r=self.r
+    for at in(0x42000000,0x43000000,0x44000000):vm.mem_map(at,0x10000)
+    vm.mem_write(0x43000000,result)
+    for reg,value in((r.UC_ARM64_REG_X0,0x42000000),(r.UC_ARM64_REG_X1,0x43000008),
+                      (r.UC_ARM64_REG_X2,0),(r.UC_ARM64_REG_X25,0x43000008)):
+     vm.reg_write(reg,value)
+    vm.emu_start(0x68d200c,0x68d2088,count=1000)
+    self.assertEqual(struct.unpack('<I',vm.mem_read(0x42000054,4))[0],want)
+  self.assertEqual(patch_sleeves(row,{'socks':'keep'}),row)
+  with self.assertRaisesRegex(ValueError,'球袜'):validate({'socks':'reserved'})
 
  def test_original_boots_reader_handles_full_card_and_private_alias_without_changing_stock(self):
   vm=self.machine({});r=self.r;table=0x42000000;data=0x43000000

@@ -1,0 +1,94 @@
+{
+  "name": "tournament_chance_button",
+  "body_hex": "800300b4620300b4430300b43f1400710803005409c049f98a0300583f010aeb830200546a0300583f010aeb22020054fd7bbea9f35301a9f30303aae00302aa01c39e52c18ea0729012005800023fd6e00313aa21c39e52c18ea072f011005800023fd6f35341a9fd7bc2a8c0035fd6fd7bbaa9fc0b00f9fa6702a9f85f03a91011005800021fd6002f68590000000000105e5f00000000ff830cd1e00700a9e20f01a9e41702a9e61f03a9e82704a9ea2f05a9ec3706a9ee3f07a9f04708a9f24f09a9f4570aa9f65f0ba9f8670ca9fa6f0da9fc770ea9fe7b00f9e00708ade20f09ade4170aade61f0bade8270cadea2f0dadec370eadee3f0fadf04710adf24f11adf45712adf65f13adf86714adfa6f15adfc7716adfe7f17ad11423bd5f18301f92a010035b50500b4a9c249f90b0a00583f010beb23050054eb0900583f010bebc2040054f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c91b006005800021fd6f18341f911421bd5e00748ade20f49ade4174aade61f4bade8274cadea2f4dadec374eadee3f4fadf04750adf24f51adf45752adf65f53adf86754adfa6f55adfc7756adfe7f57ade00740a9e20f41a9e41742a9e61f43a9e82744a9ea2f45a9ec3746a9ee3f47a9f04748a9f24f49a9f4574aa9f65f4ba9f8674ca9fa6f4da9fc774ea9fe7b40f9ff830c915002005800021fd6002f68590000000000105e5f00000000324d4f49445554530000000000000000980000000000000078fe1e0800000000585b58030000000020165803000000003c16580300000000",
+  "absolute_fixups": [
+    [
+      664,
+      136248952
+    ],
+    [
+      672,
+      56122200
+    ],
+    [
+      680,
+      56104480
+    ],
+    [
+      688,
+      56104508
+    ]
+  ],
+  "assembly": "entry_tournament_chance_labels:\n\n    cbz x0,local_0_fallback\n    cbz x2,local_0_fallback\n    cbz x3,local_0_fallback\n    cmp w1,#5\n    b.hi local_0_fallback\n    ldr x9,[x0,#0x1380]\n    ldr x10,local_0_first_agent\n    cmp x9,x10\n    b.lo local_0_fallback\n    ldr x10,local_0_last_agent\n    cmp x9,x10\n    b.hs local_0_fallback\n    stp x29,x30,[sp,#-32]!\n    stp x19,x20,[sp,#16]\n    mov x19,x3\n    mov x0,x2\n    mov w1,#63000\n    movk w1,#1142,lsl #16\n    ldr x16,native_81efe78\n    blr x16\n    mov x0,x19\n    mov w1,#63001\n    movk w1,#1142,lsl #16\n    ldr x16,native_81efe78\n    blr x16\n    ldp x19,x20,[sp,#16]\n    ldp x29,x30,[sp],#32\n    ret\nlocal_0_fallback:\n    stp x29,x30,[sp,#-0x60]!\n    str x28,[sp,#0x10]\n    stp x26,x25,[sp,#0x20]\n    stp x24,x23,[sp,#0x30]\n    ldr x16,native_3585b58\n    br x16\n.align 3\nlocal_0_first_agent: .quad 1500000000\nlocal_0_last_agent: .quad 1600000000\n\n.align 3\n\nentry_tournament_empty_chance_option:\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\n    cbnz w10,local_1_chance_option\n    cbz x21,local_1_no_option\n    ldr x9,[x21,#0x1380]\n    ldr x11,local_1_first_agent\n    cmp x9,x11\n    b.lo local_1_no_option\n    ldr x11,local_1_last_agent\n    cmp x9,x11\n    b.hs local_1_no_option\nlocal_1_chance_option:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\n\n    ldr x16,native_3581620\n    br x16\nlocal_1_no_option:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\n\n    ldr x16,native_358163c\n    br x16\n.align 3\nlocal_1_first_agent: .quad 1500000000\nlocal_1_last_agent: .quad 1600000000\n\n.align 3\n\n.quad 6004517954967784754\n.quad entry_tournament_chance_labels\n.quad entry_tournament_empty_chance_option\n\n.align 3\nnative_81efe78: .quad 136248952\nnative_3585b58: .quad 56122200\nnative_3581620: .quad 56104480\nnative_358163c: .quad 56104508\n\n.align 3\n",
+  "code": "entry_tournament_chance_labels:\n\n    cbz x0,local_0_fallback\n    cbz x2,local_0_fallback\n    cbz x3,local_0_fallback\n    cmp w1,#5\n    b.hi local_0_fallback\n    ldr x9,[x0,#0x1380]\n    ldr x10,local_0_first_agent\n    cmp x9,x10\n    b.lo local_0_fallback\n    ldr x10,local_0_last_agent\n    cmp x9,x10\n    b.hs local_0_fallback\n    stp x29,x30,[sp,#-32]!\n    stp x19,x20,[sp,#16]\n    mov x19,x3\n    mov x0,x2\n    mov w1,#63000\n    movk w1,#1142,lsl #16\n    ldr x16,native_81efe78\n    blr x16\n    mov x0,x19\n    mov w1,#63001\n    movk w1,#1142,lsl #16\n    ldr x16,native_81efe78\n    blr x16\n    ldp x19,x20,[sp,#16]\n    ldp x29,x30,[sp],#32\n    ret\nlocal_0_fallback:\n    stp x29,x30,[sp,#-0x60]!\n    str x28,[sp,#0x10]\n    stp x26,x25,[sp,#0x20]\n    stp x24,x23,[sp,#0x30]\n    ldr x16,native_3585b58\n    br x16\n.align 3\nlocal_0_first_agent: .quad 1500000000\nlocal_0_last_agent: .quad 1600000000\n\n.align 3\n\nentry_tournament_empty_chance_option:\nsub sp,sp,#800\nstp x0,x1,[sp,#0]\nstp x2,x3,[sp,#16]\nstp x4,x5,[sp,#32]\nstp x6,x7,[sp,#48]\nstp x8,x9,[sp,#64]\nstp x10,x11,[sp,#80]\nstp x12,x13,[sp,#96]\nstp x14,x15,[sp,#112]\nstp x16,x17,[sp,#128]\nstp x18,x19,[sp,#144]\nstp x20,x21,[sp,#160]\nstp x22,x23,[sp,#176]\nstp x24,x25,[sp,#192]\nstp x26,x27,[sp,#208]\nstp x28,x29,[sp,#224]\nstr x30,[sp,#240]\nstp q0,q1,[sp,#256]\nstp q2,q3,[sp,#288]\nstp q4,q5,[sp,#320]\nstp q6,q7,[sp,#352]\nstp q8,q9,[sp,#384]\nstp q10,q11,[sp,#416]\nstp q12,q13,[sp,#448]\nstp q14,q15,[sp,#480]\nstp q16,q17,[sp,#512]\nstp q18,q19,[sp,#544]\nstp q20,q21,[sp,#576]\nstp q22,q23,[sp,#608]\nstp q24,q25,[sp,#640]\nstp q26,q27,[sp,#672]\nstp q28,q29,[sp,#704]\nstp q30,q31,[sp,#736]\nmrs x17,nzcv\nstr x17,[sp,#768]\n\n    cbnz w10,local_1_chance_option\n    cbz x21,local_1_no_option\n    ldr x9,[x21,#0x1380]\n    ldr x11,local_1_first_agent\n    cmp x9,x11\n    b.lo local_1_no_option\n    ldr x11,local_1_last_agent\n    cmp x9,x11\n    b.hs local_1_no_option\nlocal_1_chance_option:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\n\n    ldr x16,native_3581620\n    br x16\nlocal_1_no_option:\nldr x17,[sp,#768]\nmsr nzcv,x17\nldp q0,q1,[sp,#256]\nldp q2,q3,[sp,#288]\nldp q4,q5,[sp,#320]\nldp q6,q7,[sp,#352]\nldp q8,q9,[sp,#384]\nldp q10,q11,[sp,#416]\nldp q12,q13,[sp,#448]\nldp q14,q15,[sp,#480]\nldp q16,q17,[sp,#512]\nldp q18,q19,[sp,#544]\nldp q20,q21,[sp,#576]\nldp q22,q23,[sp,#608]\nldp q24,q25,[sp,#640]\nldp q26,q27,[sp,#672]\nldp q28,q29,[sp,#704]\nldp q30,q31,[sp,#736]\nldp x0,x1,[sp,#0]\nldp x2,x3,[sp,#16]\nldp x4,x5,[sp,#32]\nldp x6,x7,[sp,#48]\nldp x8,x9,[sp,#64]\nldp x10,x11,[sp,#80]\nldp x12,x13,[sp,#96]\nldp x14,x15,[sp,#112]\nldp x16,x17,[sp,#128]\nldp x18,x19,[sp,#144]\nldp x20,x21,[sp,#160]\nldp x22,x23,[sp,#176]\nldp x24,x25,[sp,#192]\nldp x26,x27,[sp,#208]\nldp x28,x29,[sp,#224]\nldr x30,[sp,#240]\nadd sp,sp,#800\n\n    ldr x16,native_358163c\n    br x16\n.align 3\nlocal_1_first_agent: .quad 1500000000\nlocal_1_last_agent: .quad 1600000000\n\n.align 3\n\n.quad 6004517954967784754\n.quad entry_tournament_chance_labels\n.quad entry_tournament_empty_chance_option",
+  "functions": {
+    "native_81efe78": 136248952,
+    "native_3585b58": 56122200,
+    "native_3581620": 56104480,
+    "native_358163c": 56104508
+  },
+  "constants": {},
+  "deferred_shared_refs": [],
+  "writable": {},
+  "writable_fixups": [],
+  "evidence": [],
+  "address": 56122184,
+  "file_offset": 56105800,
+  "expected_hex": "fd7bbaa9fc0b00f9fa6702a9f85f03a9f65704a9f44f05a9fd030091ff430ad158d03bd5081740f93f140071a8831ff868160054f60300aa20008052f30303aa",
+  "entry_offset": 0,
+  "extra_entries": [
+    {
+      "name": "tournament_empty_chance_option",
+      "address": 56104476,
+      "file_offset": 56088092,
+      "expected_hex": "0a01003402000014081100911f0109ebe02c00540a0140b95f11007161ffff54f7eb46a9ff021aeb60350054e8e30291092101910ac10091e90300f909810191",
+      "entry_offset": 152
+    }
+  ],
+  "helper_entries": {},
+  "revision": "tournament-chance-ui-v2-zero-count-initialization",
+  "source_engine_sha256": "efd257d9e41b622d6ecb8f51f7b0a8ee8820113fd427c5572025df1c8eecc7b8",
+  "body_sha256": "ac5b60034d87d6531850bca1d8f7adb80fc43c90ac5272e8a6ada52232e99868",
+  "native_probes": [
+    {
+      "file_offset": 136232568,
+      "expected_hex": "ff4301d1fd7b02a9f51b00f9f44f04a9fd83009155d03bd5f30300aaa81640f9e0030091f4030091a8831ff8ff7f00a9ff0b00f9cfffff97e80340398a0240b2"
+    },
+    {
+      "file_offset": 56105912,
+      "expected_hex": "c1c249f9e2430191"
+    },
+    {
+      "file_offset": 56106172,
+      "expected_hex": "a8648052e00314aa6890a07201011c326ba83195e8274e29"
+    },
+    {
+      "file_offset": 56109364,
+      "expected_hex": "fd7bbca9fc5f01a9f65702a9f44f03a9fd030091ff0308d157d03bd5f50300aae81640f9f30302aaf40301aaa8831ff816c049f92000805213051495c00200b4"
+    },
+    {
+      "file_offset": 56109632,
+      "expected_hex": "e82740b9a8faff3581728052e00314aa0146a07209a531950d000014e82340b9"
+    },
+    {
+      "file_offset": 56087996,
+      "expected_hex": "e87741f9e97b41f91f0109ebe0010054ea0308aa4b0140b97f0d0071802a00544a1100915f0109eb61ffff54ea0308aa4b0140b97f110071a02900544a1100915f0109eb61ffff54eaab42b95f05007188010054ea034c39aa000035ea7b41b90a01003402000014081100911f0109ebe02c00540a0140b95f11007161ffff54f7eb46a9ff021aeb60350054e8e30291092101910ac10091e90300f90981019108e10191e9ab00a9e80f00f9e8830291080140b2e81f00f9e8230291130140b206000014e02340f9e7230094f7720091ff021aeb00330054f6a34ba91f0116eb60010054f80308aa04000014e80318aa1f0316ebc0000054098f5e3889ff073600815ff805d8e697f9ffff17e8a34339f66300f9e86b00fdff630339ffff1b2948020037ffd30179e803443988020036e88b40f91f010039ff8700f9e863443948020036e89740f91f010039ff9300f9e8c3443908020036e8a340f91f010039ff9f00f90d000014e87f40f91f010039ff7b00f9e8034439c8fd0737ff030279e863443908fe0737ff330279e8c3443948fe0737ff630279e0e7076fe8e30291ff230539ff530539ffdf00b9004109fce87f41b9e0af00fdff6301b9ff930539ff630339e8000034e98341b91f01096b8100005428008052e863033950000014e10240b9e0a3059122f1fd941f080071e0e300b901020054e8830291e0a30591f4f2fd94eaa74aa9e0230291e8834239eb1f40f91f01007208fd41d36101899a02018a9a4c15e797e8834239c80200371700001481628052e0830291618fa072e20317aaff7f0aa9ff5b00f99e16e797e8834239e95b40f91f010072e81f40f91801899ae00318aa1f695a95e20300aae0230291e10318aa3715e797e883423968000036e05b40f9a4d7e697f6234ca9df0208ebe0010054ea2749a9e82342391f01007208fd41d37902899a1c018a9a9f4300b1425500549f5b00f128010054887b1f53f80316aa081700380d000014e0e30291e1230291361ef097100000149b0f40b2e1031f2a6007009167d7e697f80300aa680b0091dc8200a9c80200f9e00318aae10319aae2031caae6685a95c86200911f6b3c38e86300f9e0120091e2634339e123029180f0fd94f6234ca9df0208ebe0010054ea2749a9e82342391f01007208fd41d37902899a1c018a9a9f4300b1225000549f5b00f128010054887b1f53f80316aa081700380d000014e0e30291e12302910e1ef097100000149b0f40b2e1031f2a600700913fd7e697f80300aa680b0091dc8200a9c80200f9e00318aae10319aae2031caabe685a95c86200911f6b3c38e86300f9e80240b9e9634339e8df00b9e8124039e8230539e80a40b9e84f01b9e80e40b9e85301b9e8424039e8530539e81640b9e85b01b9e81a40b9ff6b00f9e85f01b9e80240b91f050071e8979f1ae8d700b9a9030035e8e340b9080500511f0d007128030054ebb5fe906b713191890000106a69683829090a8b20011fd6e20f41a9e00315aa210080520e000014e20740f9e00315aae30f40f96100805209000014e38b40a9e00315aa8100805205000014e20340f9e00315aae30f40f94100805244100094e85b43b9e1e30291b8ce49f91f050071a8d249f9e9179f1a1f0308ebe993053920e1ff54e00318aa6d1d009408c30291a8ce09f9f7720091ff021aebe1e0ff549d00001448018052e0a3059100e4006fff1701f9ff1b01f9e86b01b9e8a3059108a10591ff1f01f9ff3b01f9ff4301f9008100ad0001803de8270991ff3f01f9ff4b01f900f18f3ce8e70891ff4f01f9ff5301f900f18f3ce8a70891ff5b01f9ff6301f9ff5f01f9ff8f01f9ff8701f9ff8b01f9e0828d3ce0828e3ce0828f3c6082853c6082863c6082873c6082883c6082893c60828a3c00f18f3ce775e997e8234a3928bbff35dbfdff17e1e30291e00315aa220080523c1e0094e87741f9e97b41f9e02340f91f0109eb60020054ea0308aa4b0140b97f0d0071a00100544a1100915f0109eb61ffff5404000014081100911f0109eb000100540a0140b95f11007161ffff54680080520200001448008052e8d700b9b7ce49f9e1e30291a8d249f9ffd300b9ff0208ebc0000054e00317aa1a1d0094e8c20291a8ce09f94d000014982200944b000014e1e30291e00315aa2200805236008052131e009488b5feb0e95b43b9b7ce49f9e1e30291f6df00b9092d47fd3f050071a8d249f9e9179f1ae96b00fdff0208ebe9930539c0000054e00317aa011d0094e8c20291a8ce09f903000014e02340f97e220094e8ab42b91f050071e8050054e9034c39e87b41b94900003568050034e97741f9ea7b41f93f010aebe00000542b0140b97f11007180040054291100913f010aeb61ffff541f090071e30300546082cd3ce85342b900b8b14e0900261e2801080b1f05007100030054e8e340b9c8020035e0e302919e1d0094e82343b9e0a30591e86301b9b2a1ff97f703002ae1e30291e00315aae203172ad81d0094e85b43b9e96b00fdf7df00b91f050071e8179f1ae893053980000054e1e30291e02340f9b91c0094"
+    },
+    {
+      "file_offset": 56120356,
+      "expected_hex": "fd7bbaa9fc0b00f9fa6702a9f85f03a9f65704a9f44f05a9fd030091ff0309d158d03bd5f40300aa081740f9f30301aaa8831ff815c049f920008052e22700b9ffff00a9ff0f00f953fa1395800600b4001440f954a51395e10315aa20b51395e10300aae00301913754e997e86340b96809003481628052e0a30091e2930091618fa072ffff02a9f5a30091ff1f00f973f7e697e8a34039aa0240b2e91f40f91f0100725501899ae00315aaf4495a95e20300aae0230091e10315aa0cf6e697e8a3403968000036e01f40f979b8e69779a240a93f0308eb00090054eb2741a9ea230091e82340394a0140b21f01007208fd41d35601899a15018b9abf4200b162190054bf5a00f128090054a87a1f53f70319aae81600384d00001448018052e003019100e4006fff7f10a9ff8b00f9e84300b9e803019109a10591ffff14a9ffaf00f9ffff16a9ffbf00f9ffff18a9ffcf00f9ffff1ea9fff300f9e083863ce083873c0081843c0081853c0081863c0081873c0081883c0081893c00818a3c208100ad2001803d00810ead0071803d4057e997e86340b9e8f6ff35a11f8052e0230091c18ea072f42300912a9a319577a240a9ff0208eb20080054ea2741a98b0240b2e82340391f01007208fd41d37501899a14018a9a9f4200b1a21200549f5a00f1c8070054887a1f53f60317aac816003842000014e1230091e00313aad2feef97e00314aa8efbff9740030037e0030191e1230091b4d0fd9477a240a9ff0208eb6103005458000014ba0e40b2e1031f2a40070091fab7e697f70300aa480b0091358300a9280300f9e00317aae10316aae20315aa79495a9528630091ff6a3538680600f9e00314aa75fbff9700fd0736e12740b9e023009162aa40b9c8d0fd9477a240a9ff0208ebe0070054eb2741a9ea230091e82340394a0140b21f01007208fd41d35501899a14018b9a9f4200b1e305005459555a95e1230091e00313aaa1feef97e8fb41b9090500513f090071a902005419000014990e40b2e1031f2a20070091ceb7e697f60300aa280b0091f48200a9e80200f9e00316aae10315aae20314aa4d495a95e8620091df6a3438680600f9e8fb41b9090500513f090071c8000054894b8052e0230091a990a0720101090bc799319577a240a9ff0208eb20020054eb2741a9ea230091e82340394a0140b21f01007208fd41d35501899a14018b9a9f4200b1420600549f5a00f1a8010054887a1f53f60317aac816003811000014e1230091e00313aa6efeef97e003019147ede897e8234039a802003716000014990e40b2e1031f2a200700919bb7e697f60300aa280b0091f48200a9e80200f9e00316aae10315aae20314aa1a495a95e8620091df6a3438680600f9e003019133ede897e823403968000036e00f40f9aeb7e697081740f9a9835ff81f0109eb81010054ff030991f44f45a9f65744a9f85f43a9fa6742a9fc0b40f9fd7bc6a8c0035fd6fc545a95fb545a95fa545a95"
+    },
+    {
+      "address": 12791384,
+      "file_offset": 12791384,
+      "expected_hex": "0000000003000000"
+    }
+  ],
+  "execution_proof": {
+    "independent_instruction_probe": true,
+    "gameplay_validated": false,
+    "original_zero_count_and_positive_count_builder_executed": true,
+    "scope_and_state_preservation_verified": true
+  },
+  "scope": "Reserved tournament chance IDs; initialize the original chance option at count0 without changing count, currency or prices"
+}

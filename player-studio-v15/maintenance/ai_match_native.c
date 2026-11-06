@@ -29,6 +29,9 @@ typedef struct {
     uptr plan_edited,multi_formation,activate_plan,apply_plan,attack_level,attack_reference;
     uptr card_metadata,abilities,aptitude,set_piece,set_overlap,queue_row,queue_remove,get_attack,entry_stamina;
     uptr discipline,injury,set_captain;
+    uptr match_params,set_extra,set_pk,set_two_leg,set_first_leg,set_second_leg,set_prior_goals,set_away_goals;
+    uptr cpu_params,set_cpu_pair,set_team_cpu_pair;
+    uptr queue_erase,queue_destroy,monotonic_clock;
 } Imports;
 SECTION(".text.imports") volatile Imports imports={
     0x72c3e28,0x72c404c,0x72c3e80,0x72c3f2c,0x73044a0,0x6991db8,
@@ -39,7 +42,9 @@ SECTION(".text.imports") volatile Imports imports={
     0x72b4db8,0x72b4e00,0x72b4ef8,0x72b4e48,0x72b4ea0,
     0x72b4f54,0x72b4f6c,0x72b4ca4,0x6a77cd0,0x6c512e0,0x6c5133c,
     0x72f3174,0x68fbea0,0x72b3658,0x72b4fc0,0x72b4fe8,0x72eb08c,0x72eb3b4,0x6ad3e64,0x6905d94,
-    0x72f3010,0x72f3008,0x72b4fa4
+    0x72f3010,0x72f3008,0x72b4fa4,
+    0x72c3eb0,0x72ea650,0x72ea658,0x72ea688,0x72ea690,0x72ea698,0x72ea6a0,0x72ea6dc,
+    0x72c3f70,0x72e63f8,0x731c674,0x72eb3ac,0x72eae50,0x8c1bc40
 };
 
 typedef struct {
@@ -79,6 +84,7 @@ typedef struct {
 typedef struct {
     u32 sequence,calls,team,roster_count,reason,reserved;
     Identity actual[NPLAYERS];
+    u64 callback_root,roster;
 } ScopeDiagnostic;
 typedef struct {
     u32 configuration_sequence,enabled,auto_execute,heartbeat;
@@ -100,6 +106,34 @@ typedef struct {
     u32 plan_field_mask;
     u32 diagnostic_enabled;
     ScopeDiagnostic diagnostic;
+    /* Appended, so the previously verified coaching transport stays intact.
+     * Rules are an explicit per-fixture opt-in, independent of auto coaching. */
+    u32 rules_enabled,rules_two_leg,rules_first_leg,rules_second_leg;
+    u32 rules_prior_home,rules_prior_away,rules_extra,rules_pk,rules_away_goals,rules_away_extra;
+    u32 rules_applied;
+    u64 rules_epoch;
+    u32 difficulty_enabled,difficulty_requested,difficulty_applied;
+    u32 difficulty_before_offense,difficulty_before_defense;
+    u32 difficulty_after_offense,difficulty_after_defense;
+    u64 difficulty_epoch;
+    Command attack_command;
+    u64 attack_ack_id;
+    u32 attack_ack_status,attack_rejection_reason;
+    u64 last_attack_command,attack_epoch;
+    uptr attack_root;
+    /* Health is published only after a fresh, decoded scoped snapshot.
+     * Waiting plans have no native queue ownership until a real legal window. */
+    u32 state_healthy,ownership_state,ownership_reason,ownership_sequence;
+    Command waiting;
+    uptr waiting_root,waiting_owner,pending_owner;
+    u32 waiting_period,pending_period,owned_pair_count;
+    u32 owned_in[2],owned_out[2];
+    u32 state_field_mask,state_period;
+    u64 state_epoch;
+    u64 last_heartbeat_ns;
+    float pending_clock_seen;
+    /* Explicit tournament-only fallback, never a replacement aptitude. */
+    u32 tournament_relaxed_aptitude;
 } Bus;
 _Static_assert(sizeof(Bus)<=BUS_BYTES,"Bus overflow");
 SECTION(".text.bus") volatile uptr bus_pointer=0x5354ee0000000000ULL;
@@ -122,7 +156,15 @@ SECTION(".text.layout") const u32 channel_layout[]={
     OFF(Command,incoming),OFF(Command,outgoing),OFF(Command,placement),
     OFF(Command,captain),OFF(Command,set_piece),OFF(Command,overlap),
     OFF(Bus,diagnostic_enabled),OFF(Bus,diagnostic),sizeof(ScopeDiagnostic),
-    OFF(Snapshot,yellow_count),OFF(Snapshot,direct_red),OFF(Snapshot,injury_state),OFF(Snapshot,current_attack_level)
+    OFF(Snapshot,yellow_count),OFF(Snapshot,direct_red),OFF(Snapshot,injury_state),OFF(Snapshot,current_attack_level),
+    OFF(Bus,rules_enabled),OFF(Bus,rules_applied),OFF(Bus,rules_epoch),
+    OFF(Bus,difficulty_enabled),OFF(Bus,difficulty_requested),OFF(Bus,difficulty_applied),
+    OFF(Bus,difficulty_before_offense),OFF(Bus,difficulty_before_defense),
+    OFF(Bus,difficulty_after_offense),OFF(Bus,difficulty_after_defense),OFF(Bus,difficulty_epoch),
+    OFF(Bus,attack_command),OFF(Bus,attack_ack_id),OFF(Bus,attack_ack_status),OFF(Bus,attack_rejection_reason),
+    OFF(Bus,state_healthy),OFF(Bus,ownership_state),OFF(Bus,ownership_reason),OFF(Bus,ownership_sequence),
+    OFF(Bus,state_field_mask),OFF(Bus,state_period),OFF(Bus,state_epoch),
+    OFF(Bus,tournament_relaxed_aptitude)
 };
 
 static void barrier(void){__asm__ volatile("dmb ish":::"memory");}
@@ -135,10 +177,23 @@ static void copy_bytes(volatile void *dst,const volatile void *src,u32 count){
     volatile u8 *d=dst;const volatile u8 *s=src;
     for(u32 i=0;i<count;++i)d[i]=s[i];
 }
+static void release_owned(uptr self,u32 reason);
+static int coach_lease(uptr self,u32 *order);
+static void ownership(u32 state,u32 reason){
+    volatile Bus *b=BUS;
+    if(b->ownership_state!=state||b->ownership_reason!=reason){
+        u32 seq=(b->ownership_sequence+2)&~1u;b->ownership_sequence=seq|1u;barrier();
+        b->ownership_state=state;b->ownership_reason=reason;barrier();b->ownership_sequence=seq;
+    }
+}
 
 /* A roster match remains valid after original substitutions reorder entries.
  * Do not compare only low player IDs: serials and every catalogue variant are
  * significant here, and no duplicate physical or expected identity is allowed.
+ * The root stored by native6ce2d94 is the callback context: native6ce2dcc
+ * obtains its roster through72c404c. Global698f7e0 queries use72c19dc instead;
+ * substituting that getter here reads an unrelated holder (16384 in live
+ * diagnostics). Keep the two contracts separate.
  */
 static int scope(uptr root,u32 team,u32 *order){
     volatile Bus *b=BUS;u32 seq=b->configuration_sequence;
@@ -147,6 +202,7 @@ static int scope(uptr root,u32 team,u32 *order){
     volatile ScopeDiagnostic *d=b->diagnostic_enabled?&b->diagnostic:0;
     u32 ds=d?(d->sequence+2)&~1u:0;
     if(d){d->sequence=ds|1u;barrier();++d->calls;d->team=team;d->roster_count=0;d->reason=0;
+        d->callback_root=root;d->roster=0;
         for(u32 i=0;i<NPLAYERS;++i){d->actual[i].id=0;d->actual[i].serial=0;}}
     u32 reason=0;
     uptr common=FN(common,uptr(*)(uptr))(root);
@@ -157,6 +213,7 @@ static int scope(uptr root,u32 team,u32 *order){
      * replace that binding, even if both rosters happen to be identical. */
     if(b->active_epoch==b->epoch&&b->bound_root&&b->bound_root!=root){reason=10;goto done;}
     uptr players=FN(players,uptr(*)(uptr,u32))(root,team);
+    if(d)d->roster=players;
     if(!players){reason=3;goto done;}
     u32 count=FN(count,u32(*)(uptr))(players);
     if(d)d->roster_count=count;
@@ -187,6 +244,8 @@ done:
 EXPORT int studio_observe(uptr self,uptr event,u32 post){
     volatile Bus *b=BUS;u32 order[NPLAYERS];
     if(!self)return 0;
+    if(!b->enabled||!b->auto_execute||!b->state_healthy)
+        release_owned(self,!b->enabled||!b->auto_execute?5:2);
     uptr root=ptr(self,0x370),team_data=ptr(self,0x378);u32 team=word(self,8);
     if(!root||!team_data||!scope(root,team,order))return 0;
     uptr common=FN(common,uptr(*)(uptr))(root);
@@ -199,12 +258,77 @@ EXPORT int studio_observe(uptr self,uptr event,u32 post){
         /* Command sequences and owned shapes are entry-local. A new entry's
          * first command must not equal a sequence consumed by the old one. */
         b->last_command=0;b->changed_plan=0;b->plan_epoch=0;b->plan_root=0;
-        b->desired_attack=2;b->last_heartbeat=0;
+        b->desired_attack=2;b->last_heartbeat=0;b->last_attack_command=0;b->attack_epoch=0;b->attack_root=0;
     }
     volatile Snapshot *s=&b->snapshot;
     u32 seq=(s->sequence+2)&~1u;s->sequence=seq|1u;barrier();
     s->configuration_sequence=configuration;s->epoch=epoch;s->game_id=b->game_id;s->team=team;
     s->phase=FN(phase,u32(*)(uptr))(info);s->period=FN(period,u32(*)(uptr))(info);
+    if(b->rules_enabled && b->difficulty_enabled==1 && b->difficulty_requested<=6 &&
+       configuration==b->configuration_sequence && epoch==b->epoch){
+        /* Same encrypted ComLevel pair and original setters used by native
+         * 6a5d0a0 / 6a580dc. TeamData keeps its own cached pair at8f2c;
+         * changing a menu CPU label alone does not update these live values.
+         * Preserve the per-object XOR keys and use sub-level NONE (0), just
+         * like the working AI-division contract. No native RNG is consumed.
+         * Scope above has already matched all23 CPU identities and rejected
+         * human teams; divisions never enable this per-tournament opt-in. */
+        uptr cpu=FN(cpu_params,uptr(*)(uptr))(root);
+        u32 requested=b->difficulty_requested;
+        if(cpu && cpu!=root && cpu!=team_data){
+            u32 before_o=word(team_data,0x8f2c)^word(team_data,0x8f30);
+            u32 before_d=word(team_data,0x8f38)^word(team_data,0x8f3c);
+            if(before_o<=6 && before_d<=6){
+                if(b->difficulty_epoch!=epoch){
+                    b->difficulty_before_offense=before_o;b->difficulty_before_defense=before_d;
+                }
+                u32 ko=word(cpu,4),kd=word(cpu,16);
+                u64 o=((u64)ko<<32)|(ko^requested),d=((u64)kd<<32)|(kd^requested);
+                FN(set_cpu_pair,void(*)(uptr,u64,u32,u64,u32))(cpu,o,0,d,0);
+                ko=word(team_data,0x8f30);kd=word(team_data,0x8f3c);
+                o=((u64)ko<<32)|(ko^requested);d=((u64)kd<<32)|(kd^requested);
+                FN(set_team_cpu_pair,void(*)(uptr,u64,u32,u64,u32))(team_data,o,0,d,0);
+                b->difficulty_after_offense=word(team_data,0x8f2c)^word(team_data,0x8f30);
+                b->difficulty_after_defense=word(team_data,0x8f38)^word(team_data,0x8f3c);
+                b->difficulty_epoch=epoch;barrier();
+                b->difficulty_applied=(b->difficulty_after_offense==requested && b->difficulty_after_defense==requested);
+            }
+        }
+    }
+    if(b->rules_enabled && configuration==b->configuration_sequence && epoch==b->epoch){
+        /* MatchParam has separate display and live period-rule fields.
+         * 6a6479c copies the former (121/122,128..135); original 6a5d5xx
+         * initializes the latter. The actual 90/120-minute consumers
+         * 6b1e400/6b1e534 read a6..ab on every transition. Updating only
+         * the display setters leaves a drawn match ending at 90 minutes.
+         * Keep both projections on this already scoped callback thread. */
+        uptr params=FN(match_params,uptr(*)(uptr))(root);
+        if(params){
+            FN(set_two_leg,void(*)(uptr,u32))(params,b->rules_two_leg);
+            FN(set_first_leg,void(*)(uptr,u32))(params,b->rules_first_leg);
+            FN(set_second_leg,void(*)(uptr,u32))(params,b->rules_second_leg);
+            FN(set_prior_goals,void(*)(uptr,u32,u32))(params,0,b->rules_prior_home);
+            FN(set_prior_goals,void(*)(uptr,u32,u32))(params,1,b->rules_prior_away);
+            FN(set_extra,void(*)(uptr,u32))(params,b->rules_extra);
+            FN(set_pk,void(*)(uptr,u32))(params,b->rules_pk);
+            /* A tied away-goal comparison has already admitted extra time.
+             * If ET away goals are disabled, retain the original aggregate
+             * but stop counting additional away goals from that point. */
+            FN(set_away_goals,void(*)(uptr,u32))(params,
+                b->rules_away_goals && (b->rules_away_extra || s->period<5));
+            volatile u8 *period_rules=(volatile u8 *)(params+0xa6);
+            period_rules[0]=(u8)b->rules_extra;
+            period_rules[1]=(u8)b->rules_pk;
+            period_rules[2]=(u8)b->rules_away_goals;
+            period_rules[3]=(u8)(b->rules_away_goals && b->rules_away_extra);
+            /* Native aa/ab retain FIRST-leg home/away order. The bus
+             * carries this leg's physical home/away order, so reverse it.
+             * First legs and ordinary matches receive zero prior goals. */
+            period_rules[4]=(u8)(b->rules_second_leg?b->rules_prior_away:0);
+            period_rules[5]=(u8)(b->rules_second_leg?b->rules_prior_home:0);
+            b->rules_applied=1;b->rules_epoch=epoch;
+        }
+    }
     s->stop_reason=FN(stop_reason,u32(*)(uptr))(info);
     s->clock_frames=FN(clock,float(*)(uptr))(info);
     uptr frame=FN(frame_root,uptr(*)(uptr))(root);
@@ -278,6 +402,7 @@ EXPORT int studio_observe(uptr self,uptr event,u32 post){
 #define ACK_STALE 4u
 #define ACK_CANCELLED 5u
 #define ACK_PARTIAL 6u
+#define ACK_WAITING_WINDOW 7u
 #define KIND_FORMATION 1u
 #define KIND_SUBSTITUTION 2u
 #define KIND_CANCEL 3u
@@ -326,7 +451,26 @@ static int native_aptitude(uptr players,u32 slot,u32 role){
     uptr entry=FN(entry,uptr(*)(uptr,u32))(players,slot);
     uptr meta=FN(card_metadata,uptr(*)(uptr))(entry);
     uptr ability=FN(abilities,uptr(*)(uptr))(meta);
-    return FN(aptitude,u32(*)(uptr,u32))(ability,role)==2;
+    u32 actual=FN(aptitude,u32(*)(uptr,u32))(ability,role);
+    if(actual>2)return 0;
+    return actual==2||(BUS->rules_enabled==1&&
+                      BUS->tournament_relaxed_aptitude==0x54584631u);
+}
+static int owned_lineup_progress(u32 current){
+    volatile Bus *b=BUS;volatile Command *c=&b->pending;
+    if(!c->plan_id||c->epoch!=b->epoch||c->game_id!=b->game_id||b->pending_root!=b->bound_root||
+       c->placement_count>11||c->sub_count>2||mask_count(current)!=c->active_count)return 0;
+    u32 target=0,in=0,out=0;
+    for(u32 i=0;i<c->placement_count;++i){
+        if(c->placement[i].expected_index>=23)return 0;
+        target|=1u<<c->placement[i].expected_index;
+    }
+    for(u32 i=0;i<c->sub_count;++i){
+        if(c->incoming[i]>=23||c->outgoing[i]>=23)return 0;
+        in|=1u<<c->incoming[i];out|=1u<<c->outgoing[i];
+    }
+    u32 initial=(target&~in)|out;
+    return !(current&~(initial|in))&&((current&(initial&target))==(initial&target));
 }
 static int queue_contains(uptr queue,u32 incoming,u32 outgoing){
     u32 count=FN(queue_count,u32(*)(uptr))(queue),found=0;
@@ -370,11 +514,13 @@ static int context_valid(uptr self,const Command *c,const u32 *order){
        !c->plan_id||s->configuration_sequence!=b->configuration_sequence)return 1;
     if(!s->sequence||(s->sequence&1)||c->based_on_snapshot>s->sequence||!c->based_on_snapshot)return 2;
     if(c->score_for!=s->score_for||c->score_against!=s->score_against)return 3;
-    if(c->active_count<7||c->active_count>11||c->placement_count!=c->active_count||c->sub_count>2||c->attack_level>4)return 4;
+    int attack_only=c->kind==4;
+    if(c->active_count<7||c->active_count>11||c->sub_count>2||c->attack_level>4)return 4;
+    if(attack_only ? (c->placement_count||c->sub_count) : c->placement_count!=c->active_count)return 4;
     float age=s->clock_frames-c->issued_clock_frames;
     if(!(age>=0&&age<=1800.0f))return 5; /* NaN fails too. */
     if(s->phase!=1&&s->phase!=2)return 6;
-    if(c->substitutions_left!=s->substitutions_left||c->windows_left!=s->windows_left)return 7;
+    if(!attack_only&&(c->substitutions_left!=s->substitutions_left||c->windows_left!=s->windows_left))return 7;
     u32 current=0,target=0,gk=0;
     uptr root=ptr(self,0x370);u32 team=word(self,8);
     uptr players=FN(players,uptr(*)(uptr,u32))(root,team);
@@ -391,6 +537,7 @@ static int context_valid(uptr self,const Command *c,const u32 *order){
     frame=frame?FN(frame_stats,uptr(*)(uptr))(frame):0;
     if(!frame||c->score_for!=FN(goals,int(*)(uptr,u32,u32))(frame,team,5)||
        c->score_against!=FN(goals,int(*)(uptr,u32,u32))(frame,team^1u,5))return 3;
+    if(attack_only)return 0; /* No lineup, duties, formation or queue mutation. */
     if(c->substitutions_left!=FN(remaining,u32(*)(uptr))(ptr(self,0x378))||
        c->windows_left!=FN(windows,u32(*)(uptr))(ptr(self,0x378)))return 7;
     for(u32 i=0;i<c->placement_count;++i){
@@ -436,111 +583,200 @@ static int normal_eleven(uptr root,u32 team);
 /* Called only by a separately verified game-thread dispatch hook. Until that
  * hook is installed this helper is exercised by original-instruction probes.
  */
-EXPORT int studio_queue_tick(uptr self){
+/* Stored physical pairs are owned only after both queues were empty and our
+ * complete batch was submitted. Cause 3 is normal; emergency rows are kept. */
+static void erase_stored(uptr queue){
+    volatile Bus *b=BUS;u32 count=FN(queue_count,u32(*)(uptr))(queue);
+    if(count>7||b->owned_pair_count>2)return;
+    for(u32 i=0;i<count;++i)
+        if(!FN(queue_row,uptr(*)(uptr,u32))(queue,i))return;
+    for(u32 k=0;k<b->owned_pair_count;++k){
+        count=FN(queue_count,u32(*)(uptr))(queue);
+        for(u32 i=0;i<count;++i){
+            uptr row=FN(queue_row,uptr(*)(uptr,u32))(queue,i);
+            if(row&&word(row,0)==3&&word(row,4)==b->owned_out[k]&&word(row,8)==b->owned_in[k]){
+                /* Actor removal erases all rows using that actor; the native
+                 * numeric-index helper truncates the tail. Use the original
+                 * row destructor + exact iterator erase, as native loops do. */
+                FN(queue_destroy,void(*)(uptr))(row);
+                FN(queue_erase,uptr(*)(uptr,uptr))(queue,row);break;
+            }
+        }
+    }
+}
+
+static void release_owned(uptr self,u32 reason){
+    volatile Bus *b=BUS;
+    if(!self)return;
+    uptr root=ptr(self,0x370);
+    int owner=b->bound_coach==self||b->pending_owner==self||b->waiting_owner==self;
+    if(!owner)return;
+    if(b->pending.plan_id&&b->pending_owner==self){
+        if(root==b->pending_root&&b->pending.game_id==b->game_id){
+            uptr team=ptr(self,0x378);
+            if(team){erase_stored(self+0x20);erase_stored(team+0xa8);}
+        }
+        if(b->pending.epoch==b->epoch&&b->pending.game_id==b->game_id)
+            ack(b->pending.plan_id,ACK_STALE,reason);
+        b->pending.plan_id=0;b->owned_pair_count=0;b->pending_owner=0;
+    }
+    if(b->waiting.plan_id&&b->waiting_owner==self){
+        if(b->waiting.epoch==b->epoch&&b->waiting.game_id==b->game_id)
+            ack(b->waiting.plan_id,ACK_STALE,reason);
+        b->waiting.plan_id=0;b->waiting_owner=0;
+    }
+    if(b->bound_coach==self){
+        /* Discard unconsumed old requests on failure; recovery must replan.
+         * A newly configured epoch's buffer is not an old callback's to eat. */
+        if(b->active_epoch==b->epoch&&b->command.epoch==b->epoch)
+            b->last_command=b->command.sequence;
+        if(b->active_epoch==b->epoch&&b->attack_command.epoch==b->epoch)
+            b->last_attack_command=b->attack_command.sequence;
+        b->plan_epoch=0;b->plan_root=0;b->changed_plan=0;
+        b->attack_epoch=0;b->attack_root=0;b->managed=0;
+        ownership(0,reason);
+    }
+}
+
+static int queue_tick(uptr self,u32 submit){
     volatile Bus *b=BUS;u32 order[NPLAYERS];
-    if(!self||!b->auto_execute||!b->heartbeat)return 0;
-    uptr root=ptr(self,0x370);u32 team=word(self,8);
-    if(!scope(root,team,order)||b->bound_root!=root||b->bound_coach!=self)return 0;
+    if(!self)return 0;
+    /* Clean an OLD epoch only through the real current callback object. Do
+     * not use stale roster indices or dereference an old match root. */
+    if((b->pending.plan_id&&b->pending_owner==self&&
+        (b->pending.epoch!=b->epoch||b->pending.game_id!=b->game_id))||
+       (b->waiting.plan_id&&b->waiting_owner==self&&
+        (b->waiting.epoch!=b->epoch||b->waiting.game_id!=b->game_id)))
+        release_owned(self,1);
+    if(!coach_lease(self,order))return 0;
+    uptr root=ptr(self,0x370),team_data=ptr(self,0x378);
+    if(b->pending.plan_id&&(b->pending.epoch!=b->epoch||b->pending.game_id!=b->game_id)){
+        /* The verified new entry cannot use an old root/owner's queue. Drop
+         * only our metadata; no old engine pointer is dereferenced. */
+        b->pending.plan_id=0;b->pending_owner=0;b->owned_pair_count=0;
+    }
+    if(b->waiting.plan_id&&(b->waiting.epoch!=b->epoch||b->waiting.game_id!=b->game_id)){
+        b->waiting.plan_id=0;b->waiting_owner=0;
+    }
+    u32 team=word(self,8);
     uptr players=FN(players,uptr(*)(uptr,u32))(root,team);
-    if(b->pending.plan_id&&(b->pending_root!=root||b->pending.epoch!=b->epoch||b->pending.game_id!=b->game_id)){
-        /* Never erase from a NEW native match using an OLD entry's indices. */
-        ack(b->pending.plan_id,ACK_STALE,1);b->pending.plan_id=0;b->managed=0;
-    }
-    if(!normal_eleven(root,team)){
-        if(b->pending.plan_id){
-            Command pending;copy_bytes(&pending,&b->pending,sizeof(pending));
-            int partial=remove_owned(self,players,&pending,order);
-            ack(pending.plan_id,partial>0?ACK_PARTIAL:ACK_CANCELLED,partial<0?22:27);
-            b->pending.plan_id=0;
-        }
-        b->managed=0;return 0;
-    }
-    if(b->heartbeat!=b->last_heartbeat){
-        b->last_heartbeat=b->heartbeat;b->last_heartbeat_frames=b->snapshot.clock_frames;
-    }else if(b->snapshot.clock_frames-b->last_heartbeat_frames>1800.0f){
-        if(b->pending.plan_id){
-            Command pending;copy_bytes(&pending,&b->pending,sizeof(pending));
-            int partial=remove_owned(self,players,&pending,order);
-            ack(pending.plan_id,partial>0?ACK_PARTIAL:ACK_STALE,partial<0?22:23);
-            b->pending.plan_id=0;
-        }
-        b->managed=0;return 0;
-    }
+    uptr info=FN(game_info,uptr(*)(uptr))(root);
+    u32 period=FN(period,u32(*)(uptr))(info);
+    u32 execution_phase=FN(phase,u32(*)(uptr))(info);
     if(b->pending.plan_id){
         Command pending;copy_bytes(&pending,&b->pending,sizeof(pending));
         u32 current=active_field_mask(root,team,order),inmask=0,outmask=0;
         for(u32 i=0;i<pending.sub_count;++i){inmask|=1u<<pending.incoming[i];outmask|=1u<<pending.outgoing[i];}
-        if(mask_count(current)!=pending.active_count){
-            int partial=remove_owned(self,players,&pending,order);
-            ack(pending.plan_id,partial>0?ACK_PARTIAL:ACK_CANCELLED,partial<0?22:27);
-            b->pending.plan_id=0;b->managed=0;
-        }else if((current&inmask)==inmask&&!(current&outmask)){
-            ack(pending.plan_id,ACK_APPLIED,0);b->pending.plan_id=0;b->managed=0;
-        }else if(pending.epoch!=b->epoch||pending.game_id!=b->game_id||
-                  pending.score_for!=b->snapshot.score_for||pending.score_against!=b->snapshot.score_against||
-                  b->snapshot.clock_frames-pending.issued_clock_frames>10800.0f){
-            int partial=remove_owned(self,players,&pending,order);
-            ack(pending.plan_id,partial>0?ACK_PARTIAL:ACK_STALE,partial<0?22:21);
-            b->pending.plan_id=0;b->managed=0;
+        int completed=(current&inmask)==inmask&&!(current&outmask);
+        if(completed){
+            ack(pending.plan_id,ACK_APPLIED,0);b->pending.plan_id=0;b->owned_pair_count=0;b->pending_owner=0;
+            /* This exact, intended batch is not a foreign lineup transition.
+             * Preserve ownership until the worker performs post-sub cleanup. */
+            b->state_field_mask=current;b->changed_plan=0;b->plan_epoch=0;b->plan_root=0;
+        }else{
+            if(execution_phase==3){
+                float delta=b->snapshot.clock_frames-b->pending_clock_seen;
+                if(delta>0)b->pending.issued_clock_frames+=delta;
+            }
+            b->pending_clock_seen=b->snapshot.clock_frames;
+            u32 reason=0;
+            if(mask_count(current)!=pending.active_count)reason=27;
+            else if(period!=b->pending_period)reason=40;
+            else if(pending.score_for!=b->snapshot.score_for||pending.score_against!=b->snapshot.score_against)reason=21;
+            else if(execution_phase!=3&&b->snapshot.clock_frames-b->pending.issued_clock_frames>10800.0f)reason=41;
+            if(reason){
+                int partial=remove_owned(self,players,&pending,order);
+                erase_stored(self+0x20);erase_stored(team_data+0xa8);
+                ack(pending.plan_id,partial>0?ACK_PARTIAL:ACK_STALE,reason);
+                b->pending.plan_id=0;b->owned_pair_count=0;b->pending_owner=0;
+            }
         }
     }
+    /* Coherent phase 3 keeps ordinary ownership but is never a mutation
+     * window. Reconcile completed members above; preserve unexecuted work. */
+    if(execution_phase==3){ownership(b->pending.plan_id?4:b->waiting.plan_id?3:1,42);return 0;}
     u32 seq=b->command.sequence;
-    if(!seq||(seq&1)||seq==b->last_command)return 0;
-    Command c;barrier();copy_bytes(&c,&b->command,sizeof(c));barrier();
-    if(seq!=b->command.sequence)return 0;
-    /* The plan callback owns this command and must see the same unconsumed
-     * transport sequence. The substitution callback never commits a shape. */
-    if(c.kind==KIND_FORMATION)return 0;
-    if(c.checksum!=checksum(&c)){b->last_command=seq;ack(c.plan_id,ACK_REJECTED,15);return 0;}
-    /* A transport sequence is entry-local. An old buffer must not consume
-     * the new entry's identical first sequence, or overwrite its stale ACK
-     * with an ordinary rejection after the observer resets last_command. */
-    if(c.epoch!=b->epoch||c.game_id!=b->game_id){ack(c.plan_id,ACK_STALE,1);return 0;}
-    b->last_command=seq;
-    if(c.kind==KIND_CANCEL){
-        if(c.epoch!=b->epoch||c.game_id!=b->game_id){ack(c.plan_id,ACK_STALE,1);return 0;}
-        if(b->pending.plan_id!=c.plan_id)return 0;
-        Command pending;copy_bytes(&pending,&b->pending,sizeof(pending));
-        int partial=remove_owned(self,players,&pending,order);
-        if(partial<0){
-            /* A native emergency now owns the pair. Hand it back without
-             * deleting that request or keeping an orphaned workshop plan. */
-            ack(c.plan_id,ACK_REJECTED,22);b->pending.plan_id=0;b->managed=0;return 0;
+    if(seq&&!(seq&1)&&seq!=b->last_command){
+        Command c;barrier();copy_bytes(&c,&b->command,sizeof(c));barrier();
+        if(seq!=b->command.sequence)return 0;
+        if(c.kind!=KIND_FORMATION){
+            if(c.epoch!=b->epoch||c.game_id!=b->game_id)return 0;
+            b->last_command=seq;
+            if(c.checksum!=checksum(&c)){ack(c.plan_id,ACK_REJECTED,15);return 0;}
+            if(c.kind==KIND_CANCEL){
+                int partial=0;
+                if(b->pending.plan_id==c.plan_id){
+                    Command pending;copy_bytes(&pending,&b->pending,sizeof(pending));
+                    partial=remove_owned(self,players,&pending,order);
+                    erase_stored(self+0x20);erase_stored(team_data+0xa8);
+                    b->pending.plan_id=0;b->owned_pair_count=0;b->pending_owner=0;
+                }
+                if(b->waiting.plan_id==c.plan_id){b->waiting.plan_id=0;b->waiting_owner=0;}
+                ack(c.plan_id,partial>0?ACK_PARTIAL:ACK_CANCELLED,partial<0?22:0);return 1;
+            }
+            if(b->pending.plan_id||b->waiting.plan_id){ack(c.plan_id,ACK_REJECTED,16);return 0;}
+            int reason=context_valid(self,&c,order);
+            if(reason){ack(c.plan_id,ACK_REJECTED,(u32)reason);return 0;}
+            if(c.kind!=KIND_SUBSTITUTION||!c.sub_count){ack(c.plan_id,ACK_REJECTED,17);return 0;}
+            copy_bytes(&b->waiting,&c,sizeof(c));
+            b->waiting_root=root;b->waiting_owner=self;b->waiting_period=period;
+            ack(c.plan_id,ACK_WAITING_WINDOW,0);
         }
-        ack(c.plan_id,partial?ACK_PARTIAL:ACK_CANCELLED,0);b->pending.plan_id=0;b->managed=0;return 1;
     }
-    if(b->pending.plan_id){
-        ack(c.plan_id,c.plan_id==b->pending.plan_id?ACK_ACCEPTED:ACK_REJECTED,16);return 0;
+    if(b->pending.plan_id){ownership(4,0);return 0;}
+    if(!b->waiting.plan_id){
+        ownership(FN(queue_count,u32(*)(uptr))(self+0x20)||FN(queue_count,u32(*)(uptr))(team_data+0xa8)?2:1,0);
+        return 0;
     }
+    Command c;copy_bytes(&c,&b->waiting,sizeof(c));
+    if(b->waiting_owner!=self||b->waiting_root!=root)return 0;
+    if(period!=b->waiting_period){
+        ack(c.plan_id,ACK_STALE,40);b->waiting.plan_id=0;b->waiting_owner=0;return 0;
+    }
+    /* Waiting time is NOT execution time. This private, previously checksummed
+     * plan is fully revalidated against this callback's fresh snapshot. */
+    c.issued_clock_frames=b->snapshot.clock_frames;c.based_on_snapshot=b->snapshot.sequence;
     int reason=context_valid(self,&c,order);
-    if(reason){ack(c.plan_id,ACK_REJECTED,(u32)reason);return 0;}
-    /* Formation commit belongs to the native plan-update callback, not this
-     * substitution event. Do not silently acknowledge an unimplemented path. */
-    if(c.kind!=KIND_SUBSTITUTION||!c.sub_count){ack(c.plan_id,ACK_REJECTED,17);return 0;}
-    uptr team_data=ptr(self,0x378);
-    if(FN(queue_count,u32(*)(uptr))(self+0x20)||FN(queue_count,u32(*)(uptr))(team_data+0xa8)||
-       c.sub_count>c.substitutions_left||!FN(can_queue,int(*)(uptr))(self)){
-        ack(c.plan_id,ACK_REJECTED,18);return 0;
+    if(reason){
+        ack(c.plan_id,ACK_STALE,(u32)reason);b->waiting.plan_id=0;b->waiting_owner=0;return 0;
+    }
+    u32 busy=FN(queue_count,u32(*)(uptr))(self+0x20)||FN(queue_count,u32(*)(uptr))(team_data+0xa8);
+    if(!submit||FN(phase,u32(*)(uptr))(info)!=2||busy||
+       !FN(can_queue,int(*)(uptr))(self)){
+        ownership(busy?2:3,busy?18:0);ack(c.plan_id,ACK_WAITING_WINDOW,busy?18:0);return 0;
     }
     for(u32 i=0;i<c.sub_count;++i){
         u32 is=(u32)slot_of(order,c.incoming[i]),os=(u32)slot_of(order,c.outgoing[i]);
+        b->owned_in[i]=FN(physical,u32(*)(uptr,u32))(players,is);
+        b->owned_out[i]=FN(physical,u32(*)(uptr,u32))(players,os);
         if(!FN(queue_sub,int(*)(uptr,u32,u32,u32))(self,is,os,3)){
-            Command partial;copy_bytes(&partial,&c,sizeof(partial));partial.sub_count=i;
-            remove_owned(self,players,&partial,order);ack(c.plan_id,ACK_REJECTED,19);return 0;
+            b->owned_pair_count=i;erase_stored(self+0x20);erase_stored(team_data+0xa8);
+            ack(c.plan_id,ACK_REJECTED,19);
+            b->waiting.plan_id=0;b->waiting_owner=0;b->owned_pair_count=0;return 0;
         }
     }
-    copy_bytes(&b->pending,&c,sizeof(c));b->pending_root=root;b->managed=1;ack(c.plan_id,ACK_ACCEPTED,0);return 1;
+    copy_bytes(&b->pending,&c,sizeof(c));b->pending_root=root;b->pending_owner=self;
+    b->pending_period=period;b->owned_pair_count=c.sub_count;
+    b->pending_clock_seen=b->snapshot.clock_frames;
+    b->waiting.plan_id=0;b->waiting_owner=0;b->managed=1;
+    ownership(4,0);ack(c.plan_id,ACK_ACCEPTED,0);return 1;
 }
+
+EXPORT int studio_queue_tick(uptr self){return queue_tick(self,1);}
+EXPORT int studio_queue_reconcile(uptr self){return queue_tick(self,0);}
 
 static int alive(uptr root){
     volatile Bus *b=BUS;
-    if(!b->auto_execute||!b->heartbeat||!b->enabled||b->bound_root!=root)return 0;
+    if(!b->auto_execute||!b->heartbeat||!b->enabled||!b->state_healthy||b->bound_root!=root)return 0;
     uptr info=FN(game_info,uptr(*)(uptr))(root);
     if(!info)return 0;
-    float now=FN(clock,float(*)(uptr))(info);
-    if(b->heartbeat!=b->last_heartbeat){b->last_heartbeat=b->heartbeat;b->last_heartbeat_frames=now;}
-    float age=now-b->last_heartbeat_frames;
-    return age>=0&&age<=1800.0f;
+    /* CLOCK_MONOTONIC continues while the match clock is paused. Use the
+     * verified original Android PLT import; no worker calls native objects. */
+    struct {long sec,nsec;} ts;
+    if(FN(monotonic_clock,int(*)(int,void*))(1,&ts)||ts.sec<0||ts.nsec<0||ts.nsec>=1000000000)return 0;
+    u64 now=(u64)ts.sec*1000000000ULL+(u64)ts.nsec;
+    if(b->heartbeat!=b->last_heartbeat){b->last_heartbeat=b->heartbeat;b->last_heartbeat_ns=now;}
+    return now>=b->last_heartbeat_ns&&now-b->last_heartbeat_ns<=2500000000ULL;
 }
 
 /* Confirmed normal actors plus card/injury departures, without guessing injury
@@ -553,15 +789,40 @@ static int normal_eleven(uptr root,u32 team){
     return active_field_mask(root,team,order)!=0;
 }
 
-/* Only suppress a competing NORMAL CPU request while an owned request is
- * pending. Original injury/GK and discipline handlers are separate entries
- * and are never intercepted by this guard. */
+static int coach_lease(uptr self,u32 *order){
+    volatile Bus *b=BUS;
+    if(!self)return 0;
+    uptr root=ptr(self,0x370),info=0;u32 team=word(self,8),reason=0;
+    if(!b->enabled||!b->auto_execute)reason=5;
+    else if(!b->state_healthy)reason=2;
+    else if(!scope(root,team,order)||b->bound_root!=root||b->bound_coach!=self)reason=1;
+    else if(!(info=FN(game_info,uptr(*)(uptr))(root)))reason=2;
+    else if(b->state_epoch!=b->epoch)reason=2;
+    else if(b->state_period!=FN(period,u32(*)(uptr))(info))reason=40;
+    else if(FN(phase,u32(*)(uptr))(info)<1||FN(phase,u32(*)(uptr))(info)>3)reason=43;
+    /* Period-local clock reset is a revalidation boundary, not a dead worker. */
+    else if(!alive(root))reason=3;
+    else if(!normal_eleven(root,team))reason=4;
+    else{
+        u32 current=active_field_mask(root,team,order);
+        if(b->state_field_mask!=current&&!owned_lineup_progress(current))reason=4;
+    }
+    if(reason){release_owned(self,reason);return 0;}
+    b->managed=1;
+    return 1;
+}
+
+/* Healthy full-match ownership covers evaluation, deliberate no-change,
+ * formation-first work, waiting and post-sub shape/duties reconciliation.
+ * ONLY the ordinary selector is intercepted; injury/GK/discipline stay native. */
 EXPORT int studio_managed(uptr self){
     volatile Bus *b=BUS;u32 order[NPLAYERS];
-    if(!self||!b->pending.plan_id||b->pending.epoch!=b->epoch)return 0;
-    uptr root=ptr(self,0x370);u32 team=word(self,8);
-    return b->pending_root==root&&b->bound_coach==self&&alive(root)&&scope(root,team,order)&&
-           mask_count(active_field_mask(root,team,order))==b->pending.active_count;
+    if(!coach_lease(self,order))return 0;
+    u32 state=b->pending.plan_id?4:b->waiting.plan_id?3:1;
+    uptr team=ptr(self,0x378);
+    if(state==1&&(FN(queue_count,u32(*)(uptr))(self+0x20)||FN(queue_count,u32(*)(uptr))(team+0xa8)))state=2;
+    uptr info=FN(game_info,uptr(*)(uptr))(ptr(self,0x370));
+    ownership(state,FN(phase,u32(*)(uptr))(info)==3?42:0);return 1;
 }
 
 static int owned_plan(uptr context,u32 *order){
@@ -581,6 +842,11 @@ static int owned_plan(uptr context,u32 *order){
     barrier();
     if(configuration!=b->configuration_sequence||epoch!=b->epoch||!b->enabled)return 0;
     u32 mask=active_field_mask(root,team,order);
+    u32 period=FN(period,u32(*)(uptr))(FN(game_info,uptr(*)(uptr))(root));
+    if(b->state_epoch!=epoch||b->state_period!=period||
+       (b->state_field_mask!=mask&&!owned_lineup_progress(mask))){
+        release_owned(b->bound_coach,b->state_epoch!=epoch?2:b->state_period!=period?40:4);return 0;
+    }
     if(!mask||(b->changed_plan&&b->plan_field_mask!=mask)){
         b->changed_plan=0;b->plan_epoch=0;b->plan_root=0;
         return 0;
@@ -597,8 +863,11 @@ EXPORT int studio_plan_tick(uptr context){
     volatile Bus *b=BUS;u32 order[NPLAYERS];
     if(!owned_plan(context,order))return -1;
     uptr root=ptr(context,0x6380),team_data=ptr(context,0x6388);
+    if(FN(phase,u32(*)(uptr))(FN(game_info,uptr(*)(uptr))(root))==3)return 0;
     u32 seq=b->command.sequence;
-    int holding=b->changed_plan&&b->plan_epoch==b->epoch&&b->plan_root==root;
+    /* A healthy lease also owns the deliberate decision to KEEP the current
+     * shape, including before our first change or while a batch is waiting. */
+    int holding=1;
     if(!seq||(seq&1)||seq==b->last_command)return holding?0:-1;
     Command c;barrier();copy_bytes(&c,&b->command,sizeof(c));barrier();
     if(seq!=b->command.sequence)return holding?0:-1;
@@ -606,7 +875,7 @@ EXPORT int studio_plan_tick(uptr context){
     if(c.checksum!=checksum(&c)){b->last_command=seq;ack(c.plan_id,ACK_REJECTED,15);return holding?0:-1;}
     if(c.epoch!=b->epoch||c.game_id!=b->game_id){ack(c.plan_id,ACK_STALE,1);return holding?0:-1;}
     b->last_command=seq;
-    if(b->pending.plan_id||c.sub_count){ack(c.plan_id,ACK_REJECTED,16);return holding?0:-1;}
+    if(b->pending.plan_id||b->waiting.plan_id||c.sub_count){ack(c.plan_id,ACK_REJECTED,16);return holding?0:-1;}
     int reason=context_valid(b->bound_coach,&c,order);
     if(reason){ack(c.plan_id,ACK_REJECTED,(u32)reason);return holding?0:-1;}
     uptr current=FN(plan,uptr(*)(uptr))(team_data),pitch=FN(pitch,uptr(*)(uptr))(root);
@@ -671,9 +940,10 @@ EXPORT int studio_plan_tick(uptr context){
         ack(c.plan_id,ACK_REJECTED,26);return holding?0:-1;
     }
     u32 before=FN(get_attack,u32(*)(uptr))(team_data);
-    FN(attack_level,void(*)(uptr,u32))(team_data,c.attack_level);
+    u32 target=b->attack_epoch==b->epoch&&b->attack_root==root?b->desired_attack:c.attack_level;
+    FN(attack_level,void(*)(uptr,u32))(team_data,target);
     FN(attack_reference,void(*)(uptr,u32))(team_data,before);
-    b->desired_attack=c.attack_level;b->changed_plan=1;b->plan_epoch=b->epoch;b->plan_root=root;
+    b->desired_attack=target;b->changed_plan=1;b->plan_epoch=b->epoch;b->plan_root=root;
     b->plan_field_mask=active_field_mask(root,word(context,8),order);
     ack(c.plan_id,ACK_APPLIED,0);return 1;
 }
@@ -682,7 +952,29 @@ EXPORT int studio_plan_tick(uptr context){
  * module, with the same scope/dead-worker fallback as the formation module. */
 EXPORT int studio_attack_tick(uptr context){
     volatile Bus *b=BUS;u32 order[NPLAYERS];
-    if(!owned_plan(context,order)||!b->changed_plan||b->plan_epoch!=b->epoch||
-       b->plan_root!=ptr(context,0x6380)||b->desired_attack>4)return -1;
+    if(!owned_plan(context,order))return -1;
+    uptr root=ptr(context,0x6380),team_data=ptr(context,0x6388);
+    if(FN(phase,u32(*)(uptr))(FN(game_info,uptr(*)(uptr))(root))==3)return 0;
+    u32 seq=b->attack_command.sequence;
+    if(seq&&!(seq&1)&&seq!=b->last_attack_command){
+        Command c;barrier();copy_bytes(&c,&b->attack_command,sizeof(c));barrier();
+        if(seq==b->attack_command.sequence){
+            b->last_attack_command=seq;
+            u32 reason=c.kind!=4?17:c.checksum!=checksum(&c)?15:context_valid(b->bound_coach,&c,order);
+            if(!reason){
+                u32 before=FN(get_attack,u32(*)(uptr))(team_data);
+                FN(attack_level,void(*)(uptr,u32))(team_data,c.attack_level);
+                FN(attack_reference,void(*)(uptr,u32))(team_data,before);
+                if(FN(get_attack,u32(*)(uptr))(team_data)!=c.attack_level)reason=26;
+                else {b->desired_attack=c.attack_level;b->attack_epoch=b->epoch;b->attack_root=root;}
+            }
+            b->attack_ack_status=reason?ACK_REJECTED:ACK_APPLIED;
+            b->attack_rejection_reason=reason;barrier();b->attack_ack_id=c.plan_id;
+        }
+    }
+    int own_attack=b->attack_epoch==b->epoch&&b->attack_root==root;
+    int own_shape=b->changed_plan&&b->plan_epoch==b->epoch&&b->plan_root==root;
+    if(!own_attack&&!own_shape)return 0;
+    if(b->desired_attack>4)return -1;
     FN(attack_level,void(*)(uptr,u32))(ptr(context,0x6388),b->desired_attack);return 0;
 }

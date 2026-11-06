@@ -8,6 +8,27 @@ input[type=range]{min-height:32px}
 input[type=checkbox],input[type=radio]{min-width:22px;min-height:22px}
 .model-stage{touch-action:none}
 .main-shell{min-width:0}
+/* All five original controls stay at the top, above portrait player cards. */
+html[data-android] #android-project-bar{position:sticky;top:0;z-index:45;box-sizing:border-box;width:100%;padding:calc(10px + env(safe-area-inset-top)) var(--gutter,14px) 10px;background:color-mix(in srgb,var(--tint) 94%,#101724);border-bottom:1px solid var(--line)}
+html[data-android] .android-project-heading{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 12px;margin-bottom:8px;min-height:20px}
+html[data-android] .android-project-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;font-weight:650;color:var(--text-2)}
+html[data-android] #android-project-bar #save-status{min-width:0;max-width:100%;font-size:11px;gap:7px;white-space:normal;line-height:1.4}
+html[data-android] #android-project-bar .head-actions{display:grid;grid-template-columns:44px 44px minmax(100px,1fr) minmax(100px,1fr) minmax(140px,1.4fr);gap:8px;width:100%;margin:0;min-width:0}
+html[data-android] #android-project-bar .head-actions>button{display:inline-flex;align-items:center;justify-content:center;min-width:0;width:100%;height:auto;min-height:44px;margin:0;padding:8px;gap:6px;font-size:13px;white-space:normal;line-height:1.25;transform:none}
+html[data-android] #android-project-bar .head-actions>button .label{display:inline;white-space:normal}
+html[data-android] #android-project-bar :is(#undo-button,#redo-button){flex-direction:column;gap:2px;padding:5px;font-size:11px}
+html[data-android] #android-project-bar :is(#undo-button,#redo-button) [data-icon]{width:16px;height:16px}
+html[data-android] #android-project-bar :is(#undo-button,#redo-button) svg{width:16px;height:16px}
+html[data-android] #android-project-bar .android-action-label{font-size:11px;line-height:1}
+html[data-android][data-ui-shell=compact] #android-project-bar{padding-left:calc(88px + var(--gutter,14px))}
+html[data-android][data-ui-shell=desk] #android-project-bar{padding-left:calc(108px + var(--gutter,14px))}
+@media(orientation:portrait) and (max-width:760px){
+ html[data-android] #android-project-bar .head-actions{grid-template-columns:44px 44px minmax(0,1fr) minmax(0,1fr)}
+ html[data-android] #android-project-bar #save-player{grid-column:1/-1}
+}
+@media(max-width:359px){
+ html[data-android] #android-project-bar #open-project [data-icon],html[data-android] #android-project-bar #export-project [data-icon]{display:none}
+}
 /* No hover on touch screens: keep cards still so taps do not leave them lifted. */
 @media(hover:none){
  .library-player:hover,.personal-player:hover,.preset-tile:hover,.coach-card:hover,.palette:hover,.tile:hover,.rail-card:hover,.button:hover,.dock-button:hover,.icon-button:hover{transform:none}

@@ -9,7 +9,9 @@ root = Path(__file__).absolute().parent
 workspace = root.parent
 parser=argparse.ArgumentParser()
 parser.add_argument('--dist-dir',default=str(workspace/'球员工坊-V15'))
-dist=Path(parser.parse_args().dist_dir).resolve()
+parser.add_argument('--work-dir',default=str(workspace/'.work/studio-build-v15'))
+parser.add_argument('--spec-dir',default=str(workspace/'.work/studio-spec-v15'))
+args=parser.parse_args();dist=Path(args.dist_dir).resolve()
 deps = workspace / ".work" / "studio-build-deps"
 if deps.exists():
     sys.path.insert(0, str(deps))
@@ -18,7 +20,7 @@ native_deps=workspace/'.work/native-integration-deps'
 if native_deps.exists():
     sys.path.insert(0,str(native_deps))
     os.environ['PYTHONPATH']=str(native_deps)+os.pathsep+os.environ.get('PYTHONPATH','')
-os.environ["PYINSTALLER_CONFIG_DIR"] = str(workspace / ".work" / "pyinstaller-cache")
+os.environ.setdefault("PYINSTALLER_CONFIG_DIR",str(workspace / ".work" / "pyinstaller-cache"))
 import PyInstaller.__main__
 from compile_cache import write_source_manifest
 write_source_manifest(root)
@@ -27,19 +29,38 @@ PyInstaller.__main__.run([
     str(root / "app.py"), "--onefile", "--windowed", "--noupx", "--noconfirm",
     "--name", "球员工坊", "--icon", str(root / "resources" / "app.ico"),
     "--distpath", str(dist),
-    "--workpath", str(workspace / ".work" / "studio-build-v15"),
-    "--specpath", str(workspace / ".work" / "studio-spec-v15"),
+    "--workpath", str(Path(args.work_dir).resolve()),
+    "--specpath", str(Path(args.spec_dir).resolve()),
     "--paths", str(root),
     "--paths", str(native_deps),
     "--collect-submodules", "wannacri",
     "--add-data", str(root / "web") + ":web",
     "--add-data", str(root / "resources") + ":resources",
+    "--add-data", str(root / "draw_v22.py") + ":.",
+    "--add-data", str(root / "stadium_runtime.py") + ":.",
+    "--add-data", str(root / "tournament_rules.py") + ":.",
+    "--add-data", str(root / "tournament_identity.py") + ":.",
+    "--add-data", str(root / "tournament_squads.py") + ":.",
+    "--add-data", str(root / "tournament_runtime.py") + ":.",
+    "--add-data", str(root / "tournament_sim_strength.py") + ":.",
+    "--add-data", str(root / "tournament_eligibility.py") + ":.",
+    "--add-data", str(root / "tournament_simulation.py") + ":.",
+    "--add-data", str(root / "coach_formula.py") + ":.",
+    "--add-data", str(root / "tournament_promotion.py") + ":.",
+    "--add-data", str(root / "tournament_promotion_ui.py") + ":.",
+    "--add-data", str(root / "tournament_rewards.py") + ":.",
+    "--add-data", str(root / "tournament_agents.py") + ":.",
+    "--add-data", str(root / "tournament_schedule_ui.py") + ":.",
+    "--add-data", str(root / "native_tournament_schedule_ui.py") + ":.",
+    "--add-data", str(root / "tournament_home.py") + ":.",
+    "--add-data", str(root / "tournament_reward_ui.py") + ":.",
     "--add-data", str(root / "personal_runtime.py") + ":.",
     "--add-data", str(root / "personal_binding.py") + ":.",
     "--add-data", str(root / "division_squads.py") + ":.",
     "--add-data", str(root / "ai_tactical_profiles.py") + ":.",
     "--add-data", str(root / "ai_division_sessions.py") + ":.",
     "--add-data", str(root / "league_rules.py") + ":.",
+    "--add-data", str(root / "league_availability.py") + ":.",
     "--add-data", str(root / "art_registry.py") + ":.",
     "--add-data", str(root / "native_diy_binding.py") + ":.",
     "--add-data", str(root / "ai_match_manager.py") + ":.",

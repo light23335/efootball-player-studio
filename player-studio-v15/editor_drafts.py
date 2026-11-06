@@ -5,7 +5,7 @@ import os
 import time
 import uuid
 
-CATEGORIES={'coach','pack','settings','progress'}
+CATEGORIES={'coach','pack','settings','progress','world'}
 
 
 def listing(store):
@@ -44,6 +44,9 @@ def update(store,category,value,commit=True):
         elif category=='progress':
             from workspace_tools import game_options
             result['value']=game_options(store,value)
+        elif category=='world':
+            import world_workspace
+            result.update(world_workspace.save(store,value))
         result['committed']=True
     except (ValueError,KeyError,TypeError,OSError) as exc:
         result['message']=str(exc)

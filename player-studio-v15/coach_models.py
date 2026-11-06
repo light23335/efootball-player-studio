@@ -2,11 +2,84 @@
 from export_errors import call as _export_data
 from export_errors import export_context, exported
 from pathlib import Path
-import copy,hashlib,json,re
+import copy,hashlib,json,os,re,threading,uuid
 from coach_heads import FOLDER,TARGET,ASSET,target_path,compile_head,original,preview,require_path
 
 PREFIXES=('', 'sp', 'im', 'motm', 'ml')
 DEFAULT_TEMPLATE=FOLDER+'SK_437sp00v0039_Face.uasset'
+_STORE_LOCK=threading.RLock()
+
+
+class CoachModelStore:
+    """Stock-coach edits, explicitly saved by coach identity. Legacy rows stay inert."""
+    def __init__(self,root):
+        self.root=Path(root);self.path=self.root/'coach-models.json'
+
+    @staticmethod
+    def normalize(value):
+        from coach_heads import normalize as normalize_head
+        if not isinstance(value,dict):raise ValueError('原版教练头模编辑无效')
+        ident=str(value.get('coach_id',''))
+        if not ident.isascii() or not ident.isdecimal() or not 0<int(ident)<1<<63:raise ValueError('请选择一名原版教练')
+        return dict(normalize_head(value),coach_id=str(int(ident)),name=str(value.get('name') or ident)[:80])
+
+    def list(self):
+        with _STORE_LOCK:
+            if not self.path.exists():return []
+            doc=json.loads(self.path.read_text(encoding='utf8'))
+            if not isinstance(doc,dict) or doc.get('version')!=1 or not isinstance(doc.get('rows'),list):raise ValueError('逐名教练头模配置版本无效')
+            rows=[self.normalize(r) for r in doc['rows']]
+            if len({r['coach_id'] for r in rows})!=len(rows):raise ValueError('逐名教练头模配置包含重复教练')
+            return rows
+
+    def _write(self,rows):
+        if self.path.exists():
+            backup=self.root/'backups';backup.mkdir(exist_ok=True)
+            (backup/('coach-models-'+uuid.uuid4().hex+'.json')).write_bytes(self.path.read_bytes())
+        temporary=self.path.with_suffix('.'+uuid.uuid4().hex+'.tmp')
+        with temporary.open('w',encoding='utf8') as f:
+            json.dump({'version':1,'rows':rows},f,ensure_ascii=False,indent=2);f.flush();os.fsync(f.fileno())
+        temporary.replace(self.path)
+
+    def save(self,value,overwrite=True):
+        row=self.normalize(value)
+        with _STORE_LOCK:
+            rows=self.list()
+            if not overwrite and any(r['coach_id']==row['coach_id'] for r in rows):raise ValueError('这名教练已有独立编辑，未覆盖；请直接编辑当前头模')
+            self._write([r for r in rows if r['coach_id']!=row['coach_id']]+[row])
+        return row
+
+    def delete(self,ident):
+        with _STORE_LOCK:self._write([r for r in self.list() if r['coach_id']!=str(ident)])
+
+
+def stock_coach(library,coach,catalog):
+    if not isinstance(coach,dict) or coach.get('type')=='custom':raise ValueError('请选择一名原版教练编辑头模')
+    row=next((r for r in catalog if str(r['id'])==str(coach.get('id'))),None)
+    if row is None:raise ValueError('当前资料库没有这名原版教练')
+    found=template(library,row['id'])
+    if not found['available']:raise ValueError(found['message'])
+    return row,found['template_path']
+
+
+def save_stock(library,coach,head,catalog,migrate=False):
+    from coach_heads import CoachHeadStore,normalize as normalize_head
+    coach,path=stock_coach(library,coach,catalog);store=CoachModelStore(library.store.root)
+    if migrate:
+        if any(r['coach_id']==str(coach['id']) or r['target']==path for r in store.list()):raise ValueError('这名教练或共用目标已有独立编辑，未覆盖')
+        head=next((r for r in CoachHeadStore(library.store.root).list() if r['target']==path),None)
+        if head is None:raise ValueError('此教练没有目标完全匹配的旧方案，请直接导入 GLB')
+    head=normalize_head(head)
+    if head['target']!=path:raise ValueError('头模目标与当前所选教练不一致，请重新打开这名教练')
+    result=preview(library,head)
+    result['head']=store.save(dict(head,coach_id=str(coach['id']),name=coach['name']),overwrite=not migrate)
+    return result
+
+
+def delete_stock(library,coach,catalog):
+    coach,_=stock_coach(library,coach,catalog)
+    CoachModelStore(library.store.root).delete(coach['id'])
+    return {'deleted':True}
 
 
 def native_key(ident):
@@ -27,6 +100,9 @@ def normalize(value):
     if asset is not None:
         if not isinstance(asset,str) or not ASSET.fullmatch(asset):raise ValueError('教练头模需要内嵌贴图的 GLB')
         row['asset_id']=asset
+    if 'preserve_expression'in value:
+        if type(value['preserve_expression'])is not bool:raise ValueError('保持导入表情必须为开关值')
+        row['preserve_expression']=value['preserve_expression']
     return row
 
 
@@ -65,8 +141,11 @@ def preview_coach(library,value):
     head=normalize(value)
     if not head:raise ValueError('尚未选择原版教练头模模板')
     if head.get('asset_id'):
-        return preview(library,{'target':head['template_path'],'mode':'custom','asset_id':head['asset_id']})
-    return original(library,head['template_path'])
+        config={'target':head['template_path'],'mode':'custom','asset_id':head['asset_id']}
+        if 'preserve_expression'in head:config['preserve_expression']=head['preserve_expression']
+        return preview(library,config)
+    from coach_heads import with_expression_preview
+    return with_expression_preview(original(library,head['template_path']))
 
 
 def current(library,coach):
@@ -79,11 +158,43 @@ def current(library,coach):
         return dict(result,template_path=head['template_path'],head_model=head,personal=True)
     found=template(library,coach.get('id'))
     if not found['available']:raise ValueError(found['message'])
-    from coach_heads import CoachHeadStore
     path=found['template_path']
-    replacement=next((r for r in CoachHeadStore(library.store.root).list() if r['target']==path),None)
-    result=preview(library,replacement) if replacement else original(library,path)
-    return dict(result,template_path=path,personal=False,replacement=replacement)
+    rows=CoachModelStore(library.store.root).list()
+    replacement=next((r for r in rows if r['coach_id']==str(coach['id'])),None)
+    stale=bool(replacement and replacement['target']!=path)
+    if stale:replacement=None  # Keep the old row; let the selected editor repair it explicitly.
+    shared=[r for r in rows if r['target']==path and r['coach_id']!=str(coach['id'])]
+    effective=replacement or next(iter(shared),None)
+    result=preview(library,effective) if effective else original(library,path)
+    # Reading a legacy candidate for an explicit migration never activates it.
+    from coach_heads import CoachHeadStore
+    try:legacy=next((r for r in CoachHeadStore(library.store.root).list() if r['target']==path),None)
+    except (ValueError,OSError):legacy=None
+    return dict(result,template_path=path,personal=False,replacement=replacement,effective_replacement=effective,
+                shared_with=[r['name'] for r in shared],stale_replacement=stale,legacy_available=bool(legacy and not effective and not stale))
+
+
+def compile_stock_models(library,rows,catalog):
+    art=[];reports=[]
+    for value in rows:
+        row=CoachModelStore.normalize(value)
+        with export_context('教练',dict(row,id=row['coach_id']),'编译所选原版教练的头模编辑'):
+            coach,path=stock_coach(library,{'id':row['coach_id']},catalog)
+            if row['target']!=path:raise ValueError('已保存目标与当前原版教练资源不一致，请重新打开该教练编辑')
+            packages,report,_,_=compile_head(library,row)
+            report.update(coach_id=str(coach['id']),name=coach['name'],source='per-coach-editor',packages=[p[0] for p in packages])
+            art.extend(packages);reports.append(report)
+    return art,reports
+
+
+def collect_head_resources(personal,personal_reports,stock,stock_reports):
+    from native_body import deduplicate_art
+    owners=[]
+    for art,reports,kind in ((personal,personal_reports,'自建教练'),(stock,stock_reports,'原版教练')):
+        for name,_,_ in art:
+            matches=[r for r in reports if name in r.get('packages',[])]
+            owners.append('、'.join(kind+'「'+r.get('name','未命名')+'」['+str(r.get('id',r.get('coach_id',r.get('uuid','?'))))+']' for r in matches) or kind)
+    return deduplicate_art(personal+stock,owners)
 
 
 def verify_loader(engine,resources=None):
@@ -111,11 +222,12 @@ def compile_models(library,coaches,definitions,replace_ids=()):
             if name in seen:raise ValueError('个人教练模型目标重复')
             seen.add(name)
             config={'target':head['template_path'],'mode':'custom','asset_id':head['asset_id']} if head.get('asset_id') else {'target':head['template_path'],'mode':'native','source':head['template_path']}
+            if 'preserve_expression'in head:config['preserve_expression']=head['preserve_expression']
             packages,report,_,_=compile_head(library,config,destination=name)
             paths=[p[0] for p in packages]
             if name not in paths:raise ValueError('个人教练模型缺少原生加载目标')
             report.update(uuid=coach['uuid'],id=ident,name=coach['name'],model_key=key,model_path=name,
                           template_path=head['template_path'],independent=True,packages=paths,
-                          animation='template skeleton and offsets retained; compatible imported facial weights preserved')
+                          animation='template skeleton and offsets retained; '+('imported expression protected'if head.get('preserve_expression',False)else'compatible imported facial weights preserved'))
             art.extend(packages);reports.append(report)
     return art,reports

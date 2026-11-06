@@ -16,10 +16,10 @@ def main():
             for source in (core/folder).rglob('*'):
                 if not source.is_file() or source.suffix in ('.pyc','.log'):continue
                 data=source.read_bytes()
-                if source.name=='index.html':
+                if source.relative_to(core).as_posix()=='web/index.html':
                     data=re.sub(rb'(V\d+ \xc2\xb7 [0-9.]+)(?=<)',rb'\1 Android',data).replace(b'</head>',b'<link rel="stylesheet" href="/android.css"><script defer src="/android-ui.js"></script></head>')
                 z.writestr(source.relative_to(core).as_posix(),data)
-        for name in ('personal_runtime.py','personal_binding.py','division_squads.py','native_overall.py','ai_tactical_profiles.py','ai_division_sessions.py','ai_match_manager.py','ai_match_channel.py','ai_match_runtime.py','ai_match_state.py','action_trace.py','league_rules.py','art_registry.py','native_diy_binding.py'):z.write(core/name,name)
+        for name in ('stadium_runtime.py','tournament_rules.py','tournament_identity.py','tournament_squads.py','tournament_eligibility.py','tournament_runtime.py','tournament_sim_strength.py','tournament_simulation.py','coach_formula.py','tournament_promotion.py','tournament_promotion_ui.py','tournament_rewards.py','tournament_agents.py','tournament_schedule_ui.py','native_tournament_schedule_ui.py','tournament_home.py','tournament_reward_ui.py','draw_v22.py','personal_runtime.py','personal_binding.py','division_squads.py','native_overall.py','ai_tactical_profiles.py','ai_division_sessions.py','ai_match_manager.py','ai_match_channel.py','ai_match_runtime.py','ai_match_state.py','action_trace.py','league_rules.py','league_availability.py','art_registry.py','native_diy_binding.py'):z.write(core/name,name)
         for source in (ROOT/'licenses').glob('*'):
             if source.is_file():z.write(source,'licenses/'+source.name)
         for source in (ROOT/'THIRD_PARTY_NOTICES.md',):z.write(source,'licenses/'+source.name)

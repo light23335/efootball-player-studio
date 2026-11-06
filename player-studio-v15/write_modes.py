@@ -8,6 +8,8 @@ DESIGN_VERSION=1
 _ASSETS={}
 _LOCK=threading.Lock()
 EDITOR_FIELDS={'studio_version','game_platform','status','editor_ready','preview','custom_coaches','project_import'}
+DESIGN_DEFAULTS={'players':(('equipment','socks','keep'),('appearance','hide_card_ui',False)),
+                 'packs':((None,'draw_count',10),)}
 
 def mode(value):
     if value not in ('full','incremental'):raise ValueError('请选择全量模式或增量模式')
@@ -31,10 +33,45 @@ def asset_hashes(value,store):
         result[name]=hit
     return result
 
-def design(kind,value,store):
-    data={k:v for k,v in value.items()if k not in EDITOR_FIELDS}
+def design_data(kind,value):
+    data=copy.deepcopy({k:v for k,v in value.items()if k not in EDITOR_FIELDS})
     if kind=='coaches':data.pop('_compiled_link_ids',None)
+    return data
+
+
+def default_variants(kind,data):
+    """Only proven, behaviour-preserving defaults may be absent or explicit.
+
+    V1 receipts predate these fields; 2.1.9 receipts include them. Keep both
+    readable without ignoring actual sock length, image, ability or UI edits.
+    """
+    values=[copy.deepcopy(data)]
+    for parent,key,default in DESIGN_DEFAULTS.get(kind,()):
+        original=data.get(parent,{})if parent else data
+        if not isinstance(original,dict):continue
+        if key in original and(type(original[key])is not type(default)or original[key]!=default):continue
+        next_values=[]
+        for value in values:
+            missing=copy.deepcopy(value);container=missing.get(parent,{})if parent else missing
+            container.pop(key,None)
+            if parent and not container:missing.pop(parent,None)
+            present=copy.deepcopy(value);container=present.setdefault(parent,{})if parent else present
+            container[key]=default;next_values.extend((missing,present))
+        values=next_values
+    return values
+
+
+def design_digest(kind,data,store):
     return hashlib.sha256(encoded({'version':DESIGN_VERSION,'kind':kind,'value':data,'assets':asset_hashes(data,store)})).hexdigest()
+
+
+def design(kind,value,store):
+    # The first representation omits all equivalent new default fields.
+    return design_digest(kind,default_variants(kind,design_data(kind,value))[0],store)
+
+
+def design_matches(kind,value,expected,store):
+    return any(design_digest(kind,data,store)==expected for data in default_variants(kind,design_data(kind,value)))
 
 def designs(projects,coaches,packs,store):
     return {'version':DESIGN_VERSION,**{kind:{row['package_id'if kind=='players'else'uuid']:design(kind,row,store)for row in values}
@@ -88,7 +125,7 @@ def legacy_unchanged(project,definition,store,document=None):
         if native is not None:mapping[booster['id']]=int(native);booster['id']=int(native)
     remapped['booster_ids']=[mapping.get(v,v)for v in remapped.get('booster_ids',[])]
     versions=list(dict.fromkeys([candidate.get('studio_version'),*[f'2.1.{n}'for n in range(7)],'2.1','2.0.6','2.0.5','2.0.4','2.0.3','2.0']))
-    for value in (candidate,remapped):
+    for value in [v for p in(candidate,remapped)for v in default_variants('players',p)]:
         for version in versions:
             value['studio_version']=version
             if hashlib.sha256(encoded(value)+b':v16-compiler-1.9.2').hexdigest()==expected:return True
@@ -102,7 +139,7 @@ def statuses(kind,values,doc,store):
     for value in values:
         uid=value['package_id'if kind=='players'else'uuid']
         if uid not in old:state='new'
-        elif uid in recorded:state='unchanged'if design(kind,value,store)==recorded[uid]else'modified'
+        elif uid in recorded:state='unchanged'if design_matches(kind,value,recorded[uid],store)else'modified'
         elif kind=='players'and legacy_unchanged(value,old[uid],store,doc):state='unchanged'
         else:state='unverified'
         result[uid]=state

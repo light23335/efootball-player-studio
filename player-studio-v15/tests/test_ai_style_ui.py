@@ -63,4 +63,62 @@ class AIStyleDisplayTests(unittest.TestCase):
             vm.mem_write(0x41001034,struct.pack('<I',garbage))
             for address in (0x2f3ded4,0x737b73c):self.assertEqual(self.count(vm,address),0)
 
+    def list_machine(self):
+        """Run the real vector construction, index conversion and name getter.
+
+        Only external DB storage, text lookup and libc memcpy/strlen are stubs.
+        Both native list loops and native getter/compact copies execute.
+        """
+        r=self.r
+        def db(vm):vm.reg_write(r.UC_ARM64_REG_X0,0x41004000)
+        def common(vm):vm.reg_write(r.UC_ARM64_REG_X0,0x41001000)
+        def memcpy(vm):
+            dst=vm.reg_read(r.UC_ARM64_REG_X0);src=vm.reg_read(r.UC_ARM64_REG_X1)
+            size=vm.reg_read(r.UC_ARM64_REG_X2)
+            vm.mem_write(dst,bytes(vm.mem_read(src,size)))
+        def strlen(vm):
+            src=vm.reg_read(r.UC_ARM64_REG_X0)
+            vm.reg_write(r.UC_ARM64_REG_X0,bytes(vm.mem_read(src,100)).index(0))
+        def text(vm):
+            message=vm.reg_read(r.UC_ARM64_REG_W1)
+            self.messages.append(message)
+            label=('Lone Wolf' if message==(352<<16)|60010 else f'native {message}').encode()
+            self.assertLess(len(label),23)
+            dst=vm.reg_read(r.UC_ARM64_REG_X0)
+            vm.mem_write(dst,bytes([len(label)*2])+label+b'\0'+bytes(22-len(label)))
+        vm=self.machine({0x82468d4:db,0x823c8d4:common,0x8c1bc70:memcpy,
+                         0x8c1bc60:memcpy,0x8c1bca0:strlen,0x2f47358:text})
+        self.install_all(vm)
+        return vm
+
+    def list_styles(self,vm,owned):
+        self.messages=[]
+        for vector,base,width in ((0x41006000,0x41007000,24),(0x41006020,0x41008000,4)):
+            vm.mem_write(vector,struct.pack('<3Q',base,base,base+8*width))
+        # The real owned common-copy function can run with no owned overrides.
+        vm.mem_write(0x41003030,struct.pack('<2Q',0,7511))
+        vm.mem_write(0x410030b0,bytes(56))
+        for reg,value in ((self.r.UC_ARM64_REG_X0,0x41003000 if owned else 7511),
+                          (self.r.UC_ARM64_REG_X1,0x41006000),
+                          (self.r.UC_ARM64_REG_X2,0x41006020)):
+            vm.reg_write(reg,value)
+        self.execute(vm,0x7379c20 if owned else 0x2f3e600)
+        begin,end=struct.unpack('<2Q',vm.mem_read(0x41006000,16))
+        labels=[]
+        for at in range(begin,end,24):
+            raw=bytes(vm.mem_read(at,24));self.assertFalse(raw[0]&1)
+            labels.append(raw[1:1+(raw[0]>>1)].decode())
+        return labels,list(self.messages)
+
+    def test_full_native_library_and_owned_lists_include_lone_wolf(self):
+        vm=self.list_machine()
+        for mask in (0,15,127):
+            for wolf in (0,1):
+                self.decode(vm,mask,wolf)
+                for owned in (False,True):
+                    labels,messages=self.list_styles(vm,owned)
+                    self.assertEqual(len(labels),mask.bit_count()+wolf,(mask,wolf,owned))
+                    self.assertEqual(labels.count('Lone Wolf'),wolf,(mask,wolf,owned))
+                    self.assertEqual(messages.count((352<<16)|60010),wolf)
+
 if __name__=='__main__':unittest.main()

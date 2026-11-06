@@ -1,4 +1,5 @@
 // Liquid Glass shell: presentation layer around app.js.
+import {teamLabel} from './team-identities.js';
 // Navigation always goes through #compact-page-select (the control app.js wires
 // to navigate()); hub data comes from the existing read-only players/list API.
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
@@ -6,6 +7,9 @@ const reducedInterfaceMotion=()=>document.documentElement.hasAttribute('data-and
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const svg=paths=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
 const ICONS={
+ world:'<ellipse cx="12" cy="15.5" rx="9" ry="5"/><path d="M3 15.5v3c0 2.5 4 4.5 9 4.5s9-2 9-4.5v-3M7 17.5l5 2 5-2M9 2h6v3a3 3 0 0 1-6 0V2Zm0 1H6v1a3 3 0 0 0 3 3m6-4h3v1a3 3 0 0 1-3 3m-3 1v4m-3 0h6"/>',
+ stadium:'<ellipse cx="12" cy="10" rx="9" ry="4.5"/><path d="M3 10v7c0 2.5 4 4.5 9 4.5s9-2 9-4.5v-7M7 10l5-2 5 2-5 2-5-2Zm5-2v4M7 3V1m10 2V1M4 5 2 3m18 2 2-2M7 15v4m10-4v4"/>',
+ tournaments:'<path d="M7 3h10v4a5 5 0 0 1-10 0V3Zm0 1H3v2a4 4 0 0 0 5 4m9-6h4v2a4 4 0 0 1-5 4m-4 2v5m-4 4v-4h8v4H8Zm-2 0h12"/>',
  home:'<path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
  tutorial:'<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2Z"/><path d="M4 19V5M9 7h6M9 11h4"/>',
  personal:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/>',
@@ -31,8 +35,8 @@ const ICONS={
  folder:'<path d="M3 7V5a2 2 0 0 1 2-2h4l3 3h7a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>',
  export:'<path d="M12 16V3m-5 5 5-5 5 5M4 14v6h16v-6"/>'
 };
-const SECTIONS=[{label:'总览',icon:'home'},{label:'我的球员',icon:'personal'},{label:'编辑球员',icon:'edit'},{label:'卡包与教练',icon:'packs'},{label:'生成安装',icon:'native'},{label:'更多工具',icon:'grid'}];
-const EYEBROW={home:'Overview',tutorial:'Playbook',personal:'My Squad',library:'Scouting',profile:'Profile',abilities:'Attributes',training:'Training',skills:'Skills & Style',motion:'Motion',card:'Card Design',model:'3D Model',packs:'Packs',coaches:'Coaching Staff',native:'Build APK',apk:'Game Source',tools:'Settings'};
+const SECTIONS=[{label:'总览',icon:'home'},{label:'我的球员',icon:'personal'},{label:'编辑球员',icon:'edit'},{label:'卡包与教练',icon:'packs'},{label:'球场与赛事',icon:'world'},{label:'生成安装',icon:'native'},{label:'更多工具',icon:'grid'}];
+const EYEBROW={home:'Overview',tutorial:'Playbook',personal:'My Squad',library:'Scouting',profile:'Profile',abilities:'Attributes',training:'Training',skills:'Skills & Style',motion:'Motion',card:'Card Design',model:'3D Model',packs:'Packs',coaches:'Coaching Staff',native:'Build APK',apk:'Game Source',tools:'Settings',stadium:'Stadium Studio',tournaments:'Competitions'};
 // eFootball ratings top out at 120: gauges and bars use this as their full scale.
 const STAT_MAX=120;
 const EDITOR=new Set(['profile','abilities','training','skills','motion','card','model']);
@@ -171,7 +175,7 @@ function renderIdentity(fresh){
  identity.querySelector('h1').textContent=name;
  const alt=[p.display_name,p.identity.shirt_name].find(v=>v&&v.trim()&&v.trim()!==name);
  identity.querySelector('.cn').textContent=alt||'';
- identity.querySelector('.tags').innerHTML=[p.identity.position,p.identity.preferred_foot,clean(p.identity.nationality),clean(p.identity.team),p.identity.height_cm&&p.identity.height_cm+' cm'].filter(Boolean).map(t=>`<span class="tag">${esc(t)}</span>`).join('');
+ identity.querySelector('.tags').innerHTML=[p.identity.position,p.identity.preferred_foot,clean(p.identity.nationality),clean(teamLabel(p.identity)),p.identity.height_cm&&p.identity.height_cm+' cm'].filter(Boolean).map(t=>`<span class="tag">${esc(t)}</span>`).join('');
  const ovr=Number(sim?.ovr)||0;
  countUp(identity.querySelector('.gauge b'),ovr);
  requestAnimationFrame(()=>identity.querySelector('.gauge .fg').style.strokeDashoffset=314*(1-Math.min(1,ovr/STAT_MAX)));
@@ -218,7 +222,7 @@ function renderHub(){
  const heroName=ready?[p?.identity?.shirt_name,p?.display_name,name].find(v=>v&&/^[ -~]+$/.test(v.trim()))||'':'PLAYER STUDIO';
  hub.innerHTML=`<div class="hub-hero glass"><span class="hero-name">${esc(heroName)}</span>
    <div class="hero-copy"><div class="eyebrow">${ready?'Current Player':'Player Studio'}</div><h2>${esc(ready?(name||'未命名球员'):'打造你的传奇球员')}</h2>
-    ${ready?`<div class="hero-meta">${ovr?`<b>${ovr}</b>`:''}${[p.identity.position,clean(p.identity.team),$('#preview-series')?.textContent].filter(Boolean).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`:`<p>${libraryReady?'从原版球员复制或新建一名球员，编辑能力、技能与卡面，再生成可安装的游戏 APK。':'先导入游戏资源库，再从原版球员复制或新建一名球员，编辑能力、技能与卡面，最后生成可安装的游戏 APK。'}</p>`}
+    ${ready?`<div class="hero-meta">${ovr?`<b>${ovr}</b>`:''}${[p.identity.position,clean(teamLabel(p.identity)),$('#preview-series')?.textContent].filter(Boolean).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`:`<p>${libraryReady?'从原版球员复制或新建一名球员，编辑能力、技能与卡面，再生成可安装的游戏 APK。':'先导入游戏资源库，再从原版球员复制或新建一名球员，编辑能力、技能与卡面，最后生成可安装的游戏 APK。'}</p>`}
     <div class="hero-actions">${heroActions}</div></div>
    <div class="hero-card"></div></div>
   <div class="hub-tiles">${featureTile}${tile('personal',{kicker:'Squad',sub:'保存、分组与导出自建球员',count})}${tile('packs',{kicker:'Packs',sub:'混编原版与自建球员，设置抽取权重'})}${tile('coaches',{kicker:'Staff',sub:'原版与自建教练、战术加成'})}${tile('apk',{kicker:'Source',sub:'导入新版游戏，刷新资源库'})}${tile('tools',{kicker:'Settings',sub:'导出文件、直接安装与 AI 进度'})}</div>

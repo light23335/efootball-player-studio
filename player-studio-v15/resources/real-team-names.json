@@ -1,0 +1,2243 @@
+{
+  "revision": 1,
+  "scope": "workshop display and search only; no game table edits",
+  "teams": {
+    "102": {
+      "name": "切尔西",
+      "name_en": "Chelsea",
+      "source_name": "切尔西 蓝",
+      "source_name_en": "Chelsea B"
+    },
+    "103": {
+      "name": "利物浦",
+      "name_en": "Liverpool",
+      "source_name": "利物浦 红",
+      "source_name_en": "Liverpool R"
+    },
+    "104": {
+      "name": "利兹",
+      "name_en": "Leeds",
+      "source_name": "利兹 白",
+      "source_name_en": "Leeds W"
+    },
+    "105": {
+      "name": "西汉姆",
+      "name_en": "West Ham",
+      "source_name": "西汉姆 红蓝",
+      "source_name_en": "West Ham RB"
+    },
+    "106": {
+      "name": "纽卡斯尔",
+      "name_en": "Newcastle",
+      "source_name": "纽卡斯尔 黑白",
+      "source_name_en": "Newcastle WB"
+    },
+    "107": {
+      "name": "阿斯顿维拉",
+      "name_en": "Aston Villa",
+      "source_name": "阿斯顿 红蓝",
+      "source_name_en": "Aston RB"
+    },
+    "109": {
+      "name": "皇家马德里",
+      "name_en": "Real Madrid",
+      "source_name": "马德里查马丁 白",
+      "source_name_en": "Madrid Chamartin B"
+    },
+    "110": {
+      "name": "瓦伦西亚",
+      "name_en": "Valencia",
+      "source_name": "瓦伦西亚 橙白",
+      "source_name_en": "Valencia BN"
+    },
+    "111": {
+      "name": "拉科鲁尼亚",
+      "name_en": "Deportivo La Coruña",
+      "source_name": "拉科鲁尼亚 蓝白",
+      "source_name_en": "La Coruña AB"
+    },
+    "120": {
+      "name": "尤文图斯",
+      "name_en": "Juventus",
+      "source_name": "皮埃姆 黑白",
+      "source_name_en": "Piemonte BN"
+    },
+    "124": {
+      "name": "佛罗伦萨",
+      "name_en": "Fiorentina",
+      "source_name": "佛罗伦萨",
+      "source_name_en": "ACF Fiorentina"
+    },
+    "125": {
+      "name": "罗马",
+      "name_en": "AS Roma",
+      "source_name": "罗马 黄红",
+      "source_name_en": "Roma GR"
+    },
+    "127": {
+      "name": "拜仁慕尼黑",
+      "name_en": "Bayern Munich",
+      "source_name": "慕尼黑 红白",
+      "source_name_en": "München RW"
+    },
+    "129": {
+      "name": "汉堡",
+      "name_en": "Hamburg",
+      "source_name": "汉堡 蓝白",
+      "source_name_en": "Hamburg BWS"
+    },
+    "172": {
+      "name": "马德里竞技",
+      "name_en": "Atlético de Madrid",
+      "source_name": "马德里罗萨斯 红白",
+      "source_name_en": "Madrid Rosas RB"
+    },
+    "173": {
+      "name": "曼城",
+      "name_en": "Manchester City",
+      "source_name": "曼彻斯特 蓝",
+      "source_name_en": "Manchester B"
+    },
+    "174": {
+      "name": "安德莱赫特",
+      "name_en": "Anderlecht",
+      "source_name": "安德莱赫特 紫白",
+      "source_name_en": "Anderlecht PW"
+    },
+    "176": {
+      "name": "布莱克本",
+      "name_en": "Blackburn",
+      "source_name": "布莱克本 蓝白",
+      "source_name_en": "Blackburn BW"
+    },
+    "177": {
+      "name": "埃弗顿",
+      "name_en": "Everton",
+      "source_name": "埃弗顿 红蓝",
+      "source_name_en": "Everton B"
+    },
+    "178": {
+      "name": "富勒姆",
+      "name_en": "Fulham",
+      "source_name": "富勒姆 白",
+      "source_name_en": "Fulham W"
+    },
+    "179": {
+      "name": "托特纳姆热刺",
+      "name_en": "Tottenham Hotspur",
+      "source_name": "托特纳姆 蓝白",
+      "source_name_en": "Tottenham WB"
+    },
+    "184": {
+      "name": "沙尔克04",
+      "name_en": "Schalke 04",
+      "source_name": "沙尔克 蓝白",
+      "source_name_en": "Schalke BW"
+    },
+    "185": {
+      "name": "云达不莱梅",
+      "name_en": "Werder Bremen",
+      "source_name": "不莱梅 绿白",
+      "source_name_en": "Bremen GW"
+    },
+    "186": {
+      "name": "博洛尼亚",
+      "name_en": "Bologna",
+      "source_name": "博洛尼亚 红蓝",
+      "source_name_en": "Bologna RB"
+    },
+    "194": {
+      "name": "皇家贝蒂斯",
+      "name_en": "Real Betis",
+      "source_name": "塞维利亚特里亚纳 绿白",
+      "source_name_en": "Sevilla Triana VB"
+    },
+    "195": {
+      "name": "塞尔塔",
+      "name_en": "Celta de Vigo",
+      "source_name": "维戈 蓝白",
+      "source_name_en": "Vigo AB"
+    },
+    "196": {
+      "name": "皇家社会",
+      "name_en": "Real Sociedad",
+      "source_name": "巴斯科希普斯夸 蓝白",
+      "source_name_en": "Vasco Gipuzkoa AB"
+    },
+    "201": {
+      "name": "伯明翰",
+      "name_en": "Birmingham",
+      "source_name": "伯明翰 蓝",
+      "source_name_en": "Birmingham B"
+    },
+    "202": {
+      "name": "博尔顿",
+      "name_en": "Bolton",
+      "source_name": "博尔顿 黑白",
+      "source_name_en": "Bolton WB"
+    },
+    "203": {
+      "name": "查尔顿",
+      "name_en": "Charlton",
+      "source_name": "查尔顿 红白",
+      "source_name_en": "Charlton RW"
+    },
+    "204": {
+      "name": "莱斯特",
+      "name_en": "Leicester",
+      "source_name": "莱斯特 蓝",
+      "source_name_en": "Leicester B"
+    },
+    "205": {
+      "name": "米德尔斯堡",
+      "name_en": "Middlesbrough",
+      "source_name": "米德尔斯堡 红白",
+      "source_name_en": "Middlesbrough RW"
+    },
+    "207": {
+      "name": "南安普顿",
+      "name_en": "Southampton",
+      "source_name": "南安普顿 红白",
+      "source_name_en": "Southampton RW"
+    },
+    "208": {
+      "name": "狼队",
+      "name_en": "Wolverhampton Wanderers",
+      "source_name": "沃尔弗汉普顿 黑黄",
+      "source_name_en": "Wolverhampton YB"
+    },
+    "210": {
+      "name": "巴斯蒂亚",
+      "name_en": "Bastia",
+      "source_name": "西奥 蓝白",
+      "source_name_en": "Bastia BB"
+    },
+    "225": {
+      "name": "门兴格拉德巴赫",
+      "name_en": "Borussia Mönchengladbach",
+      "source_name": "门兴格拉德巴赫 绿白",
+      "source_name_en": "Mönchengladbach SWG"
+    },
+    "227": {
+      "name": "弗赖堡",
+      "name_en": "Freiburg",
+      "source_name": "弗赖堡 红白",
+      "source_name_en": "Freiburg WR"
+    },
+    "231": {
+      "name": "斯图加特",
+      "name_en": "Stuttgart",
+      "source_name": "斯图加特 红白",
+      "source_name_en": "Stuttgart WR"
+    },
+    "232": {
+      "name": "沃尔夫斯堡",
+      "name_en": "Wolfsburg",
+      "source_name": "沃尔夫斯堡 绿白",
+      "source_name_en": "Wolfsburg GW"
+    },
+    "235": {
+      "name": "恩波利",
+      "name_en": "Empoli",
+      "source_name": "蒂奥 蓝",
+      "source_name_en": "Empoli A"
+    },
+    "237": {
+      "name": "摩德纳",
+      "name_en": "Modena",
+      "source_name": "摩德纳 黄蓝",
+      "source_name_en": "Modena GB"
+    },
+    "238": {
+      "name": "巴勒莫",
+      "name_en": "Palermo",
+      "source_name": "埃斯阿伊 黑&浅粉",
+      "source_name_en": "Palermo RN"
+    },
+    "240": {
+      "name": "桑普多利亚",
+      "name_en": "Sampdoria",
+      "source_name": "利古里亚 蓝",
+      "source_name_en": "Liguria B"
+    },
+    "246": {
+      "name": "布雷达",
+      "name_en": "NAC Breda",
+      "source_name": "比达 黄",
+      "source_name_en": "Breda G"
+    },
+    "253": {
+      "name": "沃伦丹",
+      "name_en": "Volendam",
+      "source_name": "沃伦丹 橙",
+      "source_name_en": "Volendam O"
+    },
+    "258": {
+      "name": "毕尔巴鄂竞技",
+      "name_en": "Athletic Club",
+      "source_name": "毕尔巴鄂 红白",
+      "source_name_en": "Bilbao BR"
+    },
+    "259": {
+      "name": "西班牙人",
+      "name_en": "RCD Espanyol",
+      "source_name": "略夫雷加特 蓝白",
+      "source_name_en": "Llobregat AB"
+    },
+    "260": {
+      "name": "马拉加",
+      "name_en": "Málaga",
+      "source_name": "马拉加 蓝白",
+      "source_name_en": "Málaga AB"
+    },
+    "261": {
+      "name": "马略卡",
+      "name_en": "Mallorca",
+      "source_name": "马略卡 黑红",
+      "source_name_en": "Mallorca RN"
+    },
+    "263": {
+      "name": "奥萨苏纳",
+      "name_en": "Osasuna",
+      "source_name": "潘普洛纳 红蓝",
+      "source_name_en": "Pamplona RA"
+    },
+    "264": {
+      "name": "桑坦德竞技",
+      "name_en": "Racing Santander",
+      "source_name": "桑坦德 绿白",
+      "source_name_en": "Santander VB"
+    },
+    "265": {
+      "name": "塞维利亚",
+      "name_en": "Sevilla FC",
+      "source_name": "塞维利亚内维翁 红白",
+      "source_name_en": "Sevilla Nervión BR"
+    },
+    "266": {
+      "name": "巴利亚多利德",
+      "name_en": "Valladolid",
+      "source_name": "巴利亚多利德 紫白",
+      "source_name_en": "Valladolid MB"
+    },
+    "267": {
+      "name": "比利亚雷亚尔",
+      "name_en": "Villarreal",
+      "source_name": "比利亚雷亚尔 黄",
+      "source_name_en": "Villarreal A"
+    },
+    "268": {
+      "name": "萨拉戈萨",
+      "name_en": "Zaragoza",
+      "source_name": "萨拉戈萨 蓝白",
+      "source_name_en": "Zaragoza BA"
+    },
+    "269": {
+      "name": "布鲁日",
+      "name_en": "Club Brugge",
+      "source_name": "布鲁日 蓝黑",
+      "source_name_en": "Brugge BZ"
+    },
+    "279": {
+      "name": "全北现代",
+      "name_en": "Jeonbuk Hyundai Motors",
+      "source_name": "全州 绿",
+      "source_name_en": "Jeonju G"
+    },
+    "281": {
+      "name": "浦项制铁",
+      "name_en": "Pohang Steelers",
+      "source_name": "浦项 红黑",
+      "source_name_en": "Pohang RB"
+    },
+    "282": {
+      "name": "首尔FC",
+      "name_en": "FC Seoul",
+      "source_name": "首尔 黑红",
+      "source_name_en": "Seoul BR"
+    },
+    "317": {
+      "name": "阿斯科利",
+      "name_en": "Ascoli",
+      "source_name": "埃姆艾 黑白条纹",
+      "source_name_en": "Ascoli BN"
+    },
+    "320": {
+      "name": "卡利亚里",
+      "name_en": "Cagliari",
+      "source_name": "卡利亚里 红蓝",
+      "source_name_en": "Cagliari RB"
+    },
+    "323": {
+      "name": "热那亚",
+      "name_en": "Genoa",
+      "source_name": "热那亚 红蓝",
+      "source_name_en": "Genova RB"
+    },
+    "327": {
+      "name": "那不勒斯",
+      "name_en": "Napoli",
+      "source_name": "那不勒斯 蓝",
+      "source_name_en": "Napoli A"
+    },
+    "328": {
+      "name": "佩斯卡拉",
+      "name_en": "Pescara",
+      "source_name": "艾比 白&浅蓝",
+      "source_name_en": "Pescara BA"
+    },
+    "336": {
+      "name": "维罗纳",
+      "name_en": "Hellas Verona",
+      "source_name": "维罗纳 黄蓝",
+      "source_name_en": "Verona GB"
+    },
+    "337": {
+      "name": "维琴察",
+      "name_en": "Vicenza",
+      "source_name": "维琴察 白红",
+      "source_name_en": "Vicenza BR"
+    },
+    "349": {
+      "name": "赫拉克勒斯",
+      "name_en": "Heracles Almelo",
+      "source_name": "阿尔梅罗 黑白",
+      "source_name_en": "Almelo ZW"
+    },
+    "357": {
+      "name": "阿尔梅里亚",
+      "name_en": "Almería",
+      "source_name": "阿尔梅里亚 红白",
+      "source_name_en": "Almería RB"
+    },
+    "359": {
+      "name": "科尔多瓦",
+      "name_en": "Córdoba CF",
+      "source_name": "艾恩 白&深绿",
+      "source_name_en": "Córdoba VB"
+    },
+    "361": {
+      "name": "埃尔切",
+      "name_en": "Elche",
+      "source_name": "埃尔切 绿白",
+      "source_name_en": "Elche BV"
+    },
+    "362": {
+      "name": "赫塔费",
+      "name_en": "Getafe",
+      "source_name": "赫塔费 蓝",
+      "source_name_en": "Getafe A"
+    },
+    "363": {
+      "name": "希洪竞技",
+      "name_en": "Sporting Gijón",
+      "source_name": "希洪 红白",
+      "source_name_en": "Gijón RB"
+    },
+    "364": {
+      "name": "拉斯帕尔马斯",
+      "name_en": "Las Palmas",
+      "source_name": "拉斯帕尔马斯 黄蓝",
+      "source_name_en": "Las Palmas AA"
+    },
+    "366": {
+      "name": "莱万特",
+      "name_en": "Levante",
+      "source_name": "莱万特 红蓝",
+      "source_name_en": "Levante RA"
+    },
+    "370": {
+      "name": "巴列卡诺",
+      "name_en": "Rayo Vallecano",
+      "source_name": "巴列卡斯 红白",
+      "source_name_en": "Vallecas BR"
+    },
+    "377": {
+      "name": "布莱顿",
+      "name_en": "Brighton & Hove Albion",
+      "source_name": "布莱顿 蓝白",
+      "source_name_en": "Brighton WB"
+    },
+    "378": {
+      "name": "伯恩利",
+      "name_en": "Burnley",
+      "source_name": "伯恩利 红蓝",
+      "source_name_en": "Burnley RB"
+    },
+    "379": {
+      "name": "卡迪夫城",
+      "name_en": "Cardiff City",
+      "source_name": "卡迪夫 蓝",
+      "source_name_en": "Cardiff B"
+    },
+    "382": {
+      "name": "水晶宫",
+      "name_en": "Crystal Palace",
+      "source_name": "水晶宫 红",
+      "source_name_en": "Crystal Palace RB"
+    },
+    "383": {
+      "name": "德比郡",
+      "name_en": "Derby County",
+      "source_name": "德比 黑白",
+      "source_name_en": "Derby WB"
+    },
+    "386": {
+      "name": "伊普斯维奇",
+      "name_en": "Ipswich Town",
+      "source_name": "伊普斯威奇 蓝白",
+      "source_name_en": "Ipswich BW"
+    },
+    "387": {
+      "name": "米尔沃尔",
+      "name_en": "Millwall",
+      "source_name": "米尔沃尔 蓝白",
+      "source_name_en": "Millwall BW"
+    },
+    "388": {
+      "name": "诺维奇城",
+      "name_en": "Norwich City",
+      "source_name": "诺维奇 黄绿",
+      "source_name_en": "Norwich YG"
+    },
+    "389": {
+      "name": "诺丁汉森林",
+      "name_en": "Nottingham Forest",
+      "source_name": "诺丁汉 红白",
+      "source_name_en": "Nottingham RW"
+    },
+    "394": {
+      "name": "谢菲尔德星期三",
+      "name_en": "Sheffield Wednesday",
+      "source_name": "谢菲尔德 蓝白",
+      "source_name_en": "Sheffield BW"
+    },
+    "395": {
+      "name": "斯托克城",
+      "name_en": "Stoke City",
+      "source_name": "斯托克 红白",
+      "source_name_en": "Stoke RW"
+    },
+    "396": {
+      "name": "桑德兰",
+      "name_en": "Sunderland",
+      "source_name": "桑德兰 黑红白",
+      "source_name_en": "Sunderland RWB"
+    },
+    "398": {
+      "name": "沃特福德",
+      "name_en": "Watford",
+      "source_name": "沃特福德 黑黄",
+      "source_name_en": "Watford BY"
+    },
+    "399": {
+      "name": "西布罗姆维奇",
+      "name_en": "West Bromwich Albion",
+      "source_name": "西布罗米奇 蓝白",
+      "source_name_en": "West Bromwich WB"
+    },
+    "436": {
+      "name": "美因茨",
+      "name_en": "Mainz",
+      "source_name": "美因茨 红白",
+      "source_name_en": "Mainz RW"
+    },
+    "1195": {
+      "name": "亨克",
+      "name_en": "Genk",
+      "source_name": "亨克 蓝白",
+      "source_name_en": "Genk BW"
+    },
+    "1196": {
+      "name": "根特",
+      "name_en": "Gent",
+      "source_name": "根特 蓝白",
+      "source_name_en": "Gent BW"
+    },
+    "1197": {
+      "name": "标准列日",
+      "name_en": "Standard Liège",
+      "source_name": "列日 红白",
+      "source_name_en": "Liège RW"
+    },
+    "1200": {
+      "name": "麦赫伦",
+      "name_en": "Mechelen",
+      "source_name": "麦赫伦 黄红",
+      "source_name_en": "Mechelen GR"
+    },
+    "1207": {
+      "name": "哥本哈根",
+      "name_en": "FC Copenhagen",
+      "source_name": "哥本哈根 白蓝",
+      "source_name_en": "København HB"
+    },
+    "1208": {
+      "name": "北西兰",
+      "name_en": "Nordsjælland",
+      "source_name": "北西兰 红黄",
+      "source_name_en": "Nordsjælland RG"
+    },
+    "1228": {
+      "name": "草蜢",
+      "name_en": "Grasshopper Club Zürich",
+      "source_name": "苏黎世 蓝白",
+      "source_name_en": "Zürich BW"
+    },
+    "1236": {
+      "name": "阿根廷青年人",
+      "name_en": "Argentinos Juniors",
+      "source_name": "拉帕特纳尔 红白",
+      "source_name_en": "La Paternal RB"
+    },
+    "1237": {
+      "name": "竞技俱乐部",
+      "name_en": "Racing Club",
+      "source_name": "阿维亚内达 蓝白",
+      "source_name_en": "Avellaneda AB"
+    },
+    "1238": {
+      "name": "拉普拉塔大学生",
+      "name_en": "Estudiantes de La Plata",
+      "source_name": "布宜诺斯艾利斯 红白",
+      "source_name_en": "Buenos Aires RB"
+    },
+    "1239": {
+      "name": "拉普拉塔体操",
+      "name_en": "Gimnasia y Esgrima La Plata",
+      "source_name": "拉普拉塔 蓝白",
+      "source_name_en": "La Plata AB"
+    },
+    "1240": {
+      "name": "独立队",
+      "name_en": "Independiente",
+      "source_name": "阿维亚内达 红",
+      "source_name_en": "Avellaneda R"
+    },
+    "1241": {
+      "name": "纽维尔老男孩",
+      "name_en": "Newell's Old Boys",
+      "source_name": "罗萨里奥 红黑",
+      "source_name_en": "Rosario RN"
+    },
+    "1242": {
+      "name": "罗萨里奥中央",
+      "name_en": "Rosario Central",
+      "source_name": "罗萨里奥 蓝黄",
+      "source_name_en": "Rosario AA"
+    },
+    "1243": {
+      "name": "圣洛伦索",
+      "name_en": "San Lorenzo",
+      "source_name": "阿尔马格罗 蓝红",
+      "source_name_en": "Almagro AR"
+    },
+    "1244": {
+      "name": "萨斯菲尔德",
+      "name_en": "Vélez Sarsfield",
+      "source_name": "林内斯 蓝白",
+      "source_name_en": "Liniers AB"
+    },
+    "1245": {
+      "name": "米内罗竞技",
+      "name_en": "Atlético Mineiro",
+      "source_name": "米纳斯吉拉斯 黑白",
+      "source_name_en": "Minas Gerais PB"
+    },
+    "1256": {
+      "name": "智利大学",
+      "name_en": "Universidad de Chile",
+      "source_name": "圣地亚哥 蓝",
+      "source_name_en": "Santiago B"
+    },
+    "1257": {
+      "name": "卡利美洲",
+      "name_en": "América de Cali",
+      "source_name": "卡利 红",
+      "source_name_en": "Cali R"
+    },
+    "1258": {
+      "name": "百万富翁",
+      "name_en": "Millonarios",
+      "source_name": "波哥大 蓝白",
+      "source_name_en": "Bogotá AB"
+    },
+    "1327": {
+      "name": "女王公园巡游者",
+      "name_en": "Queens Park Rangers",
+      "source_name": "皇后公园 蓝白",
+      "source_name_en": "Queen's Park BW"
+    },
+    "1362": {
+      "name": "切塞纳",
+      "name_en": "Cesena",
+      "source_name": "伊亚鲁 黑白",
+      "source_name_en": "Cesena BN"
+    },
+    "1589": {
+      "name": "赫尔城",
+      "name_en": "Hull City",
+      "source_name": "赫尔 橙黑",
+      "source_name_en": "Hull OB"
+    },
+    "1706": {
+      "name": "巴塞尔",
+      "name_en": "Basel",
+      "source_name": "巴塞尔 红蓝",
+      "source_name_en": "Basel RB"
+    },
+    "1760": {
+      "name": "布里斯托尔城",
+      "name_en": "Bristol City",
+      "source_name": "布里斯托尔 红",
+      "source_name_en": "Bristol R"
+    },
+    "1765": {
+      "name": "格拉纳达",
+      "name_en": "Granada",
+      "source_name": "格拉纳达 红白",
+      "source_name_en": "Granada RB"
+    },
+    "1775": {
+      "name": "墨西哥美洲",
+      "name_en": "Club América",
+      "source_name": "墨西哥城 黄蓝",
+      "source_name_en": "Ciudad de México AA"
+    },
+    "1782": {
+      "name": "新莱昂老虎",
+      "name_en": "Tigres UANL",
+      "source_name": "新莱昂 黄蓝",
+      "source_name_en": "Nuevo León AA"
+    },
+    "1832": {
+      "name": "布隆德比",
+      "name_en": "Brøndby",
+      "source_name": "布隆德比 黄蓝",
+      "source_name_en": "Brøndby GB"
+    },
+    "1909": {
+      "name": "斯旺西城",
+      "name_en": "Swansea City",
+      "source_name": "斯旺西 白",
+      "source_name_en": "Swansea W"
+    },
+    "1919": {
+      "name": "萨索洛",
+      "name_en": "Sassuolo",
+      "source_name": "萨索洛 黑绿",
+      "source_name_en": "Sassuolo NV"
+    },
+    "1922": {
+      "name": "飓风队",
+      "name_en": "Huracán",
+      "source_name": "帕克帕特里西奥斯 红",
+      "source_name_en": "Parque Patricios R"
+    },
+    "1926": {
+      "name": "蒂格雷",
+      "name_en": "Tigre",
+      "source_name": "维多利亚 蓝红",
+      "source_name_en": "Victoria AR"
+    },
+    "1927": {
+      "name": "班菲尔德",
+      "name_en": "Banfield",
+      "source_name": "班菲尔德 绿白",
+      "source_name_en": "Banfield VB"
+    },
+    "1933": {
+      "name": "戈亚斯",
+      "name_en": "Goiás",
+      "source_name": "戈亚斯 绿",
+      "source_name_en": "Goiás V"
+    },
+    "1935": {
+      "name": "累西腓航海",
+      "name_en": "Náutico",
+      "source_name": "累西腓阿弗利图斯 红白",
+      "source_name_en": "Recife Aflitos VB"
+    },
+    "1936": {
+      "name": "累西腓体育",
+      "name_en": "Sport Recife",
+      "source_name": "累西腓 黑红",
+      "source_name_en": "Recife PV"
+    },
+    "1950": {
+      "name": "伯尔尼年轻人",
+      "name_en": "BSC Young Boys",
+      "source_name": "伯尔尼 黄黑",
+      "source_name_en": "Bern GS"
+    },
+    "1955": {
+      "name": "锡永",
+      "name_en": "Sion",
+      "source_name": "锡永 红白",
+      "source_name_en": "Sion RW"
+    },
+    "1956": {
+      "name": "瓦杜茲",
+      "name_en": "Vaduz",
+      "source_name": "瓦杜茲 红",
+      "source_name_en": "Vaduz R"
+    },
+    "1957": {
+      "name": "苏黎世",
+      "name_en": "FC Zürich",
+      "source_name": "苏黎世 白蓝",
+      "source_name_en": "Zürich WB"
+    },
+    "1958": {
+      "name": "塞尔维特",
+      "name_en": "Servette",
+      "source_name": "塞尔维特 红",
+      "source_name_en": "Servette R"
+    },
+    "1989": {
+      "name": "安塔利亚体育",
+      "name_en": "Antalyaspor",
+      "source_name": "安塔利亚 红白",
+      "source_name_en": "Antalya KB"
+    },
+    "1996": {
+      "name": "开塞利体育",
+      "name_en": "Kayserispor",
+      "source_name": "卡塞利 红黄",
+      "source_name_en": "Kayseri KS"
+    },
+    "2009": {
+      "name": "色格拉布鲁日",
+      "name_en": "Cercle Brugge",
+      "source_name": "布鲁日 绿黑",
+      "source_name_en": "Brugge GZ"
+    },
+    "2010": {
+      "name": "沙勒罗瓦",
+      "name_en": "Charleroi",
+      "source_name": "沙勒罗瓦 黑白",
+      "source_name_en": "Charleroi ZW"
+    },
+    "2013": {
+      "name": "科尔特赖克",
+      "name_en": "Kortrijk",
+      "source_name": "科尔特赖克 红白",
+      "source_name_en": "Kortrijk RW"
+    },
+    "2019": {
+      "name": "瓦雷赫姆",
+      "name_en": "Waregem",
+      "source_name": "瓦雷赫姆 红绿",
+      "source_name_en": "Waregem GR"
+    },
+    "2066": {
+      "name": "霍尔森斯",
+      "name_en": "Horsens",
+      "source_name": "霍尔森斯 黄黑",
+      "source_name_en": "Horsens GS"
+    },
+    "2067": {
+      "name": "奥胡斯",
+      "name_en": "AGF Aarhus",
+      "source_name": "奥胡斯 蓝白",
+      "source_name_en": "Aarhus HB"
+    },
+    "2069": {
+      "name": "中日德兰",
+      "name_en": "Midtjylland",
+      "source_name": "中日德兰 黑红",
+      "source_name_en": "Midtjylland SR"
+    },
+    "2070": {
+      "name": "欧登塞",
+      "name_en": "Odense BK",
+      "source_name": "欧登塞 蓝白",
+      "source_name_en": "Odense HB"
+    },
+    "2071": {
+      "name": "兰德斯",
+      "name_en": "Randers",
+      "source_name": "兰德斯 蓝",
+      "source_name_en": "Randers B"
+    },
+    "2187": {
+      "name": "希罗纳",
+      "name_en": "Girona",
+      "source_name": "希罗纳 红",
+      "source_name_en": "Girona R"
+    },
+    "2188": {
+      "name": "韦斯卡",
+      "name_en": "Huesca",
+      "source_name": "韦斯卡 红蓝",
+      "source_name_en": "Huesca RA"
+    },
+    "2191": {
+      "name": "智利天主大学",
+      "name_en": "Universidad Católica",
+      "source_name": "圣地亚哥 白蓝红",
+      "source_name_en": "Santiago BAR"
+    },
+    "2192": {
+      "name": "奥达克斯意大利人",
+      "name_en": "Audax Italiano",
+      "source_name": "圣地亚哥 绿白",
+      "source_name_en": "Santiago VB"
+    },
+    "2193": {
+      "name": "国民竞技",
+      "name_en": "Atlético Nacional",
+      "source_name": "麦德林 绿白",
+      "source_name_en": "Medellín V"
+    },
+    "2194": {
+      "name": "库库塔体育",
+      "name_en": "Cúcuta Deportivo",
+      "source_name": "库库塔 黑红",
+      "source_name_en": "Cúcuta RN"
+    },
+    "2195": {
+      "name": "博亚卡奇科",
+      "name_en": "Boyacá Chicó",
+      "source_name": "博亚卡 蓝",
+      "source_name_en": "Boyacá A"
+    },
+    "2208": {
+      "name": "埃弗顿比尼亚德尔马",
+      "name_en": "Everton de Viña del Mar",
+      "source_name": "维尼亚德尔马 蓝黄",
+      "source_name_en": "Viña del Mar AA"
+    },
+    "2209": {
+      "name": "智利大学",
+      "name_en": "Universidad de Chile",
+      "source_name": "圣地亚哥 蓝",
+      "source_name_en": "Santiago A"
+    },
+    "2210": {
+      "name": "麦德林独立",
+      "name_en": "Independiente Medellín",
+      "source_name": "麦德林 红蓝",
+      "source_name_en": "Medellín RA"
+    },
+    "2284": {
+      "name": "云斯卡尔达斯",
+      "name_en": "Once Caldas",
+      "source_name": "马尼萨莱斯 白",
+      "source_name_en": "Manizales B"
+    },
+    "2285": {
+      "name": "巴兰基亚青年",
+      "name_en": "Junior de Barranquilla",
+      "source_name": "巴兰基亚 红白",
+      "source_name_en": "Barranquilla RB"
+    },
+    "2320": {
+      "name": "帕多瓦",
+      "name_en": "Padova",
+      "source_name": "帕多瓦 红白",
+      "source_name_en": "Padova BR"
+    },
+    "2361": {
+      "name": "托利马体育",
+      "name_en": "Deportes Tolima",
+      "source_name": "多利马 红黄",
+      "source_name_en": "Tolima RA"
+    },
+    "2450": {
+      "name": "克鲁塞罗",
+      "name_en": "Cruzeiro",
+      "source_name": "米纳斯吉拉斯 绿黑",
+      "source_name_en": "Minas Gerais VP"
+    },
+    "2451": {
+      "name": "戈亚尼亚竞技",
+      "name_en": "Atlético Goianiense",
+      "source_name": "戈亚尼亚 黑红",
+      "source_name_en": "Goiânia PV"
+    },
+    "2452": {
+      "name": "阿瓦伊",
+      "name_en": "Avaí",
+      "source_name": "弗洛里亚诺波利斯 蓝白",
+      "source_name_en": "Florianópolis AB"
+    },
+    "2454": {
+      "name": "塞阿腊",
+      "name_en": "Ceará",
+      "source_name": "塞阿腊 黑白",
+      "source_name_en": "Ceará PB"
+    },
+    "2465": {
+      "name": "庞特普雷塔",
+      "name_en": "Ponte Preta",
+      "source_name": "庞特普雷塔 黑白",
+      "source_name_en": "Ponte Preta BP"
+    },
+    "2468": {
+      "name": "维拉诺瓦",
+      "name_en": "Vila Nova",
+      "source_name": "维拉诺瓦 红白",
+      "source_name_en": "Vila Nova VB"
+    },
+    "2506": {
+      "name": "雷加塔斯巴西",
+      "name_en": "CRB",
+      "source_name": "马塞约 红白",
+      "source_name_en": "Maceió VB"
+    },
+    "2517": {
+      "name": "尤维斯塔比亚",
+      "name_en": "Juve Stabia",
+      "source_name": "西埃姆 黄蓝",
+      "source_name_en": "Stabia GB"
+    },
+    "2523": {
+      "name": "萨瓦德尔",
+      "name_en": "Sabadell",
+      "source_name": "萨瓦德尔 蓝白",
+      "source_name_en": "Sabadell AB"
+    },
+    "2536": {
+      "name": "贝尔格拉诺",
+      "name_en": "Belgrano",
+      "source_name": "阿尔韦迪 浅蓝",
+      "source_name_en": "Alberdi A"
+    },
+    "2538": {
+      "name": "圣菲联",
+      "name_en": "Unión de Santa Fe",
+      "source_name": "圣菲 红白",
+      "source_name_en": "Santa Fe RB"
+    },
+    "2541": {
+      "name": "奥希金斯",
+      "name_en": "O'Higgins",
+      "source_name": "兰卡瓜 蓝",
+      "source_name_en": "Rancagua A"
+    },
+    "2544": {
+      "name": "拉塞雷纳体育",
+      "name_en": "Deportes La Serena",
+      "source_name": "拉塞雷纳 红",
+      "source_name_en": "La Serena R"
+    },
+    "2545": {
+      "name": "瓦奇巴托",
+      "name_en": "Huachipato",
+      "source_name": "塔尔卡瓦诺 蓝黑",
+      "source_name_en": "Talcahuano AN"
+    },
+    "2546": {
+      "name": "拉卡莱拉联合",
+      "name_en": "Unión La Calera",
+      "source_name": "拉卡莱拉 红",
+      "source_name_en": "La Calera R"
+    },
+    "2548": {
+      "name": "帕莱斯蒂诺",
+      "name_en": "Palestino",
+      "source_name": "圣地亚哥 红白绿",
+      "source_name_en": "Santiago RBV"
+    },
+    "2551": {
+      "name": "康塞普西翁大学",
+      "name_en": "Universidad de Concepción",
+      "source_name": "康塞普西翁 黄蓝",
+      "source_name_en": "Concepción AA"
+    },
+    "2553": {
+      "name": "科布雷萨尔",
+      "name_en": "Cobresal",
+      "source_name": "埃尔萨尔瓦多 白橙",
+      "source_name_en": "El Salvador BN"
+    },
+    "2614": {
+      "name": "通德拉",
+      "name_en": "Tondela",
+      "source_name": "比艾 黄绿",
+      "source_name_en": "Tondela AV"
+    },
+    "2616": {
+      "name": "米兰德斯",
+      "name_en": "Mirandés",
+      "source_name": "埃布罗河畔米兰达 黑红",
+      "source_name_en": "Miranda de Ebro RN"
+    },
+    "2643": {
+      "name": "蒙通联",
+      "name_en": "Muangthong United",
+      "source_name": "蒙通联 红黑白",
+      "source_name_en": "Muang Thong Thani DDK"
+    },
+    "2650": {
+      "name": "卡利体育",
+      "name_en": "Deportivo Cali",
+      "source_name": "卡利 绿白",
+      "source_name_en": "Cali VB"
+    },
+    "2651": {
+      "name": "帕斯托体育",
+      "name_en": "Deportivo Pasto",
+      "source_name": "帕斯托 红蓝",
+      "source_name_en": "Pasto RAA"
+    },
+    "2653": {
+      "name": "里奥内格罗金鹰",
+      "name_en": "Águilas Doradas",
+      "source_name": "里奥内格罗 红黄",
+      "source_name_en": "Rionegro RA"
+    },
+    "2654": {
+      "name": "拉伊奎达德",
+      "name_en": "La Equidad",
+      "source_name": "波哥大 绿白",
+      "source_name_en": "Bogotá VB"
+    },
+    "2657": {
+      "name": "圣菲独立",
+      "name_en": "Independiente Santa Fe",
+      "source_name": "圣菲波哥大 红白",
+      "source_name_en": "Santa Fe de Bogotá R"
+    },
+    "2699": {
+      "name": "努布伦斯",
+      "name_en": "Ñublense",
+      "source_name": "奇尔南 红",
+      "source_name_en": "Chillán R"
+    },
+    "2707": {
+      "name": "科金博联合",
+      "name_en": "Coquimbo Unido",
+      "source_name": "科金博 黄黑",
+      "source_name_en": "Coquimbo AN"
+    },
+    "2709": {
+      "name": "康塞普西翁体育",
+      "name_en": "Deportes Concepción",
+      "source_name": "康塞普西翁 紫白",
+      "source_name_en": "Concepción M"
+    },
+    "2717": {
+      "name": "阿尔多西维",
+      "name_en": "Aldosivi",
+      "source_name": "马尔德普拉塔 绿黄",
+      "source_name_en": "Mar del Plata VA"
+    },
+    "2719": {
+      "name": "图库曼竞技",
+      "name_en": "Atlético Tucumán",
+      "source_name": "土库曼 蓝白",
+      "source_name_en": "Tucumán AB"
+    },
+    "2722": {
+      "name": "国防与司法",
+      "name_en": "Defensa y Justicia",
+      "source_name": "费尔南德斯维拉拉 黄绿",
+      "source_name_en": "Florencio Varela AV"
+    },
+    "2726": {
+      "name": "里瓦达维亚独立",
+      "name_en": "Independiente Rivadavia",
+      "source_name": "里瓦达维亚 蓝",
+      "source_name_en": "Rivadavia A"
+    },
+    "2727": {
+      "name": "科尔多瓦学院",
+      "name_en": "Instituto",
+      "source_name": "阿尔塔科尔多瓦 红白",
+      "source_name_en": "Alta Córdoba RB"
+    },
+    "2730": {
+      "name": "萨米恩托",
+      "name_en": "Sarmiento de Junín",
+      "source_name": "胡宁 绿",
+      "source_name_en": "Junín V"
+    },
+    "4071": {
+      "name": "伯恩茅斯",
+      "name_en": "Bournemouth",
+      "source_name": "伯恩茅斯 黑红",
+      "source_name_en": "Bournemouth RB"
+    },
+    "4140": {
+      "name": "柏林联合",
+      "name_en": "Union Berlin",
+      "source_name": "柏林 红白",
+      "source_name_en": "Berlin RW"
+    },
+    "4145": {
+      "name": "阿拉维斯",
+      "name_en": "Deportivo Alavés",
+      "source_name": "阿拉瓦 蓝白",
+      "source_name_en": "Álava AB"
+    },
+    "4146": {
+      "name": "埃瓦尔",
+      "name_en": "Eibar",
+      "source_name": "埃瓦尔 红蓝",
+      "source_name_en": "Eibar AR"
+    },
+    "4147": {
+      "name": "特内里费",
+      "name_en": "Tenerife",
+      "source_name": "特内里费 蓝白",
+      "source_name_en": "Tenerife AB"
+    },
+    "4148": {
+      "name": "芝加哥火焰",
+      "name_en": "Chicago Fire",
+      "source_name": "芝加哥 红白",
+      "source_name_en": "Chicago RW"
+    },
+    "4150": {
+      "name": "科罗拉多急流",
+      "name_en": "Colorado Rapids",
+      "source_name": "科罗拉多 棕蓝",
+      "source_name_en": "Colorado BB"
+    },
+    "4151": {
+      "name": "哥伦布机员",
+      "name_en": "Columbus Crew",
+      "source_name": "哥伦布 蓝黄",
+      "source_name_en": "Columbus BY"
+    },
+    "4152": {
+      "name": "华盛顿联",
+      "name_en": "D.C. United",
+      "source_name": "华盛顿特区 黑红",
+      "source_name_en": "Washington D.C. BR"
+    },
+    "4153": {
+      "name": "达拉斯FC",
+      "name_en": "FC Dallas",
+      "source_name": "达拉斯 红白",
+      "source_name_en": "Dallas RW"
+    },
+    "4154": {
+      "name": "休斯敦迪纳摩",
+      "name_en": "Houston Dynamo",
+      "source_name": "休斯敦 橙",
+      "source_name_en": "Houston O"
+    },
+    "4155": {
+      "name": "洛杉矶银河",
+      "name_en": "LA Galaxy",
+      "source_name": "洛杉矶 白蓝黄",
+      "source_name_en": "Los Angeles WBY"
+    },
+    "4156": {
+      "name": "蒙特利尔",
+      "name_en": "CF Montréal",
+      "source_name": "蒙特利尔 蓝白黑",
+      "source_name_en": "Montreal BWB"
+    },
+    "4157": {
+      "name": "新英格兰革命",
+      "name_en": "New England Revolution",
+      "source_name": "新英格兰 蓝白",
+      "source_name_en": "New England BW"
+    },
+    "4158": {
+      "name": "纽约红牛",
+      "name_en": "New York Red Bulls",
+      "source_name": "纽约 白红",
+      "source_name_en": "New York WR"
+    },
+    "4159": {
+      "name": "费城联合",
+      "name_en": "Philadelphia Union",
+      "source_name": "费城 蓝黄",
+      "source_name_en": "Philadelphia BY"
+    },
+    "4160": {
+      "name": "波特兰伐木工",
+      "name_en": "Portland Timbers",
+      "source_name": "波特兰 绿白",
+      "source_name_en": "Portland GW"
+    },
+    "4161": {
+      "name": "皇家盐湖城",
+      "name_en": "Real Salt Lake",
+      "source_name": "盐湖城 红蓝",
+      "source_name_en": "Salt Lake RB"
+    },
+    "4162": {
+      "name": "圣何塞地震",
+      "name_en": "San Jose Earthquakes",
+      "source_name": "圣何塞 黑蓝",
+      "source_name_en": "San Jose BB"
+    },
+    "4163": {
+      "name": "西雅图海湾人",
+      "name_en": "Seattle Sounders",
+      "source_name": "西雅图 绿蓝",
+      "source_name_en": "Seattle GB"
+    },
+    "4164": {
+      "name": "堪萨斯城竞技",
+      "name_en": "Sporting Kansas City",
+      "source_name": "堪萨斯城 蓝白",
+      "source_name_en": "Kansas City BW"
+    },
+    "4165": {
+      "name": "多伦多FC",
+      "name_en": "Toronto FC",
+      "source_name": "多伦多 红白",
+      "source_name_en": "Toronto RW"
+    },
+    "4166": {
+      "name": "温哥华白浪",
+      "name_en": "Vancouver Whitecaps",
+      "source_name": "温哥华 蓝白",
+      "source_name_en": "Vancouver BW"
+    },
+    "4174": {
+      "name": "蔚山HD",
+      "name_en": "Ulsan HD",
+      "source_name": "蔚山 蓝",
+      "source_name_en": "Ulsan B"
+    },
+    "4180": {
+      "name": "布伦特福德",
+      "name_en": "Brentford",
+      "source_name": "布伦特福德 红白",
+      "source_name_en": "Brentford RW"
+    },
+    "4183": {
+      "name": "考文垂城",
+      "name_en": "Coventry City",
+      "source_name": "考文垂 蓝",
+      "source_name_en": "Coventry B"
+    },
+    "4192": {
+      "name": "普雷斯顿",
+      "name_en": "Preston North End",
+      "source_name": "普雷斯顿 蓝白",
+      "source_name_en": "Preston WB"
+    },
+    "4194": {
+      "name": "谢菲尔德联",
+      "name_en": "Sheffield United",
+      "source_name": "谢菲尔德 黑红",
+      "source_name_en": "Sheffield RB"
+    },
+    "4200": {
+      "name": "亚眠",
+      "name_en": "Amiens",
+      "source_name": "亚眠 黑白",
+      "source_name_en": "Amiens NB"
+    },
+    "4212": {
+      "name": "巴黎红星",
+      "name_en": "Red Star",
+      "source_name": "巴黎红星",
+      "source_name_en": "Red Star FC"
+    },
+    "4220": {
+      "name": "克雷莫纳",
+      "name_en": "Cremonese",
+      "source_name": "埃尔比 红灰",
+      "source_name_en": "Cremona GR"
+    },
+    "4229": {
+      "name": "威尼斯",
+      "name_en": "Venezia",
+      "source_name": "迪埃尔 黑橙绿",
+      "source_name_en": "Venezia ANV"
+    },
+    "4230": {
+      "name": "恩特拉",
+      "name_en": "Virtus Entella",
+      "source_name": "埃尔亚鲁 蓝白",
+      "source_name_en": "Entella BA"
+    },
+    "4232": {
+      "name": "贝内文托",
+      "name_en": "Benevento",
+      "source_name": "西埃姆 红黄",
+      "source_name_en": "Benevento GR"
+    },
+    "4233": {
+      "name": "卡坦扎罗",
+      "name_en": "Catanzaro",
+      "source_name": "卡坦扎罗 红绿",
+      "source_name_en": "Catanzaro GR"
+    },
+    "4234": {
+      "name": "弗罗西诺内",
+      "name_en": "Frosinone",
+      "source_name": "蒂阿伊 黄蓝",
+      "source_name_en": "Frosinone GA"
+    },
+    "4237": {
+      "name": "莱切",
+      "name_en": "Lecce",
+      "source_name": "莱切 黄红",
+      "source_name_en": "Lecce GR"
+    },
+    "4241": {
+      "name": "比萨",
+      "name_en": "Pisa",
+      "source_name": "蒂奥 黑蓝",
+      "source_name_en": "Pisa NA"
+    },
+    "4247": {
+      "name": "布尔戈斯",
+      "name_en": "Burgos",
+      "source_name": "布尔戈斯 黑白",
+      "source_name_en": "Burgos NB"
+    },
+    "4249": {
+      "name": "维戈 蓝白 II",
+      "name_en": "Vigo AB",
+      "source_name": "维戈 蓝白 II",
+      "source_name_en": "Vigo AB II"
+    },
+    "4252": {
+      "name": "莱昂文化",
+      "name_en": "Cultural Leonesa",
+      "source_name": "西埃尔 黑白",
+      "source_name_en": "León B"
+    },
+    "4260": {
+      "name": "皇家奥维耶多",
+      "name_en": "Real Oviedo",
+      "source_name": "奥维多 蓝",
+      "source_name_en": "Oviedo A"
+    },
+    "4272": {
+      "name": "莱加内斯",
+      "name_en": "Leganés",
+      "source_name": "莱加内斯 蓝白",
+      "source_name_en": "Leganés AB"
+    },
+    "4276": {
+      "name": "巴斯克 吉普斯夸 蓝白 II",
+      "name_en": "Vasco Gipuzkoa AB",
+      "source_name": "巴斯克 吉普斯夸 蓝白 II",
+      "source_name_en": "Vasco Gipuzkoa AB II"
+    },
+    "4302": {
+      "name": "阿尔瓦塞特",
+      "name_en": "Albacete",
+      "source_name": "阿尔瓦塞特 黑白",
+      "source_name_en": "Albacete BN"
+    },
+    "4308": {
+      "name": "卡迪斯",
+      "name_en": "Cádiz",
+      "source_name": "卡迪斯 黄蓝",
+      "source_name_en": "Cádiz AA"
+    },
+    "4365": {
+      "name": "朴茨茅斯",
+      "name_en": "Portsmouth",
+      "source_name": "朴茨茅斯 蓝",
+      "source_name_en": "Portsmouth B"
+    },
+    "4377": {
+      "name": "阿雷佐",
+      "name_en": "Arezzo",
+      "source_name": "阿雷佐 石榴红",
+      "source_name_en": "Arezzo G"
+    },
+    "4379": {
+      "name": "曼托瓦",
+      "name_en": "Mantova",
+      "source_name": "曼托瓦 红白",
+      "source_name_en": "Mantova BR"
+    },
+    "4395": {
+      "name": "卡斯特利翁",
+      "name_en": "Castellón",
+      "source_name": "卡斯特利翁 黑白",
+      "source_name_en": "Castellón NB"
+    },
+    "4914": {
+      "name": "蒙扎",
+      "name_en": "Monza",
+      "source_name": "蒙扎 红白",
+      "source_name_en": "Monza RB"
+    },
+    "4937": {
+      "name": "圣加仑",
+      "name_en": "Sankt Gallen",
+      "source_name": "圣加仑 绿白",
+      "source_name_en": "Sankt Gallen GW"
+    },
+    "4938": {
+      "name": "图恩",
+      "name_en": "Thun",
+      "source_name": "图恩 红白",
+      "source_name_en": "Thun RW"
+    },
+    "4962": {
+      "name": "卢塞恩",
+      "name_en": "Luzern",
+      "source_name": "卢塞恩 蓝白",
+      "source_name_en": "Luzern BW"
+    },
+    "4964": {
+      "name": "洛桑",
+      "name_en": "Lausanne",
+      "source_name": "洛桑 蓝白",
+      "source_name_en": "Lausanne BW"
+    },
+    "4965": {
+      "name": "卢加诺",
+      "name_en": "Lugano",
+      "source_name": "卢加诺 黑白",
+      "source_name_en": "Lugano SW"
+    },
+    "4968": {
+      "name": "温特图尔",
+      "name_en": "Winterthur",
+      "source_name": "温特图尔 红白",
+      "source_name_en": "Winterthur RW"
+    },
+    "4988": {
+      "name": "埃尔达",
+      "name_en": "Elda",
+      "source_name": "埃尔达 红蓝",
+      "source_name_en": "Elda RA"
+    },
+    "4995": {
+      "name": "科尔多瓦中央",
+      "name_en": "Central Córdoba de Santiago del Estero",
+      "source_name": "圣地亚哥德尔埃斯特罗 白黑",
+      "source_name_en": "Santiago del Estero BN"
+    },
+    "4997": {
+      "name": "门多萨体操",
+      "name_en": "Gimnasia y Esgrima Mendoza",
+      "source_name": "门多萨 黑白",
+      "source_name_en": "Mendoza NB"
+    },
+    "5010": {
+      "name": "RB莱比锡",
+      "name_en": "RB Leipzig",
+      "source_name": "莱比锡 红白",
+      "source_name_en": "Leipzig RW"
+    },
+    "5046": {
+      "name": "塔列雷斯",
+      "name_en": "Talleres de Córdoba",
+      "source_name": "科尔多瓦 蓝白",
+      "source_name_en": "Córdoba AB"
+    },
+    "5048": {
+      "name": "隆德里纳",
+      "name_en": "Londrina",
+      "source_name": "隆德里纳 蓝",
+      "source_name_en": "Londrina AB"
+    },
+    "5061": {
+      "name": "纽约城",
+      "name_en": "New York City FC",
+      "source_name": "纽约城 蓝",
+      "source_name_en": "New York City B"
+    },
+    "5062": {
+      "name": "奥兰多城",
+      "name_en": "Orlando City",
+      "source_name": "奥兰多 紫白",
+      "source_name_en": "Orlando PW"
+    },
+    "5086": {
+      "name": "牛津联",
+      "name_en": "Oxford United",
+      "source_name": "牛津 蓝黄",
+      "source_name_en": "Oxford BY"
+    },
+    "5135": {
+      "name": "济州SK",
+      "name_en": "Jeju SK",
+      "source_name": "济州 橙",
+      "source_name_en": "Jeju O"
+    },
+    "5137": {
+      "name": "尤文图德",
+      "name_en": "Juventude",
+      "source_name": "南卡希亚斯 绿白",
+      "source_name_en": "Caxias do Sul VB"
+    },
+    "5139": {
+      "name": "博塔弗戈SP",
+      "name_en": "Botafogo de Ribeirão Preto",
+      "source_name": "里贝朗普雷图 白红黑",
+      "source_name_en": "Ribeirão Preto BVP"
+    },
+    "5142": {
+      "name": "库亚巴",
+      "name_en": "Cuiabá",
+      "source_name": "库亚巴 黄绿",
+      "source_name_en": "Cuiabá VA"
+    },
+    "5143": {
+      "name": "福塔莱萨",
+      "name_en": "Fortaleza",
+      "source_name": "福塔莱萨 蓝红白",
+      "source_name_en": "Fortaleza AVB"
+    },
+    "5191": {
+      "name": "皇家安特卫普",
+      "name_en": "Royal Antwerp",
+      "source_name": "安特卫普 红白",
+      "source_name_en": "Antwerp RW"
+    },
+    "5194": {
+      "name": "圣特鲁登",
+      "name_en": "Sint-Truiden",
+      "source_name": "圣特鲁登 黄蓝",
+      "source_name_en": "Sint-Truiden GB"
+    },
+    "5195": {
+      "name": "贝弗伦",
+      "name_en": "Beveren",
+      "source_name": "贝弗伦 黄蓝",
+      "source_name_en": "Beveren GB"
+    },
+    "5207": {
+      "name": "巴列杜帕尔",
+      "name_en": "Valledupar FC",
+      "source_name": "巴列杜帕尔 蓝白",
+      "source_name_en": "Valledupar ABR"
+    },
+    "5208": {
+      "name": "布卡拉曼加竞技",
+      "name_en": "Atlético Bucaramanga",
+      "source_name": "布卡拉曼加 黄绿",
+      "source_name_en": "Bucaramanga AV"
+    },
+    "5210": {
+      "name": "哈瓜雷斯科尔多瓦",
+      "name_en": "Jaguares de Córdoba",
+      "source_name": "科尔多瓦 浅蓝",
+      "source_name_en": "Córdoba A"
+    },
+    "5217": {
+      "name": "鲁汶",
+      "name_en": "OH Leuven",
+      "source_name": "鲁汶 白黑红绿",
+      "source_name_en": "Leuven WZRG"
+    },
+    "5220": {
+      "name": "圣吉罗斯联合",
+      "name_en": "Union Saint-Gilloise",
+      "source_name": "圣吉尔 蓝黄",
+      "source_name_en": "Saint-Gilles BG"
+    },
+    "5221": {
+      "name": "韦斯特洛",
+      "name_en": "Westerlo",
+      "source_name": "韦斯特洛 黄蓝",
+      "source_name_en": "Westerlo GB"
+    },
+    "5224": {
+      "name": "林比",
+      "name_en": "Lyngby",
+      "source_name": "林比 蓝白",
+      "source_name_en": "Lyngby HB"
+    },
+    "5225": {
+      "name": "锡尔克堡",
+      "name_en": "Silkeborg",
+      "source_name": "锡尔克堡 红白",
+      "source_name_en": "Silkeborg RH"
+    },
+    "5226": {
+      "name": "桑德捷斯基",
+      "name_en": "Sønderjyske",
+      "source_name": "哈泽斯莱乌 蓝白",
+      "source_name_en": "Haderslev HB"
+    },
+    "5229": {
+      "name": "弗雷德里西亚",
+      "name_en": "Fredericia",
+      "source_name": "弗雷德里西亚 红黑",
+      "source_name_en": "Fredericia RS"
+    },
+    "5235": {
+      "name": "瓦埃勒",
+      "name_en": "Vejle",
+      "source_name": "瓦埃勒 红白",
+      "source_name_en": "Vejle RH"
+    },
+    "5237": {
+      "name": "维堡",
+      "name_en": "Viborg",
+      "source_name": "维堡 绿白",
+      "source_name_en": "Viborg GH"
+    },
+    "5319": {
+      "name": "利文斯顿",
+      "name_en": "Livingston",
+      "source_name": "利文斯顿 黄黑",
+      "source_name_en": "Livingston YB"
+    },
+    "5366": {
+      "name": "新芝加哥",
+      "name_en": "Nueva Chicago",
+      "source_name": "新庞贝亚 蓝白",
+      "source_name_en": "Nueva Pompeya NB"
+    },
+    "5370": {
+      "name": "佩雷拉体育",
+      "name_en": "Deportivo Pereira",
+      "source_name": "佩雷拉 黄红",
+      "source_name_en": "Pereira AR"
+    },
+    "5371": {
+      "name": "福塔雷萨CEIF",
+      "name_en": "Fortaleza CEIF",
+      "source_name": "拉福塔莱萨 红蓝",
+      "source_name_en": "La Fortaleza RA"
+    },
+    "5373": {
+      "name": "拉内罗斯",
+      "name_en": "Llaneros",
+      "source_name": "比利维森西奥 黑白",
+      "source_name_en": "Villavicencio BN"
+    },
+    "5397": {
+      "name": "那空叻差是玛",
+      "name_en": "Nakhon Ratchasima",
+      "source_name": "呵叻 橙",
+      "source_name_en": "Nakhon Ratchasima S"
+    },
+    "5422": {
+      "name": "洛梅尔",
+      "name_en": "Lommel",
+      "source_name": "洛梅尔 绿白",
+      "source_name_en": "Lommel GW"
+    },
+    "5433": {
+      "name": "铁路工人",
+      "name_en": "Operário Ferroviário",
+      "source_name": "蓬塔格罗萨 黑白",
+      "source_name_en": "Ponta Grossa PB"
+    },
+    "5624": {
+      "name": "林肯城",
+      "name_en": "Lincoln City",
+      "source_name": "林肯 红白",
+      "source_name_en": "Lincoln RW"
+    },
+    "5644": {
+      "name": "安道尔FC",
+      "name_en": "FC Andorra",
+      "source_name": "安道尔城 蓝黄红",
+      "source_name_en": "Andorra la Vella AAR"
+    },
+    "5652": {
+      "name": "法蒂赫卡拉古鲁克",
+      "name_en": "Fatih Karagümrük",
+      "source_name": "法蒂赫 红黑",
+      "source_name_en": "Fatih KS"
+    },
+    "5657": {
+      "name": "巴拉卡斯中央",
+      "name_en": "Barracas Central",
+      "source_name": "巴拉卡斯 红白",
+      "source_name_en": "Barracas RB"
+    },
+    "5659": {
+      "name": "里奥夸尔托大学生",
+      "name_en": "Estudiantes de Río Cuarto",
+      "source_name": "里奥夸尔托 蓝白",
+      "source_name_en": "Río Cuarto AB"
+    },
+    "5736": {
+      "name": "亚特兰大联",
+      "name_en": "Atlanta United",
+      "source_name": "亚特兰大 红黑",
+      "source_name_en": "Atlanta RB"
+    },
+    "5737": {
+      "name": "辛辛那提FC",
+      "name_en": "FC Cincinnati",
+      "source_name": "辛辛那提 橙蓝",
+      "source_name_en": "Cincinnati OB"
+    },
+    "5738": {
+      "name": "迈阿密国际",
+      "name_en": "Inter Miami",
+      "source_name": "迈阿密 粉黑",
+      "source_name_en": "Miami BP"
+    },
+    "5739": {
+      "name": "纳什维尔SC",
+      "name_en": "Nashville SC",
+      "source_name": "纳什维尔 黄蓝",
+      "source_name_en": "Nashville YB"
+    },
+    "5740": {
+      "name": "奥斯汀FC",
+      "name_en": "Austin FC",
+      "source_name": "奥斯汀 绿黑",
+      "source_name_en": "Austin GB"
+    },
+    "5741": {
+      "name": "洛杉矶FC",
+      "name_en": "Los Angeles FC",
+      "source_name": "洛杉矶 黑黄",
+      "source_name_en": "Los Angeles BY"
+    },
+    "5742": {
+      "name": "明尼苏达联",
+      "name_en": "Minnesota United",
+      "source_name": "明尼苏达 灰蓝",
+      "source_name_en": "Minnesota GB"
+    },
+    "5768": {
+      "name": "诺瓦里桑蒂诺",
+      "name_en": "Novorizontino",
+      "source_name": "新视野 黑黄",
+      "source_name_en": "Novo Horizonte AP"
+    },
+    "5776": {
+      "name": "查尔斯顿电池",
+      "name_en": "Charleston Battery",
+      "source_name": "查尔斯顿 黄黑",
+      "source_name_en": "Charleston YB"
+    },
+    "5778": {
+      "name": "哈特福德竞技",
+      "name_en": "Hartford Athletic",
+      "source_name": "哈特福德 绿蓝",
+      "source_name_en": "Hartford GB"
+    },
+    "5779": {
+      "name": "劳登联",
+      "name_en": "Loudoun United",
+      "source_name": "劳登 红白",
+      "source_name_en": "Loudoun RW"
+    },
+    "5780": {
+      "name": "迈阿密FC",
+      "name_en": "Miami FC",
+      "source_name": "迈阿密 蓝橙",
+      "source_name_en": "Miami BO"
+    },
+    "5782": {
+      "name": "匹兹堡猎犬",
+      "name_en": "Pittsburgh Riverhounds",
+      "source_name": "匹兹堡 黄黑",
+      "source_name_en": "Pittsburgh YB"
+    },
+    "5783": {
+      "name": "坦帕湾暴徒",
+      "name_en": "Tampa Bay Rowdies",
+      "source_name": "坦帕湾 绿黄",
+      "source_name_en": "Tampa Bay GY"
+    },
+    "5785": {
+      "name": "伯明翰军团",
+      "name_en": "Birmingham Legion",
+      "source_name": "伯明翰 黑黄",
+      "source_name_en": "Birmingham BY"
+    },
+    "5786": {
+      "name": "塔尔萨FC",
+      "name_en": "FC Tulsa",
+      "source_name": "塔尔萨 白黄",
+      "source_name_en": "Tulsa WY"
+    },
+    "5787": {
+      "name": "印地十一",
+      "name_en": "Indy Eleven",
+      "source_name": "印第安纳 蓝",
+      "source_name_en": "Indiana B"
+    },
+    "5788": {
+      "name": "路易斯维尔城",
+      "name_en": "Louisville City",
+      "source_name": "路易斯维尔 紫白",
+      "source_name_en": "Louisville PW"
+    },
+    "5793": {
+      "name": "科罗拉多斯普林斯转折",
+      "name_en": "Colorado Springs Switchbacks",
+      "source_name": "科罗拉多斯普林斯 黑白",
+      "source_name_en": "Colorado Springs BW"
+    },
+    "5794": {
+      "name": "埃尔帕索火车头",
+      "name_en": "El Paso Locomotive",
+      "source_name": "埃尔帕索 蓝黄",
+      "source_name_en": "El Paso BY"
+    },
+    "5795": {
+      "name": "新墨西哥联",
+      "name_en": "New Mexico United",
+      "source_name": "新墨西哥 黄黑",
+      "source_name_en": "New Mexico YB"
+    },
+    "5798": {
+      "name": "圣安东尼奥FC",
+      "name_en": "San Antonio FC",
+      "source_name": "圣安东尼奥 黑灰",
+      "source_name_en": "San Antonio BG"
+    },
+    "5800": {
+      "name": "拉斯维加斯之光",
+      "name_en": "Las Vegas Lights",
+      "source_name": "拉斯维加斯 蓝黄蓝红",
+      "source_name_en": "Las Vegas BYBR"
+    },
+    "5801": {
+      "name": "奥克兰根",
+      "name_en": "Oakland Roots",
+      "source_name": "奥克兰 黑白",
+      "source_name_en": "Oakland BW"
+    },
+    "5802": {
+      "name": "奥兰治县SC",
+      "name_en": "Orange County SC",
+      "source_name": "奥兰治 黑橙",
+      "source_name_en": "Orange BO"
+    },
+    "5803": {
+      "name": "菲尼克斯崛起",
+      "name_en": "Phoenix Rising",
+      "source_name": "菲尼克斯 红黄",
+      "source_name_en": "Phoenix RY"
+    },
+    "5804": {
+      "name": "萨克拉门托共和",
+      "name_en": "Sacramento Republic",
+      "source_name": "萨克拉门托 黑红",
+      "source_name_en": "Sacramento BR"
+    },
+    "5832": {
+      "name": "夏洛特FC",
+      "name_en": "Charlotte FC",
+      "source_name": "夏洛特 蓝白绿白",
+      "source_name_en": "Charlotte BBGW"
+    },
+    "5833": {
+      "name": "蒙特雷湾",
+      "name_en": "Monterey Bay",
+      "source_name": "蒙特雷 蓝黑",
+      "source_name_en": "Monterey BB"
+    },
+    "5835": {
+      "name": "底特律城",
+      "name_en": "Detroit City",
+      "source_name": "底特律 红黄",
+      "source_name_en": "Detroit BY"
+    },
+    "5878": {
+      "name": "登德尔",
+      "name_en": "FCV Dender",
+      "source_name": "登德尔勒乌 蓝黑红",
+      "source_name_en": "Denderleeuw BZR"
+    },
+    "5895": {
+      "name": "休达",
+      "name_en": "Ceuta",
+      "source_name": "休达 红白",
+      "source_name_en": "Ceuta BR"
+    },
+    "5903": {
+      "name": "圣路易斯城",
+      "name_en": "St. Louis City",
+      "source_name": "圣路易斯 粉蓝",
+      "source_name_en": "St. Louis PB"
+    },
+    "5911": {
+      "name": "圣贝尔纳多",
+      "name_en": "São Bernardo",
+      "source_name": "圣贝尔纳多 黄黑",
+      "source_name_en": "São Bernardo AP"
+    },
+    "5912": {
+      "name": "大田韩亚市民",
+      "name_en": "Daejeon Hana Citizen",
+      "source_name": "大田 红绿白",
+      "source_name_en": "Daejeon RGW"
+    },
+    "5913": {
+      "name": "江原FC",
+      "name_en": "Gangwon FC",
+      "source_name": "江原道 橙",
+      "source_name_en": "Gangwon O"
+    },
+    "5914": {
+      "name": "光州FC",
+      "name_en": "Gwangju FC",
+      "source_name": "光州 黄",
+      "source_name_en": "Gwangju Y"
+    },
+    "5915": {
+      "name": "仁川联",
+      "name_en": "Incheon United",
+      "source_name": "仁川联 蓝黑",
+      "source_name_en": "Incheon BB"
+    },
+    "5918": {
+      "name": "富川FC1995",
+      "name_en": "Bucheon FC 1995",
+      "source_name": "富川 红黑",
+      "source_name_en": "Bucheon RW"
+    },
+    "5923": {
+      "name": "安养FC",
+      "name_en": "FC Anyang",
+      "source_name": "安养 紫",
+      "source_name_en": "Anyang P"
+    },
+    "5924": {
+      "name": "金泉尚武",
+      "name_en": "Gimcheon Sangmu",
+      "source_name": "金泉 红白",
+      "source_name_en": "Gimcheon RW"
+    },
+    "5954": {
+      "name": "AVS",
+      "name_en": "AVS Futebol",
+      "source_name": "阿维斯 红白",
+      "source_name_en": "Aves VB"
+    },
+    "5965": {
+      "name": "北碧府",
+      "name_en": "Kanchanaburi Power",
+      "source_name": "北碧 黑红",
+      "source_name_en": "Kanchanaburi DD"
+    },
+    "5971": {
+      "name": "北卡罗来纳FC",
+      "name_en": "North Carolina FC",
+      "source_name": "北卡罗来纳 蓝红黄",
+      "source_name_en": "North Carolina BRY"
+    },
+    "5972": {
+      "name": "罗德岛FC",
+      "name_en": "Rhode Island FC",
+      "source_name": "罗德岛 黄蓝",
+      "source_name_en": "Rhode Island YB"
+    },
+    "5973": {
+      "name": "竞技MG",
+      "name_en": "Athletic Club São João del-Rei",
+      "source_name": "圣约翰德雷 黑白",
+      "source_name_en": "São João del-Rei PB"
+    },
+    "5980": {
+      "name": "利马切体育",
+      "name_en": "Deportes Limache",
+      "source_name": "利马赫 红",
+      "source_name_en": "Limache R"
+    },
+    "6067": {
+      "name": "拉卢维耶尔",
+      "name_en": "RAAL La Louvière",
+      "source_name": "拉卢维埃尔 绿白",
+      "source_name_en": "La Louvière GW"
+    },
+    "6069": {
+      "name": "雷克瑟姆",
+      "name_en": "Wrexham",
+      "source_name": "雷克瑟姆 红白",
+      "source_name_en": "Wrexham RW"
+    },
+    "6084": {
+      "name": "圣迭戈FC",
+      "name_en": "San Diego FC",
+      "source_name": "圣迭戈 蓝白",
+      "source_name_en": "San Diego BW"
+    },
+    "6091": {
+      "name": "列克星敦SC",
+      "name_en": "Lexington SC",
+      "source_name": "列克星敦 绿白",
+      "source_name_en": "Lexington GBW"
+    },
+    "6202": {
+      "name": "吉兰丹",
+      "name_en": "Kelantan",
+      "source_name": "哥打巴鲁 红白",
+      "source_name_en": "Kota Bharu MP"
+    },
+    "6206": {
+      "name": "雪兰莪",
+      "name_en": "Selangor FC",
+      "source_name": "雪兰莪 红白",
+      "source_name_en": "Selangor MP"
+    },
+    "6257": {
+      "name": "拉巴特皇家武装力量",
+      "name_en": "AS FAR",
+      "source_name": "拉巴特 绿黑红",
+      "source_name_en": "Rabat VNR"
+    },
+    "6258": {
+      "name": "梅克内斯",
+      "name_en": "COD Meknès",
+      "source_name": "梅克内斯 红白",
+      "source_name_en": "Meknès RB"
+    },
+    "6259": {
+      "name": "贝尔卡内复兴",
+      "name_en": "RS Berkane",
+      "source_name": "贝尔卡内 橙黑白",
+      "source_name_en": "Berkane ONB"
+    },
+    "6260": {
+      "name": "德什拉奥林匹克",
+      "name_en": "Olympique Dcheira",
+      "source_name": "德什拉 绿白",
+      "source_name_en": "Dcheira VB"
+    },
+    "6261": {
+      "name": "杰迪代防卫者",
+      "name_en": "Difaâ El Jadida",
+      "source_name": "杰迪代 绿白",
+      "source_name_en": "El Jadida VB"
+    },
+    "6262": {
+      "name": "拉巴特联盟",
+      "name_en": "FUS Rabat",
+      "source_name": "拉巴特 红白黑",
+      "source_name_en": "Rabat RBN"
+    },
+    "6263": {
+      "name": "阿加迪尔哈萨尼亚",
+      "name_en": "Hassania Agadir",
+      "source_name": "阿加迪尔 红白",
+      "source_name_en": "Agadir RB"
+    },
+    "6264": {
+      "name": "丹吉尔伊蒂哈德",
+      "name_en": "Ittihad Tanger",
+      "source_name": "丹吉尔 蓝白",
+      "source_name_en": "Tanger BB"
+    },
+    "6265": {
+      "name": "马拉喀什考卡布",
+      "name_en": "Kawkab Marrakech",
+      "source_name": "马拉喀什 红白",
+      "source_name_en": "Marrakech RB"
+    },
+    "6266": {
+      "name": "非斯玛格里布",
+      "name_en": "Maghreb de Fès",
+      "source_name": "非斯 黄黑",
+      "source_name_en": "Fès JN"
+    },
+    "6267": {
+      "name": "萨菲奥林匹克",
+      "name_en": "Olympic Safi",
+      "source_name": "萨菲 红蓝",
+      "source_name_en": "Safi RB"
+    },
+    "6268": {
+      "name": "卡萨布兰卡拉贾",
+      "name_en": "Raja Casablanca",
+      "source_name": "卡萨布兰卡 绿白",
+      "source_name_en": "Casablanca VB"
+    },
+    "6269": {
+      "name": "泽马姆拉复兴",
+      "name_en": "Renaissance Zemamra",
+      "source_name": "泽玛姆拉 蓝白",
+      "source_name_en": "Zemamra BB"
+    },
+    "6270": {
+      "name": "托瓦加联合",
+      "name_en": "Union Touarga",
+      "source_name": "拉巴特 黄黑",
+      "source_name_en": "Rabat JN"
+    },
+    "6271": {
+      "name": "卡萨布兰卡维达德",
+      "name_en": "Wydad Casablanca",
+      "source_name": "卡萨布兰卡 红白",
+      "source_name_en": "Casablanca RB"
+    },
+    "6272": {
+      "name": "摩洛哥体育",
+      "name_en": "Stade Marocain",
+      "source_name": "拉巴特 蓝白",
+      "source_name_en": "Rabat BB"
+    },
+    "6274": {
+      "name": "得土安马格里布",
+      "name_en": "Moghreb Tétouan",
+      "source_name": "得土安 红白蓝",
+      "source_name_en": "Tétouan RBB"
+    },
+    "6275": {
+      "name": "特马拉维达德",
+      "name_en": "Widad Témara",
+      "source_name": "特马拉 红白",
+      "source_name_en": "Témara RB"
+    },
+    "6276": {
+      "name": "提兹尼特阿马尔",
+      "name_en": "US Amal Tiznit",
+      "source_name": "提兹尼特 蓝白",
+      "source_name_en": "Tiznit BB"
+    },
+    "6295": {
+      "name": "吉兰丹红勇士",
+      "name_en": "Kelantan Red Warrior",
+      "source_name": "吉兰丹红勇士",
+      "source_name_en": "Kelantan Red Warrior FC"
+    },
+    "17960": {
+      "name": "德黑兰独立",
+      "name_en": "Esteghlal",
+      "source_name": "德黑兰独立",
+      "source_name_en": "Esteghlal FC"
+    },
+    "18951": {
+      "name": "多哈阿拉比",
+      "name_en": "Al Arabi",
+      "source_name": "多哈 红白",
+      "source_name_en": "Doha R"
+    },
+    "20558": {
+      "name": "蔚山HD",
+      "name_en": "Ulsan HD",
+      "source_name": "蔚山 蓝",
+      "source_name_en": "Ulsan B"
+    },
+    "22060": {
+      "name": "沙迦",
+      "name_en": "Sharjah FC",
+      "source_name": "Al Sharjah RW",
+      "source_name_en": "Al Sharjah RW"
+    },
+    "22157": {
+      "name": "墨尔本胜利",
+      "name_en": "Melbourne Victory",
+      "source_name": "墨尔本胜利 浅蓝",
+      "source_name_en": "Melbourne B"
+    },
+    "22259": {
+      "name": "阿巴丹石油",
+      "name_en": "Sanat Naft Abadan",
+      "source_name": "阿巴丹钢铁 绿白",
+      "source_name_en": "Abadan GW"
+    },
+    "22422": {
+      "name": "莫亨巴甘",
+      "name_en": "Mohun Bagan",
+      "source_name": "Mohun Bagan GR",
+      "source_name_en": "Mohun Bagan GR"
+    },
+    "22577": {
+      "name": "多哈国民",
+      "name_en": "Al Ahli Doha",
+      "source_name": "Doha GW",
+      "source_name_en": "Doha GW"
+    }
+  },
+  "reference_sources": [
+    "imported V17 Team.bin IDs and exact source names",
+    "https://lnfp.ma/",
+    "https://touargaclub.ma/"
+  ]
+}

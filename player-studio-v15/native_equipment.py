@@ -1,4 +1,4 @@
-"""Native boot assignments and packed PlayerAppearance sleeve selection."""
+"""Native boot assignments and packed PlayerAppearance sleeve/sock selection."""
 from pathlib import Path
 import json,struct
 from native_cpk import unwrap,wrap
@@ -7,14 +7,20 @@ from native_models import person_keys
 BOOTS='common/etc/pesdb/Boots.bin'
 ASSIGNMENTS='common/etc/appearance/BootsList.bin'
 SLEEVES={'keep':None,'seasonal':0,'short':1,'long':2}
+SOCKS={'keep':None,'standard':0,'long':1,'short':2}
 # Native V17 appearance loader (6abcc08) skips the 8-byte identity. The
 # character decoder at 68d2048/68d2050 takes bits 62..63 of that payload:
 # season=0, short=1, long=2. Bit 134 is a different appearance flag.
 SLEEVE_BIT=126
+# The same character decoder extracts payload word 1 bits 2..3 at
+# 0x68d2044..0x68d2058 into the sock selector (+0x54). Native catalogue:
+# 0=standard, 1=long, 2=short (e.g. Grealish/Dybala use 2). 3 is reserved.
+SOCK_BIT=130
 
 def validate(value):
     if not isinstance(value,dict):raise ValueError('比赛装备设置格式无效')
     if value.get('sleeves','keep') not in SLEEVES:raise ValueError('袖长请选择跟随模板、随季节、短袖或长袖')
+    if value.get('socks','keep') not in SOCKS:raise ValueError('球袜长度请选择跟随模板、标准、长袜或短袜')
     boots=value.get('boots_id')
     if boots is not None and (type(boots) is not int or not 0<=boots<=65535):raise ValueError('球鞋编号无效')
 
@@ -30,7 +36,8 @@ def catalogue(cpk):
         material=row[104:204].split(b'\0')[0].decode('utf8','strict')
         name=row[204:304].split(b'\0')[0].decode('utf8','strict')
         rows.append({'id':key,'name':name or material or '原版球鞋','color':color,'material':material})
-    return {'boots':rows,'sleeves':[{'id':k,'name':n} for k,n in zip(SLEEVES,('跟随模板','随季节','短袖','长袖'))]}
+    return {'boots':rows,'sleeves':[{'id':k,'name':n} for k,n in zip(SLEEVES,('跟随模板','随季节','短袖','长袖'))],
+            'socks':[{'id':k,'name':n} for k,n in zip(SOCKS,('跟随模板','标准长度','长袜','短袜'))]}
 
 def write_catalogue(cpk,resources):
     result=catalogue(cpk)
@@ -43,10 +50,16 @@ def read_catalogue(resources,fallback=None):
     return json.loads(path.read_text(encoding='utf8')) if path.is_file() else {'boots':[],'sleeves':[]}
 
 def patch_sleeves(row,equipment):
-    validate(equipment);choice=SLEEVES[equipment.get('sleeves','keep')]
-    if choice is None:return row
+    # Keep the public function name for older callers; patch both independent
+    # fields together, preserving every unedited bit and all native defaults.
+    validate(equipment)
+    choices=((SLEEVE_BIT,SLEEVES[equipment.get('sleeves','keep')]),
+             (SOCK_BIT,SOCKS[equipment.get('socks','keep')]))
+    if all(choice is None for _,choice in choices):return row
     if len(row)!=64:raise ValueError('原版外观记录长度改变')
-    value=int.from_bytes(row,'little');value=(value&~(3<<SLEEVE_BIT))|(choice<<SLEEVE_BIT)
+    value=int.from_bytes(row,'little')
+    for bit,choice in choices:
+        if choice is not None:value=(value&~(3<<bit))|(choice<<bit)
     return value.to_bytes(64,'little')
 
 def compile_boots(cpk,projects,definitions,bindings,replace_ids=()):

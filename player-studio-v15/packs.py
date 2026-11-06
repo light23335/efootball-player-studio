@@ -51,6 +51,8 @@ def normalize(value):
     if not p['name']:raise ValueError('请填写卡包名称')
     p['enabled']=bool(p.get('enabled',True));p['replacement']=bool(p.get('replacement',False))
     p['description']=str(p.get('description') or '')[:500]
+    p['draw_count']=p.get('draw_count',10)
+    if type(p['draw_count'])is not int or p['draw_count']not in(10,20,30):raise ValueError('连抽数量请选择 10、20 或 30')
     p['banner']=int(p.get('banner',0))
     from pack_covers import normalize as normalize_cover
     p['cover']=normalize_cover(p.get('cover'))
@@ -122,8 +124,12 @@ def compile_packs(packs,definitions,resources,cover_bindings=None,excluded=None)
                              start_date=0,expiration_date=2147483647,use_count=0,limit_count=0,
                              banner_file_c_name=banner['c'],banner_file_d_name=banner['d'],pickup_list=[],banner_a_pickup_list=[],banner_c_pickup_list=[],pickup_cardtype_list=[])
                 price=copy.deepcopy(template['price']);price['agent_id']=aid
+                single=next((o for o in price['price_list']if o['multiple_count']==1),None)
+                multi=copy.deepcopy(next(o for o in price['price_list']if o['multiple_count']==10))
+                multi['multiple_count']=p['draw_count']
+                price['price_list']=([single]if single else[])+[multi]
                 for option in price['price_list']:
                     option['price'].update(coin_price=0,coin_price_base=0,gp_price=0,gp_price_base=0)
                 out.append({'uuid':p['uuid'],'agent_id':aid,'name':p['name'],'enabled':p['enabled'],'replacement':p['replacement'],
-                            'agent':agent,'price':price,'members':members,'skipped_members':skipped})
+                            'agent':agent,'price':price,'members':members,'skipped_members':skipped,'draw_count':p['draw_count']})
     return out

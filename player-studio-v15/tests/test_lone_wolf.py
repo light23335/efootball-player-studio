@@ -62,6 +62,34 @@ class LoneWolfDataTests(unittest.TestCase):
             self.assertEqual(groups[352]['items'][60010],expected)
         self.assertNotIn('151',app.CATALOG['PARAMETER_BY_SKILL'])
 
+    def test_old_owned_only_definition_requires_the_display_protocol(self):
+        from ai_playing_styles import definition_value
+        from native_ai_style_ui import preflight
+        legacy={'owned':{'ai_playing_styles':['lone_wolf'],'additional_skill_id':[]},
+                'base_parameters':[0]*147}
+        self.assertEqual(definition_value(legacy),['lone_wolf'])
+        self.assertTrue(required([legacy],app.CATALOG))
+        with self.assertRaisesRegex(ValueError,'缺少入口'):preflight([legacy],[])
+        legacy['ai_playing_styles']=[]
+        self.assertFalse(required([legacy],app.CATALOG))
+        self.assertEqual(preflight([legacy],[])['lone_wolf_players'],0)
+
+    def test_lone_wolf_text_is_not_gated_by_custom_skills(self):
+        from unittest.mock import patch
+        with patch('custom_skills.enabled',return_value=False):
+            groups={g['id']:g for g in text_groups(locale='zha')}
+        self.assertEqual(groups[352]['items'][60010],'独狼')
+
+    def test_card_transport_uses_exact_ids_and_explicit_off_for_previous_aliases(self):
+        from native_skill_effects import lone_wolf_bindings
+        rows=[{'identity':{'card_id':90000000001,'previous_card_ids':[90000000000]},
+               'owned':{'ai_playing_styles':['lone_wolf']}},
+              {'identity':{'card_id':90000000002},'ai_playing_styles':[],
+               'owned':{'ai_playing_styles':['lone_wolf']}}]
+        self.assertEqual(lone_wolf_bindings(rows),[(90000000000,128),(90000000001,128),(90000000002,0)])
+        conflict=copy.deepcopy(rows[1]);conflict['identity']['previous_card_ids']=[90000000000]
+        with self.assertRaisesRegex(ValueError,'冲突'):lone_wolf_bindings(rows+[conflict])
+
 
 @unittest.skipUnless(APK.is_file(),'requires original V17 APK')
 class LoneWolfNativeTransportTests(unittest.TestCase):
@@ -121,6 +149,57 @@ class LoneWolfNativeTransportTests(unittest.TestCase):
         vm.mem_write(0x41003000,struct.pack('<I',151))
         vm.reg_write(self.r.UC_ARM64_REG_X0,0x41003000);self.execute(vm,0x82bb60c)
         self.assertEqual(vm.reg_read(self.r.UC_ARM64_REG_W0),(352<<16)|60010)
+
+    def card_bound_machine(self,definitions):
+        from native_skill_effects import bind_lone_wolf_cards
+        self.candidate=copy.deepcopy(type(self).candidate)
+        self.candidate['bundles']=[bind_lone_wolf_cards(b,definitions)for b in self.candidate['bundles']]
+        key=0x123456789ab
+        vm=self.machine({0x6774740:lambda m:m.reg_write(self.r.UC_ARM64_REG_X0,key)})
+        self.install_all(vm)
+        return vm,key
+
+    def compile_match_styles(self,vm,key,cid,serial=0,tag=0):
+        source,target=0x41001000,0x41002000
+        vm.mem_write(source,bytes(512));vm.mem_write(target,bytes(512))
+        for index in range(63,70):self.set_parameter(vm,source,index,1)
+        vm.mem_write(source+0x34,struct.pack('<I',tag))
+        vm.mem_write(source+0x38,struct.pack('<I',serial&0xffffffff))
+        vm.mem_write(source+0x40,struct.pack('<Q',cid^key))
+        vm.mem_write(target+0xd4,struct.pack('<I',0x01000080))
+        vm.reg_write(self.r.UC_ARM64_REG_X19,target)
+        vm.reg_write(self.r.UC_ARM64_REG_X20,source)
+        # Execute every original native style read/set, then the actual linked
+        # transport hook and the native64-bit encrypted identity getter.
+        self.execute(vm,0x6a74d9c,0x6a74f0c)
+        self.assertEqual(vm.reg_read(self.r.UC_ARM64_REG_X0),vm.reg_read(self.r.UC_ARM64_REG_SP)+8)
+        return struct.unpack('<I',vm.mem_read(target+0xd4,4))[0]
+
+    def test_native_match_reconstruction_carries_wolf_without_compact_padding(self):
+        cid=90159685099299
+        vm,key=self.card_bound_machine([{'identity':{'card_id':cid},'ai_playing_styles':['lone_wolf']}])
+        for serial in (0,123,0xfffffffd):
+            self.assertEqual(self.compile_match_styles(vm,key,cid,serial),0x010000ff)
+
+    def test_native_match_transport_does_not_mark_unregistered_cards_or_same_low_word(self):
+        cid=90159685099299
+        vm,key=self.card_bound_machine([{'identity':{'card_id':cid},'ai_playing_styles':['lone_wolf']}])
+        for other in (0,cid+1,cid+(1<<32)):
+            self.assertEqual(self.compile_match_styles(vm,key,other),0x0100007f)
+
+    def test_native_match_off_edit_clears_stale_flag_and_old_card_alias(self):
+        cid,alias=90159685099299,90159685099298
+        definition={'identity':{'card_id':cid,'previous_card_ids':[alias]},'ai_playing_styles':[]}
+        vm,key=self.card_bound_machine([definition])
+        from custom_skills import COMPACT_TAG
+        for value in (cid,alias):
+            self.assertEqual(self.compile_match_styles(vm,key,value,tag=COMPACT_TAG|0x80),0x0100007f)
+
+    def test_native_match_on_edit_carries_old_card_alias(self):
+        cid,alias=90159685099299,90159685099298
+        definition={'identity':{'card_id':cid,'previous_card_ids':[alias]},'ai_playing_styles':['lone_wolf']}
+        vm,key=self.card_bound_machine([definition])
+        self.assertEqual(self.compile_match_styles(vm,key,alias),0x010000ff)
 
     def test_strong_foot_byte_is_produced_by_the_original_native_compiler(self):
         for foot,stop in [(0,0x6a74604),(1,0x6a74628)]:

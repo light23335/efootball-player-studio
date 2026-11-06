@@ -7,13 +7,13 @@ import copy
 import math
 import time
 
-REVISION = 'v17-situational-coach-v5-continuous-planning'
+REVISION = 'v17-situational-coach-v6-owned-window-batches'
 APTITUDE_INDEX = (13, 10, 11, 12, 6, 7, 8, 9, 5, 3, 4, 2, 1)
 ATTACK_ROLES = frozenset((8, 9, 10, 11, 12))
 
 
 def strategy(minute, difference, must_win=False, period_end=90):
-    if not math.isfinite(minute) or not -20 <= difference <= 20:
+    if not math.isfinite(minute) or not -198 <= difference <= 198:
         raise ValueError('Invalid match situation')
     if period_end not in (90,120) or minute > period_end+20:
         raise ValueError('Unknown match period')
@@ -26,6 +26,41 @@ def strategy(minute, difference, must_win=False, period_end=90):
     if difference == 0 and minute >= period_end-5 and must_win:
         return 'chase'
     return 'base'
+
+
+def match_situation(spec, snapshot):
+    """Advancement from the scoped CPU's perspective, independent of native side.
+
+    A second leg is decided by aggregate goals, then the configured away-goal
+    rule. A tied deciding match can still go to extra time/penalties; that is
+    not an elimination deficit. First legs never authorize a last-minute
+    all-out attack solely because their own ninety minutes are ending.
+    """
+    score = list(snapshot['score']); total = list(score)
+    difference = score[0]-score[1]; must_win = spec.get('must_win', False)
+    context = spec.get('advancement')
+    away = None; first_leg = False
+    if context:
+        first_leg = context['first_leg']
+        if context['second_leg']:
+            total = [score[i]+context['prior_score'][i] for i in (0,1)]
+            difference = total[0]-total[1]
+            extra = snapshot.get('period', 0) >= 5
+            # Entering ET means regulation aggregate AND away goals were tied.
+            # When ET away goals are disabled, they remain tied throughout ET.
+            if context['away_goals'] and (not extra or context['away_goals_extra_time']):
+                away = ([context['prior_score'][0], score[1]] if context['cpu_home']
+                        else [score[0], context['prior_score'][1]])
+                if difference == 0 and away[0] != away[1]:
+                    difference = 1 if away[0] > away[1] else -1
+            must_win = difference < 0
+        elif context['deciding']:
+            must_win = difference < 0 or (difference == 0 and not
+                (context['penalties'] or context['extra_time'] and snapshot.get('period_end',90)==90))
+    mode = strategy(snapshot['minute'], difference, must_win, snapshot.get('period_end',90))
+    if first_leg and mode == 'last_push':mode = 'chase'
+    return dict(mode=mode, difference=difference, must_win=must_win,
+                aggregate_score=total, away_goals=away)
 
 
 def tactical_profile(profile, kind, style):
@@ -100,7 +135,7 @@ def tactical_catalogue(base, kind, style):
 def substitution_budget(snapshot, mode, severe, urgent=False):
     left=snapshot['substitutions_left'];windows=snapshot['windows_left'];minute=snapshot['minute']
     if left<=0 or windows<=0 and snapshot['phase']!='halftime':return 0
-    emergency=mode=='last_push' or mode=='chase' and snapshot['score'][1]-snapshot['score'][0]>=2
+    emergency=mode=='last_push' or mode=='chase' and snapshot.get('advancement_difference',snapshot['score'][0]-snapshot['score'][1])<=-2
     if emergency:return min(2,left)
     # A single severely tired player does not authorize an unrelated second
     # early change. Preserve two later choices in the middle of the match.
@@ -108,6 +143,24 @@ def substitution_budget(snapshot, mode, severe, urgent=False):
     ordinary=0 if minute<55 else min(2,max(0,left-reserve))
     if mode in ('chase','protect'):ordinary=max(ordinary,min(1,left))
     return min(2,left,max(ordinary,len(severe)))
+
+
+def tournament_aptitude_exception(spec):
+    """Only a generated tournament shortage may use real off-position players."""
+    policy=spec.get('tournament_fallback')
+    return (isinstance(policy,dict)and policy.get('revision')=='tournament-real-xi-fallback-v1'
+        and policy.get('allow_incomplete_aptitude')is True and policy.get('standard_bench_only')is True
+        and type(policy.get('original_person_count'))is int and policy['original_person_count']>=11)
+
+
+def covers_roles(spec,parameters,*roles):
+    return (all(type(r)is int and 0<=r<13 and parameters[APTITUDE_INDEX[r]]in(0,1,2)for r in roles)
+            and(tournament_aptitude_exception(spec)or all(parameters[APTITUDE_INDEX[r]]==2 for r in roles)))
+
+
+def aptitude_preference(spec,parameters,*roles):
+    # Planning cost only: never change player parameters or native ratings.
+    return -25*sum(2-parameters[APTITUDE_INDEX[r]]for r in roles)if tournament_aptitude_exception(spec)else 0
 
 
 def pool_can_fill(spec, indices, profile):
@@ -118,7 +171,7 @@ def pool_can_fill(spec, indices, profile):
         for index in indices:
             if index in seen:continue
             p=spec['players'][index]['parameters']
-            if p[APTITUDE_INDEX[a]]!=2 or p[APTITUDE_INDEX[d]]!=2:continue
+            if not covers_roles(spec,p,a,d):continue
             seen.add(index)
             if index not in assigned or place(assigned[index],seen):
                 assigned[index]=slot;return True
@@ -172,7 +225,7 @@ def assignment(spec, snapshot, profile, maximum_changes=0, mode='base', excluded
         return forward
     edge(source, bench_gate, maximum_changes, 0)
     selected_edges = []
-    current_gk = next((i for i in on if players[i]['parameters'][APTITUDE_INDEX[0]] == 2 and snapshot.get('roles', {}).get(str(i)) == 0), on[0])
+    current_gk = next((i for i in on if covers_roles(spec,players[i]['parameters'],0)and snapshot.get('roles', {}).get(str(i)) == 0), on[0])
     for n, index in enumerate(available):
         current = index in on; p = players[index]; node = player_at+n
         stamina = snapshot.get('stamina', {}).get(str(index))
@@ -182,7 +235,7 @@ def assignment(spec, snapshot, profile, maximum_changes=0, mode='base', excluded
         edge(source if current else bench_gate, node, 1, 0)
         for k, slot in enumerate(slots):
             attack, defence = roles[slot]
-            if p['parameters'][APTITUDE_INDEX[attack]] != 2 or p['parameters'][APTITUDE_INDEX[defence]] != 2:
+            if not covers_roles(spec,p['parameters'],attack,defence):
                 continue
             if profile.get('requires_central_cover') and attack == 5 and (p['parameters'][15]+p['parameters'][26] < 140 or p['parameters'][40] < 65):
                 continue
@@ -190,7 +243,7 @@ def assignment(spec, snapshot, profile, maximum_changes=0, mode='base', excluded
                 continue
             native = min(p['ratings'][attack], p['ratings'][defence])
             # Workshop decision cost, not a native rating or an ability bonus.
-            effective = native - max(0, 80-stamina)*.22
+            effective = native - max(0, 80-stamina)*.22+aptitude_preference(spec,p['parameters'],attack,defence)
             if not current:
                 effective -= 1.0 if mode=='last_push' else 3.0 if mode=='chase' else 5.0
             effective += task_value(p['parameters'],attack,mode,spec.get('style'))
@@ -234,23 +287,26 @@ def assignment(spec, snapshot, profile, maximum_changes=0, mode='base', excluded
             'native_lower_bound_strength': native_lower_bound}
 
 
-def prepare_strategies(generator,selected,coach,style,base,minimum,game_id=None,entry_id=None):
+def prepare_strategies(generator,selected,coach,style,base,minimum,game_id=None,entry_id=None,*,tournament_fallback=None):
     """Bounded preflight using this actual 23, with zero/two-change variants.
 
     Save feasibility rather than asserting that an arbitrary chase/protect
     shape can be used by every player. Live planning rechecks the real lineup.
     """
     import ai_tactical_profiles as templates
+    policy={'tournament_fallback':tournament_fallback}if tournament_fallback is not None else{}
+    if tournament_fallback is not None and not tournament_aptitude_exception(policy):raise ValueError('Invalid tournament shortage policy')
     players=[]
     for i,c in enumerate(selected):
         params=list(generator.prepared(c)['parameters'])
-        ratings=[generator.rating(c,coach,style,r) if params[APTITUDE_INDEX[r]]==2 else 0 for r in range(13)]
+        ratings=[generator.rating(c,coach,style,r) if covers_roles(policy,params,r)else 0 for r in range(13)]
         players.append({'id':int(c['gameplayer_id']['id']),'serial':810000001+i,'parameters':params,
                         'ratings':ratings,'bench_rating':generator.rating(c,coach,style)})
     basis=tactical_profile(base,'base',style)
     spec={'revision':REVISION,'game_id':game_id,'entry_id':entry_id,'players':players,'style':style,
           'coach_id':coach['payload']['coach_id'],'minimum':minimum,'base_profile':basis,
           'profiles':[basis],'prepared':{},'must_win':False}
+    if tournament_fallback is not None:spec['tournament_fallback']=copy.deepcopy(tournament_fallback)
     snapshot={'on_field':list(range(11)),'bench':list(range(11,23)),
               'stamina':{str(i):100 for i in range(23)},'roles':{str(i):r for i,r in enumerate(base['attack'])},
               'defence_roles':{str(i):r for i,r in enumerate(base['defence'])}}
@@ -294,7 +350,7 @@ def staged_formation(spec,snapshot,found,mode,deadline=None):
         replacement=dict(zip(found['incoming'],outgoing))
         mapping={s:replacement.get(i,i)for s,i in found['mapping'].items()}
         if set(mapping.values())!=set(snapshot['on_field']):continue
-        if any(spec['players'][i]['parameters'][APTITUDE_INDEX[r]]!=2
+        if any(not covers_roles(spec,spec['players'][i]['parameters'],r)
                for s,i in mapping.items() for r in (target['attack'][s],target['defence'][s])):continue
         ratings=[p.get('bench_rating',p['ratings'][p['parameters'][0]])for p in spec['players']]
         for s,i in mapping.items():ratings[i]=min(spec['players'][i]['ratings'][target['attack'][s]],spec['players'][i]['ratings'][target['defence'][s]])
@@ -324,7 +380,7 @@ def staged_formation(spec,snapshot,found,mode,deadline=None):
     return None
 
 
-def valid_snapshot(spec, snapshot):
+def valid_snapshot(spec, snapshot, *, allow_transition=False):
     try:
         if snapshot['game_id'] != spec['game_id'] or snapshot.get('human_controlled') is not False:
             return False
@@ -332,7 +388,7 @@ def valid_snapshot(spec, snapshot):
             return False
         if not snapshot.get('coherent') or snapshot.get('paused') or snapshot.get('replay'):
             return False
-        if snapshot['phase'] not in ('play', 'stoppage', 'halftime'):
+        if snapshot['phase'] not in (('play','stoppage','halftime','transition')if allow_transition else('play','stoppage','halftime')):
             return False
         if not math.isfinite(snapshot['minute']) or not 0 <= snapshot['minute'] <= 150:
             return False
@@ -365,7 +421,7 @@ def substitution_pairs(spec, snapshot, incoming, outgoing):
             return None
         for inc in remaining:
             p = spec['players'][inc]['parameters']
-            if p[APTITUDE_INDEX[attack]] != 2 or p[APTITUDE_INDEX[defence]] != 2:
+            if not covers_roles(spec,p,attack,defence):
                 continue
             result = visit(todo[1:], [i for i in remaining if i != inc])
             if result is not None:return [(inc, out)]+result
@@ -382,7 +438,7 @@ def lineup_utility(spec,snapshot,mode):
         energy=snapshot.get('stamina',{}).get(str(index))
         if type(energy)not in (int,float) or not math.isfinite(energy) or not 0<=energy<=100:return None
         p=spec['players'][index]
-        effective=min(p['ratings'][a],p['ratings'][d])-max(0,80-energy)*.22
+        effective=min(p['ratings'][a],p['ratings'][d])-max(0,80-energy)*.22+aptitude_preference(spec,p['parameters'],a,d)
         result+=round((effective+task_value(p['parameters'],a,mode,spec.get('style')))*100)/100
     return result
 
@@ -423,14 +479,14 @@ def legal_assignment(spec,snapshot,profile,maximum_changes=0,mode='base',exclude
         a=roles.get(str(out));d=defence.get(str(out))
         if a==0 or type(a)is not int or type(d)is not int or not 0<=a<13 or not 0<=d<13:continue
         old=players[out]
-        old_value=min(old['ratings'][a],old['ratings'][d])-max(0,80-snapshot['stamina'][str(out)])*.22
+        old_value=min(old['ratings'][a],old['ratings'][d])-max(0,80-snapshot['stamina'][str(out)])*.22+aptitude_preference(spec,old['parameters'],a,d)
         for inc in snapshot['bench']:
             if inc in blocked:continue
             p=players[inc]
-            if p['parameters'][APTITUDE_INDEX[a]]!=2 or p['parameters'][APTITUDE_INDEX[d]]!=2:continue
+            if not covers_roles(spec,p['parameters'],a,d):continue
             energy=snapshot.get('stamina',{}).get(str(inc))
             if type(energy)not in (int,float) or not math.isfinite(energy) or not 0<=energy<=100:continue
-            value=min(p['ratings'][a],p['ratings'][d])-max(0,80-energy)*.22
+            value=min(p['ratings'][a],p['ratings'][d])-max(0,80-energy)*.22+aptitude_preference(spec,p['parameters'],a,d)
             choices.append((value-old_value,inc,out))
     choices.sort(reverse=True)
     # This is a decision-search budget, not a restriction on the card pool.
@@ -468,7 +524,7 @@ def decision_context(snapshot, mode):
     return [list(snapshot['score']), sorted(snapshot['on_field']),
             sorted(snapshot.get('unavailable', [])), snapshot.get('substitutions_left'),
             snapshot.get('windows_left'), snapshot.get('native_pending_count', 0), mode,
-            snapshot.get('period'),snapshot['phase']]
+            snapshot.get('period'),snapshot['phase'],copy.deepcopy(snapshot.get('actual_shape'))]
 
 
 class Manager:
@@ -491,8 +547,12 @@ class Manager:
         self._candidates={}
         self._coverage_cache={}
         self._coverage_groups=None
+        self.event_sink=None
 
     def profile(self,ident,mode=None):
+        # Unknown live shapes have no claimed template identity. The base is
+        # only a search reference; actual comparisons use native coordinates.
+        if ident is None:ident=self.spec['base_profile']['id']
         return resolve_profile(self.spec,ident,mode or self.state['mode'])
 
     def candidates(self,snapshot,mode):
@@ -515,7 +575,8 @@ class Manager:
         return self._candidates[key]
 
     def explain(self,snapshot,reason,**values):
-        value={'reason':reason,'minute':snapshot['minute'],'score':list(snapshot['score']),**values}
+        value={'reason':reason,'minute':snapshot['minute'],'score':list(snapshot['score']),
+               'advancement':match_situation(self.spec,snapshot),**values}
         key={k:v for k,v in value.items() if k!='minute'}
         if key!=self.state.get('decision_key'):
             self.state['decision_key']=key;self.state['last_decision']=value
@@ -555,6 +616,7 @@ class Manager:
     def record(self, event, **payload):
         self.state['journal'].append({'event': event, **payload})
         del self.state['journal'][:-128]
+        if self.event_sink is not None:self.event_sink(event,copy.deepcopy(payload))
 
     def clock(self, snapshot):
         """Monotonic decision/cooldown time, separate from displayed minute.
@@ -584,25 +646,131 @@ class Manager:
         if pending.get('cancel_requested'):return
         pending['cancel_requested'] = True
         pending['cancel_reason'] = reason
+        pending['cancel_attempts']=1;pending['cancel_sent_elapsed']=self.state['elapsed_minute']
         self.record('cancel_requested', plan_id=pending['id'], sequence=snapshot['sequence'], reason=reason)
+
+    def release_ownership(self,reason):
+        """Native removes only its owned queued pairs. Rebuild from live state."""
+        self.state.update(pending=None,staged_plan=None,after_sub_plan=None,rebuild_due=True)
+        self.state.update(attack_lane={},formation_retry={},rejected_context=None)
+        self.state.update(confirmed_shape=None,observed_native_shape=None,profile_id=None,shape_lost=True)
+        self.record('ownership_released',reason=reason,old_commands_replayed=False)
+
+    def expected_shape(self,profile,mapping):
+        def xy(value):
+            return [value['position_x'],value['position_y']]if isinstance(value,dict)else list(value)
+        return {str(index):[profile['attack'][int(slot)],profile['defence'][int(slot)],
+                 *(xy(profile['attack_coords'][int(slot)])if int(slot)else[None,None]),
+                 *(xy(profile['defence_coords'][int(slot)])if int(slot)else[None,None])]
+                for slot,index in mapping.items()}
+
+    def reconcile_shape(self,snapshot):
+        actual=snapshot.get('actual_shape')
+        if actual is None:return
+        if 'baseline_native_shape'not in self.state:
+            self.state['baseline_native_shape']=copy.deepcopy(actual)
+        expected=self.state.get('confirmed_shape')
+        pending=self.state.get('pending')
+        if expected is None and actual!=self.state.get('observed_native_shape') and not pending:
+            # A restored policy's template name is not proof of the current
+            # native shape. Match the full two-phase geometry, allowing its
+            # player assignment to differ. Unknown shapes stay unnamed.
+            recognized=None
+            if len(actual)==11:
+                values=sorted(tuple(row)for row in actual.values())
+                choices=[(self.state.get('profile_id'),self.state['mode']),
+                         (self.spec['base_profile']['id'],'base')]
+                for ident,mode in choices:
+                    if ident is None:continue
+                    probe=self.expected_shape(self.profile(ident,mode),dict(enumerate(range(11))))
+                    if values==sorted(tuple(row)for row in probe.values()):recognized=ident;break
+            old=self.state.get('profile_id')
+            self.state['profile_id']=recognized
+            if recognized is not None:self.state['confirmed_shape']=copy.deepcopy(actual)
+            else:self.state.update(shape_lost=True,rebuild_due=True,rejected_context=None,formation_retry={})
+            self.record('formation_cache_rebased_from_actual',previous_profile=old,actual_profile=recognized,
+                        actual_shape=actual,sequence=snapshot['sequence'])
+            self._candidates={}
+        # Observe an in-flight write from its actual ACK/readback below before
+        # judging the preceding target. An intended lineup change also needs
+        # its own post-sub shape reconciliation.
+        comparable=copy.deepcopy(expected)
+        if comparable is not None and pending and pending['kind']=='substitution':
+            for incoming,outgoing in pending['pairs']:
+                if str(incoming)in actual and str(outgoing)not in actual and str(outgoing)in comparable:
+                    comparable[str(incoming)]=comparable.pop(str(outgoing))
+        if comparable is not None and actual!=comparable and (not pending or pending['kind']=='substitution'):
+            if not self.state.get('shape_lost'):
+                self.record('formation_target_lost',target_profile=self.state['profile_id'],
+                            expected_shape=comparable,actual_shape=actual,sequence=snapshot['sequence'])
+            self.state.update(shape_lost=True,rebuild_due=True,confirmed_shape=None,
+                              profile_id=self.spec['base_profile']['id']if actual==self.state['baseline_native_shape']else None)
+            self.state.update(rejected_context=None,formation_retry={},last_evaluation_minute=-100)
+            self._candidates={}
+        self.state['observed_native_shape']=copy.deepcopy(actual)
 
     def cancellation(self):
         pending = self.state['pending']
         if pending and pending.get('cancel_requested'):
             return {'kind':'cancel', 'id':pending['id'], 'game_id':self.spec['game_id'],
-                    'entry_id':self.spec.get('entry_id'), 'reason':pending['cancel_reason']}
+                    'entry_id':self.spec.get('entry_id'), 'reason':pending['cancel_reason'],
+                    'generation':pending.get('cancel_attempts',1)}
         return None
 
+    def propose_attack(self, snapshot):
+        """Independent acknowledged level lane; at most three tries per context.
+
+        A queued substitution or rejected formation never blocks this lane.
+        Level changes use the native attack callback and do not edit a shape.
+        """
+        if not valid_snapshot(self.spec,snapshot):return None
+        actual=snapshot.get('current_attack_level')
+        if type(actual)is not int or not 0<=actual<=4:return None
+        elapsed=self.clock(snapshot)
+        if elapsed is None:return None
+        situation=match_situation(self.spec,snapshot);mode=situation['mode']
+        target={'base':2,'protect':1 if situation['difference']==1 else 2,'chase':3,'last_push':4}[mode]
+        key=[target,list(snapshot['score']),sorted(snapshot['on_field']),snapshot.get('period')]
+        state=self.state.setdefault('attack_lane',{})
+        if state.get('key')!=key:state.clear();state.update(key=key,attempts=0,retry_after=elapsed)
+        pending=state.get('pending')
+        if pending:
+            status=snapshot.get('attack_ack_status') if snapshot.get('attack_ack_id')==pending['id'] else None
+            if status=='applied' or actual==target:
+                self.record('attack_level_applied',plan_id=pending['id'],level=target,sequence=snapshot['sequence'])
+                state['pending']=None
+                return None
+            elif status in ('rejected','stale','cancelled') or elapsed-pending['created_elapsed']>=1:
+                self.record('attack_level_retry_wait',plan_id=pending['id'],status=status or 'timeout',
+                            rejection_reason=snapshot.get('attack_rejection_reason'))
+                state['pending']=None;state['retry_after']=elapsed+.5
+            else:return None
+        if actual==target:return None
+        if state['attempts']>=3 or elapsed<state['retry_after']:return None
+        if not (snapshot.get('native_formation_window') or snapshot.get('safe_to_change')):return None
+        proposal=dict(id=self.state['next_id'],game_id=self.spec['game_id'],entry_id=self.spec.get('entry_id'),
+            kind='attack_level',attack_level=target,mode=mode,score=list(snapshot['score']),
+            active_count=len(snapshot['on_field']),created_elapsed=elapsed)
+        self.state['next_id']+=1;state['attempts']+=1;state['pending']=proposal
+        self.record('attack_level_proposed',plan_id=proposal['id'],level=target,advancement=situation,
+                    attempt=state['attempts'],sequence=snapshot['sequence'])
+        return copy.deepcopy(proposal)
+
     def observe(self, snapshot):
-        if not valid_snapshot(self.spec, snapshot):
+        if not valid_snapshot(self.spec, snapshot,allow_transition=True):
             return False
         elapsed = self.clock(snapshot)
         if elapsed is None:return False
+        self.reconcile_shape(snapshot)
         current = set(snapshot['on_field']); before = set(self.state['previous_on_field'])
         if before and current!=before:self.state['rebuild_due']=True
         self.state['used_out'] = sorted(set(self.state['used_out']) | (before-current))
         self.state['previous_on_field'] = list(snapshot['on_field'])
         pending = self.state['pending']
+        observed_interval=0.
+        if pending:
+            observed_interval=max(0.,elapsed-pending.get('last_observed_elapsed',pending.get('created_elapsed',elapsed)))
+            pending['last_observed_elapsed']=elapsed
         if pending and snapshot.get('ack_id') == pending['id']:
             # Native request acceptance and an actual lineup change are distinct.
             if snapshot.get('ack_status') == 'applied':
@@ -617,30 +785,91 @@ class Manager:
                         self.state['after_sub_plan'] = pending
                         self.state['rebuild_due'] = True
                 else:
+                    actual=snapshot.get('actual_shape')
+                    expected=self.expected_shape(self.profile(pending['profile_id'],pending['mode']),pending['mapping'])
+                    if actual is not None and actual!=expected:
+                        self.record('formation_ack_awaiting_actual_shape',plan_id=pending['id'],sequence=snapshot['sequence'])
+                        # The receipt can arrive before the post-commit state.
+                        # Never record the desired template as actual yet.
+                        if elapsed-pending.get('created_elapsed',elapsed)>1:
+                            self.cancel(pending,snapshot,'formation ACK differs from actual shape')
+                        return True
                     self.state['mode'] = pending['mode']
                     self.state['profile_id'] = pending['profile_id']
                     self.state['attack_level'] = pending['attack_level']
                     if pending.get('changes_shape',True):self.state['last_tactic_minute'] = elapsed
                     self.state['rebuild_due'] = False
+                    if actual is not None:
+                        self.state.update(confirmed_shape=copy.deepcopy(actual),shape_lost=False)
+                        self.record('formation_write_verified',plan_id=pending['id'],actual_shape=actual,sequence=snapshot['sequence'])
                     if pending.get('continuation'):
                         self.state['staged_plan']=pending['continuation']
                         self.record('intermediate_formation_confirmed',plan_id=pending['id'])
                 if completed:
                     self.record('applied', plan_id=pending['id'], sequence=snapshot['sequence'])
                     self.state['pending'] = None
+            elif snapshot.get('ack_status')=='waiting_window' and pending['kind']=='substitution':
+                if pending.get('delivery')!='waiting_window':
+                    self.record('waiting_legal_window',plan_id=pending['id'],sequence=snapshot['sequence'])
+                pending['delivery']='waiting_window'
+                pending.setdefault('waiting_period',snapshot.get('period'))
+                pending.pop('executing_elapsed',None)
+            elif snapshot.get('ack_status')=='accepted' and pending['kind']=='substitution':
+                if pending.get('delivery')!='executing':
+                    self.record('batch_queued',plan_id=pending['id'],pairs=pending['pairs'],sequence=snapshot['sequence'])
+                    pending['executing_elapsed']=elapsed
+                pending['delivery']='executing'
             elif snapshot.get('ack_status') in ('rejected', 'stale', 'cancelled', 'partial'):
-                self.state['rejected_context']=pending.get('context')
+                transient=(snapshot.get('ack_status')=='stale' or
+                           snapshot.get('ack_status')=='cancelled' and pending.get('cancel_requested') or
+                           snapshot.get('ack_status')=='rejected' and
+                           snapshot.get('rejection_reason')in (2,3,4,5,6,7,16,18,19,21,23,24,25,26))
+                retry=self.state.setdefault('formation_retry',{})
+                if retry.get('context')!=pending.get('context'):
+                    retry.clear();retry.update(context=pending.get('context'),count=0)
+                if transient and retry['count']<2:
+                    retry['count']+=1;retry['after']=elapsed+.5
+                    self.state['rejected_context']=None;self.state['rebuild_due']=True
+                else:self.state['rejected_context']=pending.get('context')
                 self.state['after_sub_plan'] = None
                 self.state['staged_plan'] = None
-                self.record(snapshot['ack_status'], plan_id=pending['id'], sequence=snapshot['sequence'])
+                self.record(snapshot['ack_status'], plan_id=pending['id'], sequence=snapshot['sequence'],
+                            native_reason=snapshot.get('rejection_reason'),delivery=pending.get('delivery'))
                 self.state['pending'] = None
         pending = self.state['pending']
+        if snapshot.get('execution_allowed')is False:
+            if pending:
+                for key in ('created_elapsed','executing_elapsed'):
+                    if key in pending:pending[key]+=observed_interval
+                pending['suspended_at_elapsed']=elapsed
+            return True
+        if pending:pending.pop('suspended_at_elapsed',None)
         if pending:
+            if pending.get('cancel_requested'):
+                if elapsed-pending.get('cancel_sent_elapsed',elapsed)>=1:
+                    attempts=pending.get('cancel_attempts',1)
+                    if attempts<3:
+                        pending['cancel_attempts']=attempts+1;pending['cancel_sent_elapsed']=elapsed
+                        self.record('cancel_retry',plan_id=pending['id'],attempt=attempts+1)
+                    elif snapshot.get('native_pending_count')==0:
+                        # A coherent, fully scoped native snapshot proves no
+                        # remaining queue. Do not wait forever for a lost ACK,
+                        # and never replay the old target lineup on recovery.
+                        self.state.update(pending=None,after_sub_plan=None,staged_plan=None,rebuild_due=True)
+                        retry=self.state.setdefault('formation_retry',{})
+                        if retry.get('context')!=pending.get('context'):
+                            retry.clear();retry.update(context=pending.get('context'),count=0)
+                        if retry['count']<2:
+                            retry['count']+=1;retry['after']=elapsed+.5
+                            self.state['rejected_context']=None
+                        else:self.state['rejected_context']=pending.get('context')
+                        self.record('cancel_reconciled_from_native',plan_id=pending['id'],
+                                    on_field=list(snapshot['on_field']))
+                return True
             if 'initial_on_field' not in pending:
                 self.cancel(pending, snapshot, 'old plan has no verified initial lineup')
                 return True
-            mode = strategy(snapshot['minute'], snapshot['score'][0]-snapshot['score'][1],
-                            self.spec.get('must_win', False), snapshot.get('period_end',90))
+            mode = match_situation(self.spec,snapshot)['mode']
             expected = set(pending['initial_on_field'])
             result = (expected-set(pending['outgoing'])) | set(pending['incoming'])
             # An expected partial replacement is permitted while the native
@@ -651,15 +880,20 @@ class Manager:
             elif len(current) != pending['active_count'] or not partial:reason = 'native lineup changed'
             elif set(pending['incoming']) & set(snapshot.get('unavailable', [])):reason = 'substitute unavailable'
             elif mode != pending['mode']:reason = 'strategy changed'
-            elif elapsed-pending.get('created_elapsed', elapsed) > 3:reason = 'native confirmation timed out'
+            elif pending.get('delivery')=='waiting_window':
+                if pending.get('waiting_period')!=snapshot.get('period'):reason='period changed while waiting'
+            elif elapsed-pending.get('executing_elapsed',pending.get('created_elapsed',elapsed)) > 3:
+                reason = 'native confirmation timed out'
             if reason:self.cancel(pending, snapshot, reason)
         return True
 
     def propose(self, snapshot):
         if not self.observe(snapshot) or self.state['pending']:
             return None
+        if snapshot.get('execution_allowed')is False:return None
         minute = snapshot['minute']; elapsed = self.state['elapsed_minute']; score = tuple(snapshot['score'])
-        mode = strategy(minute, score[0]-score[1], self.spec.get('must_win', False),snapshot.get('period_end',90))
+        situation = match_situation(self.spec,snapshot);mode = situation['mode']
+        snapshot = dict(snapshot,advancement_difference=situation['difference'])
         count = len(snapshot['on_field'])
         count_changed=count != self.state['last_active_count']
         if count_changed:self.state['rebuild_due']=True
@@ -682,14 +916,16 @@ class Manager:
             self.explain(snapshot,'native_queue_busy',mode=mode);return None
         self.state['last_evaluation_minute']=elapsed
         context=decision_context(snapshot,mode)
+        retry=self.state.get('formation_retry',{})
+        if retry.get('context')==context and elapsed<retry.get('after',-1):return None
         if context==self.state.get('rejected_context'):
             self.explain(snapshot,'same_rejected_context',mode=mode);return None
-        level={'base':2,'protect':1 if score[0]-score[1]==1 else 2,'chase':3,'last_push':4}[mode]
+        level={'base':2,'protect':1 if situation['difference']==1 else 2,'chase':3,'last_push':4}[mode]
         changed=mode!=self.state['mode'] or level!=self.state.get('attack_level',2)
         interval={'base':5,'protect':5,'chase':3,'last_push':2}[mode]
         periodic=elapsed-self.state['last_full_evaluation']>=interval
         cooldown=3 if mode=='last_push' else 5
-        can_reform=urgent or elapsed-self.state['last_tactic_minute']>=cooldown
+        can_reform=urgent or self.state.get('shape_lost',False) or elapsed-self.state['last_tactic_minute']>=cooldown
         # Evaluation cadence and actual formation cooldown are independent.
         tactic_due = self.state['rebuild_due'] or changed or periodic or urgent
         staged=self.state.get('staged_plan')
@@ -738,7 +974,7 @@ class Manager:
         candidates = [];rejected=0;cooldown_rejected=set();deadline=time.perf_counter()+.2
         current_shape=shape_signature(current_profile)
         roles=snapshot.get('roles',{});defensive=snapshot.get('defence_roles',roles)
-        invalid_current=any(type(role)is int and 0<=role<13 and self.spec['players'][i]['parameters'][APTITUDE_INDEX[role]]!=2
+        invalid_current=any(type(role)is int and 0<=role<13 and not covers_roles(self.spec,self.spec['players'][i]['parameters'],role)
                             for i in snapshot['on_field']for role in (roles.get(str(i)),defensive.get(str(i))))
         may_start_change=can_reform or bool(severe) or count_changed or invalid_current
         parent=staged or follow or {}
@@ -774,6 +1010,13 @@ class Manager:
             if mode!='last_push':cost+=self.future_coverage_cost(snapshot,found)
             found['decision_value']=found['utility']/count+3*tactical_value(profile,mode)-switch-cost
             candidates.append(found)
+        # Reserve the first bounded slice for a same-shape fatigue/risk
+        # replacement. A slow broad shape search must not consume its turn.
+        priority=severe or sorted(set(tired+risk))
+        if budget and priority:
+            overall_deadline=deadline;deadline=min(deadline,time.perf_counter()+.08)
+            consider(current_profile,min(budget,len(priority)),tuple(priority[:budget]))
+            deadline=overall_deadline
         # Inspect no-sub alternatives across families before spending the
         # bounded search time on expensive multi-substitution combinations.
         if tactic_due:
@@ -835,7 +1078,8 @@ class Manager:
         elif staged:self.state['staged_plan']=None
         from ai_tactical_profiles import duties
         actual_profile=self.profile(proposal['profile_id'],mode)
-        proposal['changes_shape']=shape_signature(actual_profile)!=current_shape or count_changed
+        proposal['changes_shape']=(self.expected_shape(actual_profile,proposal['mapping'])!=snapshot['actual_shape']
+            if 'actual_shape'in snapshot else shape_signature(actual_profile)!=current_shape or count_changed)
         live_roles={str(index):actual_profile['attack'][slot]for slot,index in proposal['mapping'].items()}
         proposal['duties']=duties(self.spec['players'],list(proposal['mapping'].values()),live_roles)
         self.state['after_sub_plan'] = None

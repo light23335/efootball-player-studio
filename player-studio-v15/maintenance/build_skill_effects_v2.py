@@ -261,7 +261,7 @@ def build(engine, release=False):
     add_trajectory(builder)
     add_shield(builder)
     bundle = builder.bundle('studio_skill_runtime_v2', builder.rows + builder.helpers)
-    return {'revision': 'skill-effects-v2-2.0.3-pass-windup-contact-guard' if release else 'skill-effects-v2-pass-windup-contact-guard-candidate',
+    return {'revision': 'skill-effects-v2-2.0.4-lone-wolf-card-transport' if release else 'skill-effects-v2-lone-wolf-card-transport-candidate',
             'production_ready': bool(release),
             'custom_skill_protocol':CUSTOM_PROTOCOL,
             'engine_sha256': ENGINE_SHA, 'hooks': builder.rows, 'helpers': builder.helpers,

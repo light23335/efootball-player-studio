@@ -59,7 +59,15 @@ STOCK_AI_EXCLUDED_CARD_IDS = frozenset((
     89136418985332,  # Cristiano Ronaldo / 2018
     89136418985335,  # Robert Lewandowski / 2021
     89136418985333,  # Lucio / 2002
-    89136418985336))  # Rafael Leao / 2023
+    89136418985336,  # Rafael Leao / 2023
+    # User-selected V25 delta variants; other editions stay eligible.
+    89136418985339,  # Toni Kroos / 2018
+    89136418985340,  # Marcus Rashford / 2022-23
+    89136418985341,  # Kai Havertz / 2023-24
+    89136418985342,  # Lothar Matthaus / 1990
+    89136418985343,  # Jurgen Klinsmann / 1990
+    89136418985345,  # Casemiro / 2016-17
+    89136418985346))  # Karim Benzema / 2021-22
 _LOCK = threading.RLock()
 
 
@@ -238,6 +246,19 @@ BOOSTER_ROLE_STATS=(
 EMPTY_BOOSTER_KIND=4
 
 
+def booster_catalogue(cpk):
+    """Presence of actual compiled records; missing native IDs use zero effects."""
+    import hashlib
+    from native_cpk import Cpk,unwrap
+    from native_tables import BOOSTERS
+    raw=unwrap(Cpk(cpk).read(BOOSTERS))
+    if len(raw)%40:raise ValueError('原生增能表布局改变')
+    ids=sorted({(int.from_bytes(raw[i:i+40],'little')>>112)&1023 for i in range(0,len(raw),40)})
+    return {'revision':'v17-compiled-booster-presence-v1','ids':ids,
+            'source_sha256':hashlib.sha256(raw).hexdigest(),
+            'missing_record_policy':'native-zero-record-0x823dfe4'}
+
+
 def empty_booster_ids(cpk,custom_ids=()):
     from native_cpk import Cpk,unwrap
     from native_tables import BOOSTERS
@@ -382,17 +403,22 @@ class Generator:
         cap = self.caps().get(key[0])
         required_level=max(cap or 1,card.get('level_info',{}).get('level_limit') or 1)
         cached=self._trained.get(key)
-        if cached and cached.get('level_info',{}).get('level_limit',1)!=required_level:
-            self._trained.pop(key,None)
+        if cached:
+            level=cached.get('level_info',{})
+            if level.get('level_limit',1)!=required_level or level.get('level',1)!=required_level:
+                self._trained.pop(key,None)
         if key not in self._trained:
             p = copy.deepcopy(card)
             p.pop('_studio_ai_booster',None)
             if cap and cap > (p.get('level_info', {}).get('level_limit') or 1):
                 p.setdefault('level_info', {})['level_limit'] = cap
-            self._trained[key] = self.developed.developed(p, {})
-            level = self._trained[key].get('level_info', {})
+            trained = self.developed.developed(p, {})
+            level = trained.get('level_info', {})
             if level.get('level', 1) != level.get('level_limit', 1):
                 raise ValueError('AI 球员满级培养失败，未下发未完成培养的球员')
+            # A failed development must not become a successful cache hit on
+            # the next request (or after a client retries a failed entry).
+            self._trained[key] = trained
         return self._trained[key]
 
     def prepared(self, card):

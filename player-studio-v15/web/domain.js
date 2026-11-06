@@ -22,7 +22,19 @@ export function coachFactor(proficiency){
   return f(value/f(100));
 }
 
-export function simulate(project, catalog) {
+export function normalizeTraining(project,catalog){
+  const cap=Math.max(1,Math.min(100,Math.trunc(Number(project.max_level)||35))),rawLevel=Math.trunc(Number(project.initial_level)||1);
+  if(project.max_level!==cap)project.max_level=cap;
+  const level=Math.max(1,Math.min(cap,rawLevel));if(project.initial_level!==level)project.initial_level=level;
+  if(!project.training||typeof project.training!=='object')project.training={};
+  for(const g of catalog.training_groups){const count=Math.max(0,Math.min(40,Math.trunc(Number(project.training[g.id])||0)));if(project.training[g.id]!==count)project.training[g.id]=count;}
+  const spent=catalog.training_groups.reduce((sum,g)=>sum+trainingCost(project.training[g.id]),0),budget=project.card_type==='Trending'?0:2*(project.initial_level-1);
+  if(rawLevel>cap||spent>budget){project.initial_level=cap;Object.assign(project.training,autoAllocate(project,catalog));}
+  return project;
+}
+
+export function simulate(inputProject, catalog) {
+  const project=normalizeTraining({...inputProject,training:{...(inputProject.training||{})}},catalog);
   const base = {...project.base_abilities}, trained = {...base}, boosted = {}, playerBoosts={};
   const budget = project.card_type === 'Trending' ? 0 : 2 * (project.initial_level - 1);
   let spent = 0;
@@ -48,6 +60,7 @@ export function simulate(project, catalog) {
 
 export function autoAllocate(project, catalog) {
   const p = structuredClone(project);
+  p.initial_level=Math.max(1,Math.min(100,Math.trunc(Number(p.max_level)||35)));
   for (const g of catalog.training_groups) p.training[g.id] = 0;
   let current = simulate(p, catalog);
   const target=p.preview?.training_position||p.identity.position;

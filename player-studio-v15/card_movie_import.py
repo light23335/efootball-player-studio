@@ -43,7 +43,7 @@ def _fix_mux_headers(data):
     return bytes(raw)
 
 
-def encode(source, destination, ffmpeg, width, height, fps, seconds, crop_x=0, crop_y=0):
+def encode(source, destination, ffmpeg, width, height, fps, seconds, crop_x=0, crop_y=0,context=None):
     """Center crop an input to a template's opaque, silent video contract."""
     if (width, height) not in ((182, 256), (128, 128)):
         raise ValueError('实验版仅支持 182×256 大卡、128×128 小卡')
@@ -63,8 +63,25 @@ def encode(source, destination, ffmpeg, width, height, fps, seconds, crop_x=0, c
            '-frames:v', str(frames), '-c:v', 'libvpx-vp9', '-pix_fmt', 'yuv420p',
            '-b:v', '0', '-crf', '28', '-g', str(fps), '-lag-in-frames', '0',
            '-auto-alt-ref', '0', '-deadline', 'good', '-cpu-used', '4', '-f', 'ivf', '-n', str(dest)]
-    subprocess.run(cmd, check=True, capture_output=True, timeout=300,
-                   creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+    if context is None:
+        subprocess.run(cmd, check=True, capture_output=True, timeout=300,
+                       creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+    else:
+        import tempfile,time
+        with tempfile.TemporaryFile()as errors:
+            process=subprocess.Popen(cmd,stdout=subprocess.DEVNULL,stderr=errors,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+            try:
+                deadline=time.monotonic()+300
+                while process.poll()is None:
+                    context.check_cancel()
+                    if time.monotonic()>deadline:raise ValueError('视频转换超时')
+                    time.sleep(.1)
+                if process.returncode:raise subprocess.CalledProcessError(process.returncode,cmd)
+            except BaseException:
+                if process.poll()is None:process.terminate()
+                try:process.wait(timeout=5)
+                except subprocess.TimeoutExpired:process.kill();process.wait()
+                dest.unlink(missing_ok=True);raise
     video = ivf_packets(dest.read_bytes())
     if len(video['packets']) != frames or (video['width'], video['height']) != (width, height):
         raise ValueError('编码结果的帧数或尺寸不匹配')

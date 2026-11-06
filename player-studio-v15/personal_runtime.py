@@ -7,6 +7,7 @@ the registered player's definition in one SQLite transaction.
 import copy
 import hashlib
 import json
+import logging
 from pathlib import Path
 import time
 import types
@@ -170,6 +171,7 @@ class PackImageService:
         from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
         from urllib.parse import urlsplit,unquote
         self.root=Path(root).resolve();self.routes={};self.origin=None;self.lock=threading.Lock()
+        self.diagnostics={'url_rewrites':{},'requests':{},'routes':list(routes),'started':time.time()}
         for request,entry in routes.items():
             relative=Path(entry['path']);path=(self.root/relative).resolve()
             if relative.is_absolute() or not path.is_relative_to(self.root) or not path.is_file():raise ValueError('Pack banner file is missing or outside the resource root')
@@ -183,18 +185,45 @@ class PackImageService:
             def do_GET(self):self.serve(True)
             def serve(self,body):
                 path=unquote(urlsplit(self.path).path);entry=service.routes.get(path)
+                if path.startswith('/player-studio/tournaments/'):
+                    uid=path.rsplit('/',1)[-1];render=getattr(service,'tournament_overview',None)
+                    try:raw=render(uid)if render else None
+                    except (OSError,ValueError,KeyError):
+                        logging.getLogger(__name__).exception('Unable to read saved tournament overview');raw=None
+                    if raw is None:self.send_error(404);return
+                    self.send_response(200);self.send_header('Content-Type','text/html; charset=utf-8');self.send_header('Cache-Control','no-store');self.send_header('Content-Length',str(len(raw)));self.end_headers()
+                    if body:
+                        try:self.wfile.write(raw)
+                        except (BrokenPipeError,ConnectionResetError):pass
+                    return
                 if entry:
+                    service.observe('requests',path,200)
                     raw,mime=entry;self.send_response(200);self.send_header('Content-Type',mime);self.send_header('Content-Length',str(len(raw)));self.send_header('Cache-Control','public, max-age=31536000, immutable');self.end_headers()
                     if body:
                         try:self.wfile.write(raw)
                         except (BrokenPipeError,ConnectionResetError):pass
                 elif path.startswith('/player-studio/pack-covers/') or not service.origin:
+                    service.observe('requests',path,404)
                     self.send_error(404)
                 else:
                     self.send_response(302);self.send_header('Location',service.origin.rstrip('/')+'/'+self.path.lstrip('/'));self.send_header('Content-Length','0');self.end_headers()
         self.server=ThreadingHTTPServer(('127.0.0.1',0),Handler);self.server.daemon_threads=True
         self.url='http://127.0.0.1:'+str(self.server.server_port)
+        self.observe('url_rewrites','service_started',0)
         threading.Thread(target=self.server.serve_forever,daemon=True,name='personal-pack-images').start()
+
+    def observe(self,kind,key,status):
+        """Bounded local diagnostics: distinguish an unfetched banner from 404."""
+        import logging
+        with self.lock:
+            bucket=self.diagnostics[kind]
+            if key not in bucket and len(bucket)>=64:key='other'
+            row=bucket.setdefault(key,{'count':0,'status':status});row.update(count=row['count']+1,status=status)
+            try:
+                folder=self.root/'outputs/efootball';folder.mkdir(parents=True,exist_ok=True)
+                path=folder/'personal-image-status.json';pending=path.with_suffix('.tmp')
+                pending.write_text(json.dumps(dict(self.diagnostics,local_url=self.url),ensure_ascii=False),encoding='utf8');pending.replace(path)
+            except OSError:logging.getLogger(__name__).exception('Unable to persist local image diagnostics')
 
     def rewrite(self,value):
         from urllib.parse import urlsplit
@@ -202,11 +231,12 @@ class PackImageService:
         while pending:
             item=pending.pop()
             if isinstance(item,dict):
-                if item.get('type')=='IMAGE_DATA' and isinstance(item.get('url'),str):
+                if item.get('type')in('IMAGE_DATA','ONLINE_AD') and isinstance(item.get('url'),str):
                     origin=item['url'];parts=urlsplit(origin)
                     if origin!=self.url and parts.scheme in ('http','https') and parts.netloc:
                         with self.lock:self.origin=origin
                     if self.origin:item['url']=self.url
+                    if item['url']==self.url:self.observe('url_rewrites',item['type'],200)
                 pending.extend(item.values())
             elif isinstance(item,list):pending.extend(item)
         return value
@@ -613,7 +643,7 @@ def apply_game_options(conn,options):
     conn.execute('insert into meta values(?,?) on conflict(key) do update set value=excluded.value',(key,revision))
 
 
-def apply_catalogue_recycle(conn,rows):
+def apply_catalogue_recycle(conn,rows,*,remove_owned=True):
     """Reversible catalogue exclusion; owned removal was explicitly requested."""
     if not rows and not conn.execute("select 1 from meta where key='studio_recycled_catalogue_v1'").fetchone():return
     conn.execute('create table if not exists excluded_catalog_ids(card_id text primary key,reason text not null)')
@@ -624,6 +654,11 @@ def apply_catalogue_recycle(conn,rows):
     for cid,record in list(archived.items()):
         if cid not in selected:
             if isinstance(record,list):record={'card':record,'members':[]}
+            current=conn.execute('select evidence from managed_cards where card_id=?',(cid,)).fetchone()
+            if current and current[0]=='studio-recycle-restored':
+                # Older exports registered a browse-library projection before
+                # reaching this archive. Recover the actual registration row.
+                conn.execute('delete from managed_cards where card_id=?',(cid,))
             conn.execute('insert or ignore into managed_cards values(?,?,?,?,?,?)',record['card'])
             if conn.execute("select 1 from sqlite_master where name='managed_members'").fetchone():
                 conn.executemany('insert or ignore into managed_members values(?,?,?)',record.get('members',[]))
@@ -636,7 +671,141 @@ def apply_catalogue_recycle(conn,rows):
         if conn.execute("select 1 from sqlite_master where name='managed_members'").fetchone():conn.execute('delete from managed_members where card_id=?',(cid,))
         conn.execute('insert or replace into excluded_catalog_ids values(?,?)',(cid,'Workshop recycle bin'))
     conn.execute('insert into meta values(?,?) on conflict(key)do update set value=excluded.value',('studio_recycled_catalogue_v1',compact(archived)))
-    remove_recycled_owned(conn,selected)
+    if remove_owned:remove_recycled_owned(conn,selected)
+
+
+def repair_builtin_catalogue(conn,module,source,corrections=(),*,registration_markers=None,repaired_records=None):
+    """Repair startup-required source catalogue entries, never owned data.
+
+    Recycled definitions temporarily participate in the original migrations;
+    the caller reapplies catalogue exclusions before returning to the gateway.
+    Registration markers stay intact so completed owned-card updates do not run
+    again. Valid catalogue payloads, including user edits, are left unchanged.
+    """
+    if conn.in_transaction:raise ValueError('Builtin catalogue repair requires a transaction boundary')
+    archived=conn.execute("select value from meta where key='studio_recycled_catalogue_v1'").fetchone()
+    archived=json.loads(archived[0])if archived else{}
+    catalogue=source();draw_ids={str(cid)for cid in catalogue['config']['draw_card_ids']}
+    agent_id=module.AGENT_ID
+    repairs=[]
+    def matches(raw,cid,definition=None):
+        try:
+            payload=json.loads(raw)
+            if payload['gameplayer_id']['id']!=int(cid):return False
+            if definition is not None:
+                if not set(definition)<=payload.keys():return False
+                for name in ('parameters','level_info','gameplayer_id'):
+                    expected=definition.get(name)
+                    if expected is not None and type(payload.get(name))is not type(expected):return False
+                if 'parameters'in definition and len(payload['parameters'])!=len(definition['parameters']):return False
+            return True
+        except (ValueError,TypeError,KeyError):return False
+    def valid_record(row,cid,card):
+        return (isinstance(row,(list,tuple))and len(row)==6 and str(row[0])==cid and
+                row[3]==card['card_type']and row[4]==card.get('subtype')and row[5]!='studio-recycle-restored'and
+                matches(row[2],cid,card['payload']))
+    seen=set()
+    for card in catalogue['cards']:
+        definition=card['payload'];cid=str(definition['gameplayer_id']['id'])
+        if cid in seen:raise ValueError('Duplicate builtin catalogue source ID: '+cid)
+        seen.add(cid)
+        current=conn.execute('select card_id,fingerprint,payload,card_type,subtype,evidence from managed_cards where card_id=?',(cid,)).fetchone()
+        registrar=(registration_markers or{}).get(cid)
+        strict_pending=bool(registrar and not conn.execute('select 1 from meta where key=?',(registrar,)).fetchone())
+        canonical=compact(definition)
+        def compatible(row):
+            return valid_record(row,cid,card)and(not strict_pending or
+                (row[1],row[2])==(hashlib.sha256(canonical.encode()).hexdigest(),canonical))
+        needs_member=cid in draw_ids
+        member=not needs_member or conn.execute('select 1 from managed_members where agent_id=? and card_id=?',(agent_id,cid)).fetchone()
+        record=None
+        if not compatible(current):
+            old=archived.get(cid)
+            old=old.get('card')if isinstance(old,dict)else old
+            if compatible(old):
+                record=list(old);record[1]=hashlib.sha256(record[2].encode()).hexdigest()
+            else:
+                definition=copy.deepcopy(definition)
+                marker=(registration_markers or{}).get(cid,module.MARKER)
+                if conn.execute('select 1 from meta where key=?',(marker,)).fetchone():
+                    for update in corrections:
+                        if conn.execute('select 1 from meta where key=?',(update.MARKER,)).fetchone():definition=update.correct(definition)
+                if not matches(compact(definition),cid):raise ValueError('Builtin catalogue source ID mismatch: '+cid)
+                raw=compact(definition)
+                record=[cid,hashlib.sha256(raw.encode()).hexdigest(),raw,card['card_type'],card.get('subtype'),
+                        compact({'task':'E213','source':'startup catalogue repair; owned progress preserved'})]
+        old=archived.get(cid)
+        members=[r for r in old.get('members',[])if isinstance(r,list)and len(r)==3 and str(r[1])==cid]if isinstance(old,dict)else[]
+        if record or not member:repairs.append({'id':cid,'previous':list(current)if current else None,'record':record,'member_missing':not member,'members':members})
+    if not repairs:return []
+    backup_builtin_catalogue(conn,repairs)
+    with conn:
+        audit=conn.execute("select value from meta where key='studio_builtin_catalogue_repairs_v1'").fetchone()
+        audit=json.loads(audit[0])if audit else{}
+        for row in repairs:
+            if row['record']:
+                conn.execute('insert or replace into managed_cards(card_id,fingerprint,payload,card_type,subtype,evidence) values(?,?,?,?,?,?)',row['record'])
+                if repaired_records is not None:repaired_records.append(row['id'])
+            conn.executemany('insert or ignore into managed_members(agent_id,card_id,weight) values(?,?,?)',row['members'])
+            if row['member_missing']:conn.execute('insert or ignore into managed_members(agent_id,card_id,weight) values(?,?,1)',(agent_id,row['id']))
+            if row['previous']and row['record']:audit.setdefault(row['id'],row['previous'])
+        if audit:conn.execute('insert into meta values(?,?) on conflict(key)do update set value=excluded.value',('studio_builtin_catalogue_repairs_v1',compact(audit)))
+    return [r['id']for r in repairs]
+
+
+def backup_builtin_catalogue(conn,repairs):
+    filename=next((r[2]for r in conn.execute('pragma database_list')if r[1]=='main'),None)
+    if not filename:return
+    import sqlite3
+    folder=Path(filename).parent/'studio-builtin-catalogue-backups';folder.mkdir(exist_ok=True)
+    key=[{'id':r['id'],'previous':r['previous'],'member_missing':r['member_missing']}for r in repairs]
+    target=folder/(hashlib.sha256(compact(key).encode()).hexdigest()[:24]+'.sqlite3')
+    if target.is_file():return
+    temp=target.with_suffix('.tmp');backup=sqlite3.connect(temp)
+    try:
+        conn.backup(backup)
+        if backup.execute('pragma quick_check').fetchone()[0]!='ok':raise ValueError('内置卡目录修复前的存档备份校验失败，未修改存档')
+    finally:backup.close()
+    temp.replace(target)
+
+
+def install_builtin_catalogue_repair(module,document,source,corrections=(),registrars=()):
+    """Keep the original startup checks and migrations compatible with recycling."""
+    previous=module.install_once
+    if getattr(previous,'_studio_builtin_catalogue_repair',False):
+        previous._studio_document=document
+        return
+    if module.MARKER!='e213_new_cards_pack_four_native_v4' or module.AGENT_ID!=7030:raise ValueError('内置卡注册接口改变，未替换启动校验')
+    registration_markers={str(card['id']):registrar.MARKER for registrar in registrars for card in registrar.CARDS}
+    def install_once(conn):
+        if conn.in_transaction:return previous(conn)
+        rows=install_once._studio_document().get('catalogue_recycle_bin',[])
+        recovered=[]
+        repair_builtin_catalogue(conn,module,source,corrections,registration_markers=registration_markers,repaired_records=recovered)
+        try:
+            result=previous(conn)
+            # A first registration must see its exact uncorrected definition.
+            # Older completed correction markers may survive a partial seed;
+            # apply them to recovered CATALOGUE rows only after registration.
+            if recovered and result.get('status')!='waiting_for_transaction':
+                with conn:
+                    for cid in recovered:
+                        row=conn.execute('select payload from managed_cards where card_id=?',(cid,)).fetchone()
+                        if row is None:continue
+                        definition=json.loads(row[0])
+                        for update in corrections:
+                            if conn.execute('select 1 from meta where key=?',(update.MARKER,)).fetchone():definition=update.correct(definition)
+                        raw=compact(definition)
+                        if raw!=row[0]:conn.execute('update managed_cards set fingerprint=?,payload=? where card_id=?',(hashlib.sha256(raw.encode()).hexdigest(),raw,cid))
+            return result
+        finally:
+            # The original migrations own their transactions. No owned row is
+            # removed here: apply_definitions backs up and applies that policy.
+            if conn.in_transaction:conn.rollback()
+            with conn:apply_catalogue_recycle(conn,rows,remove_owned=False)
+    install_once._studio_builtin_catalogue_repair=True
+    install_once._studio_document=document
+    module.install_once=install_once
 
 
 def backup_recycled_owned(conn,rows):
@@ -838,6 +1007,11 @@ def install(namespace):
             legends_v10._active_fingerprint=None
             configured['revision']=revision
             configured['document']=document
+        if document.get('game_version')=='V17':
+            import new_cards_pack,six_cards_pack,four_card_skill_updates,six_card_skill_updates,two_card_style_updates,two_card_argentina_updates
+            install_builtin_catalogue_repair(new_cards_pack,lambda:configured['document'],six_cards_pack.document,
+                (four_card_skill_updates,six_card_skill_updates,two_card_style_updates,two_card_argentina_updates),
+                registrars=(six_cards_pack,))
         install_save_import_sync(lambda:configured['document'])
         if not configured['wrapped']:
             previous=legends_v10.activate
@@ -861,7 +1035,12 @@ def install(namespace):
                 import division_squads
                 division_squads.install(lambda:configured['document'],root,namespace.get('_logic'))
             if document.get('game_version')=='V17':
+                import stadium_runtime,tournament_runtime
+                stadium_runtime.install(lambda:configured['document'],namespace.get('_logic'))
+                tournament_runtime.install(lambda:configured['document'],root,namespace.get('_logic'))
                 action_trace.install_lifecycle(namespace.get('_logic'))
+                from league_availability import install as install_league_availability
+                install_league_availability(namespace.get('_logic'))
             configured['display']=True
         return result
     namespace['initialize']=initialize
@@ -936,7 +1115,11 @@ def install_display_previews(document,logic=None,root=None):
     editor_progression.state=progression_state
     if document().get('game_version') in ('V14','V15') or document().get('adapter_family')=='V14':
         import draw_presentation,managed_card_pool
-        draw_presentation.response_fields=lambda players:draw_response_fields(players,document().get('draw_profiles',{}),document().get('card_series_by_id',{}))
+        if document().get('draw_presentation_revision')in('v22-receipt-presentation-v3','v22-multi-audio-218-selection-light-order-v4'):
+            import draw_v22
+            draw_v22.install(document)
+        else:
+            draw_presentation.response_fields=lambda players:draw_response_fields(players,document().get('draw_profiles',{}),document().get('card_series_by_id',{}))
         old_decorate=managed_card_pool.decorate_agents
         def decorate_agents(*args,**kwargs):
             previous=getattr(state,'preview',False);state.preview=True
@@ -984,6 +1167,9 @@ def sanitize_draw_effects(response,document):
     A personal single draw only has index 0; the captured flag otherwise hides
     the side position/club and sends card parts to the wrong scene slots.
     """
+    revision=document.get('draw_presentation_revision')
+    if revision=='v22-receipt-presentation-v3':return
+    if revision=='v22-multi-audio-218-selection-light-order-v4'and len(response.get('gameplayer_list',[]))in(10,20,30):return
     identities={cid for d in document['players'] for cid in d['identity']['previous_card_ids']}
     personal=any((row.get('gameplayer',{}).get('gameplayer_id') or {}).get('id') in identities
                  for row in response.get('gameplayer_list',[]))

@@ -1,7 +1,8 @@
 from pathlib import Path
-import copy,hashlib,json,sqlite3,sys,tempfile,threading,types,unittest
+import copy,hashlib,io,json,sqlite3,sys,tempfile,threading,types,unittest,zipfile
+from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from catalogue_trash import change,active,load,restore_catalogue
+from catalogue_trash import change,active,load,restore_catalogue,patch_seed
 from personal_runtime import apply_catalogue_recycle,backup_recycled_owned
 
 class RecycleTests(unittest.TestCase):
@@ -60,5 +61,37 @@ class RecycleTests(unittest.TestCase):
             for body in ({'ids':['../x'],'action':'trash'},{'ids':[],'action':'restore'},{'ids':['1'],'action':'delete'}):
                 with self.assertRaises(ValueError):change(library,body)
             self.assertFalse((store.root/'catalogue-trash.json').exists())
+
+    def test_change_trash_restore_export_keeps_registry_metadata_instead_of_display_row(self):
+        import content_delta
+        with tempfile.TemporaryDirectory()as tmp:
+            root=Path(tmp);data=root/'data';data.mkdir();browse=root/'browse.sqlite3'
+            p={'gameplayer_id':{'id':10,'serial':0},'parameters':[65]*147,'level_info':{'level':1,'level_limit':30}}
+            raw=json.dumps(p,sort_keys=True,separators=(',',':'))
+            db=sqlite3.connect(browse);db.execute('create table players(id text primary key,name,payload,card_type)')
+            db.execute('insert into players values("10","same name",?,"UNKNOWN")',(raw,));db.commit();db.close()
+            seed=sqlite3.connect(':memory:');self.addCleanup(seed.close);self.make_db(seed)
+            record=('10',hashlib.sha256(raw.encode()).hexdigest(),raw,'Epic','Big Time','original-registry')
+            with seed:seed.execute('update managed_cards set fingerprint=?,payload=?,card_type=?,subtype=?,evidence=? where card_id=?',(*record[1:],'10'))
+            source=root/'source.apk';seed_name='assets/gateway-release/outputs/efootball/local-club.sqlite3'
+            with zipfile.ZipFile(source,'w')as z:
+                z.writestr(seed_name,seed.serialize());z.writestr(content_delta.CPKS[1],b'fixture; no native tables in this registry test')
+            store=types.SimpleNamespace(root=data,lock=threading.RLock())
+            def browse_db():
+                result=sqlite3.connect(browse);result.row_factory=sqlite3.Row;return result
+            library=types.SimpleNamespace(store=store,db=browse_db,resources=root,root=root/'library',profile={})
+            with patch('apk_sources.recorded',return_value={'apk':str(source)}),patch('native_cpk.Cpk'),patch.dict(content_delta.TABLES,{},clear=True):
+                change(library,{'ids':['10'],'action':'trash'})
+            item=load(store)['10'];self.assertEqual(item['snapshot']['card_type'],'UNKNOWN')
+            self.assertEqual(item['registration']['card'],list(record));self.assertEqual(item['registration']['members'],[[1,'10',1]])
+            with zipfile.ZipFile(source)as z:trashed=patch_seed(z,store)[seed_name]
+            change(library,{'ids':['10'],'action':'restore'})
+            exported=io.BytesIO()
+            with zipfile.ZipFile(exported,'w')as z:z.writestr(seed_name,trashed)
+            with zipfile.ZipFile(exported)as z:restored=patch_seed(z,store)[seed_name]
+            fixed=sqlite3.connect(':memory:');self.addCleanup(fixed.close);fixed.deserialize(restored)
+            self.assertEqual(fixed.execute('select * from managed_cards where card_id="10"').fetchone(),record)
+            self.assertEqual(fixed.execute('select * from managed_members where card_id="10"').fetchall(),[(1,'10',1)])
+            self.assertEqual(fixed.execute('select id from gameplayers').fetchall(),[(20,)])
 
 if __name__=='__main__':unittest.main()

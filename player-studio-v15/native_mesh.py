@@ -161,9 +161,24 @@ def head_arrays(glb,bone_count,adjustments=None,bone_remap=None):
     positions=(positions[:,[0,2,1]]*100).astype('<f4')
     normal=normals[:,[0,2,1]]
     normal/=np.maximum(np.linalg.norm(normal,axis=1,keepdims=True),1e-12)
+    # Tangent-space normal maps need the actual UV basis, not an arbitrary
+    # vector perpendicular to the normal. Work in the exported coordinate frame
+    # so reflection and mirrored UV handedness are both included.
+    edge1=positions[faces[:,1]]-positions[faces[:,0]];edge2=positions[faces[:,2]]-positions[faces[:,0]]
+    duv1=uv[faces[:,1]]-uv[faces[:,0]];duv2=uv[faces[:,2]]-uv[faces[:,0]]
+    det=duv1[:,0]*duv2[:,1]-duv1[:,1]*duv2[:,0]
+    reciprocal=np.zeros_like(det);valid=np.abs(det)>1e-12;reciprocal[valid]=1/det[valid]
+    t=(edge1*duv2[:,1,None]-edge2*duv1[:,1,None])*reciprocal[:,None]
+    b=(edge2*duv1[:,0,None]-edge1*duv2[:,0,None])*reciprocal[:,None]
+    tangent=np.zeros_like(normal);bitangent=np.zeros_like(normal)
+    for column in range(3):
+        np.add.at(tangent,faces[:,column],t);np.add.at(bitangent,faces[:,column],b)
+    tangent-=normal*(tangent*normal).sum(axis=1,keepdims=True)
     axis=np.zeros_like(normal);axis[:,2]=1;axis[np.abs(normal[:,2])>.9]=[0,1,0]
-    tangent=np.cross(axis,normal);tangent/=np.maximum(np.linalg.norm(tangent,axis=1,keepdims=True),1e-12)
-    packed=np.concatenate((np.column_stack((tangent,np.zeros(count))),np.column_stack((normal,np.ones(count)))),axis=1)
+    missing=np.linalg.norm(tangent,axis=1)<1e-12;tangent[missing]=np.cross(axis[missing],normal[missing])
+    tangent/=np.maximum(np.linalg.norm(tangent,axis=1,keepdims=True),1e-12)
+    handed=np.where((np.cross(normal,tangent)*bitangent).sum(axis=1)<0,-1.,1.)
+    packed=np.concatenate((np.column_stack((tangent,np.zeros(count))),np.column_stack((normal,handed))),axis=1)
     # UE4.26 IncreaseNormalPrecision stores signed bytes (CUE applies XOR).
     packed=(np.rint((packed+1)*127.5).clip(0,255).astype(np.uint8)^128)
     return {'positions':positions,'normals':normal,'uv':uv.astype('<f4'),'faces':faces,
@@ -183,9 +198,10 @@ def make_lod(template,head):
     active=sorted(set(np.frombuffer(template['active'],dtype='<u2').tolist())|set(head['required_bones']))
     required_data=np.asarray(required,dtype='<u2').tobytes();active_data=np.asarray(active,dtype='<u2').tobytes()
     bone_map=b''.join(struct.pack('<H',b) for b in head['bones'])
-    section=(b'\x01\x01'+struct.pack('<hiiiBII',0,0,head['triangles'],0,1,1,0)
-             +struct.pack('<I',0)+array(bone_map,2)+struct.pack('<IIh',count,4,-1)
-             +b'\0'*16+struct.pack('<iI',-1,0))
+    sections=head.get('sections',[{'material':0,'base_index':0,'triangles':head['triangles'],'base_vertex':0,'vertices':count}])
+    section=b''.join(b'\x01\x01'+struct.pack('<hiiiBII',s['material'],s['base_index'],s['triangles'],0,1,1,s['base_vertex'])
+             +struct.pack('<I',0)+array(bone_map,2)+struct.pack('<IIh',s['vertices'],4,-1)
+             +b'\0'*16+struct.pack('<iI',-1,0) for s in sections)
     uv_count=max(1,template['nuv'])
     uv=np.repeat(head['uv'][:,None,:],uv_count,axis=1).astype('<f4').tobytes()
     stream=(b'\x01\x01'+bytes([width])+bulk(index_data,width)
@@ -197,7 +213,7 @@ def make_lod(template,head):
             +b'\x01\x00'+struct.pack('<II',4,count)+bulk(b'\xff'*count*4,4)
             +struct.pack('<I',0))
     result=(b'\x01\x01'+struct.pack('<II',0,1)+array(required_data,2)
-            +struct.pack('<I',1)+section+array(active_data,2)+struct.pack('<I',len(stream))+stream)
+            +struct.pack('<I',len(sections))+section+array(active_data,2)+struct.pack('<I',len(stream))+stream)
     parsed=read_lod(result,0)
     if parsed['end']!=len(result) or parsed['vertices']!=count or parsed['skin']!=head['skin'].tobytes():
         raise ValueError('Generated skeletal mesh failed structural read-back')
@@ -240,7 +256,7 @@ def custom_face_bone_map(reference,active):
     return [head if name.startswith('skf_') else retained[i] for i,name in enumerate(names)]
 
 
-def replace_head(raw,glb,reference,metadata,neck_seam=True,head_vertical_cm=0,preserve_expression=True,binding=None):
+def replace_head(raw,glb,reference,metadata,neck_seam=True,head_vertical_cm=0,preserve_expression=True,binding=None,material_plan=None):
     import numpy as np
     from native_glb import verify_skeleton
     bones=verify_skeleton(glb,reference)
@@ -267,6 +283,9 @@ def replace_head(raw,glb,reference,metadata,neck_seam=True,head_vertical_cm=0,pr
         active=np.frombuffer(lod['active'],dtype='<u2').tolist()
         mapping=custom_face_bone_map(reference,active) if preserve_expression else retained_bone_map(reference,active)
         lod_head=head_arrays(glb,bones,adjustments,mapping)
+        if material_plan is not None:
+            from native_head_materials import partition
+            lod_head=partition(lod_head,material_plan['triangle_materials'])
         if not set(lod_head['bones'])<=set(active):raise ValueError('比赛档位仍引用了已裁去的骨骼')
         blocks.append(make_lod(lod,lod_head))
         bone_reports.append({'lod':level,'used_bones':len(lod_head['bones']),
@@ -286,13 +305,20 @@ def replace_head(raw,glb,reference,metadata,neck_seam=True,head_vertical_cm=0,pr
     at=containing[0]+8
     struct.pack_into('<Q',result,at,struct.unpack_from('<Q',result,at)[0]+delta)
     check=find_lods(result)
-    if len(check)!=len(lods) or any(lod['vertices']!=head['vertices'] for lod in check):
+    expected_vertices=lod_head['vertices']
+    if len(check)!=len(lods) or any(lod['vertices']!=expected_vertices for lod in check):
         raise ValueError('Native mesh LOD verification failed')
+    if material_plan is not None:
+        expected=[(s['material'],s['triangles']) for s in lod_head['sections']]
+        if any([(s['material'],s['triangles']) for s in lod['sections']]!=expected for lod in check):
+            raise ValueError('原生头模材质分段读回不一致')
     return bytes(result),{'vertices':head['vertices'],'triangles':head['triangles'],'lods':len(lods),
                           'bones':bones,'used_bones':len(head['bones']),'native_skin_weights':True,
                           'original_skeleton_preserved':True,'lod_geometry':'same mesh at both original LOD slots',
                           'all_lods_include_used_bones_and_parents':True,
                           'facial_animation':'custom-neutral-face; head-neck-spine motion preserved' if preserve_expression else 'imported facial weights; native LOD retention applies',
                           'carrier_facial_weights_removed':bool(preserve_expression),
+                          'render_vertices':expected_vertices,
+                          'material_sections':[{'material':s['material'],'triangles':s['triangles']} for s in check[0]['sections']],
                           'lod_skinning':bone_reports,
                           'neck_seam':neck_report,'in_game_tested':False}

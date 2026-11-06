@@ -103,6 +103,25 @@ class DivisionSquadTests(unittest.TestCase):
         self.assertEqual(len({ds.person(c)for c in cards}),3)
         self.assertEqual(doc,before,'Identity deduplication must not edit or remove projects')
 
+    def test_v25_selected_eras_are_excluded_in_both_cpu_modes_but_player_rentals_keep_them(self):
+        from tournament_squads import club_cards
+        excluded={89136418985339,89136418985340,89136418985341,89136418985342,
+                  89136418985343,89136418985345,89136418985346}
+        self.assertTrue(excluded<=ds.STOCK_AI_EXCLUDED_CARD_IDS)
+        other=89136418985344;namesake=89136418985346+(1<<28)
+        for cid in excluded|{other,namesake}:
+            p=card(cid,12);p.update(initial_base_team_id=103,_content_package='V25');self.put_card(p)
+        before=list(self.db.execute('select card_id,fingerprint,payload from managed_cards order by card_id'))
+        for include_diy in(True,False):
+            self.doc['division_squads']['include_diy']=include_diy
+            division={p['gameplayer_id']['id']for p in self.g.cards(self.db)}
+            cpu={p['gameplayer_id']['id']for p in club_cards(self.db,self.doc,103,include_diy,cpu=True)}
+            player={p['gameplayer_id']['id']for p in club_cards(self.db,self.doc,103,include_diy,cpu=False)}
+            self.assertFalse(division&excluded);self.assertFalse(cpu&excluded)
+            self.assertTrue({other,namesake}<=division);self.assertTrue({other,namesake}<=cpu)
+            self.assertTrue(excluded<=player)
+        self.assertEqual(before,list(self.db.execute('select card_id,fingerprint,payload from managed_cards order by card_id')))
+
     def setUp(self):
         mixing = patch.object(ds, 'MIX_STEPS', 128)
         mixing.start(); self.addCleanup(mixing.stop)
@@ -254,8 +273,22 @@ class DivisionSquadTests(unittest.TestCase):
 
     def test_unfinished_training_is_not_sent_to_game(self):
         self.developed.developed = lambda p, boosts: dict(p, level_info={'level':1,'level_limit':40})
-        with self.assertRaisesRegex(ValueError, '满级'):
-            self.g.build(self.db, template(), 1, random.Random(1))
+        c=self.g.cards(self.db)[0]
+        for retry in range(2):
+            with self.assertRaisesRegex(ValueError, '满级'):
+                self.g.prepared(c)
+        self.assertFalse(self.g._trained)
+        # Older releases persisted failures before checking level. Matching
+        # the cap alone must not make one of those cached rows valid.
+        required=max(self.g.caps().get(int(c['gameplayer_id']['id']))or 1,
+                     c.get('level_info',{}).get('level_limit')or 1)
+        stale=dict(c,level_info={'level':0,'level_limit':required})
+        self.g._trained[(int(c['gameplayer_id']['id']),c['_studio_fingerprint'])]=stale
+        with self.assertRaisesRegex(ValueError,'满级'):
+            self.g.prepared(c)
+        self.assertFalse(self.g._trained)
+        with self.assertRaisesRegex(ValueError,'满级'):
+            self.g.build(self.db,template(),1,random.Random(1))
 
     def test_coach_threshold_is_85_for_stock_and_custom_coaches(self):
         self.doc['division_squads']['coaches']=[{'payload':{'coach_id':{'id':1,'serial':0},**dict.fromkeys(ds.STYLES,84)},'effects':{}}]

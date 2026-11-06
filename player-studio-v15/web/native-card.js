@@ -9,6 +9,14 @@ export function cardLayerOrder(card){
     ? {f01:0,f02:1,f04:2,f03:3,f05:4,f07:5,portrait:6,f10:7,f09:8}
     : {f01:0,f02:1,portrait:2,f04:3,f03:4,f05:5,f06:6,f07:7,f10:8,f09:9};
 }
+export function cardFrontLayers(card,appearance={}){
+  const dateOverride=appearance.card_date!==undefined||card?.preset_id||appearance.card_date_visible===false||appearance.hide_card_ui===true;
+  const layers=card.custom_motion?.large?.preview?.asset_id
+    ? [{slot:'f02',kind:'video',asset_id:card.custom_motion.large.preview.asset_id,blend:'source-over'}]
+    : card.layers.filter(layer=>!layer.slot.startsWith('b')&&!layer.slot.startsWith('m')&&layer.slot!=='portrait'&&!(dateOverride&&layer.slot==='f09')&&!(appearance.hide_card_ui&&layer.slot==='f06'));
+  if(appearance.portrait&&!appearance.hide_portrait)layers.push({slot:'portrait',kind:'image',asset_id:appearance.portrait,blend:'source-over'});
+  const order=cardLayerOrder(card);return layers.sort((a,b)=>(order[a.slot]??7)-(order[b.slot]??7));
+}
 export function nativeCardState(project){
   const card=project.native_card,ui=card?.ui;if(!ui)return null;
   const source=project.source_player?.original_payload,original=source?.initial_booster_id_list||[];
@@ -42,14 +50,10 @@ export class NativeCardRenderer {
   async update(project,simulation){
     this.project=project;this.simulation=simulation;
     const card=project.native_card,dateOverride=project.appearance.card_date!==undefined||card?.preset_id||project.appearance.card_date_visible===false;
-    const key=JSON.stringify([card?.source_id,card?.preset_id,card?.custom_motion,card?.layers?.map(l=>[l.asset_id,l.blend]),card?.fonts,card?.info,project.appearance.portrait,project.appearance.hide_portrait,Boolean(dateOverride)]);
+    const key=JSON.stringify([card?.source_id,card?.preset_id,card?.custom_motion,card?.layers?.map(l=>[l.asset_id,l.blend]),card?.fonts,card?.info,project.appearance.portrait,project.appearance.hide_portrait,project.appearance.hide_card_ui,Boolean(dateOverride)]);
     if(this.key===key){this.draw();return;}
     this.clear();this.key=key;const generation=++this.generation;
-    const frontLayers=card.custom_motion?.large?.preview?.asset_id
-      ? [{slot:'f02',kind:'video',asset_id:card.custom_motion.large.preview.asset_id,blend:'source-over'}]
-      : card.layers.filter(layer=>!layer.slot.startsWith('b')&&!layer.slot.startsWith('m')&&layer.slot!=='portrait'&&!(dateOverride&&layer.slot==='f09'));
-    if(project.appearance.portrait&&!project.appearance.hide_portrait)frontLayers.push({slot:'portrait',kind:'image',asset_id:project.appearance.portrait,blend:'source-over'});
-    const order=cardLayerOrder(card);frontLayers.sort((a,b)=>(order[a.slot]??7)-(order[b.slot]??7));
+    const frontLayers=cardFrontLayers(card,project.appearance);
     const layers=await Promise.all(frontLayers.map(async layer=>({...layer,element:await this.asset(layer)})));
     const decorations=await Promise.all(Object.entries(card.info?.assets||{}).map(async([key,asset])=>[key,await this.asset(asset)]));
     const [sans,headline,chinese]=await Promise.all(['sans','headline','chinese'].map(k=>this.font(card.fonts[k])));
@@ -83,7 +87,7 @@ export class NativeCardRenderer {
       }else ctx.drawImage(image,0,0,width,height);
     }
     ctx.globalCompositeOperation='source-over';
-    if(p.appearance.native_overlay_text!==false){
+    if(p.appearance.native_overlay_text!==false&&!p.appearance.hide_card_ui){
       const state=nativeCardState(p),widgets=state?.widgets;
       const transform=(box,draw)=>{
         if(!box||box.visible===false)return;ctx.save();const px=box.w*(box.pivot?.X??.5),py=box.h*(box.pivot?.Y??.5);
@@ -122,6 +126,8 @@ export class NativeCardRenderer {
       }else{
         text(String(this.simulation.ovr),card.layout.overall,this.fonts.headline);text(p.identity.position,card.layout.position,this.fonts.sans);text(name,card.layout.name,nameFont);
       }
+    }else if(p.appearance.hide_card_ui){
+      this.canvas.dataset.nativeUiElements=JSON.stringify({hidden:true,portrait:!p.appearance.hide_portrait&&!!p.appearance.portrait});
     }
     ctx.restore();this.canvas.dataset.nativeSource=card.source_id;
     this.canvas.dataset.nativeVideoFrames=JSON.stringify(this.resources.filter(l=>l.kind==='video'&&l.element).map(l=>({slot:l.slot,time:Number(l.element.currentTime.toFixed(3)),paused:l.element.paused,ready:l.element.readyState})));

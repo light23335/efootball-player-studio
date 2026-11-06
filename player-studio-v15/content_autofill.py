@@ -98,9 +98,12 @@ def synchronize(archive,library,work,progress=lambda **kw:None):
   from native_cpk import Cpk,unwrap,wrap
   from native_tables import rows
   from native_coaches import COACH
-  source_cpk=Cpk(archive.read(CPK));donor_cpk=Cpk(refs[CPK]);table_changes={};added_cards=set();identifiers={int(r['card_id'])for r in wanted['players']}
-  auxiliary={int(r['base_id'])for r in wanted['players']if str(r.get('base_id','')).isdigit()}
-  for route in wanted.get('routes',[]):
+  from content_asset_merge import _selection as select_material_entities
+  selected_players,selected_routes,_,_,_,_=select_material_entities(previous,wanted,needed)
+  source_cpk=Cpk(archive.read(CPK));donor_cpk=Cpk(refs[CPK]);table_changes={};added_cards=set();identifiers={int(cid)for cid in selected_players}
+  new_identifiers=identifiers-{int(r['card_id'])for r in previous.get('players',[])}
+  auxiliary={int(r['base_id'])for r in selected_players.values()if str(r.get('base_id','')).isdigit()}
+  for route in selected_routes:
    auxiliary.update(int(route[k])for k in('portraitKey','modelNativeId')if str(route.get(k,'')).isdigit())
   for name,(stride,offset)in{**TABLES,COACH:(176,0)}.items():
    if name not in source_cpk.files or name not in donor_cpk.files:continue
@@ -110,7 +113,7 @@ def synchronize(archive,library,work,progress=lambda **kw:None):
     if cid not in donor:continue
     if cid in current:
      # Existing player modifications belong to the selected game, including native cards.
-     if cid in identifiers and name.endswith('/Player.bin')and current[cid]!=donor[cid]:raise ValueError('内容卡 '+str(cid)+' 在来源游戏中已有不同资料，自动补齐未覆盖；请核对所选游戏库')
+     if cid in new_identifiers and name.endswith('/Player.bin')and current[cid]!=donor[cid]:raise ValueError('内容卡 '+str(cid)+' 在来源游戏中已有不同资料，自动补齐未覆盖；请核对所选游戏库')
      continue
     current[cid]=donor[cid]
     if name.endswith('/Player.bin')and cid in identifiers:added_cards.add(cid)
@@ -127,36 +130,18 @@ def synchronize(archive,library,work,progress=lambda **kw:None):
   if out.getvalue().encode()!=unwrap(original):table_changes[ALIASES]=wrap(out.getvalue().encode(),original)
   cpk=source_cpk.replace(table_changes)if table_changes else source_cpk.raw
   replacements={CPK:cpk,PREFIX+'livedata/dt870_mobile_and.cpk':cpk}
-  from write_modes import source_container
-  from native_iostore import Container,read_package_header,append_container
   key=(library.containers/'resource-key.bin').read_bytes()
   if hashlib.sha256(key).hexdigest()!=library.profile['resource_key_sha256']:raise ValueError('内容库资源密钥校验失败')
-  target=source_container(archive,work,key)
-  toc=work/'donor.utoc'
-  with refs[STEM+'.utoc'].open()as stream:toc.write_bytes(stream.read())
-  donor=Container(toc,key,data=refs[STEM+'.ucas'])
-  from personal_source import ownership,owned_art_paths
-  excluded=owned_art_paths(donor,list(ownership(inventory.get('personal',{})).values()))
-  excluded_pids={int.from_bytes(donor.chunk_ids[i][:8],'little')for i in excluded}
-  header=next(i for i,c in enumerate(donor.chunk_ids)if c[11]==10);_,packages=read_package_header(donor.read_chunk(header));by_package={p['id']:p for p in packages}
-  present={int.from_bytes(c[:8],'little')for c in target.chunk_ids};additions=[];positions={};new_packages={}
-  for i,cid in enumerate(donor.chunk_ids):
-   pid=int.from_bytes(cid[:8],'little')
-   if cid[11]==10 or pid in excluded_pids or pid in present:continue
-   positions[i]=len(additions);additions.append((cid,donor.read_chunk(i)))
-   if cid[11]==2:new_packages[pid]=by_package[pid]
-  paths={name.removeprefix('../../../'):positions[i]for name,i in donor.paths.items()if i in positions}
-  added_assets=len(additions)
-  if additions:
-   output=work/'merged.utoc';append_container(target,output,additions,paths,list(new_packages.values()))
-   replacements.update({STEM+s:FilePayload.from_path(output.with_suffix(s))for s in('.utoc','.ucas')})
+  from content_asset_merge import merge_material_assets
+  native_replacements,asset_report=merge_material_assets(archive,refs,library,key,work,previous,wanted,needed,inventory.get('personal',{}))
+  replacements.update(native_replacements)
+  required_media=set(asset_report['media_paths'])
   for name,value in refs.items():
-   if name==CPK or name.startswith(STEM+'.'):continue
+   if name not in required_media:continue
    if name not in archive.namelist():replacements[name]=value
-   elif isinstance(value,FilePayload):
-    # Different existing containers may contain user changes. Never silently overwrite.
+   else:
     with archive.open(name)as stream:digest=hashlib.file_digest(stream,'sha256').hexdigest()
-    if metadata(value)['sha256']!=digest:raise ValueError('来源游戏中同名内容资源不同，未覆盖：'+Path(name).name)
+    if metadata(value)['sha256']!=digest:raise ValueError('新增内容所需素材与来源游戏不同，未覆盖：'+name)
   merged=copy.deepcopy(previous);merged.update(format='studio-content-catalogue-v1',base_version='V17',runtime_abi='v17-content-art/1')
   for kind,keyname in [('packages','package_id'),('players','card_id'),('routes','cardId'),('coaches','coach_id')]:
    rows_by={str(r.get(keyname,r.get('id'))):r for r in previous.get(kind,[])}
@@ -178,4 +163,4 @@ def synchronize(archive,library,work,progress=lambda **kw:None):
    if rel in listed:listed[rel].update(row)
    else:release['files'].append(row)
   replacements[PREFIX+'release-manifest.json']=compact(release)
-  return Overlay(archive,replacements),replacements,{'packages':needed,'added_cards':len(added_cards),'added_native_chunks':added_assets,'source':'imported-library-cache','original_delta_zip_required':False}
+  return Overlay(archive,replacements),replacements,{'packages':needed,'added_cards':len(added_cards),'added_native_chunks':asset_report['added_native_chunks'],'assets':asset_report,'source':'imported-library-cache','original_delta_zip_required':False}

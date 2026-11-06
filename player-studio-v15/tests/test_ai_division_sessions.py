@@ -4,6 +4,7 @@ import random
 import sqlite3
 import threading
 import unittest
+from unittest.mock import patch
 
 import ai_division_sessions as s
 
@@ -14,6 +15,23 @@ class EntryTests(unittest.TestCase):
         self.db.execute('create table meta(key text primary key,value text)')
         self.entries=s.Entries('runtime-A')
     def tearDown(self):self.db.close()
+
+    def test_live_owner_does_not_decode_archived_tournament_snapshots(self):
+        prefix='player_studio_tournament_v1:'
+        live={'definition':{'uuid':'live'},'active':{'game_id':77},'receipts':{}}
+        archived=json.dumps({'definition':{'uuid':'old'},'receipts':{'66':{'result':'NOERR'}},
+                             'large_snapshot':'x'*50000})
+        self.db.executemany('insert into meta values(?,?)',[
+            (prefix+'live',json.dumps(live)),(prefix+'old:history:run',archived),
+            (prefix+'old:backup:run',archived)])
+        original=json.loads
+        def decode(raw,*args,**kwargs):
+            if raw==archived:raise AssertionError('Archived snapshots must not enter live route decoding')
+            return original(raw,*args,**kwargs)
+        with patch.object(s.json,'loads',side_effect=decode):
+            self.assertEqual(s.match_owner(self.db,77),'tournament')
+            self.assertIsNone(s.match_owner(self.db,66))
+            self.assertIsNone(s.match_owner(self.db,999))
 
     def seeded(self):
         entry=self.entries.draw(self.db,None,random.Random(3),'shuffle_bag')
@@ -89,6 +107,10 @@ class EntryTests(unittest.TestCase):
 
     def test_bridge_only_accepted_explicit_menu_exit_invalidates_round(self):
         active,entry=self.seeded();calls=[]
+        # This tests an unissued pre-match entry. An actually started match
+        # must remain resumable and settle after an accepted menu transition.
+        active['started']=False
+        with self.db:s.write(self.db,'ai_division_active_match',active)
         class Logic:
             def __init__(self,conn):self.conn=conn
             def handle(self,command,req):calls.append(command);return {'result':req.get('result','NOERR')}

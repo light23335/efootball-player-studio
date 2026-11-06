@@ -5,25 +5,27 @@ and a non-human team). This decoder supplies facts to the policy, not permission
 to execute: the runtime's separate capability proofs remain mandatory.
 """
 import math
+import struct
 from ai_match_channel import decode_match_clock
 
 
-def decode_normal(spec, raw, *, allow_reduced=False):
+def decode_normal(spec, raw, *, allow_reduced=False, allow_transition=False):
     try:
         if raw['game_id']!=spec['game_id'] or raw.get('entry_id')!=spec.get('entry_id'):
             return None
-        if raw['team'] not in (0,1) or raw['phase'] not in (1,2):return None
+        if raw['team'] not in (0,1) or raw['phase'] not in ((1,2,3)if allow_transition else(1,2)):return None
+        transition=raw['phase']==3
         period=raw['period'];frames=raw['clock_frames']
         if type(frames) not in (int,float) or not math.isfinite(frames) or frames<0:return None
         clock=decode_match_clock(period,frames)
-        phase='play' if raw['phase']==1 else 'stoppage'
+        phase='transition'if transition else 'play' if raw['phase']==1 else 'stoppage'
         if period in (2,4,6):
             # Original native transitions reset the stage counter. These are
             # breaks at45/90/105; they are not additional playing periods.
-            if raw['phase']!=2 or frames>60:return None
+            if raw['phase']not in ((2,3)if allow_transition else(2,)) or frames>60:return None
             clock={'minute':{2:45,4:90,6:105}[period],
                    'period_end':120 if period in (4,6) else 90}
-            phase='halftime'
+            phase='transition'if transition else 'halftime'
         if clock is None:return None
         players=raw['live']
         if len(players)!=23 or len(spec['players'])!=23:return None
@@ -82,7 +84,8 @@ def decode_normal(spec, raw, *, allow_reduced=False):
              'roles':roles,'defence_roles':defence,'stamina':stamina,
              'substitutions_left':left,'windows_left':windows,'native_pending_count':pending,
              'safe_to_change':phase in ('stoppage','halftime'),
-             'safe_to_queue':pending==0 and left>0 and (windows>0 or phase=='halftime'),
+             'safe_to_queue':not transition and pending==0 and left>0 and (windows>0 or phase=='halftime'),
+             'execution_allowed':not transition,'trusted_transition':transition,
              # Publication is allowed during play, but native mutation happens
              # ONLY in 6c4ce44's original CPU tactical-update callback. MuMu's
              # actual alternate-shape ACK and held-plan readback confirm this
@@ -91,6 +94,8 @@ def decode_normal(spec, raw, *, allow_reduced=False):
              'state_source':'v17_scoped_normal_eleven',
              'discipline_source':'v17_original_entry_cards_and_injury_word' if len(discipline)==23 else 'unknown; original emergency handling retained'}
         if discipline:out['discipline']=discipline
+        if type(raw.get('current_attack_level'))is int and 0<=raw['current_attack_level']<=4:
+            out['current_attack_level']=raw['current_attack_level']
         if yellow_risk:out['yellow_risk']=yellow_risk
         if not 7<=len(on_field)<=11:return None
         if departures:
@@ -98,6 +103,25 @@ def decode_normal(spec, raw, *, allow_reduced=False):
             out.update(departures=departures,state_source='v17_scoped_confirmed_reduced_lineup')
         for k in ('ack_id','ack_status','rejection_reason'):
             if k in raw:out[k]=raw[k]
+        plan=raw.get('raw_plan')
+        if plan is not None:
+            if len(plan)!=0xe6c:return None
+            active=struct.unpack_from('<I',plan)[0]
+            if active not in (0,1):return None
+            actual={}
+            for p in players[:11]:
+                index=p['expected_index'];slot=p['lineup_slot']
+                if index not in on_field:continue
+                if slot:
+                    at=active*0x3c+(slot-1)*6
+                    ax=struct.unpack_from('<H',plan,0x124+at+2)[0];ay=struct.unpack_from('<H',plan,0x19c+at+2)[0]
+                    dx=struct.unpack_from('<H',plan,0x124+at+4)[0];dy=struct.unpack_from('<H',plan,0x19c+at+4)[0]
+                    if not(0<=ax<=48 and 0<=dx<=48 and 0<=ay<=104 and 0<=dy<=104):return None
+                # The native grid arrays contain ten outfield slots. There
+                # is no GK grid readback; do not invent template coordinates.
+                else:ax=ay=dx=dy=None
+                actual[str(index)]=[p['attack_role'],p['defence_role'],ax,ay,dx,dy]
+            out.update(actual_shape=actual,actual_plan_active=active)
         return out
     except (KeyError,TypeError,ValueError,IndexError):
         return None
@@ -105,4 +129,16 @@ def decode_normal(spec, raw, *, allow_reduced=False):
 
 def decode_match(spec,raw):
     """Admit confirmed departures; unknown injury severity/emergency GK stay native."""
-    return decode_normal(spec,raw,allow_reduced=True)
+    return decode_normal(spec,raw,allow_reduced=True,allow_transition=True)
+
+
+def rejection_reason(spec,raw):
+    """Diagnostics only: failure categories never grant native ownership."""
+    if raw is None:return 'snapshot_unreadable_or_torn'
+    if raw.get('game_id')!=spec['game_id'] or raw.get('entry_id')!=spec.get('entry_id'):return 'entry_identity_mismatch'
+    if raw.get('phase')not in (1,2,3):return 'unsupported_native_phase'
+    if raw.get('period')not in (1,2,3,4,5,6,7):return 'unsupported_native_period'
+    if any(p.get('injury_state')or p.get('direct_red')or p.get('yellow_count',0)>=2 or
+           p.get('native_flag_4202')!=1 or p.get('native_flag_4218')!=0 for p in raw.get('live',[])[:11]):
+        return 'emergency_or_actor_transition'
+    return 'state_decode_failed'

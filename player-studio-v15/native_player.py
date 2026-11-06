@@ -9,15 +9,11 @@ import copy
 import hashlib
 import json
 import uuid
-from overall import calculate,maximum_development
+from overall import calculate,maximum_development,training_cost,normalize_training
 from native_models import person_keys
 from native_celebration import project_value
 from ai_playing_styles import project_value as ai_styles,write_parameters as write_ai_styles
 from player_identity_binding import normalize as original_binding,BOUND_AGENT_MIN
-
-
-def training_cost(upgrades):
-    return sum(1+i//4 for i in range(upgrades))
 
 
 def experience_curve(costs, cap):
@@ -90,6 +86,7 @@ def reserve_identity(project, occupied, registry):
 
 @exported('球员','编译基础能力、技能和永久编号',lambda project,*args,**kwargs: project)
 def compile_player(project,catalog,costs,identity,template,nation_id,team_id,source_record=None,game_version='V17'):
+    project=normalize_training(copy.deepcopy(project),catalog)
     innate_limit,additional_limit=(100,100) if game_version=='V17' else (20,10)
     if len(project.get('innate_skills',[]))>innate_limit:raise ValueError(f'工程已完整保留；当前游戏实装支持天生技能最多 {innate_limit} 项，请调整后生成 APK')
     if len(project.get('additional_skills',[]))>additional_limit:raise ValueError(f'工程已完整保留；当前游戏实装支持额外习得技能最多 {additional_limit} 项，请调整后生成 APK')
@@ -135,7 +132,6 @@ def compile_player(project,catalog,costs,identity,template,nation_id,team_id,sou
             for index in group['indices']:trained[index]=min(105,trained[index]+upgrades)
     level,cap=project['initial_level'],project['max_level']
     budget=2*(level-1) if project['card_type']!='Trending' else 0
-    if sum(ledger.values())>budget:raise ValueError('当前培养方案超出此等级的可用点数，未写入')
     curve=experience_curve(costs,cap)
     cid=identity['card_id']
     p.update(gameplayer_id={'id':cid,'serial':1},parameters=trained,

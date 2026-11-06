@@ -7,9 +7,10 @@ Signing uses the operator's existing private release key.
 from pathlib import Path
 import argparse,hashlib,io,json,re,struct,sys,zipfile
 ROOT=Path(__file__).resolve().parent
-VERSION='2.1.7-android.1'
-VERSION_CODE=201700
-RETIRED_CORE_MODULES={'team_workshop.py','team_cpk.py','team_workshop.pyc','team_cpk.pyc','draw_policy.py','draw_journal.py','draw_policy.pyc','draw_journal.pyc'}
+VERSION='2.6'
+VERSION_CODE=206000
+DEFERRED_CORE_MODULES=set()
+RETIRED_CORE_MODULES={'team_workshop.py','team_cpk.py','team_workshop.pyc','team_cpk.pyc','draw_policy.py','draw_journal.py','draw_policy.pyc','draw_journal.pyc','tournament_reward_ui.py','tournament_reward_ui.pyc'}
 
 def compact_editor_apk(source,output,changes,removed=()):
     """Write one copy of each editor asset and retain 16-KiB .so alignment."""
@@ -93,7 +94,7 @@ def main():
     with zipfile.ZipFile(a.base) as source:
         app=io.BytesIO()
         with zipfile.ZipFile(io.BytesIO(source.read('assets/chaquopy/app.imy'))) as old,zipfile.ZipFile(app,'w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
-            replacements={p.name:p.read_bytes() for p in core.glob('*.py') if not p.name.startswith(('build_','prepare_','annotate_','package_release','enrich_'))}
+            replacements={p.name:p.read_bytes() for p in core.glob('*.py') if p.name not in DEFERRED_CORE_MODULES and not p.name.startswith(('build_','prepare_','annotate_','package_release','enrich_'))}
             replacements.update({p.name:p.read_bytes() for p in (ROOT/'app/src/main/python').glob('*.py')})
             # Pure Python movie muxer dependencies; native VP9 encoding uses
             # Android MediaCodec, never a Windows ffmpeg executable.
@@ -111,11 +112,11 @@ def main():
                 for item in (core/folder).rglob('*'):
                     if not item.is_file() or item.suffix in ('.pyc','.log'):continue
                     raw=item.read_bytes()
-                    if item.name=='index.html':raw=raw.replace(b'</head>',b'<link rel="stylesheet" href="/android.css"><script defer src="/android-ui.js"></script></head>')
+                    if item.relative_to(core).as_posix()=='web/index.html':raw=raw.replace(b'</head>',b'<link rel="stylesheet" href="/android.css"><script defer src="/android-ui.js"></script></head>')
                     z.writestr(item.relative_to(core).as_posix(),raw)
-            for name in ('personal_runtime.py','personal_binding.py','division_squads.py','native_overall.py',
+            for name in ('stadium_runtime.py','tournament_rules.py','tournament_identity.py','tournament_squads.py','tournament_eligibility.py','tournament_runtime.py','tournament_sim_strength.py','tournament_simulation.py','coach_formula.py','tournament_promotion.py','tournament_promotion_ui.py','tournament_rewards.py','tournament_agents.py','tournament_schedule_ui.py','native_tournament_schedule_ui.py','tournament_home.py','tournament_reward_ui.py','draw_v22.py','personal_runtime.py','personal_binding.py','division_squads.py','native_overall.py',
                          'ai_tactical_profiles.py','ai_division_sessions.py','ai_match_manager.py',
-                         'ai_match_channel.py','ai_match_runtime.py','ai_match_state.py','action_trace.py','league_rules.py','art_registry.py','native_diy_binding.py'):z.write(core/name,name)
+                         'ai_match_channel.py','ai_match_runtime.py','ai_match_state.py','action_trace.py','league_rules.py','league_availability.py','art_registry.py','native_diy_binding.py'):z.write(core/name,name)
             for item in (ROOT/'licenses').glob('*'):
                 if item.is_file():z.write(item,'licenses/'+item.name)
             z.write(ROOT/'THIRD_PARTY_NOTICES.md','licenses/THIRD_PARTY_NOTICES.md')

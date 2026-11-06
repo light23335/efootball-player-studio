@@ -47,6 +47,11 @@ def build_catalogue(apk,resources):
     from native_skill_effects import skill_bits
     skills=skill_bits(resources)
     with zipfile.ZipFile(apk) as z:
+        leagues=PREFIX+'outputs/reference/ziru-data/ml_competition_registry.json'
+        if leagues in z.namelist():
+            if z.getinfo(leagues).file_size>2*1024*1024:raise ValueError('联赛目录过大')
+            (resources/'team-leagues.json').write_text(json.dumps(json.loads(z.read(leagues)),ensure_ascii=False),encoding='utf8')
+        else:(resources/'team-leagues.json').unlink(missing_ok=True)
         from pack_catalogue import catalogue_from_archive
         (resources/'pack-exclusions.json').write_text(json.dumps(catalogue_from_archive(z),ensure_ascii=False),encoding='utf8')
         tables=read_tables(z);names={};classes={};verified={}
@@ -246,12 +251,9 @@ class GameImport:
         from content_delta import Delta
         with Delta(path) as delta:return delta.summary()
     def start_delta(self,body):
-        from apk_sources import resolve
-        recorded=resolve(self.server.library,self.server.store)
-        apk=Path(body.get('apk') or recorded.get('apk') or '').absolute()
-        companion=Path(body.get('companion') or recorded.get('companion') or '').absolute()
+        from import_resource_source import select_delta_sources
+        apk,companion=select_delta_sources(self.server.library,self.server.store,body)
         path=Path(body.get('path','')).absolute()
-        if not apk.is_file() or not companion.is_file():raise ValueError('请先导入 V17 主包和离线资源，或填写上方两个 APK 路径')
         if not path.is_file() or path.suffix.lower()!='.zip':raise ValueError('请选择内容增量 ZIP')
         with self.lock:
             if self.state['phase']=='working':raise ValueError('正在导入游戏数据，请稍候')

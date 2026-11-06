@@ -3,6 +3,47 @@ import copy
 from coach_formula import factor, displayed
 
 
+def training_cost(count):
+    return sum(1+i//4 for i in range(count))
+
+
+def auto_allocate_training(project,catalog):
+    """Same maximum-level reference allocation as the editor's position tool."""
+    groups=catalog['training_groups']
+    training={g['id']:0 for g in groups}
+    remaining=0 if project['card_type']=='Trending' else 2*(project['max_level']-1)
+    target=project.get('preview',{}).get('training_position') or project['identity']['position']
+    weights=catalog['auto_position_weights'].get(target) or catalog['auto_position_weights'][project['identity']['position']]
+    while remaining>0:
+        best=None
+        for index,group in enumerate(groups):
+            count=training[group['id']];cost=1+count//4
+            if count>=40 or cost>remaining:continue
+            available=sum(project['base_abilities'][str(i)]+count<105 for i in group['indices'])/len(group['indices'])
+            score=(weights[index] if index<len(weights) else 0)*available/((count+1)*cost)
+            if score>0 and (best is None or score>best[0]):best=(score,group['id'],cost)
+        if best is None:break
+        training[best[1]]+=1;remaining-=best[2]
+    return training
+
+
+def normalize_training(project,catalog,force_max=False):
+    """Repair legacy level/budget overflow instead of rejecting its export."""
+    cap=max(1,min(100,int(project.get('max_level',35))))
+    raw_level=int(project.get('initial_level',1))
+    project['max_level']=cap;project['initial_level']=max(1,min(raw_level,cap))
+    source=project.get('training') or {}
+    project['training']=dict(source)
+    for group in catalog['training_groups']:
+        project['training'][group['id']]=max(0,min(40,int(source.get(group['id'],0))))
+    spent=sum(training_cost(project['training'][g['id']])for g in catalog['training_groups'])
+    budget=0 if project['card_type']=='Trending' else 2*(project['initial_level']-1)
+    if force_max or raw_level>cap or spent>budget:
+        project['initial_level']=cap
+        project['training']=auto_allocate_training(project,catalog)
+    return project
+
+
 def calculate(project, catalog):
     base = dict(project['base_abilities'])
     trained = dict(base)

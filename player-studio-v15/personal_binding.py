@@ -104,7 +104,7 @@ def compose(payload,routes,profile,capacity=4194304):
             row+=struct.pack('<II',maximum,rarity)
         rows.extend(row)
     rows.extend(bytes(stride))
-    out=copy.deepcopy(payload);out.pop('ai_match_channel',None);out.pop('action_trace_channel',None)
+    out=copy.deepcopy(payload);out.pop('ai_match_channel',None);out.pop('action_trace_channel',None);out.pop('tournament_schedule_channel',None);out.pop('tournament_home_channel',None)
     blob=bytearray.fromhex(out['blob_hex']);prefix=bytes(blob);pending=[];delegates=[];back_refs=[]
     def word(at):return struct.unpack_from('<I',blob,at)[0]
     for name,address in profile['sites'].items():
@@ -186,6 +186,12 @@ def compose(payload,routes,profile,capacity=4194304):
                 raise ValueError('动作观察屏障入口无效')
             out['action_trace_channel']={'version':SCHEMA['version'],'data_offset':writable_locations[index][0],
                     'schema':copy.deepcopy(schema),'code_region':'root','fence_offset':at+fence}
+        if hook.get('tournament_schedule_channel'):
+            from native_tournament_schedule_ui import attach_descriptor as attach_schedule
+            attach_schedule(out,hook,at,writable_locations)
+        if hook.get('tournament_home_channel'):
+            from tournament_home import attach_descriptor as attach_home
+            attach_home(out,hook,at,writable_locations)
         blob.extend(body)
     if len(blob)>capacity:raise ValueError('个人美术绑定超出已分配容量')
     if bytes(blob[:len(prefix)])!=prefix:raise ValueError('原版传奇美术绑定被改变')
@@ -266,7 +272,7 @@ def _split_code(payload,prefix_bytes,delegates,back_refs,source=None):
     branch entry stubs must be nearby; extension code can reside anywhere.
     """
     original=bytes.fromhex(payload['blob_hex']);root=bytearray(original[:prefix_bytes]);extension=bytearray(original[prefix_bytes:])
-    for key in ('ai_match_channel','action_trace_channel'):
+    for key in ('ai_match_channel','action_trace_channel','tournament_schedule_channel','tournament_home_channel'):
         channel=payload.get(key)
         if channel and channel['fence_offset']>=prefix_bytes:
             channel['code_region']='extension';channel['fence_offset']-=prefix_bytes
@@ -300,11 +306,53 @@ def _split_code(payload,prefix_bytes,delegates,back_refs,source=None):
             struct.pack_into('<I',extension,at,(value&0xff00001f)|((((copy_at-at)//4)&0x7ffff)<<5))
     payload['extension_route_pointer_fixup']=payload.pop('route_pointer_fixup')-prefix_bytes
     payload['extension_entry_fixups']=[]
+    payload['inlined_leaf_hooks']=[]
+    leaf_entries={}
+    entries=[h for h in payload['hooks']if h['offset']>=prefix_bytes]
+    leaves={original[h['offset']:h['offset']+8]for h in entries}
+    constants={bytes.fromhex('00008052c0035fd6'),bytes.fromhex('20008052c0035fd6')}
+    leaf_count=sum(original[h['offset']:h['offset']+8]in constants for h in entries)
+    compact=len(root)+16*(len(entries)-leaf_count)+8*len(leaves&constants)>4096
+    dispatch_branches=[];payload['compact_dispatch_hooks']=[]
     for hook in payload['hooks']:
         if hook['offset']<prefix_bytes:continue
-        root.extend(bytes(-len(root)%8));stub=len(root);target=hook['offset']-prefix_bytes
-        root.extend(struct.pack('<IIQ',0x58000050,0xd61f0200,0))
-        payload['extension_entry_fixups'].append([stub+8,target]);hook['offset']=stub
+        root.extend(bytes(-len(root)%(4 if compact else 8)));stub=len(root);target=hook['offset']-prefix_bytes
+        # A complete MOV W0,#0/1; RET leaf is position independent and has
+        # no literal/data references. Keeping these eight bytes in the nearby
+        # page avoids a sixteen-byte absolute jump for each tiny predicate.
+        # Do not infer a larger function's end or inline arbitrary native code.
+        leaf=original[hook['offset']:hook['offset']+8]
+        if leaf in (bytes.fromhex('00008052c0035fd6'),bytes.fromhex('20008052c0035fd6')):
+            # Identical constant predicates can share this exact return stub.
+            # Each original native entry still receives its own branch; no
+            # original prefix or extension function is moved by this sharing.
+            if leaf in leaf_entries:stub=leaf_entries[leaf]
+            else:root.extend(leaf);leaf_entries[leaf]=stub
+            hook['offset']=stub
+            payload['inlined_leaf_hooks'].append({'name':hook['name'],'offset':stub,'body_hex':leaf.hex()})
+            continue
+        if compact:
+            if not 0<=target<2**32:raise ValueError('原生扩展目标超出共享入口范围')
+            # Keep the native prefix byte-identical. A compact entry carries
+            # only its extension offset; one dispatcher supplies the far base.
+            root.extend(struct.pack('<I',0x52800010|((target&0xffff)<<5)))
+            if target>>16:root.extend(struct.pack('<I',0x72a00010|((target>>16)<<5)))
+            dispatch_branches.append(len(root));root.extend(bytes(4))
+            payload['compact_dispatch_hooks'].append({'name':hook['name'],'offset':stub,'extension_offset':target})
+            hook['offset']=stub
+        else:
+            root.extend(struct.pack('<IIQ',0x58000050,0xd61f0200,0))
+            payload['extension_entry_fixups'].append([stub+8,target]);hook['offset']=stub
+    if dispatch_branches:
+        root.extend(bytes(-len(root)%8));dispatch=len(root)
+        # STR/LDR preserve X17 on an aligned, temporary 16-byte stack slot.
+        # LR, NZCV and every register other than the existing X16 scratch are
+        # unchanged. LDR literal at +4 reaches the far base literal at +24.
+        root.extend(struct.pack('<6IQ',0xf81f0ff1,0x580000b1,0x8b100230,
+                                0xf84107f1,0xd61f0200,0xd503201f,0))
+        payload['extension_entry_fixups'].append([dispatch+24,0])
+        for at in dispatch_branches:struct.pack_into('<I',root,at,0x14000000|(((dispatch-at)//4)&0x3ffffff))
+        payload['compact_dispatch_offset']=dispatch
     if len(root)>4096:raise ValueError('原生绑定入口超出可用的 4 KiB 页面')
     payload['root_prefix_bytes']=prefix_bytes
     payload['blob_hex']=root.hex();payload['extension_blob_hex']=extension.hex()
@@ -825,7 +873,7 @@ class _BindingCtypes:
                 clear=self.original.CFUNCTYPE(None,self.original.c_void_p,self.original.c_void_p)(address+self.payload['offsets']['clear_cache'])
                 clear(extension_address,extension_address+len(extension))
                 _EXTENSION_PAGES.append((libc,extension_address,length))
-            if self.payload.get('ai_match_channel') or self.payload.get('action_trace_channel'):
+            if self.payload.get('ai_match_channel') or self.payload.get('action_trace_channel') or self.payload.get('tournament_schedule_channel') or self.payload.get('tournament_home_channel'):
                 try:
                     if not extension:
                         libc=self.original.CDLL('libc.so',use_errno=True)
@@ -835,6 +883,12 @@ class _BindingCtypes:
                         if libc.mprotect(address,root_size,5):raise OSError(self.original.get_errno(),'AI entry page protection failed')
                     if self.payload.get('ai_match_channel'):self._register_channel(address,extension_address)
                     if self.payload.get('action_trace_channel'):self._register_action_channel(address,extension_address)
+                    if self.payload.get('tournament_schedule_channel'):
+                        from native_tournament_schedule_ui import register_binding_channel
+                        register_binding_channel(self,address,extension_address)
+                    if self.payload.get('tournament_home_channel'):
+                        from tournament_home import register_binding_channel as register_home
+                        register_home(self,address,extension_address)
                 except Exception:
                     # Optional observation must never break original startup.
                     # The zero-initialized native auto_execute gate stays off.

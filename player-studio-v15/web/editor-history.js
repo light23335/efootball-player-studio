@@ -37,6 +37,6 @@ export function historyShortcut(event){
   const key=event.key.toLowerCase();if(!['z','y'].includes(key))return null;
   const el=event.target,editable=el?.isContentEditable||['INPUT','TEXTAREA','SELECT'].includes(el?.tagName);
   // Search boxes keep their native text undo; actual draft fields use the same history as the toolbar.
-  if(editable&&!el?.matches?.('[data-bind],[data-coach-field],[data-coach-portrait],[data-link-field],[data-pack-field],[data-pack-weight],[data-pack-cover-field],[data-custom-field],[data-custom-stat],[data-equipment],[data-booster-slot]'))return null;
+  if(editable&&!el?.matches?.('[data-bind],[data-coach-field],[data-coach-portrait],[data-link-field],[data-pack-field],[data-pack-weight],[data-pack-cover-field],[data-custom-field],[data-custom-stat],[data-equipment],[data-booster-slot],[data-world-field]'))return null;
   return key==='y'||event.shiftKey?'redo':'undo';
 }

@@ -5,7 +5,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from user_data_upgrade import import_v13_data,refresh_v13_designs
 from player_package import compatible_engine,PROFILE
 from personal_runtime import sanitize_draw_effects,install_display_previews
-from native_live import reserve_shared
+from native_live import reserve_shared,PUBLISHED_VERSION_FLOOR
 import player_package as snapshots
 
 
@@ -89,14 +89,15 @@ class V14Tests(unittest.TestCase):
         from concurrent.futures import ThreadPoolExecutor
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);shared=root/'shared.json';old=root/'v13.json';local=root/'v14.json'
-            old.write_text(json.dumps({'V13':{'last':120,'hashes':{'old':120}}}))
+            base=PUBLISHED_VERSION_FLOOR
+            old.write_text(json.dumps({'V13':{'last':base+120,'hashes':{'old':base+120}}}))
             t=lambda version:{'version_file':{'version':version}}
-            first,_=reserve_shared(shared,local,'V14',t(80),'v14',(old,));self.assertEqual(first,121)
-            back,_=reserve_shared(shared,old,'V13',t(100),'old');self.assertEqual(back,122)
-            self.assertEqual(reserve_shared(shared,old,'V13',t(100),'old')[0],122)
-            def reserve(i):return reserve_shared(shared,local,'V14' if i%2 else 'V13',t(80),'different-'+str(i))[0]
+            first,_=reserve_shared(shared,local,'V14',t(base+80),'v14',(old,));self.assertEqual(first,base+121)
+            back,_=reserve_shared(shared,old,'V13',t(base+100),'old');self.assertEqual(back,base+122)
+            self.assertEqual(reserve_shared(shared,old,'V13',t(base+100),'old')[0],base+122)
+            def reserve(i):return reserve_shared(shared,local,'V14' if i%2 else 'V13',t(base+80),'different-'+str(i))[0]
             with ThreadPoolExecutor(max_workers=8) as pool:versions=list(pool.map(reserve,range(16)))
-            self.assertEqual(sorted(versions),list(range(123,139)))
+            self.assertEqual(sorted(versions),list(range(base+123,base+139)))
 
     def test_import_keeps_ids_signing_and_assets_and_never_overwrites_v14_edits(self):
         with tempfile.TemporaryDirectory() as tmp:

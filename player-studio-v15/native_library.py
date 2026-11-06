@@ -16,6 +16,7 @@ import zipfile
 from native_movie import convert_movie
 from native_models import resolve_face,person_keys
 from native_skeletal import FACE_DECODER_REVISION
+from native_texture import TEXTURE_DECODER_REVISION
 from native_presets import NativePresets
 from native_symbols import merged_symbols,resolve_club,converted_symbol,informative_symbol
 
@@ -145,7 +146,8 @@ class NativeLibrary:
         with contextlib.closing(self.db()) as c:
             try:rows=[dict(r) for r in c.execute('SELECT * FROM identities ORDER BY name')]
             except sqlite3.OperationalError:rows=[]
-        return {kind:[r for r in rows if r['kind']==kind] for kind in ('nation','team')}
+        from team_names import display
+        return {kind:[display(r) for r in rows if r['kind']==kind] for kind in ('nation','team')}
 
     def player(self,pid):
         with contextlib.closing(self.db()) as c:
@@ -375,7 +377,8 @@ class NativeLibrary:
                             if n.endswith(('.pak','.ucas','.utoc')):copy(nested,n,10)
                     for n in z.namelist():
                         if n.startswith(('assets/pc0010_mobile_and.','assets/gateway-release/livedata/','assets/gateway-release/custom-resources/')) and n.endswith(('.pak','.ucas','.utoc')):copy(z,n,10)
-                with zipfile.ZipFile(companion) as z,z.open('assets/resource-bootstrap/resources.zip') as raw,zipfile.ZipFile(raw) as nested:
+                from import_resource_source import companion_archive
+                with companion_archive(companion) as nested:
                     for n in nested.namelist():
                         if n.endswith(('.pak','.ucas','.utoc')):copy(nested,n)
                 if self.containers.exists():raise ValueError('资源目录已存在，请重新启动检查，不覆盖已有缓存')
@@ -409,7 +412,7 @@ class NativeLibrary:
                 if not row:raise ValueError('资源编号不在游戏索引中')
                 hit=self.cache.get(identifier)
                 current_face=row['kind']=='model' and row['name'].endswith('_Face')
-                if hit and (not current_face or hit.get('decoder_revision')==FACE_DECODER_REVISION) and (self.store.root/'assets'/hit['asset_id']).is_file():results[identifier]=hit
+                if hit and (not current_face or (hit.get('decoder_revision')==FACE_DECODER_REVISION and hit.get('texture_decoder_revision')==TEXTURE_DECODER_REVISION)) and (self.store.root/'assets'/hit['asset_id']).is_file():results[identifier]=hit
                 else:rows.append(dict(row))
             ordinary=[r['path'] for r in rows if r['kind']!='model' or not r['name'].endswith('_Face')]
             if ordinary:self.run(ordinary)
@@ -465,10 +468,28 @@ class NativeLibrary:
                     if not ref.startswith('/Game/'):continue
                     texture=row['path'].split('/Content/')[0]+'/Content/'+ref[6:].split('.')[0]+'.uasset'
                     requests.append(texture);bindings.append((name,texture,props));break
+        # A name-map pixel format can be stale even when CUE4Parse reports a
+        # successful conversion. Decode ETC2 from its actual platform header,
+        # replacing old cached PNGs before assembling another face GLB.
+        from native_iostore import package_names
+        from native_texture import cooked_mip,desktop_etc2_png
+        texture_overrides=[]
+        for ref in dict.fromkeys(requests):
+            raw,_=self.face_assets().get(ref)
+            declared=[n for n in package_names(raw) if n.startswith('PF_')]
+            if not any(n in ('PF_ETC2_RGB','PF_ETC2_RGBA') for n in declared):continue
+            header=struct.unpack_from('<16I',raw)
+            if len(declared)==1 and raw.find(declared[0].encode()+b'\0',header[13]+header[14])>=0:continue
+            mip=cooked_mip(raw,lambda suffix:self.face_assets().get(ref.removesuffix('.uasset')+suffix)[0])
+            if mip['format'] not in ('PF_ETC2_RGB','PF_ETC2_RGBA'):
+                raise ValueError('原版纹理名称与实际平台格式不符：'+ref)
+            png=self.converted/Path(ref).with_suffix('.png');png.parent.mkdir(parents=True,exist_ok=True)
+            png.write_bytes(desktop_etc2_png(mip,self.native))
+            texture_overrides.append({'path':ref,'declared':declared,'cooked':mip['format']})
         missing=[v for v in requests if not (self.converted/Path(v).with_suffix('.png')).is_file()]
         if missing:self.run(missing)
         for name,ref,props in bindings:
             png=self.converted/Path(ref).with_suffix('.png')
             if png.is_file():materials[name]=(png.read_bytes(),props)
         target=path.with_name(path.stem+'-native.glb');metadata=glb_textures(path,materials,target)
-        return target,metadata
+        return target,{**metadata,'texture_decoder_revision':TEXTURE_DECODER_REVISION,'texture_overrides':texture_overrides}

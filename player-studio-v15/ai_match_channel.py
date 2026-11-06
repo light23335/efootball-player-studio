@@ -8,8 +8,8 @@ import math
 import struct
 
 
-ACK_STATUS = {1:'accepted',2:'applied',3:'rejected',4:'stale',5:'cancelled',6:'partial'}
-KINDS = {'formation':1,'substitution':2,'cancel':3}
+ACK_STATUS = {1:'accepted',2:'applied',3:'rejected',4:'stale',5:'cancelled',6:'partial',7:'waiting_window'}
+KINDS = {'formation':1,'substitution':2,'cancel':3,'attack_level':4}
 
 
 def checksum(raw):
@@ -49,12 +49,17 @@ def encode_command(layout, spec, snapshot, proposal, sequence, epoch):
         if type(clock) not in (int,float) or not math.isfinite(clock) or clock<0:
             raise ValueError('Missing verified native clock')
         struct.pack_into('<f',raw,layout['command.issued_clock_frames'],clock)
+        if kind == 'attack_level':
+            if type(proposal['attack_level'])is not int or not 0<=proposal['attack_level']<=4:
+                raise ValueError('Invalid native attack level')
+            put('checksum',checksum(raw))
+            return bytes(raw)
         mapping = {int(slot):integer(index) for slot,index in proposal['mapping'].items()}
         count=proposal['active_count']
         if (not 7<=count<=11 or len(mapping)!=count or len(set(mapping.values()))!=count or
             any(type(slot)is not int or not 0<=slot<11 for slot in mapping) or 0 not in mapping):
             raise ValueError('Native placement must match the actual distinct active players')
-        if proposal.get('policy_revision') in ('v17-situational-coach-v3','v17-situational-coach-v4','v17-situational-coach-v5-continuous-planning'):
+        if proposal.get('policy_revision') in ('v17-situational-coach-v3','v17-situational-coach-v4','v17-situational-coach-v5-continuous-planning','v17-situational-coach-v6-owned-window-batches'):
             from ai_match_manager import resolve_profile
             profile=resolve_profile(spec,proposal['profile_id'],proposal['mode'])
         else:

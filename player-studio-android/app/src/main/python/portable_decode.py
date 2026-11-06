@@ -10,6 +10,7 @@ from PIL import Image
 from native_iostore import package_names
 from native_mesh import read_lod
 from native_skeletal import object_imports,skeleton,local_matrix,mesh_glb
+from native_texture import cooked_mip
 
 
 class Properties:
@@ -144,32 +145,8 @@ def block_image(data,width,height,fmt):
     return Image.frombytes('RGBA',(width,height),pixels,'raw','BGRA')
 
 def texture_image(assets,path):
-    raw=assets.raw(path);h=struct.unpack_from('<16I',raw);names=package_names(raw)
-    formats=[n for n in names if n.startswith('PF_')]
-    if len(formats)!=1:raise ValueError('原版纹理像素格式不唯一')
-    fmt=formats[0];at=raw.find(fmt.encode()+b'\0',h[13]+h[14])
-    if at<16:raise ValueError('未找到原版纹理平台数据')
-    width,height,slices,length=struct.unpack_from('<4I',raw,at-16)
-    if not 1<=width<=8192 or not 1<=height<=8192 or slices!=1 or length!=len(fmt)+1:raise ValueError('原版纹理尺寸或切片数未适配')
-    pos=at+length;first,count,cooked,flags=struct.unpack_from('<4I',raw,pos);pos+=16
-    if not 1<=count<=16 or cooked!=1:raise ValueError('原版纹理 mip 格式未适配')
-    wide=bool(flags&0x2000);size,stored,offset=struct.unpack_from('<QQq' if wide else '<IIq',raw,pos);pos+=24 if wide else 16
-    if not 0<size<=128*1024*1024 or size!=stored:raise ValueError('原版纹理 bulk 长度未适配')
-    if flags&0x40:data=raw[pos:pos+size];dimensions_at=pos+size
-    elif flags&0x100:
-        # Optional high-resolution mips are a different IoStore chunk (4),
-        # exposed as .uptnl. The .ubulk chunk (3) contains lower mips only.
-        suffix='.uptnl' if flags&0x800 else '.ubulk'
-        bulk=assets.raw(path.removesuffix('.uasset')+suffix)
-        if offset<0 or offset+size>len(bulk):raise ValueError(f'原版纹理 bulk 数据不完整：{path}{suffix}，偏移 {offset}，需要 {size} 字节，实际 {len(bulk)} 字节')
-        data=bulk[offset:offset+size]
-        dimensions_at=pos
-    else:raise ValueError('此原版纹理 bulk 存储方式未适配')
-    if len(data)!=size:raise ValueError('原版纹理 bulk 数据不完整')
-    mip_width,mip_height,depth=struct.unpack_from('<3I',raw,dimensions_at)
-    if not 1<=mip_width<=width or not 1<=mip_height<=height or depth!=1:raise ValueError('原版纹理 mip 尺寸不受支持')
-    width,height=mip_width,mip_height
-    return block_image(data,width,height,fmt)
+    mip=cooked_mip(assets.raw(path),lambda suffix:assets.raw(path.removesuffix('.uasset')+suffix))
+    return block_image(mip['data'],mip['width'],mip['height'],mip['format'])
 
 
 

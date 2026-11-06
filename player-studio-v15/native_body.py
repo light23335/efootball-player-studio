@@ -199,14 +199,46 @@ def compile_body(assets,head,head_path,asset_key):
     return [(target,encoded,newmeta)],report
 
 
+def deduplicate_art(art,owners=None):
+    """One compatible package per logical target; never silently choose a writer."""
+    result=[];names={};ids={};chunk_sources={}
+    for index,item in enumerate(art):
+        name,raw,meta=item;owner=owners[index] if owners is not None else name
+        ident=meta['id']
+        if ident!=package_id(name):raise ValueError('资源目标与 package ID 不一致：'+name+'；来源：'+owner)
+        old=names.get(name) or ids.get(ident)
+        if old is not None:
+            previous,producer=old
+            if previous[0]!=name or previous[1]!=raw or previous[2]!=meta:
+                raise ValueError('资源目标冲突：'+name+'；'+producer+' 与 '+owner+' 的内容、依赖或 chunk 元数据不同；请核对对应编辑与目标')
+            continue
+        chunks=[(struct.pack('<QHBB',ident,0,0,2),raw,'.uasset')]
+        chunks.extend((c['chunk_id'],c['data'],c['suffix']) for c in meta.get('external_chunks',[]))
+        for cid,data,suffix in chunks:
+            if not isinstance(cid,bytes) or len(cid)!=12:raise ValueError('资源 chunk ID 无效：'+name+suffix+'；来源：'+owner)
+            if cid in chunk_sources:
+                previous,producer,old_data=chunk_sources[cid]
+                if old_data!=data:raise ValueError('资源 chunk 内容冲突：'+previous+' 与 '+name+suffix+'；'+producer+' 与 '+owner+'；'+cid.hex())
+            else:chunk_sources[cid]=(name+suffix,owner,data)
+        names[name]=ids[ident]=(item,owner);result.append(item)
+    return result
+
+
 def container_parts(art):
     """Keep package-store entries separate from their external bulk chunks."""
-    additions=[];paths={};packages=[]
-    for name,raw,meta in art:
-        paths['PesMobile/Content/'+name[6:]+'.uasset']=len(additions)
-        additions.append((struct.pack('<QHBB',meta['id'],0,0,2),raw))
+    additions=[];paths={};packages=[];chunks={}
+    def add(path,cid,data):
+        if not isinstance(cid,bytes) or len(cid)!=12:raise ValueError('资源 chunk ID 无效：'+path)
+        if cid in chunks:
+            index,previous=chunks[cid]
+            if additions[index][1]!=data:raise ValueError('资源 chunk 内容冲突：'+previous+' 与 '+path+'；'+cid.hex())
+        else:
+            index=len(additions);chunks[cid]=(index,path);additions.append((cid,data))
+        if path in paths and paths[path]!=index:raise ValueError('资源路径对应不同 chunk：'+path)
+        paths[path]=index
+    for name,raw,meta in deduplicate_art(art):
+        add('PesMobile/Content/'+name[6:]+'.uasset',struct.pack('<QHBB',meta['id'],0,0,2),raw)
         packages.append({k:v for k,v in meta.items() if k!='external_chunks'})
         for chunk in meta.get('external_chunks',[]):
-            paths['PesMobile/Content/'+name[6:]+chunk['suffix']]=len(additions)
-            additions.append((chunk['chunk_id'],chunk['data']))
+            add('PesMobile/Content/'+name[6:]+chunk['suffix'],chunk['chunk_id'],chunk['data'])
     return additions,paths,packages

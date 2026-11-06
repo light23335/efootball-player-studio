@@ -133,11 +133,11 @@ def start(home,native_dir):
 def busy():
     if _server is None:return False
     return (_server.native_package.status()['phase']=='working' or _server.game_import.status()['phase']=='working'
-            or _server.library.state['phase']=='preparing')
+            or _server.library.state['phase']=='preparing' or _server.video_import.status()['phase']=='working')
 
 def work_status():
     if _server:
-        for worker in (_server.native_package,_server.game_import):
+        for worker in (_server.native_package,_server.game_import,_server.video_import):
             state=worker.status()
             if state['phase']=='working':return json.dumps({'busy':True,'message':state.get('message','本机任务进行中')})
         if _server.library.state['phase']=='preparing':return json.dumps({'busy':True,'message':_server.library.state.get('message','准备原版资源')})

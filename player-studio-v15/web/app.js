@@ -1,4 +1,6 @@
 import {exportStep} from './export-errors.js';
+import {setTeamOptions,teamLabel,identitySelection} from './team-identities.js';
+import {importCardMovie} from './motion-import.js';
 import {skillCapacityNotice} from './skill-capacity.js';
 import {renderStyleHelp,syncStyleHelp,setStyleCheckPosition} from './playing-style-ui.js';
 import {MotionUI} from './motion-ui.js';
@@ -16,12 +18,13 @@ import {OnboardingUI,navigationGroups} from './onboarding-ui.js';
 import {WorkspaceTools} from './workspace-tools.js';
 import {renderThumbnailPanel,drawThumbnail} from './thumbnail-ui.js';
 import {renderCustomBoosterBody} from './custom-boosters.js';
-import {simulate,autoAllocate,trainingCost,ratingColor,cardTypes,cardTypeName,selectCardType,selectCardSeries,series,statGroups,positionNames} from './domain.js';
+import {simulate,autoAllocate,normalizeTraining,trainingCost,ratingColor,cardTypes,cardTypeName,selectCardType,selectCardSeries,series,statGroups,positionNames} from './domain.js';
 import {ModelViewer} from './model-viewer.js';
 import {LibraryUI} from './library-ui.js';
 import {GameImportUI} from './game-import-ui.js';
 import {NativePackageUI} from './native-package-ui.js';
 import {PackUI} from './pack-ui.js';
+import {WorldUI} from './world-ui.js';
 import {bodyPanel,equipmentPanel} from './body-ui.js';
 import {headPanel} from './head-tools.js';
 import {PersonalUI} from './personal-ui.js';
@@ -35,6 +38,8 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const clone=v=>structuredClone(v);
 const token=new URLSearchParams(location.search).get('token')||'';
 const icons={
+ stadium:'<ellipse cx="12" cy="10" rx="9" ry="4.5"/><path d="M3 10v7c0 2.5 4 4.5 9 4.5s9-2 9-4.5v-7M7 10l5-2 5 2-5 2-5-2Zm5-2v4M7 3V1m10 2V1M4 5 2 3m18 2 2-2M7 15v4m10-4v4"/>',
+ tournaments:'<path d="M7 3h10v4a5 5 0 0 1-10 0V3Zm0 1H3v2a4 4 0 0 0 5 4m9-6h4v2a4 4 0 0 1-5 4m-4 2v5m-4 4v-4h8v4H8Zm-2 0h12"/>',
  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/>',
  chart:'<path d="M4 20V10m8 10V4m8 16v-7"/>',
  grow:'<path d="m3 17 6-6 4 4 8-10m-6 0h6v6"/>',
@@ -63,6 +68,8 @@ const pages={
  tutorial:{title:'详细教程',short:'教程',icon:'help',description:'逐步操作说明、安装方式与常见问题。'},
  tools:{title:'导出与游戏设置',short:'导出与设置',icon:'archive',description:'管理导出文件、直接安装及 AI 组别进度。'},
  personal:{title:'我的球员',short:'我的球员',icon:'folder',description:'保存多名自建球员，随时打开编辑或导出独立工程。'},
+ stadium:{title:'球场装饰',short:'球场装饰',icon:'stadium',description:'编辑场边与看台装置，导入图片 TIFO 或静态 GLB。'},
+ tournaments:{title:'自定义赛事',short:'锦标赛',icon:'tournaments',description:'编排赛制和参赛球队，使用满级俱乐部阵容与工坊 AI。'},
  packs:{title:'卡包编辑',short:'卡包编辑',icon:'archive',description:'混编原版与自建球员，设置抽取权重、卡池规则与原版封面。'},
  motion:{title:'动作风格',short:'动作风格',icon:'grow',description:'参考原版球员的比赛姿态，为每张卡保存和复用动作预设。'},
  coaches:{title:'教练管理',short:'教练管理',icon:'user',description:'选择原版教练，或新建教练并自定义战术与能力加成。'},
@@ -77,8 +84,9 @@ const pages={
  apk:{title:'游戏来源与更新',short:'游戏来源与更新',icon:'refresh',description:'导入新版游戏主包，校验后更新球员数据库与原版资源索引。'}
 };
 let project,catalog,currentPage='home',preview='card',abilityFilter='all',skillQuery='',skillMode='innate',skillSelectedOnly=false;
+let normalizedTrainingOwner=null;
 let past=[],future=[],lastChangeKey='',lastChangeTime=0,version=0,savedVersion=0,saveTimer=null,savePromise=null,viewer;
-let editorAutosave;
+let editorAutosave,worldUI;
 let toolsUI,onboardingUI,releaseUpdatesUI,boosterLibraryUI,motionUI,taskCenter,navigationMode='simple';
 const workspaceNavigation=new WorkspaceNavigation($('#navigation'));
 let simulation,imageCache=new Map(),cardDrawVersion=0,modelMetadata={},libraryUI,updateUI,nativePackageUI,personalUI,coachUI,presetsUI,packUI,nativeCard,identityOptions={nation:[],team:[]};
@@ -91,7 +99,7 @@ function toast(message,error=false){const el=document.createElement('div');el.cl
 function get(path){return path.split('.').reduce((v,k)=>v?.[k],project);}
 function set(path,value){const keys=path.split('.');let target=project;for(const key of keys.slice(0,-1))target=target[key]??=( {});target[keys.at(-1)]=value;if(path==='model.skin_tone')project.model.skin_tone_edited=true;if(path==='model.torso_length')project.model.physique.leg_length=14-value;if(path==='model.physique.leg_length')project.model.torso_length=14-value;if(path==='model.torso_length'||path==='model.physique.leg_length'){for(const k of ['model.torso_length','model.physique.leg_length'])$$(`[data-bind="${k}"]`).forEach(el=>el.value=get(k));}}
 function commit(mutator,key=null){
-  const before=clone(project),now=performance.now();try{mutator();}catch(error){project=before;throw error;}if(JSON.stringify(before)===JSON.stringify(project))return;
+  const before=clone(project),now=performance.now();try{mutator();normalizeTraining(project,catalog);}catch(error){project=before;throw error;}if(JSON.stringify(before)===JSON.stringify(project))return;
   if(!past.length||!key||key!==lastChangeKey||now-lastChangeTime>600){past.push(before);if(past.length>60)past.shift();}
   lastChangeKey=key;lastChangeTime=now;future=[];version++;scheduleSave();updateLive();updateUndo();libraryUI?.scheduleCardInfo();
 }
@@ -112,7 +120,7 @@ async function flushSave(manual=false){
 const playerHistory={get canUndo(){return !!past.length;},get canRedo(){return !!future.length;},
   undo(){if(!past.length)return;future.push(clone(project));project=past.pop();lastChangeKey='';version++;scheduleSave();renderPage();},
   redo(){if(!future.length)return;past.push(clone(project));project=future.pop();lastChangeKey='';version++;scheduleSave();renderPage();}};
-function currentHistory(){return activeHistory(currentPage,{pack:packUI?.editing?packUI.history:null,coach:coachUI?.editing?coachUI.history:null,player:playerHistory});}
+function currentHistory(){return ['stadium','tournaments'].includes(currentPage)?worldUI?.history:activeHistory(currentPage,{pack:packUI?.editing?packUI.history:null,coach:coachUI?.editing?coachUI.history:null,player:playerHistory});}
 function updateUndo(){const h=currentHistory();for(const [id,enabled]of [['undo-button',h?.canUndo],['redo-button',h?.canRedo]]){const button=$('#'+id);if(button)button.disabled=!enabled;$$(`[data-proxy="${id}"]`).forEach(b=>b.disabled=!enabled);}}
 function undo(){currentHistory()?.undo();}
 function redo(){currentHistory()?.redo();}
@@ -128,7 +136,7 @@ function range(path,label,min,max,step=1,unit=''){
   return `<label class="range-field field"><div class="row-between"><span>${label}</span><output data-value="${path}" data-unit="${unit}">${esc(get(path))}${unit}</output></div><input type="range" data-bind="${path}" min="${min}" max="${max}" step="${step}" value="${esc(get(path))}"></label>`;
 }
 function selectPosition(){return catalog.POSITIONS.map(p=>[p,`${p} · ${positionNames[p]}`]);}
-function identityInput(kind,label){const field=kind==='nation'?'nationality':'team';return `<label class="field"><span>${label}</span><input class="input" data-bind="identity.${field}" data-identity-kind="${kind}" list="identities-${kind}" value="${esc(project.identity[field])}" placeholder="输入中文或英文名称筛选"><datalist id="identities-${kind}">${identityOptions[kind].map(r=>`<option value="${esc(r.name)} · #${r.id}">${esc(r.name_en)}</option>`).join('')}</datalist><small>输入名称可搜索；原始编号在资料详情中查看。</small></label>`;}
+function identityInput(kind,label){const field=kind==='nation'?'nationality':'team';return `<label class="field"><span>${label}</span><input class="input" data-bind="identity.${field}" data-identity-kind="${kind}" list="identities-${kind}" value="${esc(kind==='team'?teamLabel(project.identity):project.identity[field])}" placeholder="输入中文或英文名称筛选"><datalist id="identities-${kind}">${identityOptions[kind].map(r=>`<option value="${esc(r.name)} · #${r.id}">${esc(r.name_en)}</option>`).join('')}</datalist><small>输入名称可搜索；原始编号在资料详情中查看。</small></label>`;}
 
 function renderProfile(){
   return panel('基本信息',`<div class="field-grid">${bindInput('identity.name','球员姓名','text',{placeholder:'输入你的名字'})}${bindInput('identity.shirt_name','球衣背后名字','text',{placeholder:'可与卡面姓名不同'})}${bindInput('display_name','卡面显示名','text',{placeholder:'可与姓名相同'})}${identityInput('nation','国籍 / 地区')}${identityInput('team','球队名称')}${bindInput('identity.position','主要位置','text',{choices:selectPosition()})}${bindInput('identity.preferred_foot','惯用脚','text',{choices:[['右脚','右脚'],['左脚','左脚']]})}</div><details class="note"><summary>查看原始资料编号</summary>国家：<span data-identity-code="nation">${esc(project.identity.nation_id??'未选择')}</span> · 球队：<span data-identity-code="team">${esc(project.identity.team_id??'未选择')}</span></details><div class="section-spacer"></div><div class="field-grid three" style="margin-top:16px">${bindInput('identity.height_cm','身高','number',{min:140,max:220,unit:'cm'})}${bindInput('identity.weight_kg','体重','number',{min:40,max:140,unit:'kg'})}${bindInput('identity.age','年龄','number',{min:15,max:60,unit:'岁'})}${bindInput('identity.number','球衣号码','number',{min:1,max:999,hint:project.identity.number_source||'按原生阵容读取，也可手动修改'})}</div>`,'PROFILE')+
@@ -146,7 +154,7 @@ function boosterSelect(slot){const current=project.booster_ids[slot]||0;return `
 function renderCustomBoosters(){return panel('自定义增能',renderCustomBoosterBody(project,catalog.ABILITIES));}
 function renderTraining(){
   const target=project.preview?.training_position||project.identity.position;
-  return panel('等级设置',`<div class="field-grid">${bindInput('initial_level','模拟当前等级','number',{min:1,max:project.max_level})}${bindInput('max_level','等级上限','number',{min:1,max:100})}</div><p class="note">每提升 1 级获得 2 点；同项目每 4 次加点，下一阶段的单次消耗增加 1 点。培养能力上限 105。</p>`)+
+  return panel('等级设置',`<div class="field-grid">${bindInput('initial_level','模拟当前等级','number',{min:1,max:project.max_level})}${bindInput('max_level','等级上限','number',{min:1,max:100})}</div><p class="note">自动分配按最大等级计算；等级越界或加点超出当前预算时，自动切到最大等级并重算加点。每提升 1 级获得 2 点；同项目每 4 次加点，下一阶段的单次消耗增加 1 点。培养能力上限 105。</p>`)+
   `<div class="budget-card" id="budget-card"><div class="budget-metrics"><div><span>等级提供</span><strong id="budget-total">0<small>点</small></strong></div><div><span>已分配</span><strong id="budget-spent">0<small>点</small></strong></div><div><span>剩余培养点</span><strong id="budget-remaining">0<small>点</small></strong></div></div><div class="budget-track"><i id="budget-progress"></i></div></div><div class="training-actions"><label class="training-position"><span>加点目标位置</span><select id="training-target" data-bind="preview.training_position">${catalog.POSITIONS.map(pos=>`<option value="${pos}" ${target===pos?'selected':''}>${pos} · ${positionNames[pos]}</option>`).join('')}</select></label><button class="button secondary" data-action="auto-train">${icon('spark')}按所选位置分配</button><button class="button subtle" data-action="reset-training">${icon('refresh')}重置加点</button><span class="inline-tip" id="training-target-note"></span></div><p class="note">每项能力显示基础、加点后和最终数值；最终值计入当前球员增能与所选教练。</p><div class="training-grid">${catalog.training_groups.map(group=>`<section class="training-card"><h3>${group.label}<span data-group-cost="${group.id}"></span></h3><div class="training-stat-head"><span>能力</span><span>基础</span><span>培养</span><span>最终</span></div><div class="training-stat-list" data-training-stats="${group.id}"></div><div class="stepper"><div class="stepper-group"><button data-step="-1" data-group="${group.id}" aria-label="减少${group.label}">−</button><input data-bind="training.${group.id}" type="number" min="0" max="40" aria-label="${group.label}加点次数" value="${project.training[group.id]}"><button data-step="1" data-group="${group.id}" aria-label="增加${group.label}">+</button></div><span data-group-next="${group.id}"></span></div></section>`).join('')}</div><div style="height:19px"></div>`+
   panel('球员增能',`<div class="field-grid">${boosterSelect(0)}${boosterSelect(1)}</div><label class="switch-label" style="margin-top:17px"><input type="checkbox" data-bind="conditional_boosters" ${project.conditional_boosters?'checked':''}>将条件增能计入预览</label><p class="note">目录包含 418 项本版增能。条件类只有在上面的开关启用时计入；不模拟教练与状态箭头。</p>`)+
   renderCustomBoosters()+
@@ -174,7 +182,7 @@ function updateSkillGrid(){
 function renderCard(){
   const art=project.native_art||{},native=project.native_card,bt=(native?.card_type||project.card_type)==='BigTime';
   const photo=project.appearance.portrait,date=project.appearance.card_date??originalCardDate(native);
-  return panel('你的人物与卡面资料',`<div class="card-person"><div class="card-person-image">${photo?`<img src="/assets/${esc(photo)}" alt="当前人物图">`:'<span>导入透明 PNG 人物图</span>'}</div><div><p class="panel-description">先导入人物，再从下方选择空白底板。换预设会保留你的人物、能力、技能和培养方案。</p><div class="portrait-actions"><button class="button primary" data-action="upload-portrait">导入 / 替换自己的人物</button><button class="button secondary" data-action="native-portrait-library">选择游戏人物</button></div><label class="switch-label"><input type="checkbox" data-bind="appearance.hide_portrait" ${project.appearance.hide_portrait?'checked':''}>仅预览空白底板（暂时隐藏人物）</label></div></div><div class="field-grid" style="margin-top:18px">${bt?`<label class="field"><span>BT 日期</span><input class="input" type="date" id="card-date" data-bind="appearance.card_date" value="${esc(date)}"><small>可直接修改日期；留空则不显示。</small></label>`:''}<label class="field"><span>卡面星级</span><select data-bind="appearance.card_rarity" data-number="1">${[1,2,3,4,5].map(n=>`<option value="${n}" ${n===(project.appearance.card_rarity||native?.info?.rarity||5)?'selected':''}>${n} 星</option>`).join('')}</select></label></div>${bt?`<label class="switch-label" style="margin-top:13px"><input type="checkbox" data-bind="appearance.card_date_visible" ${project.appearance.card_date_visible!==false?'checked':''}>显示 BT 日期</label>`:''}<p class="note">当前设计：${native?esc(cardTypeName(native.card_type)+' · '+(native.preset?.title||native.source_label||'原版卡面')):'尚未选择；请在下方点击“使用此预设”。'}</p>`)+
+  return panel('你的人物与卡面资料',`<div class="card-person"><div class="card-person-image">${photo?`<img src="/assets/${esc(photo)}" alt="当前人物图">`:'<span>导入透明 PNG 人物图</span>'}</div><div><p class="panel-description">先导入人物，再从下方选择空白底板。换预设会保留你的人物、能力、技能和培养方案。</p><div class="portrait-actions"><button class="button primary" data-action="upload-portrait">导入 / 替换自己的人物</button><button class="button secondary" data-action="native-portrait-library">选择游戏人物</button></div><label class="switch-label"><input type="checkbox" data-bind="appearance.hide_portrait" ${project.appearance.hide_portrait?'checked':''}>仅预览空白底板（暂时隐藏人物）</label><label class="switch-label"><input type="checkbox" data-bind="appearance.hide_card_ui" ${project.appearance.hide_card_ui?'checked':''}>隐藏卡面 UI，仅保留卡底和人物</label><small class="note">预览与导出 PNG 同步隐藏文字、队徽、星级和增能图标；图片或视频中已经合成的内容会保留。</small></div></div><div class="field-grid" style="margin-top:18px">${bt?`<label class="field"><span>BT 日期</span><input class="input" type="date" id="card-date" data-bind="appearance.card_date" value="${esc(date)}"><small>可直接修改日期；留空则不显示。</small></label>`:''}<label class="field"><span>卡面星级</span><select data-bind="appearance.card_rarity" data-number="1">${[1,2,3,4,5].map(n=>`<option value="${n}" ${n===(project.appearance.card_rarity||native?.info?.rarity||5)?'selected':''}>${n} 星</option>`).join('')}</select></label></div>${bt?`<label class="switch-label" style="margin-top:13px"><input type="checkbox" data-bind="appearance.card_date_visible" ${project.appearance.card_date_visible!==false?'checked':''}>显示 BT 日期</label>`:''}<p class="note">当前设计：${native?esc(cardTypeName(native.card_type)+' · '+(native.preset?.title||native.source_label||'原版卡面')):'尚未选择；请在下方点击“使用此预设”。'}</p>`)+
   panel('自制动态背景',`<p class="panel-description">导入 MP4、MOV 或 WebM，自动转换成大卡与小卡动画；建议使用透明 PNG 人物图。原卡面美术装饰图层会隐藏，游戏资料控件本身的边框可能仍会显示。</p><div class="field-grid"><label class="field"><span>小卡裁切水平位置（-100 左，100 右）</span><input id="motion-crop-x" class="input" type="number" min="-100" max="100" value="${esc(native?.custom_motion?.mini?.crop_x??0)}"></label><label class="field"><span>小卡裁切垂直位置（-100 上，100 下）</span><input id="motion-crop-y" class="input" type="number" min="-100" max="100" value="${esc(native?.custom_motion?.mini?.crop_y??0)}"></label></div><p class="note">先填写裁切位置再导入；想调整时可重新选择视频。短视频自动循环补齐，大卡 10 秒，小卡 5 秒，建议视频本身首尾衔接。</p><div class="portrait-actions"><button class="button primary" data-action="motion-import" ${native?'':'disabled'}>导入视频并生成大小卡</button><button class="button secondary" data-action="motion-mini" ${native?.custom_motion?'':'disabled'}>单独导入小卡视频</button><button class="button subtle" data-action="motion-remove" ${native?.custom_motion?'':'disabled'}>移除自制动态背景</button></div><p class="note">${native?.custom_motion?'已启用独立动态背景，仅绑定此工程卡。':native?'先选择素材并导入视频。':'请先选择原版卡面预设，用于卡片类型与资料布局。'}</p>`)+
   panel('原版空白卡面预设',presetsUI.render())+
   renderThumbnailPanel(project,range)+
@@ -200,7 +208,7 @@ function renderPage(){
   $('#page-title').textContent=page.title;$('#breadcrumb-page').textContent=page.short;$('#page-description').textContent=page.description;
   $('#page-eyebrow').textContent=currentPage==='model'?'SHAPE YOUR PLAYER':'CREATE YOUR OWN LEGACY';
   $$('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.page===currentPage));
-  $('#editor-content').innerHTML=({home:()=>onboardingUI.render(),tutorial:()=>onboardingUI.renderTutorial(),tools:()=>toolsUI.render(),packs:()=>packUI.render(),personal:()=>personalUI.render(),coaches:()=>coachUI.render(),library:()=>libraryUI.render(),profile:renderProfile,abilities:renderAbilities,training:renderTraining,skills:renderSkills,motion:()=>motionUI.render(),card:renderCard,model:renderModel,apk:()=>updateUI.render(),native:()=>nativePackageUI.render()})[currentPage]();
+  $('#editor-content').innerHTML=({stadium:()=>worldUI.render('stadium'),tournaments:()=>worldUI.render('tournaments'),home:()=>onboardingUI.render(),tutorial:()=>onboardingUI.renderTutorial(),tools:()=>toolsUI.render(),packs:()=>packUI.render(),personal:()=>personalUI.render(),coaches:()=>coachUI.render(),library:()=>libraryUI.render(),profile:renderProfile,abilities:renderAbilities,training:renderTraining,skills:renderSkills,motion:()=>motionUI.render(),card:renderCard,model:renderModel,apk:()=>updateUI.render(),native:()=>nativePackageUI.render()})[currentPage]();
   workspaceNavigation.activate(currentPage,playerReady(project));
   if(currentPage==='skills')updateSkillGrid();
   if(currentPage==='model'){viewer?.attach($('#main-model-stage'));updateModelControls();}
@@ -211,6 +219,7 @@ function renderPage(){
   onboardingUI?.activate(currentPage).catch(e=>toast(e.message,true));
   packUI?.activate(currentPage);toolsUI?.activate(currentPage).catch(e=>toast(e.message,true));
   motionUI?.activate(currentPage);libraryUI?.scheduleCardInfo();
+  worldUI?.activate(currentPage).catch(e=>toast(e.message,true));
   if(currentPage==='card')presetsUI.refresh();
 }
 function navigate(page){if(!pages[page])return;if(editorPages.has(page)&&!playerReady(project)){toast('请先从资源库读取球员，或打开“我的球员”中的工程');$('#compact-page-select').value=currentPage==='library'?'personal':currentPage;return;}currentPage=page;if(!project||!viewer)return;renderPage();window.scrollTo({top:0,behavior:'instant'});}
@@ -224,6 +233,8 @@ function sixStats(values){
 }
 function updateLive(){
   if(!project||!catalog)return;
+  if(normalizedTrainingOwner!==project){normalizeTraining(project,catalog);normalizedTrainingOwner=project;}
+  $$('[data-bind="initial_level"]').forEach(n=>{n.max=project.max_level;if(n.value!==String(project.initial_level))n.value=project.initial_level;});
   simulation=simulate(project,catalog);
   syncStyleHelp(project,catalog);
   document.querySelectorAll('[data-skin-tone]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.skinTone)===project.model.skin_tone)));
@@ -241,7 +252,7 @@ function updateLive(){
   const budget=$('#budget-card');if(budget){
     budget.classList.toggle('invalid',!simulation.valid);$('#budget-total').innerHTML=simulation.budget+'<small>点</small>';$('#budget-spent').innerHTML=simulation.spent+'<small>点</small>';$('#budget-remaining').innerHTML=simulation.remaining+'<small>点</small>';
     $('#budget-progress').style.width=(simulation.budget?Math.min(100,simulation.spent/simulation.budget*100):0)+'%';$('#budget-progress').style.background=simulation.valid?'var(--mint)':'var(--red)';
-    for(const group of catalog.training_groups){const count=project.training[group.id],next=trainingCost(count+1)-trainingCost(count);$(`[data-group-cost="${group.id}"]`).textContent='已用 '+trainingCost(count)+' 点';$(`[data-group-next="${group.id}"]`).textContent='下次 '+next+' 点';$(`[data-step="1"][data-group="${group.id}"]`).disabled=next>simulation.remaining||count>=40;$(`[data-step="-1"][data-group="${group.id}"]`).disabled=!count;}
+    for(const group of catalog.training_groups){const count=project.training[group.id],next=trainingCost(count+1)-trainingCost(count);$$(`[data-bind="training.${group.id}"]`).forEach(n=>n.value=count);$(`[data-group-cost="${group.id}"]`).textContent='已用 '+trainingCost(count)+' 点';$(`[data-group-next="${group.id}"]`).textContent='下次 '+next+' 点';$(`[data-step="1"][data-group="${group.id}"]`).disabled=next>simulation.remaining||count>=40;$(`[data-step="-1"][data-group="${group.id}"]`).disabled=!count;}
     for(const group of catalog.training_groups){$(`[data-training-stats="${group.id}"]`).innerHTML=group.indices.map(i=>`<div class="training-stat-row" data-training-stat="${i}"><span>${esc(catalog.ABILITIES[i])}</span><span>${simulation.base[i]}</span><strong style="color:${ratingColor(simulation.trained[i])}">${simulation.trained[i]}</strong><strong style="color:${ratingColor(simulation.final[i])}">${simulation.final[i]}</strong></div>`).join('');}
     const trainingTarget=project.preview?.training_position||project.identity.position;$('#training-target-note').textContent=`目标 ${trainingTarget} · 该位置参考总评 ${simulation.positionOvrs[trainingTarget]} · 方案可撤销`;
     $('#training-comparison').innerHTML=Object.entries(catalog.ABILITIES).map(([i,label])=>{const delta=simulation.final[i]-simulation.base[i];return `<tr data-training-detail="${i}"><th>${esc(label)}</th><td>${simulation.base[i]}</td><td>${simulation.trained[i]}</td><td>${simulation.boosted[i]}</td><td style="color:${ratingColor(simulation.final[i])}">${simulation.final[i]}</td><td>${delta>0?'+':''}${delta}</td></tr>`;}).join('');
@@ -268,13 +279,13 @@ async function drawCard(){
   if(generation!==cardDrawVersion)return;
   const canvas=$('#player-card'),ctx=canvas.getContext('2d');if(canvas.width!==1200){canvas.width=1200;canvas.height=1720;}ctx.clearRect(0,0,1200,1720);ctx.save();ctx.scale(2,2);
   const fit=(image,x=0,y=0,w=600,h=860,zoom=1,dx=0,dy=0)=>{const scale=Math.min(w/image.width,h/image.height)*zoom;ctx.drawImage(image,x+(w-image.width*scale)/2+dx,y+(h-image.height*scale)/2+dy,image.width*scale,image.height*scale);};
-  if(full)fit(full);else{
+  if(full&&(!p.appearance.hide_card_ui||!background&&!portrait))fit(full);else{
     if(background)fit(background);
-    if(portrait)fit(portrait,0,background?70:0,600,background?670:860,p.appearance.photo_zoom,p.appearance.photo_x,p.appearance.photo_y);
+    if(portrait&&!p.appearance.hide_portrait)fit(portrait,0,background?70:0,600,background?670:860,p.appearance.photo_zoom,p.appearance.photo_x,p.appearance.photo_y);
     if(foreground)fit(foreground);
   }
   const visible=Boolean(portrait||background||foreground||full);$('#card-empty').hidden=visible;
-  if(visible&&p.appearance.native_overlay_text){ctx.fillStyle='#fff';ctx.textAlign='left';ctx.font='700 72px Arial';ctx.fillText(simulation.ovr,35,100);ctx.font='24px Arial';ctx.fillText(p.identity.position,40,132);ctx.font='600 34px "Microsoft YaHei",Arial';ctx.fillText(p.display_name||p.identity.name||'',35,790,530);}
+  if(visible&&p.appearance.native_overlay_text&&!p.appearance.hide_card_ui){ctx.fillStyle='#fff';ctx.textAlign='left';ctx.font='700 72px Arial';ctx.fillText(simulation.ovr,35,100);ctx.font='24px Arial';ctx.fillText(p.identity.position,40,132);ctx.font='600 34px "Microsoft YaHei",Arial';ctx.fillText(p.display_name||p.identity.name||'',35,790,530);}
   ctx.restore();
 }
 
@@ -291,7 +302,8 @@ async function importMotion(role){
   if(!Number.isFinite(x)||!Number.isFinite(y)||Math.abs(x)>100||Math.abs(y)>100)throw Error('裁切位置应在 -100 至 100 之间');
   const path=await choose('motion-video');if(!path)return;
   toast('正在转换视频，请稍候…');
-  const result=await api('card-motion/import',{path,role,crop_x:x,crop_y:y});
+  const result=await importCardMovie(api,{path,role,crop_x:x,crop_y:y});
+  if(!result){toast('视频导入已取消，原卡面保持');return;}
   if(project.package_id!==uuid||project.native_card!==card)throw Error('工程或卡面已切换，视频未应用');
   commit(()=>{if(role==='both')project.native_card.custom_motion=result;else project.native_card.custom_motion.mini=result.mini;},'card-motion');
   renderPage();toast('动态背景已导入，可预览并生成 APK');
@@ -317,7 +329,7 @@ const actions={
   'clear-native-foreground':()=>{commit(()=>{if(project.native_art)project.native_art.foreground=null;});renderPage();},
   'clear-native-full':()=>{commit(()=>{if(project.native_art)project.native_art.full=null;});renderPage();},
   'preset':()=>{commit(()=>{const vals={14:84,15:48,16:40,17:84,18:84,19:80,20:86,21:72,22:66,23:74,24:45,25:62,26:48,27:68,28:75,29:40,30:40,31:40,32:40,34:86,35:76,36:82,37:82,38:87,39:73,40:76};project.base_abilities=vals;},'preset');renderPage();toast('已载入前锋参考基础值，可撤销或继续调整');},
-  'auto-train':()=>{commit(()=>project.training=autoAllocate(project,catalog),'auto-train');renderPage();toast('已按 '+(project.preview?.training_position||project.identity.position)+' 生成参考加点方案');},
+  'auto-train':()=>{commit(()=>{project.initial_level=project.max_level;project.training=autoAllocate(project,catalog);},'auto-train');renderPage();toast('已按最大等级和 '+(project.preview?.training_position||project.identity.position)+' 生成参考加点方案');},
   'reset-training':()=>{commit(()=>{for(const g of catalog.training_groups)project.training[g.id]=0;},'reset-training');renderPage();},
   'upload-portrait':()=>importAsset('image','appearance.portrait'),
   'motion-import':()=>importMotion('both'),
@@ -355,9 +367,9 @@ function handleInput(event){
     const path=el.dataset.bind;if(path.startsWith('base_abilities.'))value=normalizeBaseAbility(value);
     if(path==='appearance.thumbnail_mode'){commit(()=>set(path,value),path);renderPage();return;}
     if(path==='card_series'){commit(()=>selectCardSeries(project,value),path);renderPage();return;}
-    commit(()=>{set(path,value);if(path==='max_level'){project.initial_level=Math.min(project.initial_level,value);project.max_level_known=true;}if(el.dataset.identityKind){const kind=el.dataset.identityKind,exact=identityOptions[kind].find(r=>r.name+' · #'+r.id===value),matches=identityOptions[kind].filter(r=>r.name===value||r.name_en===value),row=exact||(matches.length===1?matches[0]:null);project.identity[kind==='nation'?'nation_id':'team_id']=row?.id??null;if(row){value=row.name;set(path,value);el.value=value;}}},path);
+    commit(()=>{if(el.dataset.identityKind){const kind=el.dataset.identityKind,selection=identitySelection(value,kind,identityOptions,project.identity);project.identity[kind==='nation'?'nation_id':'team_id']=selection.id;set(path,selection.stored);value=selection.display;el.value=value;}else set(path,value);if(path==='max_level')project.max_level_known=true;},path);
     $$(`[data-bind="${path}"]`).forEach(other=>{if(other!==el){if(other.type==='checkbox')other.checked=value;else other.value=value;}});
-    if(path==='max_level'){$$('[data-bind="initial_level"]').forEach(n=>{n.max=project.max_level;n.value=project.initial_level;});}
+    if(path==='max_level'||path==='initial_level'){$$('[data-bind="initial_level"]').forEach(n=>{n.max=project.max_level;n.value=project.initial_level;});}
   }else if(el.id==='skill-search'){skillQuery=el.value;updateSkillGrid();}
   else if(el.id==='selected-skills-only'){skillSelectedOnly=el.checked;updateSkillGrid();}
   else if(el.dataset.boosterSlot!==undefined){
@@ -417,7 +429,7 @@ function progressDraft(){
 }
 async function initializeEditorAutosave(){
  editorAutosave=new EditorAutosave({api,read:()=>({coach:coachUI?.editing,pack:packUI?.editing,
-  settings:toolsUI?.gameSettings.value,progress:progressDraft()}),onState:(kind,state,message)=>{
+  settings:toolsUI?.gameSettings.value,progress:progressDraft(),world:worldUI?.draft}),onState:(kind,state,message)=>{
    if((kind==='progress'?'settings':kind)!==saveTarget(currentPage))return;
    const el=$('#save-status');el.className='save-status'+(state==='error'?' error':state==='pending'||state==='saving'?' saving':'');
    el.textContent={pending:'修改待保存',saving:'正在自动保存',saved:'已自动保存到本机',draft:'草稿已保存，资料待完善',error:'自动保存失败，请点击保存重试'}[state];el.title=message||'';
@@ -470,7 +482,7 @@ function renderNavigation(){
 async function boot(){
   hydrateIcons();
   taskCenter=new TaskCenter({api,navigate,toast,page:()=>currentPage});
-  const data=await api('bootstrap');project=data.project;if(data.platform==='pc')await new WindowSession(api,()=>project,token,()=>{editorAutosave?.capture();return editorAutosave?.closeRows()||[];}).start();new AndroidSidebarResize(data.platform);const setup=await api('setup/status',{}).catch(()=>({preferences:{navigation:'simple'},recommended_mode:'coexist',resources_needed:{update:true,coexist:true}}));navigationMode=setup.preferences.navigation;renderNavigation();project=data.project;catalog=data.catalog;identityOptions=data.identities||identityOptions;
+  const data=await api('bootstrap');project=data.project;if(data.platform==='pc')await new WindowSession(api,()=>project,token,()=>{editorAutosave?.capture();return editorAutosave?.closeRows()||[];}).start();new AndroidSidebarResize(data.platform);const setup=await api('setup/status',{}).catch(()=>({preferences:{navigation:'simple'},recommended_mode:'coexist',resources_needed:{update:true,coexist:true}}));navigationMode=setup.preferences.navigation;renderNavigation();project=data.project;catalog=data.catalog;identityOptions=data.identities||identityOptions;setTeamOptions(identityOptions.team);
   libraryUI=new LibraryUI({api,commit,project:()=>project,catalog,toast,navigate,rerender:renderPage,beforeLoadPlayer:preparePlayerLoad,status:data.library,apk:data.default_apk,companion:data.default_companion});
   updateUI=new GameImportUI({api,toast,apk:data.default_apk,companion:data.default_companion,rerender:renderPage});
   nativePackageUI=new NativePackageUI({api,toast,platform:data.platform,project:()=>project,apk:data.default_apk,companion:data.default_companion,installationMode:setup.recommended_mode,resourcesNeeded:setup.resources_needed,rigged:data.default_rigged||''});
@@ -479,6 +491,7 @@ async function boot(){
   toolsUI=new WorkspaceTools({api,toast,project:()=>project,flushSave,flushEditors:()=>editorAutosave?.flush()});
   boosterLibraryUI=new BoosterLibraryUI({api,toast,project:()=>project,flushSave,commit,rerender:renderPage});
   packUI=new PackUI({api,toast,rerender:renderPage,onHistoryChange:editorHistoryChanged,flushEditors:()=>editorAutosave?.flush()});
+  worldUI=new WorldUI({api,toast,rerender:renderPage,onHistoryChange:editorHistoryChanged});
   motionUI=new MotionUI({api,toast,project:()=>project,commit,rerender:renderPage});
   personalUI=new PersonalUI({api,toast,beforeOpenPlayer:async()=>{if(await choosePlayerAction('读取已保存球员','将切换当前编辑内容。当前工程会先备份；切换到其他球员时会保存当前球员。若要创建另一名球员，请使用新建独立槽位。',[{id:'open',label:'备份并读取球员',primary:true}])!=='open')return false;await api('project/checkpoint',{project});return true;},project:()=>project,flushSave,navigate,rerender:renderPage,onPlayerDeleted:id=>{if(packUI.editing)packUI.editing.members=packUI.editing.members.filter(m=>m.kind!=='custom'||m.id!==id);},replaceProject:p=>{past=[];future=[];project=p;version++;savedVersion=version;}});
   coachUI=new CoachUI({api,toast,catalog,onHistoryChange:editorHistoryChanged,flushEditors:()=>editorAutosave?.flush(),onCoachDeleted:uuid=>nativePackageUI?.coachIds.delete(uuid),replaceProject:p=>{past=[];future=[];project=p;version++;savedVersion=version;lastChangeKey='';},identities:()=>identityOptions,project:()=>project,commit,flushSave,navigate,rerender:renderPage,resourceKey:()=>libraryUI.status.cache_directory+':'+libraryUI.status.phase,custom:data.custom_coaches?.rows||[]});

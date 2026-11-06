@@ -11,6 +11,28 @@ PATH=FOLDER+'SK_437sp00v0039_Face.uasset'
 
 
 class CoachModelTests(unittest.TestCase):
+    def test_expression_setting_survives_normalize_preview_and_export_per_coach(self):
+        from coach_models import preview_coach
+        from coach_heads import normalize as normalize_stock
+        for protected in(False,True):
+            head={'template_path':PATH,'asset_id':'a'*64+'.glb','preserve_expression':protected}
+            self.assertEqual(normalize(head),head)
+            config={'target':PATH,'mode':'custom','asset_id':head['asset_id'],'preserve_expression':protected}
+            self.assertEqual(normalize_stock(config),config)
+            with patch('coach_models.preview',return_value={})as show:
+                preview_coach(None,head)
+            show.assert_called_once_with(None,config)
+            lib=SimpleNamespace(state={'phase':'ready'},face_assets=lambda:SimpleNamespace(files={'../../../'+PATH}))
+            coach={'uuid':'one','name':'One','native_source_id':str(SOURCE),'head_model':head}
+            destination='/Game/Assets/character/DemoFace/Manager/SK_600001_Face'
+            with patch('coach_models.compile_head',return_value=([(destination,b'raw',{})],{},b'',None))as compile:
+                compile_models(lib,[coach],[{'id':600001}])
+            self.assertEqual(compile.call_args.args[1]['preserve_expression'],protected)
+        for value in(0,1,'true',None):
+            with self.assertRaises(ValueError):normalize({'template_path':PATH,'preserve_expression':value})
+        legacy={'template_path':PATH,'asset_id':'a'*64+'.glb'}
+        self.assertEqual(normalize(legacy),legacy)
+
     def test_native_manager_id_layout_matches_original_and_private_ids(self):
         self.assertEqual(native_key(SOURCE),'437sp00v0039')
         for ident in (600000,600123,999999):self.assertEqual(native_key(ident),str(ident))
@@ -57,10 +79,10 @@ class CoachModelTests(unittest.TestCase):
 
     def test_current_stock_coach_shows_saved_replacement_before_original(self):
         with tempfile.TemporaryDirectory() as folder:
-            from coach_heads import CoachHeadStore
+            from coach_models import CoachModelStore
             lib=SimpleNamespace(state={'phase':'ready'},store=SimpleNamespace(root=Path(folder)),face_assets=lambda:SimpleNamespace(files={'../../../'+PATH}))
-            replacement={'target':PATH,'mode':'custom','asset_id':'a'*64+'.glb'}
-            CoachHeadStore(folder).save(replacement)
+            replacement={'target':PATH,'mode':'custom','asset_id':'a'*64+'.glb','coach_id':str(SOURCE),'name':'Stock coach'}
+            CoachModelStore(folder).save(replacement)
             with patch('coach_models.preview',return_value={'asset_id':'b'*64+'.glb'}) as render,patch('coach_models.original') as stock:
                 result=current(lib,{'id':str(SOURCE),'type':'original'})
             render.assert_called_once_with(lib,replacement);stock.assert_not_called()

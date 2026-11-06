@@ -3,6 +3,41 @@ from pathlib import Path
 import collections,contextlib,copy,hashlib,json,os,re,sqlite3,time,zipfile
 
 REASON='Workshop recycle bin'
+SEED='assets/gateway-release/outputs/efootball/local-club.sqlite3'
+
+
+def registration_record(record,cid):
+    """Accept a registry row, never a browse-library display projection."""
+    if not isinstance(record,dict):return None
+    card=record.get('card');members=record.get('members',[])
+    if not isinstance(card,(list,tuple))or len(card)!=6 or str(card[0])!=cid:return None
+    try:payload=json.loads(card[2])
+    except(ValueError,TypeError):return None
+    if not isinstance(payload,dict)or not isinstance(payload.get('gameplayer_id'),dict)or payload['gameplayer_id'].get('id')!=int(cid):return None
+    if not isinstance(card[3],str)or not card[3]or card[5]=='studio-recycle-restored':return None
+    if not isinstance(members,list)or any(not isinstance(r,(list,tuple))or len(r)!=3 or str(r[1])!=cid for r in members):return None
+    return {'card':list(card),'members':[list(r)for r in members]}
+
+
+def source_registrations(archive,ids):
+    if SEED not in archive.namelist():return {}
+    db=sqlite3.connect(':memory:')
+    try:
+        db.deserialize(archive.read(SEED))
+        row=db.execute("select value from meta where key='studio_recycled_catalogue_v1'").fetchone()
+        archived=json.loads(row[0])if row else{}
+        result={}
+        for cid in ids:
+            row=db.execute('select card_id,fingerprint,payload,card_type,subtype,evidence from managed_cards where card_id=?',(cid,)).fetchone()
+            members=db.execute('select agent_id,card_id,weight from managed_members where card_id=?',(cid,)).fetchall()
+            record=registration_record({'card':row,'members':members},cid)
+            if record is None:
+                old=archived.get(cid)
+                if isinstance(old,list):old={'card':old,'members':members}
+                record=registration_record(old,cid)
+            if record is not None:result[cid]=record
+        return result
+    finally:db.close()
 
 def load(store):
     path=store.root/'catalogue-trash.json'
@@ -27,11 +62,12 @@ def change(library,body):
                     snapshots[cid]=dict(row)
             from apk_sources import recorded
             source=Path(recorded(library,store).get('apk',''))
-            native={cid:{} for cid in ids}
+            native={cid:{} for cid in ids};registrations={}
             if source.is_file():
                 from native_cpk import Cpk,unwrap
                 from content_delta import CPKS,TABLES
                 with zipfile.ZipFile(source)as archive:
+                    registrations=source_registrations(archive,ids)
                     cpk=Cpk(archive.read(CPKS[1]))
                     for name,(size,offset)in TABLES.items():
                         data=unwrap(cpk.read(name))
@@ -41,6 +77,7 @@ def change(library,body):
             for cid in ids:
                 items[cid]={**items.get(cid,{}),'id':cid,'name':snapshots[cid]['name'],'snapshot':snapshots[cid],
                             'native_records':native[cid]or items.get(cid,{}).get('native_records',{}),'trashed':True,'changed_at':int(time.time())}
+                if cid in registrations:items[cid]['registration']=registrations[cid]
         else:
             for cid in ids:
                 if cid not in items:raise ValueError('球员不在回收站记录：'+cid)
@@ -72,21 +109,25 @@ def patch_tables(raw,store,restore_only=False):
     return source.replace(replacements)if replacements else raw
 
 def patch_seed(archive,store):
-    name='assets/gateway-release/outputs/efootball/local-club.sqlite3';items=load(store)
+    name=SEED;items=load(store)
     if not items:return {}
     db=sqlite3.connect(':memory:')
     try:
         db.deserialize(archive.read(name))
         with db:
+            # Restore original archived registry rows first. Library `players`
+            # snapshots are UI projections and may have UNKNOWN card type,
+            # no subtype or a different payload; they cannot register a card.
+            from personal_runtime import apply_catalogue_recycle
+            apply_catalogue_recycle(db,policy(store))
             for cid,item in items.items():
-                if item['trashed']:
-                    db.execute('delete from managed_cards where card_id=?',(cid,))
-                    if db.execute("select 1 from sqlite_master where name='managed_members'").fetchone():db.execute('delete from managed_members where card_id=?',(cid,))
-                else:
-                    row=item['snapshot'];p=json.loads(row['payload']);text=json.dumps(p,ensure_ascii=False,sort_keys=True,separators=(',',':'))
-                    db.execute('insert or ignore into managed_cards values(?,?,?,?,?,?)',(cid,hashlib.sha256(text.encode()).hexdigest(),text,row['card_type'],None,'studio-recycle-restored'))
-            from personal_runtime import remove_recycled_owned
-            remove_recycled_owned(db,{cid for cid,r in items.items()if r['trashed']})
+                if not item['trashed']:
+                    record=registration_record(item.get('registration'),cid)
+                    if record is None:continue
+                    current=db.execute('select evidence from managed_cards where card_id=?',(cid,)).fetchone()
+                    if current is None or current[0]=='studio-recycle-restored':
+                        db.execute('insert or replace into managed_cards values(?,?,?,?,?,?)',record['card'])
+                    db.executemany('insert or ignore into managed_members values(?,?,?)',record['members'])
         if db.execute('pragma quick_check').fetchone()[0]!='ok':raise ValueError('回收站处理后的种子库校验失败')
         return {name:db.serialize()}
     finally:db.close()

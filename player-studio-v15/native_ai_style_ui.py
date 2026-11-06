@@ -22,3 +22,20 @@ def hooks(engine):
             if engine.read(64).hex()!=entry['expected_hex']:
                 raise ValueError('此版本的 AI 比赛风格显示接口改变，未写入独狼显示修复')
     return copy.deepcopy(BUNDLES)
+
+
+def preflight(definitions,bundles):
+    """Fail at export rather than silently emit a missing AI-style UI chain."""
+    from ai_playing_styles import definition_value
+    players=[p for p in definitions if 'lone_wolf' in definition_value(p)]
+    if not players:return {'lone_wolf_players':0}
+    entries={r.get('name') for b in bundles for r in [b]+b.get('extra_entries',[])}
+    expected={'studio_custom_skill_decode','studio_custom_skill_get_parameter',
+              'studio_custom_skill_name_message','studio_lone_wolf_ai_parameter',
+              'studio_lone_wolf_owned_ai_list','studio_lone_wolf_library_ai_list',
+              'studio_lone_wolf_ai_display_counts','studio_lone_wolf_library_ai_count'}
+    missing=expected-entries
+    if missing:raise ValueError('独狼 AI 风格显示适配缺少入口：'+', '.join(sorted(missing)))
+    return {'lone_wolf_players':len(players),'source_bit':687,'virtual_parameter':151,
+            'native_styles_preserved':7,'owned_and_library_lists':True,'display_counts':True,
+            'name_message':(352<<16)|60010,'revision':'lone-wolf-display-v2'}

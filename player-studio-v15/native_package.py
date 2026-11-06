@@ -45,10 +45,34 @@ COMPILER_REVISION='v17-source-aware-selection-2.1.6'
 def compact(value):return json.dumps(value,ensure_ascii=False,separators=(',',':')).encode('utf8')
 
 
+def _reserve_live_version(library,store,release,template,fingerprint):
+    """One real export observes its selected source and current library APK."""
+    from native_live import library_version
+    observed=library_version(library,store)
+    shared=library.home.parent/'.player-studio-shared/native-live-versions.json'
+    local=store.root/'native-live-versions.json'
+    seeds=[library.home.parent/name/'data/native-live-versions.json'for name in('球员工坊','球员工坊-V14','球员工坊-V15')]
+    return reserve_shared(shared,local,release,template,fingerprint,seeds,observed_versions=(observed,))
+
+
 def bytecode(source,filename):
     code=compile(source,filename,'exec',dont_inherit=True)
     return importlib.util.MAGIC_NUMBER+struct.pack('<III',0,0,len(source.encode('utf8')))+marshal.dumps(code)
 
+
+WORLD_HELPERS=('stadium_runtime','tournament_rules','tournament_identity','tournament_squads','tournament_eligibility','tournament_runtime','tournament_sim_strength','tournament_simulation','coach_formula','tournament_promotion','tournament_promotion_ui','tournament_rewards','tournament_agents','tournament_schedule_ui','native_tournament_schedule_ui','tournament_home','tournament_reward_ui','league_availability')
+
+
+def competition_menu_hooks(engine,resources,menu_sha256,tournaments):
+    """The original League cache bridge is needed even without custom events."""
+    from native_tournament_home import hooks as home_hooks
+    result=home_hooks(engine,resources,menu_sha256=menu_sha256)
+    if tournaments:
+        from native_tournament_schedule_ui_entry import hooks as schedule_entry_hooks
+        from native_tournament_contract_ui import hooks as contract_hooks
+        result=schedule_entry_hooks(engine,[t['event_id']for t in tournaments],resources,menu_sha256=menu_sha256)+result
+        result+=contract_hooks(engine,resources)
+    return result
 
 def hook_archive(raw,runtime_source,binding_source=None,division_source=None,rating_source=None,helper_sources=None):
     src=zipfile.ZipFile(io.BytesIO(raw));stub=src.read('embedded_gateway.pyc')
@@ -58,7 +82,7 @@ def hook_archive(raw,runtime_source,binding_source=None,division_source=None,rat
     dest=io.BytesIO()
     with zipfile.ZipFile(dest,'w') as out:
         for entry in src.infolist():
-            if entry.filename in ('embedded_gateway.pyc','personal_runtime.pyc','personal_binding.pyc','division_squads.pyc','native_overall.pyc','ai_tactical_profiles.pyc','ai_division_sessions.pyc','ai_match_manager.pyc','ai_match_channel.pyc','ai_match_runtime.pyc','ai_match_state.pyc','action_trace.pyc','league_rules.pyc','art_registry.pyc','native_diy_binding.pyc','draw_policy.pyc','draw_journal.pyc'):continue
+            if entry.filename in tuple(name+'.pyc'for name in WORLD_HELPERS)+('embedded_gateway.pyc','personal_runtime.pyc','personal_binding.pyc','division_squads.pyc','native_overall.pyc','ai_tactical_profiles.pyc','ai_division_sessions.pyc','ai_match_manager.pyc','ai_match_channel.pyc','ai_match_runtime.pyc','ai_match_state.pyc','action_trace.pyc','league_rules.pyc','art_registry.pyc','native_diy_binding.pyc','draw_policy.pyc','draw_journal.pyc','draw_v22.pyc'):continue
             out.writestr(entry,src.read(entry))
         out.writestr('embedded_gateway.pyc',bytecode(source,'embedded_gateway.py'),compress_type=zipfile.ZIP_DEFLATED)
         out.writestr('personal_runtime.pyc',bytecode(runtime_source,'personal_runtime.py'),compress_type=zipfile.ZIP_DEFLATED)
@@ -66,7 +90,7 @@ def hook_archive(raw,runtime_source,binding_source=None,division_source=None,rat
         if division_source is not None:out.writestr('division_squads.pyc',bytecode(division_source,'division_squads.py'),compress_type=zipfile.ZIP_DEFLATED)
         if rating_source is not None:out.writestr('native_overall.pyc',bytecode(rating_source,'native_overall.py'),compress_type=zipfile.ZIP_DEFLATED)
         for name,content in (helper_sources or {}).items():
-            if name not in ('ai_tactical_profiles','ai_division_sessions','ai_match_manager','ai_match_channel','ai_match_runtime','ai_match_state','action_trace','league_rules','art_registry','native_diy_binding'):raise ValueError('Unknown game helper module')
+            if name not in WORLD_HELPERS+('ai_tactical_profiles','ai_division_sessions','ai_match_manager','ai_match_channel','ai_match_runtime','ai_match_state','action_trace','league_rules','art_registry','native_diy_binding','draw_v22'):raise ValueError('Unknown game helper module')
             out.writestr(name+'.pyc',bytecode(content,name+'.py'),compress_type=zipfile.ZIP_DEFLATED)
     return dest.getvalue()
 
@@ -146,10 +170,9 @@ class NativePackage:
                          'current':uid==current['package_id'],'model_error':error,'model_warning':warning,
                          'booster_error':'；'.join(booster_issues(p,catalog['ABILITIES'])),
                          'maximum_overall':maximum_development(p,catalog)['overall'],'max_level':p['max_level']})
-        from coach_heads import CoachHeadStore
         from coach_models import prepare as prepare_coach_model
         coach_rows=[prepare_coach_model(c,self.library) for c in self.coach_candidates(current)]
-        return {'rows':rows,'errors':saved['errors'],'coach_heads':CoachHeadStore(self.store.root).list(),'coaches':[{'uuid':c['uuid'],'name':c['name'],'has_model':bool(c.get('head_model'))} for c in coach_rows],
+        return {'rows':rows,'errors':saved['errors'],'coaches':[{'uuid':c['uuid'],'name':c['name'],'has_model':bool(c.get('head_model'))} for c in coach_rows],
                 'packs':[{'uuid':p['uuid'],'name':p['name'],'enabled':p['enabled'],'member_count':len(p['members'])} for p in load_packs(self.store)]}
 
     def coach_candidates(self,current):
@@ -191,6 +214,9 @@ class NativePackage:
             result['hidden_unchanged']=sum(r['write_state']=='unchanged'for r in result['rows'])
             result['rows']=[r for r in result['rows']if r['write_state']!='unchanged']
         result['write_source']=summary
+        from world_workspace import load as load_world
+        from tournament_runtime import export_rows
+        result['tournaments']=export_rows(load_world(self.store)['tournaments'],doc.get('tournaments',[]))
         if summary:
             with self.lock:self._write_positive=(summary['token'],positive)
         return result
@@ -204,9 +230,10 @@ class NativePackage:
                 self.state={'phase':'working','message':'为离线资源 APK 生成同一本机签名'}
                 threading.Thread(target=self._companion,args=(body['companion'],body.get('installation_mode','update')),daemon=True).start()
                 return copy.deepcopy(self.state)
-            from coach_heads import CoachHeadStore
-            if type(body.get('include_coach_heads',True)) is not bool:raise ValueError('教练头模开关无效')
-            head_rows=CoachHeadStore(self.store.root).list() if body.get('include_coach_heads',True) else []
+            from coach_models import CoachModelStore
+            # Old clients may still send include_coach_heads / coach_heads. Neither
+            # can activate the retired global store or inject arbitrary targets.
+            head_rows=CoachModelStore(self.store.root).list()
             current=body['project'];ids=body.get('selected_ids',[current['package_id']])
             if type(body.get('force_fps160',False)) is not bool:raise ValueError('160 帧开关无效')
             if not isinstance(ids,list) or len(ids)!=len(set(ids)) or len(ids)>10000:raise ValueError('球员选择无效')
@@ -253,10 +280,26 @@ class NativePackage:
             if 'frame_rate' in body:option_settings['frame_rate']=body['frame_rate']
             option_settings=normalize_game_settings(option_settings)
             body=dict(body,export_settings=option_settings)
-            if not projects and not packs and not coaches and not head_rows and not source_doc and not game_options(self.store).get('enabled') and not body.get('force_fps160') and not any(v['enabled'] for v in option_settings.values()):raise ValueError('请选择球员、教练、头模或卡包，或启用游戏设置')
+            from world_workspace import load as load_world,normalize as normalize_world
+            world=normalize_world(load_world(self.store),self.store.root/'assets')
+            from tournament_runtime import export_selection
+            tournament_ids=body.get('tournament_ids',[t['uuid']for t in world['tournaments']if t.get('enabled')])
+            body['tournament_config']=export_selection(world['tournaments'],source_doc.get('tournaments',[]),tournament_ids,writing)
+            if body['tournament_config'] and source_doc and not ids and not coach_ids and not pack_ids:
+                # A tournament-only update must retain the user's other content,
+                # including tournaments they did not select for replacement.
+                writing='incremental'
+                body.update(write_mode=writing,tournament_only_update=True)
+                body['tournament_config']=export_selection(world['tournaments'],source_doc.get('tournaments',[]),tournament_ids,writing)
+            from world_workspace import selection_warnings
+            body['tournament_selection_warnings']=selection_warnings(self.library,self.store,body['tournament_config'])
+            # Stadium compilation does not validate unrelated, unselected drafts.
+            world['tournaments']=[]
+            body['world_workspace']=world if(self.store.root/'world-workspace.json').is_file()else None
+            if not projects and not packs and not coaches and not head_rows and not source_doc and not world['stadium']['enabled'] and not world['stadium']['unlock_all'] and not body['tournament_config'] and not game_options(self.store).get('enabled') and not body.get('force_fps160') and not any(v['enabled'] for v in option_settings.values()):raise ValueError('请选择球员、教练、头模或卡包，或启用球场、赛事或游戏设置')
             validate_boosters(projects,self._booster_labels())
             self.state={'phase':'working','message':'核对当前游戏原包与所选球员','players':len(projects)}
-        threading.Thread(target=self._worker,args=(dict(body,projects=projects,packs=packs,coaches=coaches,coach_heads=head_rows),),daemon=True).start()
+        threading.Thread(target=self._worker,args=(dict(body,projects=projects,packs=packs,coaches=coaches,stock_coach_models=head_rows),),daemon=True).start()
         return self.status()
 
     def _companion(self,path,installation_mode='update'):
@@ -455,14 +498,26 @@ class NativePackage:
                 coach_model_loader=None
                 if coach_model_art or kept.get('coach_models'):
                     with engine_file.open() as engine:coach_model_loader=verify_coach_model_loader(engine,self.profile_resources)
-                art.extend(coach_model_art)
                 from coach_portraits import compile_portraits,owned_paths
                 coach_art,coach_portrait_report=compile_portraits(body.get('coaches',[]),coaches,self.library)
                 art.extend(coach_art)
-                from coach_heads import compile_heads,replacement_indices as head_replacements
+                from coach_heads import replacement_indices as head_replacements
+                from coach_models import compile_stock_models,collect_head_resources
                 self.update(message='编译教练三维头模')
-                head_art,coach_head_report=compile_heads(self.library,body.get('coach_heads',[]))
-                art.extend(head_art)
+                head_art,coach_head_report=compile_stock_models(self.library,body.get('stock_coach_models',[]),coach_catalog)
+                art.extend(collect_head_resources(coach_model_art,coach_model_report,head_art,coach_head_report))
+                from world_workspace import compile_stadium
+                from tournament_runtime import configuration as tournament_configuration
+                world=body.get('world_workspace');stadium_art=[];stadium_report={'enabled':False};stadium_config=inherited.get('stadium',{'enabled':False});tournament_config=body['tournament_config']
+                if world is not None:
+                    if self.library.profile.get('game_version')!='V17'and(world['stadium']['enabled']or tournament_config):raise ValueError('球场与赛事仅适用于已核对的 V17 接口')
+                    self.update(message='编译球场 TIFO、场边装置与赛事规则')
+                    stadium_art,stadium_config,stadium_report=compile_stadium(self.store,self.library,world)
+                    art.extend(stadium_art)
+                stadium_stock=[{'target':'PesMobile/Content/'+p[6:]+'.uasset','private_packages':[a[0]for a in stadium_art if '/PlayerStudio/Stadium/'in a[0]]}for p in stadium_report.get('native_table_paths',[])]
+                from native_draw_v22 import compile_assets as compile_draw_assets
+                draw_art,draw_replacements,draw_stock_groups,draw_report=export_call('抽卡演出','V22 音效蓝图与音效库','编译并校验 V22 抽卡资源',compile_draw_assets,self.library,self.profile_resources,source,content_replacements)
+                art.extend(draw_art)
                 from card_presentation import repair_routes
                 carried_aliases=set().union(*(owners[p['identity']['package_id']]['aliases']for p in kept.get('players',[])))if kept.get('players')else set()
                 carried_routes=[r for r in inherited.get('native_binding',{}).get('routes',[])if int(r['cardId'])in carried_aliases]
@@ -478,7 +533,13 @@ class NativePackage:
                     private_movie_files[name]=raw
                 self.update(message='合并原生球员、外观、技能与增能资料表')
                 timings.mark('coach_and_card_motion')
-                cpk,table_report=compile_tables(original,projects,definitions,self.resources,bindings,coach_resources,replace_ids,replace_boosters,source_cpk=original_cpk)
+                entry_art=[];entry_stock=[]
+                if tournament_config:
+                    from tournament_entry import artwork,image_files
+                    entry_art=artwork(self.library);art.extend(entry_art);entry_files,entry_routes=image_files(tournament_config,self.store)
+                    entry_stock=[{'target':'PesMobile/Content/'+p[6:]+'.uasset','private_packages':[]}for p,_,_ in entry_art]
+                    cover_files.update(entry_files);cover_routes.update(entry_routes)
+                cpk,table_report=compile_tables(original,projects,definitions,self.resources,bindings,coach_resources,replace_ids,replace_boosters,source_cpk=original_cpk,tournaments=bool(tournament_config))
                 removed_aliases=set().union(*(p['aliases']for uid,p in owners.items()if writing=='full'and uid not in selected['players']))if owners else set()
                 cpk=prune_tables(cpk,removed_aliases,{c['id']for c in retired_coaches})
                 cpk=recycle_tables(cpk,self.store)
@@ -491,14 +552,15 @@ class NativePackage:
                 retired_prefixes=tuple(prefix+str(cid)+'_'for cid in removed_coach_ids for prefix in ('SK_','MI_','T_'))
                 retired_model_paths={index for path,index in src.paths.items()if retired_prefixes and '/character/RealFace/'in path and path.rsplit('/',1)[-1].startswith(retired_prefixes)}
                 owned_replacements=personal_source.owned_art_paths(src,selected_owners)|owned_paths(src,[c['id'] for c in old_coaches+retired_coaches])|retired_model_paths
-                resource_build=append_container(src,out,additions,paths,packages,owned_replacements|motion_replacements(src,motion['packages'])|head_replacements(src,head_art+coach_model_art),cache=compile_cache,remove_indices=owned_replacements)
+                resource_build=append_container(src,out,additions,paths,packages,owned_replacements|motion_replacements(src,motion['packages'])|head_replacements(src,head_art+coach_model_art+draw_art+stadium_art+entry_art),cache=compile_cache,remove_indices=owned_replacements)
                 timings.mark('iostore_build')
                 replacements={**content_replacements,PREFIX+NATIVE+'dt870_mobile_and.cpk':cpk,
                               PREFIX+'livedata/dt870_mobile_and.cpk':cpk}
+                replacements.update(draw_replacements)
                 replacements.update(recycle_seed(source,self.store))
                 from coach_heads import patch_stock_containers
-                self.update(message='替换原始教练模型容器并核对加载路径')
-                stock_head_replacements,stock_head_report=patch_stock_containers(source,self.library,head_art,coach_head_report,work)
+                self.update(message='替换教练头模与抽卡音效原始容器，核对加载路径')
+                stock_head_replacements,stock_head_report=patch_stock_containers(source,self.library,head_art+draw_art+stadium_art+entry_art,coach_head_report+draw_stock_groups+stadium_stock+entry_stock,work)
                 replacements.update(stock_head_replacements)
                 timings.mark('coach_stock_containers')
                 native_movie_files=motion.get('native_movie_files',{})
@@ -522,20 +584,29 @@ class NativePackage:
                 template_path=PREFIX+'work/templates/CMD_LOGIN_LIVEDATA.json'
                 live_template=_export_data("资料文件",template_path,"读取并解析 JSON",lambda: json.loads(source.read(template_path)))
                 live_registry_path=self.store.root/'native-live-versions.json'
-                shared=self.library.home.parent/'.player-studio-shared/native-live-versions.json'
-                seeds=[self.library.home.parent/name/'data/native-live-versions.json' for name in ('球员工坊','球员工坊-V14','球员工坊-V15')]
-                live_version,live_registry=reserve_shared(shared,live_registry_path,release['release_id'],live_template,resource_files['dt870_mobile_and.cpk']['sha256'],seeds)
-                live_template=compile_template(live_template,cpk,live_version)
+                from native_live import container_metadata,content_fingerprint
+                live_containers=container_metadata(source,replacements,live_template)
+                live_fingerprint=content_fingerprint(resource_files['dt870_mobile_and.cpk']['sha256'],live_containers)
+                live_version,live_registry=_reserve_live_version(self.library,self.store,release['release_id'],live_template,live_fingerprint)
+                live_template=compile_template(live_template,cpk,live_version,live_containers)
                 live_report=verify_template(live_template,cpk)
                 replacements[template_path]=compact(live_template)
                 binding_source=(Path(getattr(sys,'_MEIPASS',Path(__file__).absolute().parent))/'personal_binding.py').read_text(encoding='utf8')
                 division_source=(Path(getattr(sys,'_MEIPASS',Path(__file__).absolute().parent))/'division_squads.py').read_text(encoding='utf8')
                 rating_source=(Path(getattr(sys,'_MEIPASS',Path(__file__).absolute().parent))/'native_overall.py').read_text(encoding='utf8')
                 helper_sources={name:(Path(getattr(sys,'_MEIPASS',Path(__file__).absolute().parent))/(name+'.py')).read_text(encoding='utf8')
-                                for name in ('ai_tactical_profiles','ai_division_sessions','ai_match_manager','ai_match_channel','ai_match_runtime','ai_match_state','action_trace','league_rules','art_registry','native_diy_binding')}
+                                for name in WORLD_HELPERS+('ai_tactical_profiles','ai_division_sessions','ai_match_manager','ai_match_channel','ai_match_runtime','ai_match_state','action_trace','league_rules','art_registry','native_diy_binding','draw_v22')}
+                from tournament_schedule_ui import runtime_source as schedule_runtime_source
+                helper_sources['tournament_schedule_ui']=schedule_runtime_source(helper_sources['tournament_schedule_ui'],self.profile_resources/'tournament_schedule_ui')
+                from tournament_rewards import runtime_source as rewards_runtime_source
+                helper_sources['tournament_rewards']=rewards_runtime_source(helper_sources['tournament_rewards'],self.profile_resources)
                 coaching_fingerprint=hashlib.sha256((self.profile_resources/'native-ai-match-adapter.json').read_bytes()).hexdigest()
                 from studio_resources import bundled_resources
                 trace_fingerprint=hashlib.sha256((bundled_resources()/'native-action-trace.json').read_bytes()).hexdigest()
+                if tournament_config:
+                    trace_fingerprint+=hashlib.sha256((self.profile_resources/'tournament_schedule_ui/native-entry.json').read_bytes()).hexdigest()
+                    trace_fingerprint+=hashlib.sha256((self.profile_resources/'tournament_schedule_ui/native-home.json').read_bytes()).hexdigest()
+                    trace_fingerprint+=hashlib.sha256((self.profile_resources/'tournament_schedule_ui/native-contract.json').read_bytes()).hexdigest()
                 compiler_fingerprint=hashlib.sha256((self.runtime_source+'\0'+binding_source+'\0'+division_source+'\0'+rating_source+'\0'+'\0'.join(helper_sources.values())+'\0'+coaching_fingerprint+'\0'+trace_fingerprint+'\0'+COMPILER_REVISION).encode('utf8')).hexdigest()
                 document={'compiler_fingerprint':compiler_fingerprint,'game_version':self.library.profile.get('game_version','V14'),'adapter_family':self.library.profile.get('family','V14'),'draw_profiles':_export_data("资料文件",self.profile_resources / 'native-draw-profiles.json',"读取并解析 JSON",lambda: json.loads((self.profile_resources/'native-draw-profiles.json').read_text(encoding='utf8'))),'format':'personal-player-native-v1','version':1,'players':definitions,'packs':packs,'coaches':coaches,
                           'training_groups':catalog['training_groups'],'resource_files':resource_files,
@@ -543,12 +614,42 @@ class NativePackage:
                           'card_series_by_id':card_series(cpk),
                           'preview_boosters':{str(b['id']):{'effects':b['effects'],'conditional':bool(b.get('conditional'))} for b in catalog['boosters']}}
                 document['players']=list(all_definitions.values())
+                document.update(stadium=stadium_config,stadium_preflight=stadium_report,tournaments=tournament_config)
+                if tournament_config:document['tournament_entry_image']=next(iter(entry_routes))
+                if tournament_config:
+                    document['tournament_entry_images']={shape:next(path for path,entry in entry_routes.items()if entry['path'].endswith('-'+shape+'.jpg'))for shape in('portrait','landscape')}
+                    from team_names import display as team_display
+                    document['tournament_team_names']={str(r['id']):team_display(r)['name']for r in self.library.identities()['team']}
+                    from world_workspace import national_teams
+                    document['tournament_national_team_nations']=national_teams(self.library)
+                    from tournament_schedule_ui_emblems import extract as extract_schedule_emblems
+                    emblems=extract_schedule_emblems(self.library.containers,
+                        sorted({team for t in tournament_config for team in t['team_ids']}),self.library.native,
+                        nation_ids=document['tournament_national_team_nations'])
+                    document['tournament_emblems']=emblems['teams']
+                    document['tournament_emblem_report']={k:v for k,v in emblems.items()if k!='teams'}
+                from world_workspace import unlock_catalogue
+                document['stadium'].setdefault('unlock_all',True)
+                unlock=unlock_catalogue()
+                document['stadium']['unlock_catalogue']=unlock
+                # Tournament rules use the scoped native match channel even
+                # when the optional automatic coach is switched off.
+                needs_coaching=bool(tournament_config)
+                document['draw_presentation_revision']=draw_report.get('revision')if draw_report['enabled']else None
+                document['draw_presentation_assets']=draw_report
                 native_players=unwrap(Cpk(cpk).read(PLAYER),fresh=True)
                 document['native_player_catalogue']={'version':1,'table_sha256':hashlib.sha256(native_players).hexdigest(),
                     'card_ids':sorted(rows(native_players,400,8))}
                 document['content_catalogue']=content_catalogue
                 document['catalogue_recycle_bin']=recycle_policy(self.store)
                 document['catalogue_recycle_policy']='remove-owned-exact-cards; backup-save-before-removal; shared-art-retained'
+                if tournament_config:
+                    from tournament_rewards import export_catalogue as reward_catalogue
+                    document['tournament_reinforcement_cards']=reward_catalogue(self.library,document,inherited.get('tournament_reinforcement_cards'))
+                    from tournament_squads import export_standard_cards,export_fallback_standard_cards
+                    document['tournament_standard_cards']=export_standard_cards(self.library,document)
+                    document['tournament_fallback_standard_cards']=export_fallback_standard_cards(self.library,document)
+                    document['tournament_standard_card_policy']={'unknown_level_limit':35,'scope':'private-tournament-squads','source':'selected-native-library; final Player.bin IDs only'}
                 document['coach_heads']=coach_head_report
                 document['coach_head_containers']=stock_head_report
                 document['coach_models']=personal_source.merge(kept.get('coach_models',[]),coach_model_report,'uuid')
@@ -591,9 +692,14 @@ class NativePackage:
                     document['division_squads']['random_boosters']=random_booster_pool(catalog,cpk,custom_ids)
                     from division_squads import empty_booster_ids
                     document['division_squads']['empty_booster_ids']=empty_booster_ids(cpk,custom_ids)
+                    from division_squads import booster_catalogue
+                    document['native_booster_catalogue']=booster_catalogue(cpk)
                     document['division_squads']['excluded_ids']=list(set(document['division_squads']['excluded_ids'])|set(recycled))
                     document['division_squads']['style_mode']=document['game_options'].get('style_mode','shuffle_bag')
-                    if document['division_squads']['enabled']:
+                    if tournament_config:
+                        from world_workspace import selection_warnings
+                        document['tournament_selection_warnings']=selection_warnings(self.library,self.store,tournament_config,document=document)
+                    if document['division_squads']['enabled'] or needs_coaching:
                         from native_overall import verify_engine as verify_rating_engine
                         with engine_file.open() as rating_engine:
                             document['division_squads']['native_rating_preflight']=verify_rating_engine(rating_engine)
@@ -601,11 +707,12 @@ class NativePackage:
                 for p in projects:
                     with export_context('球员',p,'分配和编译自定义增能'):
                         for b in p.get('custom_boosters',[]):document['preview_boosters'][str(b['id'])]={'effects':b['effects'],'conditional':bool(b.get('conditional'))}
-                document['pack_covers']={**kept.get('pack_covers',{}),**cover_routes}
+                from tournament_entry import merge_image_routes
+                document['pack_covers']=merge_image_routes(kept.get('pack_covers',{}),cover_routes)
                 document['editor_registries']={'boosters':booster_registry,'coach_boosters':coach_registry.get('boosters',{}),'coach_links':coach_registry.get('links',{})}
                 document['coach_links']=list({r['id']:r for r in [*kept.get('coach_links',[]),*new_link_routes]}.values())
                 for relative,content in cover_files.items():replacements[PREFIX+relative]=content
-                if identities or inherited.get('native_binding') or content_catalogue['routes'] or document['coach_links'] or export_settings['controller']['enabled'] or export_settings['card_motion']['enabled'] or (document['game_version']=='V17' and (export_settings['ai_cut_in_shots']['enabled'] or export_settings['action_trace']['enabled'] or document.get('division_squads',{}).get('enabled'))):
+                if document['game_version']=='V17' or identities or inherited.get('native_binding') or content_catalogue['routes'] or document['coach_links'] or tournament_config or export_settings['controller']['enabled'] or export_settings['card_motion']['enabled']:
                     profile=_export_data("资料文件",self.resources / 'native-route-templates.json',"读取并解析 JSON",lambda: json.loads((self.resources/'native-route-templates.json').read_text(encoding='utf8')))
                     profile['club_emblems']=True
                     profile['external_routes']=True
@@ -629,12 +736,14 @@ class NativePackage:
                         from game_settings import controller_hooks
                         profile['native_hooks']+=export_call('游戏资料','native-controller.json','编译手柄键位',controller_hooks,export_settings['controller'],engine,self.profile_resources)
                         from native_skill_effects import hooks as skill_hooks,required as skill_effects_required
-                        if skill_effects_required(document['players'],catalog):profile['native_hooks']+=export_call('游戏资料',self.profile_resources/'native-skill-effects.json','核对并写入比赛技能效果',skill_hooks,engine,self.profile_resources)
+                        if skill_effects_required(document['players'],catalog):profile['native_hooks']+=export_call('游戏资料',self.profile_resources/'native-skill-effects.json','核对并写入比赛技能效果',skill_hooks,engine,self.profile_resources,definitions=document['players'])
+                        from native_ai_style_ui import preflight as ai_style_preflight
+                        document['ai_style_display']=ai_style_preflight(document['players'],profile['native_hooks'])
                         if document['game_version']=='V17':
                             from native_action_trace import hooks as action_trace_hooks,REVISION as ACTION_TRACE_REVISION
                             document['action_trace']={'enabled':export_settings['action_trace']['enabled'],'revision':ACTION_TRACE_REVISION,
                                                       'coverage':'native states, motion attempts and movement samples; candidate pass/dribble/shot before/after; request/power and native control flags; full-match acceptance pending'}
-                            if document.get('division_squads',{}).get('enabled'):
+                            if document.get('division_squads',{}).get('enabled') or needs_coaching:
                                 from native_ai_match import hooks as match_hooks
                                 profile['native_hooks']+=export_call('游戏资料','native-ai-match-adapter.json','编译 AI 组队与临场调整适配',match_hooks,engine,self.profile_resources)
                                 document['division_squads']['native_coaching_phase']='verified native execution; situational policy v5; local scenario validation; gameplay acceptance pending'
@@ -648,7 +757,8 @@ class NativePackage:
                                 profile['native_hooks']+=action_trace_hooks(engine,ai_enabled=ai_options['enabled'])
                             elif ai_options['enabled']:profile['native_hooks']+=export_call('游戏资料','native-ai-cut-in-shots.json','编译 AI 射门决策',ai_cut_in_hooks,engine,ordinary_enabled=True)
                             document['ai_cut_in_shots']={**ai_options,'experimental':True,'revision':AI_CUT_IN_REVISION,
-                                                         'ordinary_choice':'equal close-opportunity action classes' if ai_options['enabled'] else 'native',
+                                                         'ordinary_choice':'possession-locked forced native style actions' if ai_options['enabled'] else 'native',
+                                                         'possession_probability':0.7,'possession_end':'any holder change, including teammates',
                                                          'priority':['blitz_curler_setup','long_range_curler','long_range_shooting']}
                             from native_skill_capacity import hooks as capacity_hooks,REVISION as SKILL_CAPACITY_REVISION
                             profile['native_hooks']+=export_call('游戏资料','native-skill-capacity.json','编译技能数量与显示扩展',capacity_hooks,engine)
@@ -685,6 +795,11 @@ class NativePackage:
                                            'presentation_rarity':10 if definition['card_type'] in ('BigTime','Epic','Legendary') else 0})
                     from card_presentation import repair_routes
                     routes=repair_routes(routes,document['players'],records)
+                    if document['game_version']=='V17' or tournament_config:
+                        menu=self.library.face_assets().get('PesMobile/Content/Assets/menu/online/evCompe/MainMenu/BP_MenuEvCompeEventMainMenu.uasset')[0]
+                        with engine_file.open()as schedule_engine:
+                            profile.setdefault('native_hooks',[]).extend(competition_menu_hooks(schedule_engine,self.profile_resources,
+                                hashlib.sha256(menu).hexdigest(),tournament_config))
                     compose(original_binding,routes,profile)
                     document['native_binding']={'routes':routes,'profile':profile,'original_fingerprint':fingerprint(original_binding)}
                     from native_binding_source import installer_metadata

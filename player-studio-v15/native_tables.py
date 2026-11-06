@@ -57,7 +57,8 @@ def player_record(template,project,definition,fields,ability_bits,skill_bits):
     for index,field in ability_bits.items():value=set_bits(value,field['bit'],6,base[int(index)]-40)
     for field in AI_FIELDS.values():value=set_bits(value,field['bit'],1,base[field['parameter']])
     from ai_playing_styles import CUSTOM_SOURCE_BIT
-    value=set_bits(value,CUSTOM_SOURCE_BIT,1,int('lone_wolf' in definition.get('ai_playing_styles',definition['owned'].get('ai_playing_styles',[]))))
+    from ai_playing_styles import definition_value
+    value=set_bits(value,CUSTOM_SOURCE_BIT,1,int('lone_wolf' in definition_value(definition)))
     from native_skill_effects import compiled_skills
     selected=set(compiled_skills(project['innate_skills'],identity['height_cm']))
     # Extended match markers carry custom ownership from either editor list.
@@ -133,7 +134,7 @@ def weekly_table(data,projects,definitions,bindings=None,replace_ids=()):
     return data+b''.join(extra),len(extra)
 
 
-def compile_tables(original,projects,definitions,resources,bindings,extra=None,replace_ids=(),replace_boosters=(),*,source_cpk=None):
+def compile_tables(original,projects,definitions,resources,bindings,extra=None,replace_ids=(),replace_boosters=(),*,source_cpk=None,tournaments=False):
     cpk=source_cpk if source_cpk is not None else Cpk(original)
     if source_cpk is not None and cpk.raw!=original:raise ValueError('资料表解码来源与当前 CPK 不一致')
     wrapped={n:cpk.read(n) for n in (PLAYER,APPEARANCE,VARIATION,ALIASES,BOOSTERS)}
@@ -202,8 +203,11 @@ def compile_tables(original,projects,definitions,resources,bindings,extra=None,r
     for name in cpk.files:
         if name.endswith('/string/all_diff.str'):
             content=cpk.read(name)
-            updated_text=merge_all(content,texts,{text_key(bid)+j for bid in replace_boosters for j in (0,1)},
-                                   text_groups(resources,name.split('/')[0]))
+            groups=text_groups(resources,name.split('/')[0])
+            if tournaments:
+                from tournament_entry import text_groups as entry_text
+                groups+=entry_text(name.split('/')[0])
+            updated_text=merge_all(content,texts,{text_key(bid)+j for bid in replace_boosters for j in (0,1)},groups)
             if updated_text==content:unchanged_strings+=1
             else:replacements[name]=updated_text
     weekly,weekly_added=weekly_table(unwrap(cpk.read(WEEKLY)),projects,definitions,bindings,replace_ids)

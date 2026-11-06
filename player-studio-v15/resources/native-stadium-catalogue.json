@@ -1,0 +1,441 @@
+{
+  "version": 1,
+  "owned_key": "stadium_asset_unlocked_v1",
+  "source": "V22 original custom_stadium literal catalogue",
+  "assets": [
+    {
+      "stadium_asset_type": "ADVERTISE",
+      "stadium_asset_id": 1,
+      "stadium_asset_name": "广告牌 001"
+    },
+    {
+      "stadium_asset_type": "ADVERTISE",
+      "stadium_asset_id": 2,
+      "stadium_asset_name": "广告牌 002"
+    },
+    {
+      "stadium_asset_type": "ADVERTISE",
+      "stadium_asset_id": 31,
+      "stadium_asset_name": "广告牌 031"
+    },
+    {
+      "stadium_asset_type": "ADVERTISE",
+      "stadium_asset_id": 62,
+      "stadium_asset_name": "广告牌 062"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 1,
+      "stadium_asset_name": "场边物品 001"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 2,
+      "stadium_asset_name": "场边物品 002"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 3,
+      "stadium_asset_name": "场边物品 003"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 4,
+      "stadium_asset_name": "场边物品 004"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 5,
+      "stadium_asset_name": "场边物品 005"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 6,
+      "stadium_asset_name": "场边物品 006"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 7,
+      "stadium_asset_name": "场边物品 007"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 8,
+      "stadium_asset_name": "场边物品 008"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 9,
+      "stadium_asset_name": "场边物品 009"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 10,
+      "stadium_asset_name": "场边物品 010"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 11,
+      "stadium_asset_name": "场边物品 011"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 31,
+      "stadium_asset_name": "场边物品 031"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 32,
+      "stadium_asset_name": "场边物品 032"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 33,
+      "stadium_asset_name": "场边物品 033"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 41,
+      "stadium_asset_name": "场边物品 041"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 42,
+      "stadium_asset_name": "场边物品 042"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 51,
+      "stadium_asset_name": "场边物品 051"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 52,
+      "stadium_asset_name": "场边物品 052"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 61,
+      "stadium_asset_name": "场边物品 061"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 62,
+      "stadium_asset_name": "场边物品 062"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 63,
+      "stadium_asset_name": "场边物品 063"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 71,
+      "stadium_asset_name": "场边物品 071"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 76,
+      "stadium_asset_name": "场边物品 076"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 77,
+      "stadium_asset_name": "场边物品 077"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 78,
+      "stadium_asset_name": "场边物品 078"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 79,
+      "stadium_asset_name": "场边物品 079"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 80,
+      "stadium_asset_name": "场边物品 080"
+    },
+    {
+      "stadium_asset_type": "OBJECT",
+      "stadium_asset_id": 81,
+      "stadium_asset_name": "场边物品 081"
+    },
+    {
+      "stadium_asset_type": "ENTRANCE",
+      "stadium_asset_id": 1,
+      "stadium_asset_name": "入场主题 / TIFO 001"
+    },
+    {
+      "stadium_asset_type": "ENTRANCE",
+      "stadium_asset_id": 2,
+      "stadium_asset_name": "入场主题 / TIFO 002"
+    },
+    {
+      "stadium_asset_type": "ENTRANCE",
+      "stadium_asset_id": 3,
+      "stadium_asset_name": "入场主题 / TIFO 003"
+    },
+    {
+      "stadium_asset_type": "ENTRANCE",
+      "stadium_asset_id": 4,
+      "stadium_asset_name": "入场主题 / TIFO 004"
+    },
+    {
+      "stadium_asset_type": "ENTRANCE",
+      "stadium_asset_id": 5,
+      "stadium_asset_name": "入场主题 / TIFO 005"
+    },
+    {
+      "stadium_asset_type": "ENTRANCE",
+      "stadium_asset_id": 6,
+      "stadium_asset_name": "入场主题 / TIFO 006"
+    },
+    {
+      "stadium_asset_type": "ENTRANCE",
+      "stadium_asset_id": 7,
+      "stadium_asset_name": "入场主题 / TIFO 007"
+    },
+    {
+      "stadium_asset_type": "ENTRANCE",
+      "stadium_asset_id": 21,
+      "stadium_asset_name": "入场主题 / TIFO 021"
+    },
+    {
+      "stadium_asset_type": "ENTRANCE",
+      "stadium_asset_id": 31,
+      "stadium_asset_name": "入场主题 / TIFO 031"
+    },
+    {
+      "stadium_asset_type": "ENTRANCE",
+      "stadium_asset_id": 41,
+      "stadium_asset_name": "入场主题 / TIFO 041"
+    },
+    {
+      "stadium_asset_type": "ENTRANCE",
+      "stadium_asset_id": 42,
+      "stadium_asset_name": "入场主题 / TIFO 042"
+    },
+    {
+      "stadium_asset_type": "ENTRANCE",
+      "stadium_asset_id": 51,
+      "stadium_asset_name": "入场主题 / TIFO 051"
+    },
+    {
+      "stadium_asset_type": "ENTRANCE",
+      "stadium_asset_id": 61,
+      "stadium_asset_name": "入场主题 / TIFO 061"
+    },
+    {
+      "stadium_asset_type": "ENTRANCE",
+      "stadium_asset_id": 62,
+      "stadium_asset_name": "入场主题 / TIFO 062"
+    },
+    {
+      "stadium_asset_type": "ENTRANCE",
+      "stadium_asset_id": 65,
+      "stadium_asset_name": "入场主题 / TIFO 065"
+    },
+    {
+      "stadium_asset_type": "ENTRANCE",
+      "stadium_asset_id": 67,
+      "stadium_asset_name": "入场主题 / TIFO 067"
+    },
+    {
+      "stadium_asset_type": "ENTRANCE",
+      "stadium_asset_id": 68,
+      "stadium_asset_name": "入场主题 / TIFO 068"
+    },
+    {
+      "stadium_asset_type": "ENTRANCE",
+      "stadium_asset_id": 69,
+      "stadium_asset_name": "入场主题 / TIFO 069"
+    },
+    {
+      "stadium_asset_type": "ENTRANCE",
+      "stadium_asset_id": 70,
+      "stadium_asset_name": "入场主题 / TIFO 070"
+    },
+    {
+      "stadium_asset_type": "ENTRANCE",
+      "stadium_asset_id": 71,
+      "stadium_asset_name": "入场主题 / TIFO 071"
+    },
+    {
+      "stadium_asset_type": "ENTRANCE",
+      "stadium_asset_id": 72,
+      "stadium_asset_name": "入场主题 / TIFO 072"
+    },
+    {
+      "stadium_asset_type": "ENTRANCE",
+      "stadium_asset_id": 73,
+      "stadium_asset_name": "入场主题 / TIFO 073"
+    },
+    {
+      "stadium_asset_type": "EFFECT_GOAL",
+      "stadium_asset_id": 1,
+      "stadium_asset_name": "进球特效 001"
+    },
+    {
+      "stadium_asset_type": "EFFECT_GOAL",
+      "stadium_asset_id": 2,
+      "stadium_asset_name": "进球特效 002"
+    },
+    {
+      "stadium_asset_type": "EFFECT_GOAL",
+      "stadium_asset_id": 3,
+      "stadium_asset_name": "进球特效 003"
+    },
+    {
+      "stadium_asset_type": "EFFECT_GOAL",
+      "stadium_asset_id": 4,
+      "stadium_asset_name": "进球特效 004"
+    },
+    {
+      "stadium_asset_type": "EFFECT_GOAL",
+      "stadium_asset_id": 5,
+      "stadium_asset_name": "进球特效 005"
+    },
+    {
+      "stadium_asset_type": "EFFECT_GOAL",
+      "stadium_asset_id": 6,
+      "stadium_asset_name": "进球特效 006"
+    },
+    {
+      "stadium_asset_type": "EFFECT_GOAL",
+      "stadium_asset_id": 31,
+      "stadium_asset_name": "进球特效 031"
+    },
+    {
+      "stadium_asset_type": "EFFECT_GOAL",
+      "stadium_asset_id": 32,
+      "stadium_asset_name": "进球特效 032"
+    },
+    {
+      "stadium_asset_type": "EFFECT_GOAL",
+      "stadium_asset_id": 33,
+      "stadium_asset_name": "进球特效 033"
+    },
+    {
+      "stadium_asset_type": "PROJECTION_GOAL",
+      "stadium_asset_id": 1,
+      "stadium_asset_name": "进球投影 001"
+    },
+    {
+      "stadium_asset_type": "PROJECTION_GOAL",
+      "stadium_asset_id": 31,
+      "stadium_asset_name": "进球投影 031"
+    },
+    {
+      "stadium_asset_type": "PROJECTION_GOAL",
+      "stadium_asset_id": 32,
+      "stadium_asset_name": "进球投影 032"
+    },
+    {
+      "stadium_asset_type": "PROJECTION_GOAL",
+      "stadium_asset_id": 61,
+      "stadium_asset_name": "进球投影 061"
+    },
+    {
+      "stadium_asset_type": "PROJECTION_GOAL",
+      "stadium_asset_id": 64,
+      "stadium_asset_name": "进球投影 064"
+    },
+    {
+      "stadium_asset_type": "PROJECTION_KICKOFF",
+      "stadium_asset_id": 1,
+      "stadium_asset_name": "开球投影 001"
+    },
+    {
+      "stadium_asset_type": "PROJECTION_KICKOFF",
+      "stadium_asset_id": 31,
+      "stadium_asset_name": "开球投影 031"
+    },
+    {
+      "stadium_asset_type": "PROJECTION_KICKOFF",
+      "stadium_asset_id": 61,
+      "stadium_asset_name": "开球投影 061"
+    },
+    {
+      "stadium_asset_type": "PROJECTION_KICKOFF",
+      "stadium_asset_id": 62,
+      "stadium_asset_name": "开球投影 062"
+    }
+  ],
+  "anchors": [
+    {
+      "id": 1,
+      "position_cm": [
+        -6000,
+        1500,
+        0
+      ],
+      "yaw": 270,
+      "label": "A 端球门后方 · 上侧",
+      "description": "位于 A 端球门后侧，靠示意图上半侧。"
+    },
+    {
+      "id": 2,
+      "position_cm": [
+        -6000,
+        -1500,
+        0
+      ],
+      "yaw": 270,
+      "label": "A 端球门后方 · 下侧",
+      "description": "位于 A 端球门后侧，靠示意图下半侧。"
+    },
+    {
+      "id": 3,
+      "position_cm": [
+        -2050,
+        -4050,
+        0
+      ],
+      "yaw": 0,
+      "label": "长边场外 · A 侧",
+      "description": "位于示意图下方长边，靠 A 端的半场。"
+    },
+    {
+      "id": 4,
+      "position_cm": [
+        2050,
+        -4050,
+        0
+      ],
+      "yaw": 0,
+      "label": "长边场外 · B 侧",
+      "description": "位于示意图下方长边，靠 B 端的半场。"
+    },
+    {
+      "id": 5,
+      "position_cm": [
+        6000,
+        -1500,
+        0
+      ],
+      "yaw": 90,
+      "label": "B 端球门后方 · 下侧",
+      "description": "位于 B 端球门后侧，靠示意图下半侧。"
+    },
+    {
+      "id": 6,
+      "position_cm": [
+        6000,
+        1500,
+        0
+      ],
+      "yaw": 90,
+      "label": "B 端球门后方 · 上侧",
+      "description": "位于 B 端球门后侧，靠示意图上半侧。"
+    }
+  ],
+  "anchor_source": {
+    "package": "/Game/Assets/bg/AdditionalAsset/Object/object",
+    "actors": "BP_PitchsideObject1..6",
+    "decoded_sha256": "d4630d62bf840e34db10976436c20b8d3514b297efc997a849c23aba818c4e80",
+    "coordinates": "native centimetres; X pitch length, Y pitch width, Z up; schematic A/B are not home/away"
+  }
+}

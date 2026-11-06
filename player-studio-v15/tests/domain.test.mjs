@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {simulate,trainingCost,autoAllocate,selectCardType,selectCardSeries,coachFactor} from '../web/domain.js';
+import {simulate,normalizeTraining,trainingCost,autoAllocate,selectCardType,selectCardSeries,coachFactor} from '../web/domain.js';
 import {nativeCardState,cardLayerOrder} from '../web/native-card.js';
 import {applyCardPreset,formatCardDate,originalCardDate} from '../web/card-design.js';
 const catalog=JSON.parse(readFileSync(new URL('../resources/catalog.json',import.meta.url)));
@@ -9,6 +9,33 @@ catalog.coaches=JSON.parse(readFileSync(new URL('../resources/coaches.json',impo
 function project(){return {identity:{position:'CF'},card_type:'Epic',initial_level:35,
   base_abilities:Object.fromEntries(Object.keys(catalog.ABILITIES).map(k=>[k,65])),
   training:Object.fromEntries(catalog.training_groups.map(g=>[g.id,0])),booster_ids:[0,0],conditional_boosters:false};}
+
+test('legacy level and training overflow use a valid maximum-level allocation',()=>{
+  for(const [level,cap,count]of [[60,25,0],[2,35,12],[35,35,40],[1,1,40]]){
+    const p=project();p.initial_level=level;p.max_level=cap;p.training.SHOOT=count;
+    normalizeTraining(p,catalog);
+    assert.equal(p.initial_level,cap);assert.deepEqual(p.training,autoAllocate(p,catalog));
+    const s=simulate(p,catalog);assert.ok(s.valid);assert.ok(s.remaining>=0);assert.ok(s.spent<=2*(cap-1));
+  }
+});
+test('maximum-level auto allocation and valid manual lower-level designs stay distinct',()=>{
+  const p=project();p.initial_level=10;p.max_level=35;p.training.SHOOT=4;
+  const before=structuredClone(p);normalizeTraining(p,catalog);assert.deepEqual(p,before);
+  const plan=autoAllocate(p,catalog);assert.ok(Object.values(plan).reduce((s,n)=>s+trainingCost(n),0)>18);
+  p.training=plan;normalizeTraining(p,catalog);assert.equal(p.initial_level,35);assert.ok(simulate(p,catalog).valid);
+});
+test('normalization and repeated preview refresh keep the same project and training identity',()=>{
+  const p=project();p.max_level=25;p.initial_level=60;p.identity.number=77;p.weekly_condition='B';
+  const identity=p.identity,training=p.training;let observed=null,reads=0;
+  for(let i=0;i<200;i++){
+    assert.equal(normalizeTraining(p,catalog),p);
+    simulate(p,catalog);
+    if(observed!==p){observed=p;reads++;}
+    assert.equal(p.identity,identity);assert.equal(p.training,training);
+    assert.equal(p.identity.number,77);assert.equal(p.weekly_condition,'B');
+  }
+  assert.equal(reads,1);assert.equal(p.initial_level,25);
+});
 
 test('replacement portrait is visible above opaque BT preset mechanics',()=>{
   const preset=JSON.parse(readFileSync(new URL('../resources/native-card-presets.json',import.meta.url))).rows.find(p=>p.id==='0228d3fa5b56402988236642');
@@ -84,14 +111,14 @@ test('conditional boosters only apply when enabled',()=>{
 });
 test('auto allocation stays in budget at all supported levels and positions',()=>{
   for(const position of catalog.POSITIONS)for(const level of [1,2,10,35,50,61,80,100]){
-    const p=project();p.initial_level=level;p.identity.position=position;p.training=autoAllocate(p,catalog);
+    const p=project();p.initial_level=level;p.max_level=level;p.identity.position=position;p.training=autoAllocate(p,catalog);
     const s=simulate(p,catalog);assert.ok(s.spent<=2*(level-1));assert.ok(Object.values(s.trained).every(v=>v<=105));
     assert.equal(s.valid,true);
   }
 });
-test('trending has no ordinary training points and over-allocation stays visible',()=>{
+test('trending has no ordinary training points and old allocation is repaired',()=>{
   const p=project();p.card_type='Trending';p.training.SHOOT=1;const s=simulate(p,catalog);
-  assert.equal(s.budget,0);assert.equal(s.remaining,-1);assert.equal(s.valid,false);
+  assert.equal(s.budget,0);assert.equal(s.remaining,0);assert.equal(s.valid,true);assert.deepEqual(s.trained,s.base);
 });
 test('native position priorities keep outfield players out of goalkeeper training',()=>{
   for(const position of catalog.POSITIONS.filter(p=>p!=='GK')){

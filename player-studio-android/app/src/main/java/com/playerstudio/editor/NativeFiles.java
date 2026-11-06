@@ -23,6 +23,7 @@ public final class NativeFiles {
     private static File pendingInstall;
     private static final Map<String,ParcelFileDescriptor> descriptors=new ConcurrentHashMap<>();
     private static final ExecutorService io=Executors.newSingleThreadExecutor();
+    private static final long VIDEO_LIMIT=512L*1024*1024;
     static Context applicationContext(){return context;}
     public static String descriptorSnapshot() throws Exception {
         JSONObject result=new JSONObject();for(Map.Entry<String,ParcelFileDescriptor> entry:descriptors.entrySet())result.put(entry.getKey(),entry.getValue().getFd());return result.toString();
@@ -46,7 +47,7 @@ public final class NativeFiles {
         BaseActivity activity=BaseActivity.activity();
         activity.runOnUiThread(()->{
             Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE);
-            intent.setType("image".equals(selectedCategory)?"image/*":"*/*");
+            intent.setType("image".equals(selectedCategory)?"image/*":"motion-video".equals(selectedCategory)?"video/*":"*/*");
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
             activity.startActivityForResult(intent,100);
         });
@@ -93,12 +94,54 @@ public final class NativeFiles {
             context.getSharedPreferences("sourceDocuments",0).edit().putString(filename,uri.toString()).apply();
             return path;
         }
+        if("motion-video".equals(selectedCategory)) {
+            if(!name.toLowerCase(Locale.ROOT).matches(".*\\.(mp4|mov|webm)$"))throw new IOException("请选择 MP4、MOV 或 WebM 视频");
+            long declaredSize=-1;
+            try(Cursor cursor=context.getContentResolver().query(uri,new String[]{OpenableColumns.SIZE},null,null,null)) {
+                if(cursor!=null&&cursor.moveToFirst()&&!cursor.isNull(0))declaredSize=cursor.getLong(0);
+            }catch(Exception ignored){} // Some providers omit SIZE; fstat/bounded copy still enforce the limit.
+            if(declaredSize>VIDEO_LIMIT)throw new IOException("视频不能超过 512 MB");
+            // Seekable local SAF documents can be read without a cache copy.
+            ParcelFileDescriptor descriptor=null;
+            try {
+                descriptor=context.getContentResolver().openFileDescriptor(uri,"r");
+                if(descriptor==null)throw new IOException("视频无法打开");
+                Os.lseek(descriptor.getFileDescriptor(),0,OsConstants.SEEK_CUR);
+                long size=descriptor.getStatSize();
+                if(size>VIDEO_LIMIT)throw new IOException("视频不能超过 512 MB");
+                if(size<1)throw new IOException("此文件提供方需要复制读取");
+                context.getContentResolver().takePersistableUriPermission(uri,flags&Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                String filename=stableName(uri,name);File alias=aliasFile(filename);
+                registerDescriptor(alias,descriptor);descriptor=null;
+                context.getSharedPreferences("sourceDocuments",0).edit().putString(filename,uri.toString()).apply();
+                return alias.getAbsolutePath();
+            }catch(Exception e) {
+                if(e instanceof IOException&&"视频不能超过 512 MB".equals(e.getMessage()))throw e;
+                // Non-seekable providers and transient grants use a bounded copy.
+            }finally{if(descriptor!=null)descriptor.close();}
+        }
         File folder=new File(context.getCacheDir(),"selected-inputs");folder.mkdirs();
         File dest=new File(folder,UUID.randomUUID()+"-"+name);
+        boolean complete=false;
         try(InputStream input=context.getContentResolver().openInputStream(uri);OutputStream output=new FileOutputStream(dest)) {
-            if(input==null)throw new IOException("文件无法打开");copy(input,output);
-        }
+            if(input==null)throw new IOException("文件无法打开");
+            if("motion-video".equals(selectedCategory))copyLimited(input,output,VIDEO_LIMIT);else copy(input,output);
+            complete=true;
+        }finally{if(!complete)dest.delete();}
         return dest.getAbsolutePath();
+    }
+    private static void copyLimited(InputStream in,OutputStream out,long limit)throws IOException {
+        byte[] buffer=new byte[1024*1024];long total=0;int count;
+        while((count=in.read(buffer))!=-1){total+=count;if(total>limit)throw new IOException("视频不能超过 512 MB");out.write(buffer,0,count);}
+    }
+    public static ParcelFileDescriptor openVideoDescriptor(String path)throws Exception {
+        File file=new File(path);ParcelFileDescriptor original=descriptors.get(file.getAbsolutePath());
+        if(original==null)for(Map.Entry<String,ParcelFileDescriptor> entry:descriptors.entrySet())
+            if(new File(entry.getKey()).getCanonicalPath().equals(file.getCanonicalPath())){original=entry.getValue();break;}
+        ParcelFileDescriptor result=original==null?ParcelFileDescriptor.open(file,ParcelFileDescriptor.MODE_READ_ONLY):ParcelFileDescriptor.dup(original.getFileDescriptor());
+        long size=result.getStatSize();
+        if(size<1||size>VIDEO_LIMIT){result.close();throw new IOException(size>VIDEO_LIMIT?"视频不能超过 512 MB":"视频文件为空或无法读取大小");}
+        return result;
     }
     private static void copy(InputStream in,OutputStream out) throws IOException {
         byte[] buffer=new byte[1024*1024];int count;while((count=in.read(buffer))!=-1)out.write(buffer,0,count);

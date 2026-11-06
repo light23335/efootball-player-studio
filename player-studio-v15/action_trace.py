@@ -31,6 +31,44 @@ STAGES={1:'native_request_before_preference',2:'request_after_preference',
 ACTIONS={}
 SHOT_TYPES={0:'普通射门',1:'控制射门',2:'挑射',3:'大力射门（紫射）',4:'原生射门模式 1'}
 NATIVE_KINDS=(1,2,3,4,6,7)
+SELECTION_REASONS={
+    20:('possession_roll_rejected','本次持球未命中70%风格标志'),
+    21:('not_current_ball_holder','当前不是本球员持球'),
+    23:('forced_incisive_route','本次持球强制选择内切路线'),
+    24:('no_executable_incisive_route','当前没有可执行的内切路线'),
+    26:('possession_state_busy','持球标志同步繁忙，本次保留原生'),
+    27:('possession_changed_during_decision','决策期间球权已变化，原标志失效'),
+    28:('possession_context_missing','本次原生持球上下文缺失'),
+    1:('native_no_candidate','原生无可用候选'),
+    2:('missing_selector_context','候选选择上下文缺失'),
+    3:('unsupported_native_class','原生候选类别尚未纳入比较'),
+    4:('native_special_shot_mode','保留原生特殊射门候选'),
+    5:('profile_rejected','增强资格检查未通过'),
+    6:('snapshot_rejected','位置快照检查未通过'),
+    7:('invalid_candidate_list','原生候选列表无效'),
+    8:('protected_native_pass','保留原生保护传球'),
+    9:('protected_alternative_pass','保留已通过原生检查的保护传球'),
+    10:('original_not_in_list','原生选择不在候选列表内'),
+    11:('original_not_comparable','原生选择不满足当前比较条件'),
+    12:('no_alternative_class','没有其它可用动作类别'),
+    13:('equal_draw_kept_native','等权选择保留原生候选'),
+    14:('equal_draw_changed','等权选择改写候选'),
+    15:('lone_wolf_kept_native','独狼优选与原生候选一致'),
+    16:('lone_wolf_shot','独狼选择可用射门'),
+    17:('lone_wolf_route','独狼选择射门准备路线'),
+    18:('lone_wolf_no_usable_route_or_shot','独狼无可用射门或准备路线'),
+    19:('draw_unavailable','等权选择未返回可用类别')}
+PROFILE_REASONS={1:'上下文缺失',2:'球员槽位或比赛根缺失',3:'球员槽位无效',
+    4:'比赛信息缺失',5:'不在比赛进行阶段',6:'能力资料缺失',7:'普通增强关闭且没有独狼',
+    8:'缺少对应风格或配套射门技能',9:'球队资料缺失',10:'进攻方向无效',
+    11:'球场资料缺失',12:'球员位置资料缺失',13:'球场尺寸无效',14:'位置或朝向无效',
+    15:'当前射门距离不在8至44米范围',16:'没有内切或独狼风格',17:'当前不是本球员持球',
+    18:'本次持球未命中70%标志',19:'当前控球者资料缺失',20:'持球标志同步繁忙'}
+SNAPSHOT_REASONS={1:'上下文缺失',2:'球员槽位或比赛根缺失',3:'球员槽位无效',
+    4:'比赛信息缺失',5:'不在比赛进行阶段',6:'球场资料缺失',7:'球场尺寸无效',
+    8:'球队资料缺失',9:'进攻方向无效',10:'在场球员位置资料缺失',
+    11:'在场球员坐标无效',12:'当前动作球员在界外',13:'双方有效在场人数不足',
+    14:'当前动作球员未处于有效在场名单',15:'当前动作球员能力资料缺失'}
 _THREADS=[]
 _CHANNELS=[]
 _CONFIG=None
@@ -116,6 +154,30 @@ def decode_event(raw):
                              'changed':original!=selected,'no_executable_candidate':original==30 and selected==30,'motion_execution_confirmed':False}
         if original==30:record['candidate']['original_name']='当前无可用候选'
         if selected==30:record['candidate']['selected_name']='当前无可用候选'
+        diagnostic,profile,decision_flags=struct.unpack_from('<3I',raw,136)
+        if reason==6 and diagnostic>>16==0x5345 and diagnostic&65535 in SELECTION_REASONS:
+            code=diagnostic&65535;label,description=SELECTION_REASONS[code]
+            count,seen,usable,vetoed,classes,detail=struct.unpack_from('<6I',raw,152)
+            ids=lambda mask:[i for i in range(30)if mask&(1<<i)]
+            selection={'version':1,'reason_code':code,'reason':label,'description':description,
+                'profile':profile,'profile_name':{0:'未通过资格检查',1:'普通射门',2:'搓射',3:'弧线落叶'}.get(profile,'未知'),
+                'incisive_branch':bool(decision_flags&256),'lone_wolf_branch':bool(decision_flags&512),
+                'candidate_count':count,'evaluated_ids':ids(seen),'comparable_ids':ids(usable),
+                'native_vetoed_ids':ids(vetoed),'action_classes':[names.get(i,str(i))for i in (1,2,3)if classes&(1<<i)],
+                'detail_raw':detail,'changed':original!=selected}
+            if code==5:selection['qualification_failure']=PROFILE_REASONS.get(detail,'未知资格检查原因')
+            if code==6:selection['snapshot_failure']=SNAPSHOT_REASONS.get(detail,'未知位置快照原因')
+            if code==21:
+                selection['native_owner_raw']=detail
+                selection['native_owner_slot']=detail if detail<22 else None
+            if decision_flags&0x1000 and code not in(5,6):
+                selection['version']=2
+                selection['possession']={'epoch':detail>>4,'roll':detail&15,'probability':.7,
+                    'active':bool(decision_flags&0x2000)and code!=27,
+                    'expired_during_decision':code==27,'draw_scope':'individual_possession',
+                    'end_on_teammate_handoff':True}
+                selection['style_eligible_ids']=selection['comparable_ids']
+            record['candidate']['selection']=selection
     ai_flags=struct.unpack_from('<I',raw,148)[0]
     record['ai_styles']=[name for bit,name in ((4,'内切突破'),(7,'独狼'))if ai_flags&(1<<bit)]
     flags=struct.unpack_from('<I',raw,100)[0]
@@ -185,12 +247,13 @@ class RingReader:
 
 
 class Journal:
-    def __init__(self,root,max_bytes=32*1024*1024,names=None):
+    def __init__(self,root,max_bytes=32*1024*1024,names=None,expected_styles=None):
         self.folder=Path(root)/'outputs/efootball/player-actions';self.folder.mkdir(parents=True,exist_ok=True)
         self.max_bytes=max_bytes;self.part=0;self.path=None;self.stream=None;self.names=names or {}
         self.run=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')+'-'+str(os.getpid())
         self.total=0;self.lock=threading.RLock();self.completed=[];self._open()
         self.counts={};self.match_id=None;self.roster={}
+        self.expected_styles=copy.deepcopy(expected_styles or {});self.selection_counts={}
         self.losses={'ring_overrun':0,'native_contention':0,'metadata':0,'unknown':False}
 
     def _open(self):
@@ -209,6 +272,16 @@ class Journal:
                 value={'utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),**event}
                 if self.match_id is not None:value['match_id']=self.match_id
                 if value.get('player_id') in self.names:value['player_name']=self.names[value['player_id']]
+                expected=self.expected_styles.get(value.get('player_id'))
+                if value.get('identity_verified') and 'ai_styles'in value and expected is not None:
+                    value['configured_ai_styles']=list(expected)
+                    value['missing_runtime_ai_styles']=[s for s in expected if s not in value['ai_styles']]
+                selection=(value.get('candidate')or{}).get('selection')
+                if selection:
+                    styles=value.get('ai_styles',[])
+                    group='combined'if '独狼'in styles and '内切突破'in styles else 'lone_wolf'if '独狼'in styles else 'incisive'if '内切突破'in styles else 'untagged'
+                    counts=self.selection_counts.setdefault(group,{})
+                    counts[selection['reason']]=counts.get(selection['reason'],0)+1
                 self.counts[value['event']]=self.counts.get(value['event'],0)+1
                 if value['event']in ('trace_overrun','trace_contention','trace_metadata_overrun'):
                     key={'trace_overrun':'ring_overrun','trace_contention':'native_contention','trace_metadata_overrun':'metadata'}[value['event']]
@@ -222,6 +295,7 @@ class Journal:
             status={'enabled':True,'events':self.total,'native_events':native,'event_counts':self.counts,
                     'match_id':self.match_id,'path':self.path.name,'part':self.part,'schema':VERSION,
                     'lost_events':dict(self.losses),
+                    'selection_diagnostics':copy.deepcopy(self.selection_counts),
                     'capture_complete':False,'completion_note':'inspect lifecycle, native counters and gap reports; no universal action coverage proof'}
             tmp=self.folder/'status.tmp';tmp.write_text(json.dumps(status,ensure_ascii=False),'utf8');tmp.replace(self.folder/'status.json')
 
@@ -235,6 +309,7 @@ class Journal:
             if self.match_id is not None:self.append([{'event':'match_capture_closed','reason':'next match','clean_finish':False}])
             self.stream.close();self.completed.append(self.path);self.part=0
             self.match_id=str(match_id);self.roster={};self.counts={};self.total=0
+            self.selection_counts={}
             self.losses={'ring_overrun':0,'native_contention':0,'metadata':0,'unknown':False}
             self.run=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')+'-'+str(os.getpid())+'-match-'+hashlib.sha256(self.match_id.encode()).hexdigest()[:12]
             self._open();self.append([{'event':'match_capture_opened',**metadata}])
@@ -283,7 +358,7 @@ def install_lifecycle(logic=None):
                 elif command=='CMD_GET_VSCOM_GAME_RESULT':
                     result=request.get('match_result')or{}
                     data.update(game_id=result.get('game_id',data['game_id'])or _ACTIVE_GAME,
-                                result={k:v for k,v in result.items()if k in ('score','home_score','away_score','own_goals','opponent_goals','result','game_id')})
+                                result={k:v for k,v in result.items()if k in ('score','home_score','away_score','own_goals','opponent_goals','result','game_id','game_use_cpu_level')})
                     record_lifecycle('match_end',data)
                 elif command in ('CMD_GET_MAINMENU_INFO','CMD_GET_LEAGUE_COM_INFO'):
                     record_lifecycle('match_exit',data)
@@ -303,20 +378,24 @@ def register_channel(buffer,offset,schema,fence):
         return bytes(view[offset+at:offset+at+size])
     channel={'view':view,'offset':offset,'reader':RingReader(read,fence),'fence':fence,'thread':None,'stop':threading.Event()}
     _CHANNELS.append(channel)
-    if _CONFIG and _CONFIG['enabled']:start(channel,_CONFIG['root'],_CONFIG['names'])
+    if _CONFIG and _CONFIG['enabled']:start(channel,_CONFIG['root'],_CONFIG['names'],_CONFIG.get('expected_styles'))
     return channel
 
 
 def configure(root,document):
     global _CONFIG
-    names={}
+    names={};expected_styles={}
     for row in document.get('players',[]):
         identity=row.get('identity',{});owned=row.get('owned',{});name=owned.get('name')or owned.get('name_en')
         if name:
             for cid in [identity.get('card_id'),*identity.get('previous_card_ids',[])]:
                 if type(cid)is int:names[cid]=str(name)
+        styles=row.get('ai_playing_styles',owned.get('ai_playing_styles',[]))or[]
+        selected=[label for key,label in (('incisive_run','内切突破'),('lone_wolf','独狼'))if key in styles]
+        for cid in [identity.get('card_id'),*identity.get('previous_card_ids',[])]:
+            if type(cid)is int:expected_styles[cid]=selected
     enabled=document.get('action_trace',{}).get('enabled')is True
-    _CONFIG={'root':Path(root),'names':names,'enabled':enabled}
+    _CONFIG={'root':Path(root),'names':names,'expected_styles':expected_styles,'enabled':enabled}
     if enabled:
         # Observe a copy already published by the existing match adapter. Its
         # policy, snapshot decoder and native execution proof stay unchanged.
@@ -330,15 +409,16 @@ def configure(root,document):
                 return result
             native_log._studio_action_trace=True;Bridge.native_log=native_log
     for channel in _CHANNELS:
-        if enabled:start(channel,root,names)
+        if enabled:start(channel,root,names,expected_styles)
         else:struct.pack_into('<I',channel['view'],channel['offset']+4,0);channel['fence']()
 
 
-def start(channel,root,names=None):
+def start(channel,root,names=None,expected_styles=None):
     if channel['thread'] is not None:
         channel['journal'].names=names or {}
+        channel['journal'].expected_styles=copy.deepcopy(expected_styles or {})
         struct.pack_into('<I',channel['view'],channel['offset']+4,1);channel['fence']();return
-    journal=Journal(root,names=names);view=channel['view'];at=channel['offset'];fence=channel['fence']
+    journal=Journal(root,names=names,expected_styles=expected_styles);view=channel['view'];at=channel['offset'];fence=channel['fence']
     channel['journal']=journal
     # The native producer remains a no-op until storage and the consumer exist.
     struct.pack_into('<I',view,at,MAGIC);fence();struct.pack_into('<I',view,at+4,1);fence()
@@ -375,6 +455,7 @@ def start(channel,root,names=None):
                 if now-heartbeat>=5:
                     diagnostic=channel['reader'].diagnostics()
                     journal.append([{'event':'trace_heartbeat','native':diagnostic,
+                                     'selection_diagnostics':copy.deepcopy(journal.selection_counts),
                                      'worker_alive':True,'written_native_events':sum(journal.counts.get(KINDS[k],0)for k in NATIVE_KINDS),
                                      'lost_events':diagnostic['dropped'],'capture_complete':False}]);heartbeat=now
                 # Busy matches also export every 15 seconds. File IO remains

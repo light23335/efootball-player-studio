@@ -7,7 +7,7 @@ import copy,hashlib,io,json,os,re,threading,uuid
 FOLDER='PesMobile/Content/Assets/character/DemoFace/Manager/'
 TARGET=re.compile(re.escape(FOLDER)+r'SK_\d+(?:sp\d+v\d+)?_Face\.uasset\Z')
 ASSET=re.compile(r'[a-f0-9]{64}\.glb\Z')
-REVISION='coach-head-v2-lod-materials'
+REVISION='coach-head-v3-expression-preview'
 
 
 def target_path(value):
@@ -26,6 +26,9 @@ def normalize(value):
         asset=value.get('asset_id')
         if not isinstance(asset,str) or not ASSET.fullmatch(asset):raise ValueError('请导入完整的 GLB 教练头模')
         row['asset_id']=asset
+    if 'preserve_expression'in value:
+        if type(value['preserve_expression'])is not bool:raise ValueError('保持导入表情必须为开关值')
+        row['preserve_expression']=value['preserve_expression']
     return row
 
 
@@ -37,7 +40,7 @@ class CoachHeadStore:
         with self.lock:
             if not self.path.exists():return []
             doc=_export_data("资料文件",self.path,"读取并解析 JSON",lambda: json.loads(self.path.read_text(encoding='utf8')))
-            if doc.get('version')!=1 or not isinstance(doc.get('rows'),list):raise ValueError('教练头模配置版本无效')
+            if not isinstance(doc,dict) or doc.get('version')!=1 or not isinstance(doc.get('rows'),list):raise ValueError('教练头模配置版本无效')
             rows=[normalize(r) for r in doc['rows']]
             if len({r['target'] for r in rows})!=len(rows):raise ValueError('教练头模配置包含重复目标')
             return rows
@@ -63,7 +66,7 @@ class CoachHeadStore:
 
 
 def catalogue(library,coaches):
-    if library.state['phase']!='ready':return {'ready':False,'rows':[],'saved':CoachHeadStore(library.store.root).list()}
+    if library.state['phase']!='ready':return {'ready':False,'rows':[]}
     paths=sorted({p.removeprefix('../../../') for p in library.face_assets().files if TARGET.fullmatch(p.removeprefix('../../../'))})
     rows=[]
     for path in paths:
@@ -75,7 +78,7 @@ def catalogue(library,coaches):
         family=[c for c in coaches if int(c['id'])&0xfffffff==base]
         label=next((c.get('name') or c.get('name_en') for c in matches or family),'未匹配姓名')
         rows.append({'path':path,'name':name,'label':label,'variant':variant,'coach_ids':[str(c['id']) for c in matches]})
-    return {'ready':True,'rows':rows,'saved':CoachHeadStore(library.store.root).list()}
+    return {'ready':True,'rows':rows}
 
 
 def require_path(library,path):
@@ -140,7 +143,7 @@ def lod_material_bindings(mesh,materials,lod_count):
     return result
 
 
-def compile_head(library,value,destination=None):
+def compile_head(library,value,destination=None,*,preview_variants=None):
     """Build real cooked packages for an existing manager path, plus read-back proof."""
     from native_art import logical_package,clone_group,texture
     from native_iostore import rename_package,package_names
@@ -174,7 +177,11 @@ def compile_head(library,value,destination=None):
     document=_export_data("资料文件",library.converted / Path(target).with_suffix('.json'),"读取并解析 JSON",lambda: json.loads((library.converted/Path(target).with_suffix('.json')).read_text(encoding='utf-8-sig')))
     mesh=next((e for e in document if e.get('Type')=='SkeletalMesh' and e.get('ImportedBounds')),None)
     if mesh is None:raise ValueError('教练头模边界资料未能解码')
-    converted,mesh_report=replace_head(raw,bound,reference,mesh,neck_seam=False,preserve_expression=False)
+    protected=row.get('preserve_expression',False)  # Legacy edits keep their existing facial animation.
+    converted,mesh_report=replace_head(raw,bound,reference,mesh,neck_seam=False,preserve_expression=protected)
+    if preview_variants is not None:
+        unprotected=replace_head(raw,bound,reference,mesh,neck_seam=False,preserve_expression=False)[0]if protected else converted
+        preview_variants['raw']=mesh_glb(type('Source',(),{'raw':lambda self,p:unprotected})(),target_name)
     bindings=lod_material_bindings(mesh,reference.doc['materials'],mesh_report['lods'])
     from PIL import Image
     image=Image.open(io.BytesIO(bound.image())).convert('RGBA')
@@ -224,7 +231,7 @@ def compile_head(library,value,destination=None):
     encoded=next(data for name,data,_ in packages if name==output_name)
     if output_name not in package_names(encoded):raise ValueError('教练头模资源名写回校验失败')
     preview=mesh_glb(type('Source',(),{'raw':lambda self,p:encoded})(),output_name)
-    report.update(destination=output_name,asset_id=row['asset_id'],rig=rig,mesh=mesh_report,face=face_details(encoded),material_template=bindings[0]['shader_template'],lod_material_bindings=bindings,material_revision=REVISION,private_packages=list(renames.values())[1:])
+    report.update(destination=output_name,asset_id=row['asset_id'],preserve_expression=protected,rig=rig,mesh=mesh_report,face=face_details(encoded),material_template=bindings[0]['shader_template'],lod_material_bindings=bindings,material_revision=REVISION,private_packages=list(renames.values())[1:])
     return packages,report,preview,image
 
 
@@ -233,8 +240,9 @@ def preview(library,value):
     row=normalize(value)
     if row['mode']=='native':
         result=dict(original(library,row['source']));result['report']={'mode':'native','target':row['target'],'source':row['source'],'in_game_tested':False}
-        require_path(library,row['target']);return result
-    packages,report,raw,image=compile_head(library,row)
+        require_path(library,row['target']);return with_expression_preview(result)
+    variants={}
+    packages,report,raw,image=compile_head(library,row,preview_variants=variants)
     from native_glb import Glb
     doc=Glb(raw).doc
     folder=library.store.root/'tmp';folder.mkdir(exist_ok=True)
@@ -244,7 +252,23 @@ def preview(library,value):
     materials={m['name']:(png.getvalue(),{}) for m in doc['materials']}
     output=path.with_name(path.stem+'-textured.glb');glb_textures(path,materials,output)
     asset=library.store.import_asset(output,'model')
-    return {'asset_id':asset['id'],'url':asset['url'],'report':report}
+    if variants.get('raw')is not None and variants['raw']!=raw:
+        unprotected=variants['raw'];token=hashlib.sha256(unprotected).hexdigest()
+        raw_path=folder/('coach-expression-raw-'+token+'.glb');raw_path.write_bytes(unprotected)
+        raw_output=raw_path.with_name(raw_path.stem+'-textured.glb')
+        raw_doc=Glb(unprotected).doc
+        glb_textures(raw_path,{m['name']:(png.getvalue(),{})for m in raw_doc['materials']},raw_output)
+        raw_asset=library.store.import_asset(raw_output,'model')
+    else:raw_asset=asset
+    return with_expression_preview({'asset_id':asset['id'],'url':asset['url'],'report':report},raw_asset['url'],row.get('preserve_expression',False))
+
+
+def with_expression_preview(result,raw_url=None,protected=False):
+    """Use the same HeadTools contract as players, without player neck fitting."""
+    return dict(result,head_preview={'revision':REVISION,'export_url':result['url'],
+        'raw_url':raw_url or result['url'],'anchors':{},'protected':protected,
+        'original_game_face':result.get('report',{}).get('mode')!='custom',
+        'notice':'张嘴与闭眼临时测试原面部权重，归零恢复导出效果；不会改变保存的表情设置。'})
 
 
 def compile_heads(library,rows):

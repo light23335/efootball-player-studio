@@ -35,7 +35,8 @@ class LiveDataTests(unittest.TestCase):
         self.assertEqual(module._R9_RESOURCE_CHECKS,[{'bytes':61384704,'sha256':new}])
 
     def apk(self,download=b'actual-cpk',old_template=False,old_document=False,old_manifest=False):
-        cpk=b'actual-cpk';t=compile_template(self.template(),b'old'if old_template else cpk,2026101905)
+        template=self.template();info=json.loads(template['version_file']);info['dt880']=[];template['version_file']=json.dumps(info)
+        cpk=b'actual-cpk';t=compile_template(template,b'old'if old_template else cpk,2026101905)
         report=verify_template(compile_template(self.template(),b'old'if old_document else cpk,2026101905),b'old'if old_document else cpk)
         meta={'bytes':len(cpk),'sha256':hashlib.sha256(cpk).hexdigest()}
         doc={'live_data':report,'resource_files':{'dt870_mobile_and.cpk':meta}}

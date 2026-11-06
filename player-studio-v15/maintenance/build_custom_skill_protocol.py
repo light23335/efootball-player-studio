@@ -171,6 +171,15 @@ movk w10,#{COMPACT_TAG >> 16},lsl #16
 cmp w9,w10
 and w8,w8,#0x80
 csel w8,w8,wzr,eq
+// Match records reconstructed through the native 147-parameter protocol may
+// have no extension padding. Carry this independent style by exact native
+// card identity as well; registered OFF rows also clear stale source flags.
+str x30,[sp,#-16]!
+mov w1,w8
+mov x0,x20
+bl shared_studio_lone_wolf_card_binding
+mov w8,w0
+ldr x30,[sp],#16
 ldr w9,[x19,#0xd4]
 bic w9,w9,#0x80
 orr w9,w9,w8
@@ -178,7 +187,58 @@ str w9,[x19,#0xd4]
 add x0,sp,#8
 {jump('resume')}
 ''',{'resume':address+4},evidence=['Player.bin bit 687 -> tagged compact +34 bit 7 -> match AI flag 7',
+    'exact native card identity carries the authored style when protocol reconstruction drops extension padding',
     'preserves all seven original AI flags; never uses a skill ID'])
+    builder.helper('studio_lone_wolf_card_binding',f'''
+stp x19,x20,[sp,#-48]!
+stp x21,x30,[sp,#16]
+mov w19,w1
+adr x20,descriptor
+ldr w8,[x20,#8]
+cbz w8,binding_fallback
+mov w9,#1
+lsl w9,w9,#16
+cmp w8,w9
+b.hi binding_fallback
+mov w21,w8
+{call('identity')}
+// The original getter decodes the full64-bit card ID into X1. Save serials
+// and rented-card serials do not affect the identity of the authored card.
+cbz x1,binding_fallback
+ldr w8,[x20,#12]
+add x20,x20,w8,sxtw
+mov w9,wzr
+mov w10,w21
+binding_search:
+cmp w9,w10
+b.hs binding_fallback
+add w11,w9,w10
+lsr w11,w11,#1
+add x12,x20,w11,uxtw #4
+ldp x13,x14,[x12]
+cmp x1,x13
+b.eq binding_found
+b.lo binding_lower
+add w9,w11,#1
+b binding_search
+binding_lower:
+mov w10,w11
+b binding_search
+binding_found:
+and w19,w14,#0x80
+binding_fallback:
+mov w0,w19
+ldp x21,x30,[sp,#16]
+ldp x19,x20,[sp],#48
+ret
+.align 3
+descriptor:
+.quad 0x535455444c574631
+.word 0,0
+''',{'identity':0x68fe720},evidence=[
+        '6a5133c calls68fe720 on the same full match record passed to6a742dc',
+        'native identity fields at+38/+40; full64-bit ID, no name/person/donor matching',
+        'package compiler appends sorted exact-ID bindings without growing native save or parameter arrays'])
     address=0x82a2208
     builder.add('studio_lone_wolf_ai_parameter',address,f'''
 cmp w0,#7

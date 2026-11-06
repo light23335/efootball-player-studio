@@ -1,0 +1,1788 @@
+{
+  "format": "player-studio-tournament-reinforcements",
+  "version": 1,
+  "revision": "v22-user-pool-20261103",
+  "source_sha256": "040b9acab0ffebb37d30c34c215db72d174e0e56339fc9a98b657ee391b1a582",
+  "source_title": "V22原包位置分类总评榜：三组各100张",
+  "reference_only": "总评、等级和增能为名单核对信息；游戏能力与资源使用当前安装卡库，不据此伪造或补全缺卡。",
+  "group_counts": {
+    "attack": 79,
+    "midfield": 22,
+    "defence_goalkeeper": 17
+  },
+  "excluded_card_ids": [
+    89138556678270
+  ],
+  "cards": [
+    {
+      "card_id": 89138556575063,
+      "name": "梅西",
+      "edition": "BT·阿根廷 2026-07-15",
+      "position": "SS",
+      "group": "attack",
+      "source_rank": 19,
+      "reference_overall": 111,
+      "max_level": 32,
+      "reference_booster_ids": [
+        199,
+        507,
+        0
+      ]
+    },
+    {
+      "card_id": 88045755828950,
+      "name": "乔治·贝斯特",
+      "edition": "北爱尔兰 1970",
+      "position": "RWF",
+      "group": "attack",
+      "source_rank": 20,
+      "reference_overall": 109,
+      "max_level": 34,
+      "reference_booster_ids": [
+        205,
+        266,
+        0
+      ]
+    },
+    {
+      "card_id": 89136140651034,
+      "name": "伊布",
+      "edition": "BT·AC米兰 2010-09-25",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 21,
+      "reference_overall": 109,
+      "max_level": 34,
+      "reference_booster_ids": [
+        45,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 89136409091415,
+      "name": "梅西",
+      "edition": "BT·巴萨 2007-04-18",
+      "position": "RWF",
+      "group": "attack",
+      "source_rank": 22,
+      "reference_overall": 109,
+      "max_level": 34,
+      "reference_booster_ids": [
+        49,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88039581945323,
+      "name": "克鲁伊夫",
+      "edition": "巴萨 1973/74",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 24,
+      "reference_overall": 108,
+      "max_level": 34,
+      "reference_booster_ids": [
+        76,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88040387119495,
+      "name": "贝利",
+      "edition": "桑托斯 1963",
+      "position": "SS",
+      "group": "attack",
+      "source_rank": 25,
+      "reference_overall": 108,
+      "max_level": 33,
+      "reference_booster_ids": [
+        187,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88045487427597,
+      "name": "迭戈·科斯塔",
+      "edition": "切尔西 2016/17",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 26,
+      "reference_overall": 108,
+      "max_level": 32,
+      "reference_booster_ids": [
+        82,
+        265,
+        0
+      ]
+    },
+    {
+      "card_id": 88045755861672,
+      "name": "贝尔",
+      "edition": "威尔士 2016",
+      "position": "RWF",
+      "group": "attack",
+      "source_rank": 27,
+      "reference_overall": 108,
+      "max_level": 35,
+      "reference_booster_ids": [
+        42,
+        262,
+        0
+      ]
+    },
+    {
+      "card_id": 88045755863174,
+      "name": "阿扎尔",
+      "edition": "切尔西 2016/17",
+      "position": "LWF",
+      "group": "attack",
+      "source_rank": 28,
+      "reference_overall": 108,
+      "max_level": 32,
+      "reference_booster_ids": [
+        205,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88046024308919,
+      "name": "凯恩",
+      "edition": "2026 世界年度最佳",
+      "position": "SS",
+      "group": "attack",
+      "source_rank": 29,
+      "reference_overall": 108,
+      "max_level": 35,
+      "reference_booster_ids": [
+        82,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 89133456301399,
+      "name": "梅西",
+      "edition": "BT·2015-01-11",
+      "position": "RWF",
+      "group": "attack",
+      "source_rank": 30,
+      "reference_overall": 108,
+      "max_level": 32,
+      "reference_booster_ids": [
+        142,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 89136677522134,
+      "name": "乔治·贝斯特",
+      "edition": "BT·曼联 1968-05-29",
+      "position": "RWF",
+      "group": "attack",
+      "source_rank": 31,
+      "reference_overall": 108,
+      "max_level": 34,
+      "reference_booster_ids": [
+        49,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 89138556572074,
+      "name": "C罗",
+      "edition": "BT·葡萄牙 2026-06-23",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 32,
+      "reference_overall": 108,
+      "max_level": 32,
+      "reference_booster_ids": [
+        82,
+        515,
+        0
+      ]
+    },
+    {
+      "card_id": 89138556701095,
+      "name": "哈兰德",
+      "edition": "BT·挪威 2026-07-05",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 33,
+      "reference_overall": 108,
+      "max_level": 33,
+      "reference_booster_ids": [
+        82,
+        498,
+        0
+      ]
+    },
+    {
+      "card_id": 89139630444046,
+      "name": "皮耶罗",
+      "edition": "BT·意大利 2000-06-19",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 34,
+      "reference_overall": 108,
+      "max_level": 34,
+      "reference_booster_ids": [
+        239,
+        283,
+        0
+      ]
+    },
+    {
+      "card_id": 88039045074413,
+      "name": "鲁梅尼格",
+      "edition": "德国 1982",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 35,
+      "reference_overall": 107,
+      "max_level": 32,
+      "reference_booster_ids": [
+        76,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88040387119642,
+      "name": "伊布",
+      "edition": "瑞典 2012",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 36,
+      "reference_overall": 107,
+      "max_level": 32,
+      "reference_booster_ids": [
+        76,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88040655554922,
+      "name": "盖德·穆勒",
+      "edition": "拜仁 1973/74",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 37,
+      "reference_overall": 107,
+      "max_level": 32,
+      "reference_booster_ids": [
+        76,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88041460894376,
+      "name": "贝尔",
+      "edition": "皇马 2017/18",
+      "position": "RWF",
+      "group": "attack",
+      "source_rank": 38,
+      "reference_overall": 107,
+      "max_level": 32,
+      "reference_booster_ids": [
+        192,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88041460993514,
+      "name": "古利特",
+      "edition": "荷兰 1988",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 39,
+      "reference_overall": 107,
+      "max_level": 32,
+      "reference_booster_ids": [
+        193,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88041729329832,
+      "name": "贝尔",
+      "edition": "皇马 2017/18·火影联动",
+      "position": "RWF",
+      "group": "attack",
+      "source_rank": 40,
+      "reference_overall": 107,
+      "max_level": 32,
+      "reference_booster_ids": [
+        192,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88044145248321,
+      "name": "苏亚雷斯",
+      "edition": "乌拉圭 2010",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 41,
+      "reference_overall": 107,
+      "max_level": 34,
+      "reference_booster_ids": [
+        25,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88044145253792,
+      "name": "内马尔",
+      "edition": "巴西 2014",
+      "position": "LWF",
+      "group": "attack",
+      "source_rank": 42,
+      "reference_overall": 107,
+      "max_level": 31,
+      "reference_booster_ids": [
+        31,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88044145348071,
+      "name": "罗伯特·巴乔",
+      "edition": "意大利 1994",
+      "position": "SS",
+      "group": "attack",
+      "source_rank": 43,
+      "reference_overall": 107,
+      "max_level": 33,
+      "reference_booster_ids": [
+        81,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88045755960771,
+      "name": "托蒂",
+      "edition": "罗马 2006/07",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 44,
+      "reference_overall": 107,
+      "max_level": 34,
+      "reference_booster_ids": [
+        34,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88045755960841,
+      "name": "阿德里亚诺",
+      "edition": "国际米兰 2005/06",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 45,
+      "reference_overall": 107,
+      "max_level": 34,
+      "reference_booster_ids": [
+        82,
+        262,
+        0
+      ]
+    },
+    {
+      "card_id": 88046292831745,
+      "name": "德罗巴",
+      "edition": "切尔西 2009/10",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 46,
+      "reference_overall": 107,
+      "max_level": 34,
+      "reference_booster_ids": [
+        82,
+        258,
+        0
+      ]
+    },
+    {
+      "card_id": 88047366601026,
+      "name": "亚马尔",
+      "edition": "2026 世界年度最佳",
+      "position": "RWF",
+      "group": "attack",
+      "source_rank": 47,
+      "reference_overall": 107,
+      "max_level": 34,
+      "reference_booster_ids": [
+        87,
+        257,
+        0
+      ]
+    },
+    {
+      "card_id": 89133993205152,
+      "name": "内马尔",
+      "edition": "BT·2015-01-11",
+      "position": "LWF",
+      "group": "attack",
+      "source_rank": 48,
+      "reference_overall": 107,
+      "max_level": 32,
+      "reference_booster_ids": [
+        144,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 106778255821223,
+      "name": "哈兰德",
+      "edition": "英格兰联赛 2025/26 赛季最佳",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 50,
+      "reference_overall": 107,
+      "max_level": 32,
+      "reference_booster_ids": [
+        25,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 106782013894690,
+      "name": "登贝莱",
+      "edition": "国际杯精选 第3辑",
+      "position": "RWF",
+      "group": "attack",
+      "source_rank": 51,
+      "reference_overall": 107,
+      "max_level": 32,
+      "reference_booster_ids": [
+        31,
+        392,
+        0
+      ]
+    },
+    {
+      "card_id": 106782550788519,
+      "name": "哈兰德",
+      "edition": "国际杯精选 第5辑",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 52,
+      "reference_overall": 107,
+      "max_level": 32,
+      "reference_booster_ids": [
+        23,
+        463,
+        0
+      ]
+    },
+    {
+      "card_id": 106782819217056,
+      "name": "阿尔瓦雷斯",
+      "edition": "国际杯精选 第6辑",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 53,
+      "reference_overall": 107,
+      "max_level": 34,
+      "reference_booster_ids": [
+        192,
+        482,
+        0
+      ]
+    },
+    {
+      "card_id": 106787919411383,
+      "name": "凯恩",
+      "edition": "2026 赛事之星",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 54,
+      "reference_overall": 107,
+      "max_level": 33,
+      "reference_booster_ids": [
+        23,
+        499,
+        0
+      ]
+    },
+    {
+      "card_id": 123236838841410,
+      "name": "莱万多夫斯基",
+      "edition": "Strike Arena",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 55,
+      "reference_overall": 107,
+      "max_level": 1,
+      "reference_booster_ids": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "card_id": 56168508672311,
+      "name": "维尼修斯",
+      "edition": "国际杯 POTD 第9日",
+      "position": "LWF",
+      "group": "attack",
+      "source_rank": 56,
+      "reference_overall": 106,
+      "max_level": 1,
+      "reference_booster_ids": [
+        96,
+        0,
+        0
+      ]
+    },
+    {
+      "card_id": 88036360594345,
+      "name": "里贝里",
+      "edition": "拜仁 2013/14",
+      "position": "LWF",
+      "group": "attack",
+      "source_rank": 57,
+      "reference_overall": 106,
+      "max_level": 31,
+      "reference_booster_ids": [
+        31,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88036360719824,
+      "name": "罗纳尔迪尼奥",
+      "edition": "巴萨 2005/06",
+      "position": "LWF",
+      "group": "attack",
+      "source_rank": 58,
+      "reference_overall": 106,
+      "max_level": 34,
+      "reference_booster_ids": [
+        27,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88037702764935,
+      "name": "贝利",
+      "edition": "巴西 1970",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 59,
+      "reference_overall": 106,
+      "max_level": 34,
+      "reference_booster_ids": [
+        75,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88039044943928,
+      "name": "鲁尼",
+      "edition": "曼联 2011/12",
+      "position": "SS",
+      "group": "attack",
+      "source_rank": 60,
+      "reference_overall": 106,
+      "max_level": 32,
+      "reference_booster_ids": [
+        76,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88039044974657,
+      "name": "苏亚雷斯",
+      "edition": "利物浦 2013/14",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 61,
+      "reference_overall": 106,
+      "max_level": 34,
+      "reference_booster_ids": [
+        23,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88039581945358,
+      "name": "皮耶罗",
+      "edition": "尤文 2007/08",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 62,
+      "reference_overall": 106,
+      "max_level": 34,
+      "reference_booster_ids": [
+        23,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88040387118554,
+      "name": "埃托奥",
+      "edition": "巴萨 2008/09",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 63,
+      "reference_overall": 106,
+      "max_level": 32,
+      "reference_booster_ids": [
+        23,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88040387120260,
+      "name": "普斯卡什",
+      "edition": "匈牙利 1952",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 64,
+      "reference_overall": 106,
+      "max_level": 32,
+      "reference_booster_ids": [
+        186,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88040387120768,
+      "name": "特维斯",
+      "edition": "阿根廷 2007",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 65,
+      "reference_overall": 106,
+      "max_level": 34,
+      "reference_booster_ids": [
+        76,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88040655554414,
+      "name": "佐拉",
+      "edition": "切尔西 1997/98",
+      "position": "SS",
+      "group": "attack",
+      "source_rank": 66,
+      "reference_overall": 106,
+      "max_level": 35,
+      "reference_booster_ids": [
+        81,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88041460993461,
+      "name": "菲戈",
+      "edition": "葡萄牙 2004",
+      "position": "RWF",
+      "group": "attack",
+      "source_rank": 67,
+      "reference_overall": 106,
+      "max_level": 34,
+      "reference_booster_ids": [
+        80,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88044413691936,
+      "name": "格策",
+      "edition": "德国 2014",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 68,
+      "reference_overall": 106,
+      "max_level": 34,
+      "reference_booster_ids": [
+        76,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88045755960809,
+      "name": "范巴斯滕",
+      "edition": "荷兰 1988",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 69,
+      "reference_overall": 106,
+      "max_level": 34,
+      "reference_booster_ids": [
+        157,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88045755960810,
+      "name": "古利特",
+      "edition": "荷兰 1988",
+      "position": "SS",
+      "group": "attack",
+      "source_rank": 70,
+      "reference_overall": 106,
+      "max_level": 31,
+      "reference_booster_ids": [
+        157,
+        251,
+        0
+      ]
+    },
+    {
+      "card_id": 88045755964138,
+      "name": "舍甫琴科",
+      "edition": "AC米兰 2002/03",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 71,
+      "reference_overall": 106,
+      "max_level": 32,
+      "reference_booster_ids": [
+        42,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88046292730790,
+      "name": "阿圭罗",
+      "edition": "曼城 2011/12",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 72,
+      "reference_overall": 106,
+      "max_level": 32,
+      "reference_booster_ids": [
+        205,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 89129161334103,
+      "name": "梅西",
+      "edition": "BT·2009-05-27",
+      "position": "RWF",
+      "group": "attack",
+      "source_rank": 73,
+      "reference_overall": 106,
+      "max_level": 32,
+      "reference_booster_ids": [
+        56,
+        0,
+        0
+      ]
+    },
+    {
+      "card_id": 89129429769559,
+      "name": "梅西",
+      "edition": "BT·2015-05-06",
+      "position": "RWF",
+      "group": "attack",
+      "source_rank": 74,
+      "reference_overall": 106,
+      "max_level": 33,
+      "reference_booster_ids": [
+        57,
+        0,
+        0
+      ]
+    },
+    {
+      "card_id": 89133187865943,
+      "name": "梅西",
+      "edition": "BT·2021-07-10",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 75,
+      "reference_overall": 106,
+      "max_level": 34,
+      "reference_booster_ids": [
+        134,
+        0,
+        0
+      ]
+    },
+    {
+      "card_id": 89133724764840,
+      "name": "贝尔",
+      "edition": "BT·2018-05-26",
+      "position": "RWF",
+      "group": "attack",
+      "source_rank": 76,
+      "reference_overall": 106,
+      "max_level": 31,
+      "reference_booster_ids": [
+        157,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 89134261635137,
+      "name": "苏亚雷斯",
+      "edition": "BT·2015-01-11",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 77,
+      "reference_overall": 106,
+      "max_level": 32,
+      "reference_booster_ids": [
+        143,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 89135066911146,
+      "name": "C罗",
+      "edition": "BT·2025-06-08",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 78,
+      "reference_overall": 106,
+      "max_level": 32,
+      "reference_booster_ids": [
+        76,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 89135067033519,
+      "name": "奥斯梅恩",
+      "edition": "BT·2024-10-28",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 79,
+      "reference_overall": 106,
+      "max_level": 31,
+      "reference_booster_ids": [
+        133,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 89138019825360,
+      "name": "克瓦拉茨赫利亚",
+      "edition": "BT·巴黎圣日耳曼 2026-04-28",
+      "position": "LWF",
+      "group": "attack",
+      "source_rank": 80,
+      "reference_overall": 106,
+      "max_level": 35,
+      "reference_booster_ids": [
+        205,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 89138019858754,
+      "name": "亚马尔",
+      "edition": "BT·巴萨 2026-02-28",
+      "position": "RWF",
+      "group": "attack",
+      "source_rank": 81,
+      "reference_overall": 106,
+      "max_level": 34,
+      "reference_booster_ids": [
+        87,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 106738527367087,
+      "name": "奥斯梅恩",
+      "edition": "土超精选 2025-03-27",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 82,
+      "reference_overall": 106,
+      "max_level": 31,
+      "reference_booster_ids": [
+        133,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 106756512542639,
+      "name": "奥斯梅恩",
+      "edition": "土超月度MVP 2025-08",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 83,
+      "reference_overall": 106,
+      "max_level": 32,
+      "reference_booster_ids": [
+        133,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 106756780978095,
+      "name": "奥斯梅恩",
+      "edition": "土超月度MVP 2025-09",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 84,
+      "reference_overall": 106,
+      "max_level": 32,
+      "reference_booster_ids": [
+        133,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 106759733768760,
+      "name": "萨卡",
+      "edition": "斜向长传B 2025-11-06",
+      "position": "RWF",
+      "group": "attack",
+      "source_rank": 85,
+      "reference_overall": 106,
+      "max_level": 35,
+      "reference_booster_ids": [
+        27,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 106771008057263,
+      "name": "奥斯梅恩",
+      "edition": "土超月度MVP 2026-02",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 86,
+      "reference_overall": 106,
+      "max_level": 32,
+      "reference_booster_ids": [
+        133,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 106773692401975,
+      "name": "维尼修斯",
+      "edition": "杰出攻击手 2025/26 赛季最佳",
+      "position": "LWF",
+      "group": "attack",
+      "source_rank": 87,
+      "reference_overall": 106,
+      "max_level": 35,
+      "reference_booster_ids": [
+        27,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 106779597991855,
+      "name": "奥斯梅恩",
+      "edition": "土超 2025/26 赛季最佳",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 88,
+      "reference_overall": 106,
+      "max_level": 32,
+      "reference_booster_ids": [
+        133,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 106781476920663,
+      "name": "梅西",
+      "edition": "国际杯精选第1辑",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 89,
+      "reference_overall": 106,
+      "max_level": 33,
+      "reference_booster_ids": [
+        28,
+        334,
+        0
+      ]
+    },
+    {
+      "card_id": 106781745470620,
+      "name": "加克波",
+      "edition": "国际杯精选第2辑",
+      "position": "LWF",
+      "group": "attack",
+      "source_rank": 91,
+      "reference_overall": 106,
+      "max_level": 34,
+      "reference_booster_ids": [
+        192,
+        356,
+        0
+      ]
+    },
+    {
+      "card_id": 106781745473447,
+      "name": "乔纳森·戴维",
+      "edition": "国际杯精选第2辑",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 92,
+      "reference_overall": 106,
+      "max_level": 32,
+      "reference_booster_ids": [
+        194,
+        343,
+        0
+      ]
+    },
+    {
+      "card_id": 106782282266807,
+      "name": "凯恩",
+      "edition": "国际杯精选第4辑",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 93,
+      "reference_overall": 106,
+      "max_level": 33,
+      "reference_booster_ids": [
+        193,
+        427,
+        0
+      ]
+    },
+    {
+      "card_id": 106782550788446,
+      "name": "德凯特拉雷",
+      "edition": "国际杯精选第5辑",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 94,
+      "reference_overall": 106,
+      "max_level": 32,
+      "reference_booster_ids": [
+        193,
+        469,
+        0
+      ]
+    },
+    {
+      "card_id": 106786308879147,
+      "name": "若昂·佩德罗",
+      "edition": "瞩目新星 2026/27",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 95,
+      "reference_overall": 106,
+      "max_level": 34,
+      "reference_booster_ids": [
+        200,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 106787651045391,
+      "name": "费兰·托雷斯",
+      "edition": "西班牙 2026",
+      "position": "CF",
+      "group": "attack",
+      "source_rank": 96,
+      "reference_overall": 106,
+      "max_level": 32,
+      "reference_booster_ids": [
+        76,
+        497,
+        0
+      ]
+    },
+    {
+      "card_id": 106787651090754,
+      "name": "亚马尔",
+      "edition": "西班牙 2026",
+      "position": "RWF",
+      "group": "attack",
+      "source_rank": 97,
+      "reference_overall": 106,
+      "max_level": 32,
+      "reference_booster_ids": [
+        27,
+        494,
+        0
+      ]
+    },
+    {
+      "card_id": 106788187839904,
+      "name": "内马尔",
+      "edition": "现役传奇 2026",
+      "position": "LWF",
+      "group": "attack",
+      "source_rank": 98,
+      "reference_overall": 106,
+      "max_level": 34,
+      "reference_booster_ids": [
+        194,
+        504,
+        0
+      ]
+    },
+    {
+      "card_id": 106788187841133,
+      "name": "J罗",
+      "edition": "现役传奇 2026",
+      "position": "RWF",
+      "group": "attack",
+      "source_rank": 99,
+      "reference_overall": 106,
+      "max_level": 35,
+      "reference_booster_ids": [
+        80,
+        505,
+        0
+      ]
+    },
+    {
+      "card_id": 106800804393500,
+      "name": "多库",
+      "edition": "魔术盘带 2026-10-22",
+      "position": "LWF",
+      "group": "attack",
+      "source_rank": 100,
+      "reference_overall": 106,
+      "max_level": 32,
+      "reference_booster_ids": [
+        39,
+        266,
+        0
+      ]
+    },
+    {
+      "card_id": 89138556678367,
+      "name": "罗德里",
+      "edition": "BT·西班牙 2026-07-19",
+      "position": "DMF",
+      "group": "midfield",
+      "source_rank": 9,
+      "reference_overall": 108,
+      "max_level": 35,
+      "reference_booster_ids": [
+        41,
+        476,
+        0
+      ]
+    },
+    {
+      "card_id": 88044145348075,
+      "name": "克鲁伊夫",
+      "edition": "荷兰 1974",
+      "position": "AMF",
+      "group": "midfield",
+      "source_rank": 10,
+      "reference_overall": 107,
+      "max_level": 32,
+      "reference_booster_ids": [
+        194,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 89137214427270,
+      "name": "阿扎尔",
+      "edition": "BT·比利时 2018-07-14",
+      "position": "AMF",
+      "group": "midfield",
+      "source_rank": 11,
+      "reference_overall": 107,
+      "max_level": 33,
+      "reference_booster_ids": [
+        50,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 89138288136169,
+      "name": "伊涅斯塔",
+      "edition": "BT·西班牙 2010-07-11",
+      "position": "LMF",
+      "group": "midfield",
+      "source_rank": 12,
+      "reference_overall": 107,
+      "max_level": 32,
+      "reference_booster_ids": [
+        34,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 89138556700485,
+      "name": "贝林厄姆",
+      "edition": "BT·英格兰 2026-07-11",
+      "position": "AMF",
+      "group": "midfield",
+      "source_rank": 13,
+      "reference_overall": 107,
+      "max_level": 32,
+      "reference_booster_ids": [
+        39,
+        465,
+        0
+      ]
+    },
+    {
+      "card_id": 56162955404703,
+      "name": "凯西",
+      "edition": "国际杯 POTD 第10日",
+      "position": "CMF",
+      "group": "midfield",
+      "source_rank": 14,
+      "reference_overall": 106,
+      "max_level": 1,
+      "reference_booster_ids": [
+        98,
+        0,
+        0
+      ]
+    },
+    {
+      "card_id": 88036629155304,
+      "name": "里杰卡尔德",
+      "edition": "AC米兰 1991/92",
+      "position": "DMF",
+      "group": "midfield",
+      "source_rank": 15,
+      "reference_overall": 106,
+      "max_level": 33,
+      "reference_booster_ids": [
+        184,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88039044980128,
+      "name": "内马尔",
+      "edition": "巴西 2016",
+      "position": "LMF",
+      "group": "midfield",
+      "source_rank": 16,
+      "reference_overall": 106,
+      "max_level": 32,
+      "reference_booster_ids": [
+        27,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88039581948642,
+      "name": "马克莱莱",
+      "edition": "皇马 2001/02",
+      "position": "DMF",
+      "group": "midfield",
+      "source_rank": 17,
+      "reference_overall": 106,
+      "max_level": 33,
+      "reference_booster_ids": [
+        29,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88040387126185,
+      "name": "里贝里",
+      "edition": "法国 2012",
+      "position": "LMF",
+      "group": "midfield",
+      "source_rank": 18,
+      "reference_overall": 106,
+      "max_level": 32,
+      "reference_booster_ids": [
+        194,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88041460993477,
+      "name": "内德维德",
+      "edition": "捷克 2004",
+      "position": "LMF",
+      "group": "midfield",
+      "source_rank": 19,
+      "reference_overall": 106,
+      "max_level": 33,
+      "reference_booster_ids": [
+        189,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88044145348017,
+      "name": "贝克汉姆",
+      "edition": "英格兰 2002",
+      "position": "RMF",
+      "group": "midfield",
+      "source_rank": 20,
+      "reference_overall": 106,
+      "max_level": 32,
+      "reference_booster_ids": [
+        186,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88044145348064,
+      "name": "皮尔洛",
+      "edition": "意大利 2006",
+      "position": "DMF",
+      "group": "midfield",
+      "source_rank": 21,
+      "reference_overall": 106,
+      "max_level": 35,
+      "reference_booster_ids": [
+        184,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88044145348069,
+      "name": "马特乌斯",
+      "edition": "德国 1994",
+      "position": "CMF",
+      "group": "midfield",
+      "source_rank": 22,
+      "reference_overall": 106,
+      "max_level": 34,
+      "reference_booster_ids": [
+        187,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88045755827099,
+      "name": "戴维斯",
+      "edition": "巴萨 2003/04",
+      "position": "DMF",
+      "group": "midfield",
+      "source_rank": 23,
+      "reference_overall": 106,
+      "max_level": 33,
+      "reference_booster_ids": [
+        203,
+        261,
+        0
+      ]
+    },
+    {
+      "card_id": 88045755829934,
+      "name": "卡卡",
+      "edition": "皇马 2009/10",
+      "position": "AMF",
+      "group": "midfield",
+      "source_rank": 24,
+      "reference_overall": 106,
+      "max_level": 33,
+      "reference_booster_ids": [
+        34,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88045755964130,
+      "name": "马克莱莱",
+      "edition": "切尔西 2005/06",
+      "position": "DMF",
+      "group": "midfield",
+      "source_rank": 25,
+      "reference_overall": 106,
+      "max_level": 33,
+      "reference_booster_ids": [
+        41,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 89138019757152,
+      "name": "B费",
+      "edition": "BT·曼联 2026-02-07",
+      "position": "AMF",
+      "group": "midfield",
+      "source_rank": 26,
+      "reference_overall": 106,
+      "max_level": 32,
+      "reference_booster_ids": [
+        39,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 89138019820385,
+      "name": "柯克曲",
+      "edition": "BT·贝西克塔斯 2026-03-19",
+      "position": "CMF",
+      "group": "midfield",
+      "source_rank": 27,
+      "reference_overall": 106,
+      "max_level": 33,
+      "reference_booster_ids": [
+        133,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 106785772021264,
+      "name": "埃利奥特·安德松",
+      "edition": "夏季转会 2026-08-17",
+      "position": "CMF",
+      "group": "midfield",
+      "source_rank": 28,
+      "reference_overall": 106,
+      "max_level": 34,
+      "reference_booster_ids": [
+        202,
+        250,
+        0
+      ]
+    },
+    {
+      "card_id": 106787651039542,
+      "name": "奥尔莫",
+      "edition": "西班牙 2026",
+      "position": "AMF",
+      "group": "midfield",
+      "source_rank": 29,
+      "reference_overall": 106,
+      "max_level": 32,
+      "reference_booster_ids": [
+        28,
+        496,
+        0
+      ]
+    },
+    {
+      "card_id": 106788456363289,
+      "name": "恩佐·费尔南德斯",
+      "edition": "胜利引擎 2026",
+      "position": "CMF",
+      "group": "midfield",
+      "source_rank": 30,
+      "reference_overall": 106,
+      "max_level": 32,
+      "reference_booster_ids": [
+        189,
+        368,
+        0
+      ]
+    },
+    {
+      "card_id": 56161529278248,
+      "name": "范迪克",
+      "edition": "国际杯 POTD 第4日",
+      "position": "CB",
+      "group": "defence_goalkeeper",
+      "source_rank": 7,
+      "reference_overall": 108,
+      "max_level": 1,
+      "reference_booster_ids": [
+        63,
+        0,
+        0
+      ]
+    },
+    {
+      "card_id": 88045755829367,
+      "name": "切赫",
+      "edition": "切尔西 2005/06",
+      "position": "GK",
+      "group": "defence_goalkeeper",
+      "source_rank": 8,
+      "reference_overall": 108,
+      "max_level": 29,
+      "reference_booster_ids": [
+        85,
+        271,
+        0
+      ]
+    },
+    {
+      "card_id": 56163139890527,
+      "name": "库尔图瓦",
+      "edition": "国际杯 POTD 第11日",
+      "position": "GK",
+      "group": "defence_goalkeeper",
+      "source_rank": 10,
+      "reference_overall": 107,
+      "max_level": 1,
+      "reference_booster_ids": [
+        103,
+        0,
+        0
+      ]
+    },
+    {
+      "card_id": 89138288133079,
+      "name": "布冯",
+      "edition": "BT·意大利 2006-07-09",
+      "position": "GK",
+      "group": "defence_goalkeeper",
+      "source_rank": 11,
+      "reference_overall": 107,
+      "max_level": 29,
+      "reference_booster_ids": [
+        85,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 106788187832737,
+      "name": "诺伊尔",
+      "edition": "2026 现役传奇",
+      "position": "GK",
+      "group": "defence_goalkeeper",
+      "source_rank": 12,
+      "reference_overall": 107,
+      "max_level": 28,
+      "reference_booster_ids": [
+        79,
+        502,
+        0
+      ]
+    },
+    {
+      "card_id": 88039581948647,
+      "name": "舒梅切尔",
+      "edition": "曼联 1998/99",
+      "position": "GK",
+      "group": "defence_goalkeeper",
+      "source_rank": 13,
+      "reference_overall": 106,
+      "max_level": 29,
+      "reference_booster_ids": [
+        33,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88040387118039,
+      "name": "布冯",
+      "edition": "尤文 2011/12",
+      "position": "GK",
+      "group": "defence_goalkeeper",
+      "source_rank": 14,
+      "reference_overall": 106,
+      "max_level": 30,
+      "reference_booster_ids": [
+        33,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88040387255015,
+      "name": "舒梅切尔",
+      "edition": "丹麦 1992",
+      "position": "GK",
+      "group": "defence_goalkeeper",
+      "source_rank": 15,
+      "reference_overall": 106,
+      "max_level": 29,
+      "reference_booster_ids": [
+        79,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88044145351392,
+      "name": "图拉姆",
+      "edition": "法国 1998",
+      "position": "RB",
+      "group": "defence_goalkeeper",
+      "source_rank": 16,
+      "reference_overall": 106,
+      "max_level": 33,
+      "reference_booster_ids": [
+        195,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88045755827094,
+      "name": "范德萨",
+      "edition": "荷兰 1998",
+      "position": "GK",
+      "group": "defence_goalkeeper",
+      "source_rank": 17,
+      "reference_overall": 106,
+      "max_level": 30,
+      "reference_booster_ids": [
+        44,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88045755960770,
+      "name": "马尔蒂尼",
+      "edition": "意大利 2000",
+      "position": "CB",
+      "group": "defence_goalkeeper",
+      "source_rank": 18,
+      "reference_overall": 106,
+      "max_level": 27,
+      "reference_booster_ids": [
+        41,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 88045755964133,
+      "name": "卡纳瓦罗",
+      "edition": "意大利 2000",
+      "position": "CB",
+      "group": "defence_goalkeeper",
+      "source_rank": 19,
+      "reference_overall": 106,
+      "max_level": 27,
+      "reference_booster_ids": [
+        41,
+        267,
+        0
+      ]
+    },
+    {
+      "card_id": 89138288138433,
+      "name": "拉姆",
+      "edition": "BT·德国 2014-07-13",
+      "position": "RB",
+      "group": "defence_goalkeeper",
+      "source_rank": 20,
+      "reference_overall": 106,
+      "max_level": 33,
+      "reference_booster_ids": [
+        86,
+        136,
+        0
+      ]
+    },
+    {
+      "card_id": 105859401166632,
+      "name": "范迪克",
+      "edition": "现役传奇 2026",
+      "position": "CB",
+      "group": "defence_goalkeeper",
+      "source_rank": 21,
+      "reference_overall": 106,
+      "max_level": 27,
+      "reference_booster_ids": [
+        63,
+        0,
+        0
+      ]
+    },
+    {
+      "card_id": 106783356096959,
+      "name": "铃木彩艳",
+      "edition": "日本精选 2026-07-11",
+      "position": "GK",
+      "group": "defence_goalkeeper",
+      "source_rank": 22,
+      "reference_overall": 106,
+      "max_level": 28,
+      "reference_booster_ids": [
+        79,
+        451,
+        0
+      ]
+    },
+    {
+      "card_id": 106787651035597,
+      "name": "乌奈·西蒙",
+      "edition": "西班牙 2026",
+      "position": "GK",
+      "group": "defence_goalkeeper",
+      "source_rank": 23,
+      "reference_overall": 106,
+      "max_level": 30,
+      "reference_booster_ids": [
+        79,
+        495,
+        0
+      ]
+    },
+    {
+      "card_id": 106787651045215,
+      "name": "库库雷利亚",
+      "edition": "西班牙 2026",
+      "position": "LB",
+      "group": "defence_goalkeeper",
+      "source_rank": 24,
+      "reference_overall": 106,
+      "max_level": 33,
+      "reference_booster_ids": [
+        80,
+        493,
+        0
+      ]
+    }
+  ]
+}

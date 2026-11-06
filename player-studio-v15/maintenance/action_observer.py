@@ -315,6 +315,22 @@ cbz x23,candidate_done
 ldp w8,w9,[x23,#8]
 str w8,[sp,#256]
 str w9,[sp,#260]
+// Candidate diagnostics occupy formerly reserved event words. Keep the
+// 192-byte event ABI, raw AI flags at148 and actor identity at176 unchanged.
+ldp w8,w9,[x23,#16]
+str w8,[sp,#264]
+str w9,[sp,#268]
+ldr w8,[x23,#24]
+str w8,[sp,#272]
+ldp w8,w9,[x23,#28]
+str w8,[sp,#280]
+str w9,[sp,#284]
+ldp w8,w9,[x23,#36]
+str w8,[sp,#288]
+str w9,[sp,#292]
+ldp w8,w9,[x23,#44]
+str w8,[sp,#296]
+str w9,[sp,#300]
 candidate_done:
 cmp w20,#3
 b.ne power_type_done
@@ -561,7 +577,7 @@ ret
 ''',{'game_info':0x72c3e80,'phase':0x697b60c,'clock':0x6a4bd08,
       'physical':0x72c19f8,'player_info':0x72c1a14,
       'action':0x72d7dc8,'player_state':0x72c40b0,'abilities':0x7301ef8,'skill':0x72b39c4,
-      'players':0x72c404c,'count':0x68fb5fc,'entry':0x72f2d04,'identity':0x72f29e0},
+      'players':0x72c19dc,'count':0x68fb5fc,'entry':0x72f2d04,'identity':0x72f29e0},
       writable={'trace_ring':BUFFER_BYTES},evidence=['native callbacks only, actor supplied by the original getter/selector',
       'private RW ring only; no game object writes, allocation, file IO or Python calls',
       'state changes and one unique motion attempt per actor/frame/family/result/power',
@@ -772,7 +788,7 @@ bl shared_studio_trace_ai
     address=0x70e57a0
     word=int.from_bytes(b.engine[address-0x4000:address-0x4000+4],'little')
     b.add('studio_observed_ai_candidate_choice',address,f'''
-stp x19,x20,[sp,#-96]!
+stp x19,x20,[sp,#-128]!
 stp x21,x22,[sp,#16]
 str x30,[sp,#32]
 mov x19,x0
@@ -783,6 +799,9 @@ mov w21,w0
 stp w20,w21,[sp,#48]
 mov w8,#-1
 stp w8,w8,[sp,#56]
+stp xzr,xzr,[sp,#64]
+stp xzr,xzr,[sp,#80]
+str wzr,[sp,#96]
 cmp w20,#30
 b.hs original_class_done
 ldr x8,[x19]
@@ -794,7 +813,8 @@ umaddl x8,w20,w9,x8
 ldr w8,[x8]
 stp w8,w8,[sp,#56]
 original_class_done:
-'''+candidate_observe(5)+('mov x0,x19\nmov w1,w20\nbl shared_studio_ai_select_cut_in_candidate\nmov w21,w0\n'if ai else '')+'''
+'''+candidate_observe(5)+('mov x0,x19\nmov w1,w20\nbl shared_studio_ai_select_cut_in_candidate\nmov w21,w0\n'
+    'stp w1,w2,[sp,#64]\nstp w3,w4,[sp,#72]\nstp w5,w6,[sp,#80]\nstp w7,w8,[sp,#88]\nstr w9,[sp,#96]\n'if ai else '')+'''
 str w21,[sp,#52]
 cmp w21,#30
 b.hs selected_class_done
@@ -811,7 +831,7 @@ selected_class_done:
 mov w0,w21
 ldr x30,[sp,#32]
 ldp x21,x22,[sp,#16]
-ldp x19,x20,[sp],#96
+ldp x19,x20,[sp],#128
 ret
 original:
 .word {word}

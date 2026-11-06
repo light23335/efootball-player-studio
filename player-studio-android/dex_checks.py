@@ -54,6 +54,6 @@ def inspect_runtime(files):
         report=inspect_dex(raw);duplicate=classes.intersection(report['classes'])
         if duplicate:raise ValueError('Duplicate Android runtime classes: '+str(sorted(duplicate)[:5]))
         classes.update(report['classes']);reports[name]={'strings':report['strings'],'classes':len(report['classes']),'sha256':report['sha256']}
-    required={f'Lcom/playerstudio/editor/{name};' for name in ('MainActivity','BaseActivity','ExportProvider','StudioService','InstalledGames','NativeFiles','ControllerBridge','MovieBridge')}
+    required={f'Lcom/playerstudio/editor/{name};' for name in ('MainActivity','BaseActivity','ExportProvider','StudioService','InstalledGames','NativeFiles','ControllerBridge','MovieBridge','CardMoviePixels','CardMovieTranscoder')}
     if required-classes:raise ValueError('Missing compiled Android components: '+str(sorted(required-classes)))
     return {'dex':reports,'required_components_present':True,'ordered_string_tables':True,'duplicate_classes':False}

@@ -1,5 +1,5 @@
 """Verified match-time effects; no permanent ability inflation."""
-import copy,json
+import copy,json,struct
 from pathlib import Path
 from studio_resources import bundled_resources
 
@@ -30,15 +30,57 @@ def decode_skills(value,parameters,catalog,fields):
     return selected
 
 def required(definitions,catalog):
+    from ai_playing_styles import definition_value
     skills=(24,25,43,51,52,68)
     indices=[int(catalog['PARAMETER_BY_SKILL'][str(skill)]) for skill in skills]
-    return any('lone_wolf' in p.get('ai_playing_styles',[]) or p.get('studio_custom_skills') or any(p['base_parameters'][index] for index in indices) or set(p['owned'].get('additional_skill_id',[]))&set(skills) for p in definitions)
+    return any('lone_wolf' in definition_value(p) or p.get('studio_custom_skills') or any(p['base_parameters'][index] for index in indices) or set(p['owned'].get('additional_skill_id',[]))&set(skills) for p in definitions)
 
-def hooks(engine,resources=None):
+LONE_WOLF_BINDING_MAGIC=struct.pack('<Q',0x535455444c574631)
+
+
+def lone_wolf_bindings(definitions):
+    """Only explicitly authored cards/aliases; OFF edits are authoritative too."""
+    from ai_playing_styles import definition_value
+    result={}
+    for definition in definitions:
+        identity=definition['identity']
+        flag=0x80 if 'lone_wolf' in definition_value(definition) else 0
+        for cid in {identity['card_id'],*identity.get('previous_card_ids',[])}:
+            if type(cid)is not int or not 0<cid<2**63:
+                raise ValueError('独狼卡号传递包含无效球员卡号')
+            if cid in result and result[cid]!=flag:
+                raise ValueError('独狼卡号传递存在相互冲突的旧卡号')
+            result[cid]=flag
+    if len(result)>65536:raise ValueError('独狼卡号传递数量超出范围')
+    return sorted(result.items())
+
+
+def bind_lone_wolf_cards(bundle,definitions):
+    """Append package-specific native data; existing code/fixup offsets stay put."""
+    result=copy.deepcopy(bundle)
+    body=bytearray.fromhex(result['body_hex'])
+    marker=body.find(LONE_WOLF_BINDING_MAGIC)
+    if marker<0 or body.find(LONE_WOLF_BINDING_MAGIC,marker+1)>=0:
+        raise ValueError('此比赛技能接口缺少独狼卡号传递，请更新程序后生成')
+    if bytes(body[marker+8:marker+16])!=bytes(8):
+        raise ValueError('独狼卡号传递已编译，不能重复追加')
+    rows=lone_wolf_bindings(definitions)
+    if rows:
+        body.extend(bytes(-len(body)%16))
+        relative=len(body)-marker
+        struct.pack_into('<II',body,marker+8,len(rows),relative)
+        body.extend(b''.join(struct.pack('<QQ',cid,flag)for cid,flag in rows))
+    result['body_hex']=body.hex()
+    return result
+
+
+def hooks(engine,resources=None,definitions=None):
     data=json.loads(((Path(resources) if resources else RESOURCE)/'native-skill-effects.json').read_text(encoding='utf8'))
     if data.get('production_ready') is False:
         raise ValueError('此技能适配仍在验证中，尚不能写入游戏 APK')
     result=copy.deepcopy(data.get('bundles') or data['hooks'])
+    if definitions is not None:
+        result=[bind_lone_wolf_cards(h,definitions)if h['name']=='studio_skill_runtime_v2' else h for h in result]
     for hook in result:
         for entry in [hook]+list(hook.get('extra_entries',[])):
             engine.seek(entry['file_offset'])
@@ -80,8 +122,10 @@ def text_groups(resources=None,locale='zha'):
     if enabled():
         for row in custom_text_groups(locale):
             result.setdefault(row['id'],{'name':row['name'],'id':row['id'],'items':{}})['items'].update(row['items'])
-        result.setdefault(352,{'name':'E15W','id':352,'items':{}})['items'][60010]='独狼' if chinese else 'Lone Wolf'
-        result.setdefault(353,{'name':'E18T','id':353,'items':{}})['items'][60010]=('优先寻找安全远射；与内切突破组合时优先内切寻找射位。' if chinese else 'Prioritises safe long shots and dribbles towards a shooting position. Combines with Incisive Run to prefer inward routes.')
+    # AI styles are independent of the optional four-skill catalogue gate.
+    # Always provide both text keys when rebuilding full and delta languages.
+    result.setdefault(352,{'name':'E15W','id':352,'items':{}})['items'][60010]='独狼' if chinese else 'Lone Wolf'
+    result.setdefault(353,{'name':'E18T','id':353,'items':{}})['items'][60010]=('优先寻找安全远射；与内切突破组合时优先内切寻找射位。' if chinese else 'Prioritises safe long shots and dribbles towards a shooting position. Combines with Incisive Run to prefer inward routes.')
     return list(result.values())
 
 def skill_bits(resources):

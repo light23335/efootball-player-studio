@@ -149,11 +149,12 @@ def verify_portrait_locations(packages,binding):
 @exported('球员','编译卡面、脸模和材质',lambda project,*args,**kwargs: project)
 def compile_art(project,identity,library,rigged_path=None,reference_path=None,mesh_metadata=None,asset_key=None,cache=None):
     from compile_cache import assets_in
+    from native_head_materials import REVISION as material_revision
     person=str(asset_key or identity['person_id'])
     card_inputs={'appearance':project['appearance'],'native_card':project['native_card'],
                  'native_art':project.get('native_art'),'identity':identity,'asset_key':person}
     face_inputs={'model':project.get('model'),'source_player_id':(project.get('source_player')or{}).get('id'),
-                 'asset_key':person,'mesh_metadata':mesh_metadata}
+                 'asset_key':person,'mesh_metadata':mesh_metadata,'material_compiler':material_revision}
     def card():return _compile_card_art(project,identity,library,person)
     def face():return _compile_face_art(project,identity,library,rigged_path,reference_path,mesh_metadata,person)
     if cache:
@@ -249,7 +250,6 @@ def _compile_card_art(project,identity,library,person):
 
 
 def _compile_face_art(project,identity,library,rigged_path,reference_path,mesh_metadata,person):
-    from PIL import Image
     from native_glb import Glb,prove_binding
     from native_mesh import replace_head
     assets=library.face_assets()if hasattr(library,'face_assets')else Assets(library.containers)
@@ -291,7 +291,12 @@ def _compile_face_art(project,identity,library,rigged_path,reference_path,mesh_m
     face='/Game/Assets/character/RealFace/'
     original=source.read('../../../PesMobile/Content/Assets/character/RealFace/SK_133543_Face.uasset')
     original_meta=assets.metadata(source,struct.pack('<QHBB',package_id(face+'SK_133543_Face'),0,0,2))
-    converted,report['mesh']=replace_head(original,bound,reference,mesh_metadata,model.get('neck_seam') is not False,model.get('head_vertical_cm',0),model.get('preserve_expression') is not False,model.get('binding_handles'))
+    from native_head_materials import plan as plan_materials,maps as material_maps,compile_texture as compile_head_texture
+    # A binding-only GLB may have lost secondary texture channels. Its geometry
+    # and UV were proven above; use the design GLB's material in that case.
+    material_source=static if rigged_path else bound
+    materials=plan_materials(material_source);maps=material_maps(material_source,materials)
+    converted,report['mesh']=replace_head(original,bound,reference,mesh_metadata,model.get('neck_seam') is not False,model.get('head_vertical_cm',0),model.get('preserve_expression') is not False,model.get('binding_handles'),material_plan=materials)
     from native_body import face_body_source,transfer_body_settings,compile_body
     body_source=face_body_source(assets,project)
     if body_source:
@@ -304,18 +309,23 @@ def _compile_face_art(project,identity,library,rigged_path,reference_path,mesh_m
     from native_skeletal import allow_closeup_lod
     converted,report['closeup_lod']=allow_closeup_lod(converted)
     packages={face+'SK_133543_Face':(original,original_meta)}
-    for name in ['MI_133543_Head_FaceUpcon_HQ','MI_133543_Head_FaceUpcon_MQ','T_133543_Face_D','T_133543_Face_N','T_133543_Face_SRO']:
+    names=['MI_133543_Head_FaceUpcon_HQ','MI_133543_Head_FaceUpcon_MQ','T_133543_Face_D','T_133543_Face_N','T_133543_Face_SRO']
+    if materials['report']['hair_triangles']:
+        names+=['MI_133543_Head_Hair_HQ','MI_133543_Head_Hair_MQ','T_133543_Hair_High_D','T_133543_Hair_D','T_133543_Hair_High_SRO']
+    for name in names:
         packages[face+name]=assets.get(face+name)
+    if materials['report']['hair_triangles']:
+        from native_head_materials import verify_native_hair
+        materials['report']['native_contracts']={quality:verify_native_hair(packages[face+'MI_133543_Head_Hair_'+quality][0],quality) for quality in ('HQ','MQ')}
     renames={name:name.replace('133543',person) for name in packages}
     overrides={face+'SK_133543_Face':converted if body_source else face_skin(converted,model.get('skin_tone'))}
-    maps={'D':Image.open(io.BytesIO(bound.image())).convert('RGBA'),
-          'N':Image.new('RGBA',(4,4),(128,128,255,255)),
-          'SRO':Image.new('RGBA',(4,4),(64,160,255,255))}
     for name,raw,meta in clone_group(packages,renames,overrides):
-        if name.startswith(face+'T_'+person+'_Face_'):
-            raw=texture(raw,name,maps[name.rsplit('_',1)[-1]])[0]
+        prefix=face+'T_'+person+'_'
+        if name.startswith(prefix):
+            channel=name[len(prefix):]
+            raw=compile_head_texture(raw,name,maps[channel],materials['texture_wraps'][channel])
         result.append((name,raw,meta))
     report.update(native_packages=len(result),
-                  face_texture_pixels=list(maps['D'].size),face_materials='own diffuse and neutral normal/SRO',
+                  face_texture_pixels=list(maps['Face_D'].size),face_materials=materials['report'],
                   original_video_resources_preserved=True,in_game_tested=False)
     return result,report

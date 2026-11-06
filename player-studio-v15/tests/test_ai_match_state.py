@@ -66,6 +66,15 @@ class StateTests(unittest.TestCase):
         for period in (0,2,4,6,8,9,10,99):
             self.raw['period']=period;self.assertIsNone(decode_normal(self.spec,self.raw))
 
+    def test_coherent_phase_three_is_observable_but_has_no_execution_permissions(self):
+        self.raw['phase']=3
+        state=decode_match(self.spec,self.raw)
+        self.assertEqual(state['phase'],'transition');self.assertTrue(state['trusted_transition'])
+        self.assertFalse(state['execution_allowed']);self.assertFalse(state['safe_to_change'])
+        self.assertFalse(state['safe_to_queue']);self.assertFalse(state['native_formation_window'])
+        self.raw['live'][0]['native_flag_4202']=0
+        self.assertIsNone(decode_match(self.spec,self.raw))
+
     def test_abnormal_field_yields_without_guessing_discipline(self):
         for key,value in (('native_flag_4202',0),('native_flag_4218',1)):
             raw=copy.deepcopy(self.raw);raw['live'][5][key]=value

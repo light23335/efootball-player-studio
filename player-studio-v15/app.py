@@ -49,7 +49,7 @@ import editor_drafts
 from window_sessions import WindowSessions
 from booster_library import BoosterLibrary
 
-APP_VERSION = "2.1.7"
+APP_VERSION = "2.6"
 GAME_PLATFORM = "android"
 MAX_PERSONAL_PLAYERS = 10000
 BUNDLE = Path(getattr(sys, "_MEIPASS", Path(__file__).absolute().parent))
@@ -150,8 +150,9 @@ def normalize_project(value):
     # Project storage must preserve valid designs beyond the game's display
     # capacity. Native APK compilation checks its own supported capacities.
     p["additional_skills"] = [v for v in p["additional_skills"] if v not in p["innate_skills"]]
-    p["initial_level"] = int(number(p.get("initial_level"), 1, 100, 1))
     p["max_level"] = int(number(p.get("max_level"), 1, 100, 35))
+    training_force_max=number(p.get('initial_level'),1,1000000,1)>p['max_level']
+    p["initial_level"] = int(number(p.get("initial_level"), 1, 100, 1))
     p["initial_level"] = min(p["initial_level"], p["max_level"])
     training = p.setdefault("training", {})
     if not isinstance(training, dict):
@@ -204,6 +205,8 @@ def normalize_project(value):
     if not isinstance(p['traits'],dict) or p['traits'].get('weak_foot_usage','普通') not in ('低','普通','高','极高'):
         raise ValueError('逆足使用频率请选择低、普通、高或极高')
     appearance = p.setdefault("appearance", {})
+    appearance.setdefault('hide_card_ui',False)
+    if type(appearance['hide_card_ui']) is not bool:raise ValueError('隐藏卡面 UI 必须为开关值')
     if 'card_date' in appearance:
         value=appearance['card_date']
         if not isinstance(value,str) or len(value)>10:raise ValueError('BT 日期格式应为 YYYY-MM-DD')
@@ -225,7 +228,8 @@ def normalize_project(value):
     model = p.setdefault("model", {})
     p.setdefault('weekly_condition','auto')
     from native_equipment import validate as validate_equipment
-    validate_equipment(p.setdefault('equipment',{'boots_id':None,'sleeves':'keep'}))
+    validate_equipment(p.setdefault('equipment',{'boots_id':None,'sleeves':'keep','socks':'keep'}))
+    p['equipment'].setdefault('socks','keep')
     if p['weekly_condition'] not in ('auto','A','B','C','D','E'):raise ValueError('实时更新状态请选择跟随规则或 A–E')
     model.setdefault('preserve_expression',True)
     if type(model['preserve_expression']) is not bool:raise ValueError('保持导入表情必须为开关值')
@@ -272,7 +276,8 @@ def normalize_project(value):
         # Older versions kept the empty-slot marker after a custom model or
         # card was authored. Loading that saved design must enable editing.
         p['status']='draft';p['editor_ready']=True
-    return p
+    from overall import normalize_training
+    return normalize_training(p,CATALOG,force_max=training_force_max)
 
 
 def referenced_assets(p):
@@ -641,6 +646,10 @@ class StudioServer(ThreadingHTTPServer):
         self.catalog['equipment']=read_catalogue(resources,RESOURCE)
         CATALOG=self.catalog
         self.library=library;self.native_package=package;self.head_preview=HeadPreview(library,package)
+        from card_motion_jobs import VideoImports
+        previous_videos=getattr(self,'video_import',None)
+        if previous_videos is None:self.video_import=VideoImports(self.store,library.ffmpeg)
+        else:previous_videos.ffmpeg=library.ffmpeg
         from native_thumbnail import ThumbnailPreview
         self.thumbnail_preview=ThumbnailPreview(library)
 
@@ -808,6 +817,32 @@ class Handler(BaseHTTPRequestHandler):
                 result = store.save(store.saved_player(body['package_id'])['project'], manual=True)
             elif path == '/api/players/export':
                 result = store.export_project(store.saved_player(body['package_id'])['project'])
+            elif path == '/api/world/load':
+                import world_workspace
+                result={'document':world_workspace.refresh_stand_previews(store,self.server.library,world_workspace.load(store)),**world_workspace.team_catalogue(self.server.library,store)}
+            elif path == '/api/world/save':
+                import world_workspace
+                result=world_workspace.save(store,body['document'])
+            elif path == '/api/world/import':
+                import world_workspace
+                result=world_workspace.import_asset(store,body)
+            elif path == '/api/world/import-stand':
+                import world_workspace
+                result=world_workspace.import_stand(store,self.server.library,body)
+            elif path == '/api/world/preview-stand':
+                import world_workspace
+                doc=world_workspace.default();doc['stadium']['slots'][0]['stand_tifo']=body['object']
+                doc=world_workspace.normalize(doc,store.root/'assets')
+                result={'object':world_workspace.refresh_stand_previews(store,self.server.library,doc)['stadium']['slots'][0]['stand_tifo']}
+            elif path == '/api/world/catalogue':
+                import world_workspace
+                result=world_workspace.catalogue(self.server.library)
+            elif path == '/api/world/native-preview':
+                import world_workspace
+                result=world_workspace.native_preview(store,self.server.library,body.get('id'))
+            elif path == '/api/world/preview-rules':
+                import tournament_rules
+                result=tournament_rules.preview(body['tournament'])
             elif path == '/api/coaches/save':
                 from coach_models import prepare as prepare_coach_model,preview_coach
                 coach=prepare_coach_model(body['coach'],self.server.library)
@@ -822,6 +857,12 @@ class Handler(BaseHTTPRequestHandler):
             elif path == '/api/coaches/model/preview':
                 from coach_models import preview_coach
                 result = preview_coach(self.server.library,body.get('head_model'))
+            elif path in ('/api/coaches/model/save','/api/coaches/model/migrate'):
+                from coach_models import save_stock
+                result = save_stock(self.server.library,body.get('coach'),body.get('head'),self.server.catalog['coaches'],migrate=path.endswith('/migrate'))
+            elif path == '/api/coaches/model/delete':
+                from coach_models import delete_stock
+                result = delete_stock(self.server.library,body.get('coach'),self.server.catalog['coaches'])
             elif path == '/api/coaches/list':
                 result = store.coaches.list()
             elif path == '/api/coaches/delete':
@@ -837,14 +878,8 @@ class Handler(BaseHTTPRequestHandler):
             elif path == '/api/coaches/heads/preview':
                 from coach_heads import preview
                 result = preview(self.server.library,body.get('head'))
-            elif path == '/api/coaches/heads/save':
-                from coach_heads import preview,CoachHeadStore
-                result = preview(self.server.library,body.get('head'))
-                result['head'] = CoachHeadStore(store.root).save(body['head'])
-            elif path == '/api/coaches/heads/delete':
-                from coach_heads import CoachHeadStore
-                CoachHeadStore(store.root).delete(body.get('target'))
-                result = {'deleted':True}
+            elif path in ('/api/coaches/heads/save','/api/coaches/heads/delete'):
+                raise ValueError('独立全局教练头模替换已停用，请打开所选教练编辑头模；旧文件和素材保留')
             elif path=='/api/motion/source':
                 from native_motion import from_player
                 result=from_player(self.server.library.player(str(body.get('id',''))))
@@ -939,10 +974,11 @@ class Handler(BaseHTTPRequestHandler):
             elif path == '/api/thumbnail/preview':
                 result = self.server.thumbnail_preview.prepare(normalize_project(body['project']))
             elif path == '/api/card-motion/import':
-                from custom_motion_import import convert
-                role=body.get('role','both')
-                if role not in ('both','mini'):raise ValueError('动画转换目标无效')
-                result=convert(store,self.server.library.ffmpeg,body['path'],['large','mini'] if role=='both' else ['mini'],body.get('crop_x',0),body.get('crop_y',0))
+                result=self.server.video_import.start(body)
+            elif path == '/api/card-motion/status':
+                result=self.server.video_import.status(body.get('job_id'))
+            elif path == '/api/card-motion/cancel':
+                result=self.server.video_import.cancel(body.get('job_id'))
             elif path == '/api/native-apk/status':
                 result = self.server.native_package.status()
             elif path == "/api/project/new":
@@ -1055,7 +1091,7 @@ def main(argv=None):
     def idle_monitor():
         while True:
             time.sleep(15)
-            busy=server.game_import.status()['phase']=='working' or server.native_package.status()['phase']=='working' or server.library.state['phase']=='preparing'
+            busy=server.game_import.status()['phase']=='working' or server.native_package.status()['phase']=='working' or server.library.state['phase']=='preparing' or server.video_import.status()['phase']=='working'
             if not args.no_idle_exit and not busy and time.monotonic() - server.last_seen > 180:
                 server.shutdown()
                 return

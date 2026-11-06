@@ -17,6 +17,30 @@ def event(seq=1,slot=7,kind=1):
 
 
 class JournalTests(unittest.TestCase):
+    def test_candidate_diagnostic_extension_is_explicit_and_old_rows_still_decode(self):
+        raw=event(kind=6);struct.pack_into('<4I',raw,84,6,0,1,6)
+        self.assertNotIn('selection',trace.decode_event(raw)['candidate'])
+        struct.pack_into('<3I',raw,136,0x53450010,3,0x300)
+        struct.pack_into('<6I',raw,152,3,7,7,4,10,0)
+        value=trace.decode_event(raw)['candidate']['selection']
+        self.assertEqual(value['reason'],'lone_wolf_shot');self.assertTrue(value['lone_wolf_branch'])
+        self.assertEqual(value['native_vetoed_ids'],[2]);self.assertEqual(value['evaluated_ids'],[0,1,2])
+        self.assertEqual(value['action_classes'],['射门','盘带候选'])
+        struct.pack_into('<I',raw,96,5)
+        self.assertNotIn('selection',trace.decode_event(raw)['candidate'])
+
+    def test_expected_style_mismatch_is_metadata_and_never_fakes_runtime_flags(self):
+        with tempfile.TemporaryDirectory()as folder:
+            journal=trace.Journal(folder,expected_styles={123:['内切突破','独狼']})
+            row={'event':'ai_candidate_choice','player_id':123,'identity_verified':True,
+                 'ai_styles':['内切突破'],'candidate':{'selection':{'reason':'profile_rejected'}}}
+            journal.append([row]);journal.close()
+            saved=json.loads(journal.path.read_text('utf8').splitlines()[-1])
+            self.assertEqual(saved['ai_styles'],['内切突破'])
+            self.assertEqual(saved['missing_runtime_ai_styles'],['独狼'])
+            self.assertEqual(journal.selection_counts,{'incisive':{'profile_rejected':1}})
+            self.assertNotIn('missing_runtime_ai_styles',row)
+
     def test_decoded_events_retain_native_ids_and_never_output_nan(self):
         value=trace.decode_event(event(kind=4))
         self.assertEqual(value['motion']['family_id'],160);self.assertTrue(value['motion']['selection_succeeded'])
@@ -172,13 +196,13 @@ class NativeObserverTests(unittest.TestCase):
         stubs={0x698f7e0:current,0x72c3e80:ret(self.info),0x697b60c:ret(1),
                0x6a4bd08:lambda vm:vm.reg_write(r.UC_ARM64_REG_W0,self.frame),
                0x72d7dc8:ret(self.ai),0x72c40b0:ret(self.state),
-               0x72c404c:ret(0),
+               0x72c19dc:ret(0),
                0x6d3fe78:ret(0),0x6d64b78:ret(0)}
         if with_identity:
             def players(vm):self.roster_calls.append(('team',vm.reg_read(r.UC_ARM64_REG_W1)));vm.reg_write(r.UC_ARM64_REG_X0,self.info+0x4000)
             def entry(vm):self.roster_calls.append(('slot',vm.reg_read(r.UC_ARM64_REG_W1)));vm.reg_write(r.UC_ARM64_REG_X0,self.info+0x5000)
             def identity(vm):vm.reg_write(r.UC_ARM64_REG_X0,0xfeed1234fffffffe);vm.reg_write(r.UC_ARM64_REG_X1,self.card_id)
-            stubs.update({0x72c404c:players,0x68fb5fc:ret(23),0x72f2d04:entry,0x72f29e0:identity})
+            stubs.update({0x72c19dc:players,0x68fb5fc:ret(23),0x72f2d04:entry,0x72f29e0:identity})
         vm=self.machine(stubs);vm.mem_map(0x49010000,0x100000)
         for address in (self.actor,self.root,self.info,self.state,self.ai,self.request,self.output,self.player_info):vm.mem_map(address,0x10000)
         # The root's first table contains AnimeInfo, not GameActor. Keep it

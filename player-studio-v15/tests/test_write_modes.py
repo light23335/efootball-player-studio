@@ -25,6 +25,28 @@ class WriteModesTests(unittest.TestCase):
   changed=copy.deepcopy(self.project);changed['abilities']['20']=81
   self.assertEqual(w.statuses('players',[changed],self.old,self.store)[self.project['package_id']],'modified')
   changed['package_id']=str(uuid.uuid4());self.assertEqual(w.statuses('players',[changed],self.old,self.store)[changed['package_id']],'new')
+ def test_pre_sock_and_219_explicit_default_receipts_match_without_rebuilding(self):
+  old=copy.deepcopy(self.project);old['equipment']={'boots_id':None,'sleeves':'keep'};old['appearance']={'portrait':None}
+  current=copy.deepcopy(old);current['equipment']['socks']='keep';current['appearance']['hide_card_ui']=False
+  original=copy.deepcopy(current)
+  for fields in(False,True):
+   saved=current if fields else old
+   self.old['write_designs']={'version':1,'players':{saved['package_id']:w.design_digest('players',w.design_data('players',saved),self.store)}}
+   self.assertEqual(w.statuses('players',[current],self.old,self.store)[current['package_id']],'unchanged')
+   self.assertEqual(w.statuses('players',[old],self.old,self.store)[old['package_id']],'unchanged')
+   for changed in('long','short','standard'):
+    edited=copy.deepcopy(current);edited['equipment']['socks']=changed
+    self.assertEqual(w.statuses('players',[edited],self.old,self.store)[edited['package_id']],'modified')
+   edited=copy.deepcopy(current);edited['appearance']['hide_card_ui']=True
+   self.assertEqual(w.statuses('players',[edited],self.old,self.store)[edited['package_id']],'modified')
+  self.assertEqual(current,original)
+  self.assertEqual(w.design('players',old,self.store),w.design('players',current,self.store))
+ def test_pack_default_ten_draws_matches_old_and_new_receipts_but_twenty_is_an_edit(self):
+  pack={'uuid':str(uuid.uuid4()),'name':'Pack','members':[]}
+  old={'packs':[pack],'write_designs':{'version':1,'packs':{pack['uuid']:w.design_digest('packs',pack,self.store)}}}
+  current=dict(pack,draw_count=10)
+  self.assertEqual(w.statuses('packs',[current],old,self.store)[pack['uuid']],'unchanged')
+  self.assertEqual(w.statuses('packs',[dict(pack,draw_count=20)],old,self.store)[pack['uuid']],'modified')
  def test_exact_legacy_design_is_unchanged_but_any_edit_is_unverified(self):
   self.old['players'][0]['owned']['_personal_design_revision']=hashlib.sha256(w.encoded(self.project)+b':v16-compiler-1.9.2').hexdigest()
   p=copy.deepcopy(self.project);p['studio_version']='2.1.6'

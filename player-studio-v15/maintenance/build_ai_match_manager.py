@@ -32,7 +32,13 @@ SCHEMA_NAMES=(
     'command.issued_clock_frames','command.incoming','command.outgoing','command.placement',
     'command.captain','command.set_piece','command.overlap',
     'diagnostic_enabled','diagnostic','diagnostic_bytes',
-    'snapshot.yellow_count','snapshot.direct_red','snapshot.injury_state','snapshot.current_attack_level')
+    'snapshot.yellow_count','snapshot.direct_red','snapshot.injury_state','snapshot.current_attack_level',
+    'rules_enabled','rules_applied','rules_epoch',
+    'difficulty_enabled','difficulty_requested','difficulty_applied',
+    'difficulty_before_offense','difficulty_before_defense','difficulty_after_offense','difficulty_after_defense','difficulty_epoch',
+    'attack_command','attack_ack_id','attack_ack_status','attack_rejection_reason',
+    'state_healthy','ownership_state','ownership_reason','ownership_sequence',
+    'state_field_mask','state_period','state_epoch','tournament_relaxed_aptitude')
 
 
 def build(compiler,engine,work):
@@ -73,10 +79,13 @@ def build(compiler,engine,work):
     # no PC-relative operand, so its replay remains exact.
     origin=0x6ce3198;continuation=origin+4
     asm='stp x30,x0,[sp,#-32]!\nstr x1,[sp,#16]\n'+save_all()
-    asm+='mov w2,#0\nbl '+str(observe)+'\n'+restore_all()
+    asm+='mov w2,#0\nbl '+str(observe)+'\n'
+    # Submit the ENTIRE prepared batch before the original callback consumes
+    # the substitution window. Post-event work only observes/reconciles.
+    asm+=f'ldr x0,[sp,#{FRAME+8}]\nbl '+str(symbols['studio_queue_tick']['st_value'])+'\n'+restore_all()
     asm+='adr x30,post_event\nsub sp,sp,#0xa0\nldr x16,original_next\nbr x16\n'
     asm+='post_event:\n'+save_all()+f'ldr x0,[sp,#{FRAME+8}]\nldr x1,[sp,#{FRAME+16}]\nmov w2,#1\nbl '+str(observe)+'\n'
-    asm+=f'ldr x0,[sp,#{FRAME+8}]\nbl '+str(symbols['studio_queue_tick']['st_value'])+'\n'
+    asm+=f'ldr x0,[sp,#{FRAME+8}]\nbl '+str(symbols['studio_queue_reconcile']['st_value'])+'\n'
     asm+=restore_all()+'ldp x30,x16,[sp],#32\nret\n.align 3\noriginal_next: .quad '+str(continuation)
     wrapper=bytes(assembler.asm(asm,addr=entry)[0]);at=wrapper.find(struct.pack('<Q',continuation))
     if at<0 or wrapper.find(struct.pack('<Q',continuation),at+1)>=0:raise ValueError('Ambiguous native continuation')
@@ -105,15 +114,28 @@ def build(compiler,engine,work):
             'expected_hex':raw[origin-16384:origin-16384+64].hex(),
             'entry_offset':entry,'body_hex':body.hex(),'absolute_fixups':fixups,
             'writable_fixups':[[bus_at,32768]],'extra_entries':extra,
-            'helper_entries':{name:symbols[name]['st_value'] for name in ('studio_observe','studio_queue_tick','studio_fence','studio_managed','studio_plan_tick','studio_attack_tick')},
+            'helper_entries':{name:symbols[name]['st_value'] for name in ('studio_observe','studio_queue_tick','studio_queue_reconcile','studio_fence','studio_managed','studio_plan_tick','studio_attack_tick')},
             'channel_schema':dict(zip(SCHEMA_NAMES,values)),
             'source_sha256':hashlib.sha256(source.read_bytes()).hexdigest(),
             'implementation_phase':'read-only-runtime-bridge-await-state-and-live-validation','automatic_execution_verified':False,
             'execution_proof':dict.fromkeys(('automatic_execution_verified','state_decoder_verified','entry_binding_verified',
-                                            'legal_windows_verified','emergency_reconciliation_verified'),False),
+                                            'legal_windows_verified','emergency_reconciliation_verified',
+                                            'persistent_takeover_verified','whole_batch_window_verified','owned_release_verified'),False),
+            # Direct live-rule fields must be guarded just like imported
+            # setters. Check their original initialization and both actual
+            # end-of-period consumers before accepting another engine.
             'native_import_probes':[{'address':address,'file_offset':address-16384,
-                                      'expected_hex':raw[address-16384:address-16384+64].hex()}
-                                    for address in sorted({target for _,target in fixups})],
+                                      'expected_hex':raw[address-16384:address-16384+
+                                          {0x6a6479c:0x37c,0x6b1e400:0x134,0x6b1e534:0x120,
+                                           0x6ce6108:0x19c,0x6ce5824:0xdc,0x6ce3678:0x750,
+                                           0x6ce2ce4:0xb0,0x72eb4e0:0xd8}.get(address,64)].hex()}
+                                    for address in sorted({target for _,target in fixups}|
+                                                          {0x6ce3678,0x6ce2ce4,0x72eb4e0,0x6a5d600,0x6a5d640,0x6a5d690,
+                                                           0x6a6479c,0x6b1dfbc,0x6b1e400,0x6b1e534,
+                                                           # Original callback/global roster proof
+                                                           # dependencies are not all direct imports.
+                                                           0x72c19dc,0x69922e8,0x6905d9c,
+                                                           0x72f2ca8,0x6ce2d94})],
             'evidence':['V17 complete 23 card/serial scope and CPU-only native test',
                         'Original integer stamina ratio ABI W0 and native frame clock S0',
                         'Original CPU event flow preserved before/after snapshot capture']}

@@ -8,5 +8,5 @@ export function identityLabel(row,kind,options){
 }
 export function identityMatches(options,kind,query){
  const q=query.trim().toLocaleLowerCase().replace(/^#/,'');
- return (options[kind]||[]).filter(r=>r.id>0&&r.id<=(kind==='nation'?511:131071)&&(!q||String(r.id)===q||[r.name,r.name_en].join(' ').toLocaleLowerCase().includes(q)));
+ return (options[kind]||[]).filter(r=>r.id>0&&r.id<=(kind==='nation'?511:131071)&&(!q||String(r.id)===q||[r.name,r.name_en,...(r.aliases||[])].join(' ').toLocaleLowerCase().includes(q)));
 }

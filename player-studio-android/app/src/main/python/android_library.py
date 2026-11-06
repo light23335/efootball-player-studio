@@ -47,7 +47,8 @@ class AndroidLibrary(BaseLibrary):
                         if name.endswith(('.pak','.utoc','.ucas')):collect(nested,name,10)
                 for name in archive.namelist():
                     if name.startswith(('assets/pc0010_mobile_and.','assets/gateway-release/livedata/','assets/gateway-release/custom-resources/')) and name.endswith(('.pak','.utoc','.ucas')):collect(archive,name,10)
-            with zipfile.ZipFile(companion) as archive,archive.open('assets/resource-bootstrap/resources.zip') as raw,zipfile.ZipFile(raw) as nested:
+            from import_resource_source import companion_archive
+            with companion_archive(companion) as nested:
                 for name in nested.namelist():
                     if name.endswith(('.pak','.utoc','.ucas')):collect(nested,name)
             need=sum(sizes.values())+256*1024*1024;free=shutil.disk_usage(self.home).free
@@ -80,7 +81,8 @@ class AndroidLibrary(BaseLibrary):
                 png=io.BytesIO();texture_image(self.decoder,ref).save(png,format='PNG')
                 bindings[name]=(png.getvalue(),props);break
         target=path.with_name(path.stem+'-native.glb')
-        return target,glb_textures(path,bindings,target)
+        from native_texture import TEXTURE_DECODER_REVISION
+        return target,{**glb_textures(path,bindings,target),'texture_decoder_revision':TEXTURE_DECODER_REVISION}
 
 def index_assets(library):
     listed={p.removeprefix('../../../') for p in library.decoder.files}

@@ -29,6 +29,80 @@ def fixture():
 
 
 class MatchManagerTests(unittest.TestCase):
+    def test_accepted_substitution_survives_observed_transition_and_finishes_after_resume(self):
+        spec,snap=fixture();snap.update(minute=60,score=[0,0],period=3,phase='play',safe_to_change=False,safe_to_queue=True)
+        snap['stamina']['7']=20;m=Manager(spec);p=m.propose(snap)
+        self.assertEqual(p['kind'],'substitution')
+        snap.update(ack_id=p['id'],ack_status='accepted');m.observe(snap)
+        for minute in (60.1,61,62,64):
+            snap.update(minute=minute,sequence=snap['sequence']+2,phase='transition',execution_allowed=False)
+            self.assertIsNone(m.propose(snap));self.assertIsNone(m.cancellation())
+        snap.update(phase='play',execution_allowed=True,minute=64.1)
+        m.observe(snap);self.assertIsNone(m.cancellation())
+        snap.update(ack_status='applied',on_field=[i for i in snap['on_field']if i not in p['outgoing']]+p['incoming'],
+                    bench=[i for i in snap['bench']if i not in p['incoming']])
+        m.observe(snap);self.assertIsNone(m.state['pending']);self.assertIsNotNone(m.state['after_sub_plan'])
+
+    def test_lost_confirmed_native_shape_invalidates_cached_template_and_marks_real_change(self):
+        spec,snap=fixture();snap.update(minute=71.7,score=[0,2],period=3)
+        m=Manager(spec);base=m.profile(spec['base_profile']['id']);mapping=dict(enumerate(range(11)))
+        baseline=m.expected_shape(base,mapping);snap['actual_shape']=copy.deepcopy(baseline)
+        m.observe(snap)
+        target=m.profile(next(p for p in spec['profiles']if p['family']=='4213')['id'])
+        m.state.update(profile_id=target['id'],confirmed_shape=m.expected_shape(target,mapping),shape_lost=False)
+        m.observe(snap)
+        self.assertNotEqual(m.state['profile_id'],target['id']);self.assertTrue(m.state['shape_lost'])
+        self.assertTrue(m.state['rebuild_due'])
+        self.assertTrue(any(r['event']=='formation_target_lost'for r in m.state['journal']))
+        proposal=m.propose(snap);self.assertIsNotNone(proposal)
+        actual=m.expected_shape(m.profile(proposal['profile_id'],proposal['mode']),proposal['mapping'])
+        self.assertEqual(proposal['changes_shape'],actual!=baseline)
+        self.assertTrue(proposal['changes_shape'])
+
+    def test_formation_receipt_alone_does_not_claim_an_unobserved_shape(self):
+        spec,snap=fixture();snap.update(minute=30,score=[0,2],period=1)
+        m=Manager(spec);base=m.profile(spec['base_profile']['id']);mapping=dict(enumerate(range(11)))
+        snap['actual_shape']=m.expected_shape(base,mapping)
+        proposal=m.propose(snap);self.assertEqual(proposal['kind'],'formation')
+        snap.update(ack_id=proposal['id'],ack_status='applied',sequence=10)
+        m.observe(snap)
+        self.assertIsNotNone(m.state['pending']);self.assertEqual(m.state['confirmed_shape'],snap['actual_shape'])
+        snap.update(actual_shape=m.expected_shape(m.profile(proposal['profile_id'],proposal['mode']),proposal['mapping']),sequence=12)
+        m.observe(snap)
+        self.assertIsNone(m.state['pending']);self.assertEqual(m.state['confirmed_shape'],snap['actual_shape'])
+
+    def test_restored_template_label_is_rebased_from_first_actual_native_shape(self):
+        spec,snap=fixture();m=Manager(spec)
+        baseline=m.expected_shape(m.profile(spec['base_profile']['id']),dict(enumerate(range(11))))
+        m.state['profile_id']=next(p['id']for p in spec['profiles']if p['family']=='4213')
+        snap['actual_shape']=baseline;m.observe(snap)
+        self.assertEqual(m.state['profile_id'],spec['base_profile']['id'])
+        self.assertEqual(m.state['confirmed_shape'],baseline)
+
+    def test_waiting_window_has_no_three_minute_timeout_but_queued_execution_does(self):
+        spec,snap=fixture();snap.update(minute=60,score=[0,0],period=3,phase='play',safe_to_change=False,safe_to_queue=True)
+        snap['stamina']['7']=20;m=Manager(spec);p=m.propose(snap)
+        self.assertEqual(p['kind'],'substitution')
+        for minute in (61,64,69,76):
+            snap.update(minute=minute,sequence=snap['sequence']+2,ack_id=p['id'],ack_status='waiting_window')
+            m.observe(snap)
+            self.assertIsNone(m.cancellation());self.assertEqual(m.state['pending']['id'],p['id'])
+        snap.update(minute=77,ack_status='accepted');m.observe(snap)
+        snap['minute']=79;m.observe(snap);self.assertIsNone(m.cancellation())
+        snap['minute']=81;m.observe(snap)
+        self.assertEqual(m.cancellation()['reason'],'native confirmation timed out')
+
+    def test_waiting_batch_is_reassessed_after_period_transition_and_ownership_loss(self):
+        spec,snap=fixture();snap.update(minute=60,score=[0,0],period=3);snap['stamina']['7']=20
+        m=Manager(spec);p=m.propose(snap)
+        snap.update(ack_id=p['id'],ack_status='waiting_window');m.observe(snap)
+        snap.update(period=4,minute=90);m.observe(snap)
+        self.assertEqual(m.cancellation()['reason'],'period changed while waiting')
+        m.state['staged_plan']={'old':True};m.state['after_sub_plan']={'old':True}
+        m.release_ownership('worker stopped')
+        self.assertIsNone(m.state['pending']);self.assertIsNone(m.state['staged_plan'])
+        self.assertIsNone(m.state['after_sub_plan']);self.assertTrue(m.state['rebuild_due'])
+
     def test_unsafe_best_shape_does_not_hide_other_legal_substitutions(self):
         spec,snap=fixture();spec['minimum']=0;snap.update(minute=70,score=[0,0])
         anchor=spec['base_profile']['attack'].index(4)
@@ -81,7 +155,7 @@ class MatchManagerTests(unittest.TestCase):
         spec,snap=fixture();snap.update(minute=60,score=[0,0],phase='play',safe_to_change=False,safe_to_queue=True,period=3)
         snap['stamina']['7']=20;m=Manager(spec);p=m.propose(snap)
         self.assertEqual(p['kind'],'substitution')
-        snap.update(ack_id=p['id'],ack_status='stale',minute=64,sequence=10)
+        snap.update(ack_id=p['id'],ack_status='rejected',rejection_reason=10,minute=64,sequence=10)
         self.assertIsNone(m.propose(snap))
         snap['stamina']['7']=15;snap.update(minute=65,sequence=12)
         self.assertIsNone(m.propose(snap))

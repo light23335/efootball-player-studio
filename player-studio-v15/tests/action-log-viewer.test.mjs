@@ -31,3 +31,20 @@ test('v3 dribble decision and movement samples are readable and filterable',asyn
  assert.equal(filterActions(value.rows,'盘带','','ai_candidate_choice').length,1);
  assert.ok(actionRow(value.rows[1]).includes('移动轨迹'));
 });
+test('selection reason, native veto and missing Lone Wolf flag remain visible and escaped',()=>{
+ const value=row(1,{event:'ai_candidate_choice',ai_styles:['内切突破'],missing_runtime_ai_styles:['独狼'],
+  candidate:{original_name:'传球',selected_name:'传球',selection:{description:'增强资格检查未通过',
+   qualification_failure:'<距离不足>',candidate_count:3,comparable_ids:[0,1],native_vetoed_ids:[1],changed:false}}});
+ const html=actionRow(value);
+ assert.ok(html.includes('增强资格检查未通过'));assert.ok(html.includes('原生否决 1 个'));
+ assert.ok(html.includes('配置有 独狼'));assert.ok(html.includes('&lt;距离不足&gt;'));
+ assert.equal(filterActions([value],'独狼').length,1);
+});
+
+test('possession hit miss and stale tickets are distinguishable from candidate execution',()=>{
+ for(const [active,expired,text]of [[true,false,'已命中70%标志'],[false,false,'未命中70%标志'],[true,true,'标志已失效']]){
+  const html=actionRow(row(1,{event:'ai_candidate_choice',candidate:{original_name:'传球',selected_name:'传球',
+   selection:{version:2,description:'本次持球判定',style_eligible_ids:[1],possession:{epoch:15,roll:active?2:9,active,expired_during_decision:expired}}}}));
+  assert.ok(html.includes(text),html);assert.ok(html.includes('15'),html);
+ }
+});

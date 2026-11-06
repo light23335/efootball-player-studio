@@ -13,11 +13,15 @@ from ai_opportunity import add_opportunity_helpers, COMPARISON_WINDOW, PREFERENC
 from ai_selection import add_selection_helpers
 
 ENGINE_SHA='efd257d9e41b622d6ecb8f51f7b0a8ee8820113fd427c5572025df1c8eecc7b8'
-REVISION='v17-ai-cut-in-opportunity-v7-203-selection-fixed-shot-modes'
+REVISION='v17-ai-style-v14-possession-context'
 
 
 def add_ai_cut_in_shots(b):
     add_opportunity_helpers(b)
+    from ai_possession import add_possession_helpers
+    from ai_forced_style import add_forced_style_helpers
+    add_possession_helpers(b)
+    add_forced_style_helpers(b)
     # Result: w0 = 0 off / 1 shooting / 2 curler / 3 blitz curler;
     # x1 = live PlayerInfo; x2 = pitch; w3 = attacking side; s0 = goal-X
     # distance; s1 = signed lateral position. Native parameter 66 maps to
@@ -31,23 +35,35 @@ str x30,[sp,#64]
 stp d8,d9,[sp,#80]
 mov x19,x0
 mov w24,#0
+mov w16,#1
+str w16,[sp,#72]
 cbz x19,done
 ldr x21,[x19]
 ldr x20,[x19,#0x18]
+mov w16,#2
+str w16,[sp,#72]
 cbz x21,done
 cbz x20,done
 ldr w22,[x21]
+mov w16,#3
+str w16,[sp,#72]
 cmp w22,#22
 b.hs done
 mov x0,x20
 {call('game_info')}
+mov w16,#4
+str w16,[sp,#72]
 cbz x0,done
 {call('phase')}
+mov w16,#5
+str w16,[sp,#72]
 cmp w0,#1
 b.ne done
 mov x0,x20
 mov w1,w22
 {call('player_state')}
+mov w16,#6
+str w16,[sp,#72]
 cbz x0,done
 {call('abilities')}
 mov x23,x0
@@ -55,8 +71,12 @@ cbz x23,done
 ldr w8,[x23,#0xd4]
 tbnz w8,#7,check_skills
 bl shared_studio_ai_preference_enabled
+mov w16,#7
+str w16,[sp,#72]
 cbz w0,done
 check_skills:
+mov w16,#8
+str w16,[sp,#72]
 mov x0,x23
 mov w1,#51
 {call('skill')}
@@ -89,8 +109,12 @@ mov w0,w22
 mov w1,w0
 mov x0,x20
 {call('team_data')}
+mov w16,#9
+str w16,[sp,#72]
 cbz x0,no
 ldrsb w23,[x0,#0x28c]
+mov w16,#10
+str w16,[sp,#72]
 cmp w23,#1
 b.eq side_ok
 cmn w23,#1
@@ -99,15 +123,21 @@ side_ok:
 mov x0,x20
 {call('pitch')}
 mov x26,x0
+mov w16,#11
+str w16,[sp,#72]
 cbz x26,no
 mov x0,x20
 mov w1,w22
 {call('player_info')}
 mov x25,x0
+mov w16,#12
+str w16,[sp,#72]
 cbz x25,no
 ldr s8,[x25,#0x4f4]
 ldr s9,[x25,#0x4fc]
 ldr s0,[x26]
+mov w16,#13
+str w16,[sp,#72]
 ldr s1,min_half_length
 fcmp s0,s1
 b.vs no
@@ -116,6 +146,8 @@ ldr s1,max_half_length
 fcmp s0,s1
 b.gt no
 scvtf s1,w23
+mov w16,#14
+str w16,[sp,#72]
 fmul s8,s8,s1
 fsub s8,s0,s8
 fcmp s8,#0.0
@@ -126,6 +158,8 @@ fcmp s0,s0
 b.vs no
 fmul s0,s0,s0
 fmadd s0,s8,s8,s0
+mov w16,#15
+str w16,[sp,#72]
 ldr s1,min_distance_sq
 fcmp s0,s1
 b.lt no
@@ -137,11 +171,13 @@ mov x2,x26
 mov w3,w23
 fmov s0,s8
 fmov s1,s9
+str wzr,[sp,#72]
 b done
 no:
 mov w24,#0
 done:
 mov w0,w24
+ldr w4,[sp,#72]
 ldp d8,d9,[sp,#80]
 ldr x30,[sp,#64]
 ldp x25,x26,[sp,#48]
@@ -215,26 +251,31 @@ def build(engine,release=False):
                               ('native_blitz_branch',0x6d68648,104),('native_shot_dispatch',0x70e5354,180),
                               ('selector_caller_layout',0x70e4bfc,20)]:
         probes.append({'name':name,'file_offset':address-0x4000,'expected_hex':engine[address-0x4000:address-0x4000+size].hex()})
-    return {'revision':REVISION,'production_ready':release,'experimental':True,'probability_gate':{'candidate':None,'candidate_policy':'2.0.3 restored','shot':.8,'stable_window_native_ticks':30},'probes':probes,
+    return {'revision':REVISION,'production_ready':release,'experimental':True,'probability_gate':{'candidate':.7,'candidate_policy':'one locked draw per individual possession; forced native-executable style action when active','shot':.8,'stable_window_native_ticks':30,'possession_end':'any native owner change, including teammate or no owner'},'probes':probes,
             'ordinary_switch_offset':ordinary_at,'engine_sha256':ENGINE_SHA,'hooks':b.rows,'helpers':b.helpers,'bundles':[bundle],
             'priority':['Blitz Curler','Long-range Curler','Long-range Shooting'],
             'qualification':{'ai_parameter':66,'ai_match_bit':4,'lone_wolf_match_bit':7,
                              'lone_wolf_parameter':151,'blitz_requires_incisive':False,
+                             'candidate_requires_shooting_skill':False,'candidate_requires_attacking_half':False,
                              'skills':{'18':51,'17':7,'23':42}},
-            'shot_styles':{'stage':'only after native CPU chooses a shot','weights':'one equal ticket per available skill',
-                           'styles':{'Blitz Curler':{'match_skill':51,'request_subtype':1,'power_min':.55},
+            'shot_styles':{'stage':'only after native CPU chooses a shot','weights':'one equal ticket per currently eligible skill',
+                           'decision_window_native_ticks':30,'power_ticket':'record only after request subtype is committed; final native mode must agree',
+                           'controlled_power':{'inside_penalty_area':[.30,.60],'outside_penalty_area':[.50,.70],
+                                               'policy':'clamp native power; preserve within range; unknown geometry unchanged',
+                                               'legacy_curler_rewrites_included':True},
+                           'styles':{'Blitz Curler':{'match_skill':51,'request_subtype':1,'power_by_zone':'controlled_power'},
                                      'Low Screamer':{'match_skill':58,'request_subtype':0,'power_max':.49},
                                      'Heavy Shot':{'match_skill':74,'request_subtype':3,'stunning_outside_penalty_area_only':True,'power_if_original_at_most_half':.65,'preserve_original_power_above':.5}},
                            'all_shooting_positions':True,'native_motion_checks_preserved':True,
                            'low_and_blitz_coexist':'current CPU actor/root, at most two native ticks'},
             'selector_layout':{'game_context_offset':8,'player_context_offset':16,'native_caller':'0x70e4bfc'},
             'opportunity':{'scale':'workshop positional heuristic, not native utility or xG',
-                           'window':COMPARISON_WINDOW,'bonus':0,'ordinary_choice':'equal action classes',
+                           'window':None,'bonus':0,'ordinary_choice':'forced inward native route during an active possession',
                            'lone_wolf':'safe shot first, otherwise reposition; inward if Incisive Run',
                            'posture':'native heading, strong-foot space, estimated open-body alignment',
                            'snapshot_once':True,
                            'candidate_evaluations':'one per unique ID','unknown':'keep original',
-                           'protected':['open box reception','clear defensive-line penetration'],
+                           'protected':[],
                            'decoded_pass_modes':['ordinary ground pass'],'gameplay_calibrated':False},
             'limits':{'native_candidates_only':True,'native_shot_checks_retained':True,
                       'gameplay_acceptance':'pending user testing'}}

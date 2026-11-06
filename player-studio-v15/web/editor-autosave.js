@@ -1,5 +1,5 @@
-export function saveTarget(page){return page==='coaches'?'coach':page==='packs'?'pack':page==='tools'?'settings':'player';}
-export const saveLabels={coach:'保存教练',pack:'保存卡包',player:'保存球员',settings:'保存设置'};
+export function saveTarget(page){return ['stadium','tournaments'].includes(page)?'world':page==='coaches'?'coach':page==='packs'?'pack':page==='tools'?'settings':'player';}
+export const saveLabels={coach:'保存教练',pack:'保存卡包',player:'保存球员',settings:'保存设置',world:'保存球场与赛事'};
 
 // A single serialized queue prevents an older slow response overwriting a
 // newer edit. No render is performed after an automatic save.
