@@ -1,6 +1,7 @@
 """Optional, non-blocking public GitHub Release checks. Never installs updates."""
 from pathlib import Path
 import copy,json,logging,re,threading,time,urllib.request,urllib.error
+import tempfile
 from urllib.parse import urlsplit
 NATIVE_TRANSPORT=None
 
@@ -15,7 +16,7 @@ def repository(value):
  return value
 
 def version(value):
- match=re.fullmatch(r'(?:V16-)?v?(\d+\.\d+(?:\.\d+){0,2})',str(value))
+ match=re.fullmatch(r'(?:V16-)?v?(\d+\.\d+(?:\.\d+){0,2})(?:test)?',str(value),re.IGNORECASE)
  if not match:return None
  parts=tuple(map(int,match[1].split('.')));return parts+(0,)*(4-len(parts))
 
@@ -27,12 +28,22 @@ def release_result(data,current,repo,platform):
  page=data.get('html_url','')
  if not page.startswith(prefix+'tag/'):raise ValueError('Release 地址与配置仓库不一致')
  assets=[]
+ fallback=[]
  for asset in data.get('assets',[]):
   name=str(asset.get('name',''));url=str(asset.get('browser_download_url',''))
   if not url.startswith(prefix+'download/') or 'V15' in name.upper():continue
   if platform=='android' and name.lower().endswith('.apk'):assets.append((name,url))
   elif platform=='pc' and name.lower().endswith('.zip') and ('免安装' in name or 'portable' in name.lower()):assets.append((name,url))
- return {'phase':'available','version':tag,'message':'发现可选更新 '+tag,'notes':str(data.get('body') or '')[:8000],'release_url':page,'download_url':assets[0][1] if assets else page,'asset':assets[0][0] if assets else None,'mandatory':False}
+  elif platform=='pc' and name.lower().endswith('.zip') and not any(x in name.lower() for x in ('source','源码')):fallback.append((name,url))
+ if not assets and len(fallback)==1:assets=fallback
+ result={'phase':'available','version':tag,'message':'发现可选更新 '+tag,'notes':str(data.get('body') or '')[:8000],'release_url':page,'download_url':assets[0][1] if assets else page,'asset':assets[0][0] if assets else None,'mandatory':False}
+ if assets:
+  selected=next(a for a in data.get('assets',[]) if a.get('browser_download_url')==assets[0][1])
+  size=selected.get('size')
+  if isinstance(size,int) and not isinstance(size,bool) and size>0:result['download_total']=size
+  digest=str(selected.get('digest') or '')
+  if re.fullmatch(r'sha256:[0-9a-fA-F]{64}',digest):result['sha256']=digest[7:].lower()
+ return result
 
 class UpdateChecker:
  def __init__(self,store,resources,current,platform='pc'):
@@ -56,7 +67,7 @@ class UpdateChecker:
   if not manual and (not settings.get('enabled') or not settings.get('repository')):return self.status()
   repo=repository(settings['repository'])
   with self.lock:
-   if self.state['phase']=='checking':return dict(self.state)
+   if self.state['phase'] in ('checking','downloading','preparing'):return dict(self.state)
    self.state={'phase':'checking','message':'正在检查 GitHub 正式版本…'}
   threading.Thread(target=self._check,args=(repo,),daemon=True,name='studio-update-check').start();return self.status()
  def _check(self,repo):
@@ -83,3 +94,28 @@ class UpdateChecker:
   with self.lock:target=self.state.get('download_url') or self.state.get('release_url')
   if not target or not target.startswith('https://github.com/'+repository(self.settings()['repository'])+'/releases/'):raise ValueError('请先检查更新')
   return target
+ def download(self):
+  if self.platform!='pc':raise ValueError('当前平台不支持此更新方式')
+  with self.lock:
+   if self.state.get('phase')!='available' or not self.state.get('sha256') or not self.state.get('asset'):
+    raise ValueError('更新包缺少可信的校验信息，请使用下载页面')
+   selected=copy.deepcopy(self.state)
+   self.state['phase']='downloading';self.state['message']='正在下载更新…';self.state['downloaded']=0
+  threading.Thread(target=self._download,args=(selected,),daemon=True).start()
+  return self.status()
+ def _download(self,selected):
+  from update_package import download_package,stage_package
+  try:
+   work=Path(tempfile.mkdtemp(prefix='studio-update-',dir=self.store.root/'tmp'))
+   (work/'studio-update-owned.json').write_text(json.dumps({'version':selected['version']}),encoding='utf8')
+   def progress(size):
+    with self.lock:
+     self.state['downloaded']=size
+     self.state['message']='正在下载更新…'
+   download_package(selected['download_url'],work/'package.zip',selected['sha256'],progress)
+   with self.lock:self.state['message']='下载完成，正在校验并准备更新…';self.state['phase']='preparing'
+   stage_package(work/'package.zip',work/'stage')
+   with self.lock:self.state={**selected,'phase':'ready','message':'下载完成，可以重启更新','work':str(work)}
+  except Exception as exc:
+   logging.exception('Update download failed')
+   with self.lock:self.state={**selected,'phase':'available','message':'下载失败：'+str(exc)}

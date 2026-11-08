@@ -6,6 +6,9 @@ import sys
 import shutil
 
 root = Path(__file__).absolute().parent
+for required in ('web/vendor/three/build/three.module.js', 'web/vendor/three/build/three.core.js'):
+    if not (root / required).is_file():
+        raise FileNotFoundError('构建缺少界面依赖：' + required)
 workspace = root.parent
 parser=argparse.ArgumentParser()
 parser.add_argument('--dist-dir',default=str(workspace/'球员工坊-V15'))

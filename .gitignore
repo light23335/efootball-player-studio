@@ -20,6 +20,9 @@ local.properties
 .gradle/
 .cxx/
 build/
+!player-studio-v15/web/vendor/three/build/
+!player-studio-v15/web/vendor/three/build/three.module.js
+!player-studio-v15/web/vendor/three/build/three.core.js
 output/
 *.exe
 *.dll
